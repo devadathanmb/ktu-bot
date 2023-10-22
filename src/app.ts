@@ -4,8 +4,15 @@ import start from "./commands/start";
 import help from "./commands/help";
 import result from "./commands/result";
 import defaultHandler from "./commands/defaultHandler";
+import { Scenes, session } from "telegraf";
+import resultWizard from "./scenes/resultWizard";
+import ResultContext from "./types/resultContext";
 
-const bot = new Telegraf(process.env.BOT_TOKEN!);
+const bot = new Telegraf<ResultContext>(process.env.BOT_TOKEN!);
+const stage = new Scenes.Stage<ResultContext>([resultWizard]);
+
+bot.use(session());
+bot.use(stage.middleware());
 
 bot.start((ctx) => start(ctx));
 bot.command("help", (ctx) => help(ctx));

@@ -1,7 +1,5 @@
-import { Context } from "telegraf";
-
-function result(ctx: Context) {
-  ctx.reply("Result command");
+function result(ctx: any) {
+  ctx.scene.enter("result-wizard");
 }
 
 export default result;
