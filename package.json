@@ -1,0 +1,20 @@
+{
+  "name": "ktu-result-bot",
+  "version": "1.0.0",
+  "description": "A telegram bot to view results from KTU portal",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/app.js",
+    "build": "npx tsc",
+    "dev": "tsc -w & nodemon dist/app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "telegraf": "^4.14.0"
+  }
+}
