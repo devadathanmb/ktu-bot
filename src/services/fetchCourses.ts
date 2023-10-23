@@ -1,28 +1,28 @@
 import axios from "axios";
 import * as https from "https";
+import { COURSES_URL } from "../constants/constants";
+import { Course } from "../types/types";
 
 const agent = new https.Agent({
   rejectUnauthorized: false,
 });
 
-const API_URL = "https://api.ktu.edu.in/ktu-web-service/anon/masterData";
-
-async function fetchCourses() {
+async function fetchCourses(): Promise<Course[]> {
   try {
-    const response = await axios.post(API_URL, "data=programs", {
+    const response = await axios.post(COURSES_URL, "data=programs", {
       httpsAgent: agent,
     });
-    const relevantData: { id: number; name: string }[] =
-      response.data.program.map(
-        ({ id, name }: { id: number; name: string }) => ({
-          id,
-          name,
-        }),
-      );
+
+    const relevantData: Course[] = response.data.program.map(
+      (course: { id: number; name: string }) => ({
+        id: course.id,
+        name: course.name,
+      }),
+    );
     return relevantData;
   } catch (error) {
     console.error("Error fetching data:", error);
-    throw "Something wrong with KTU servers right now";
+    throw new Error("Something wrong with KTU servers right now");
   }
 }
 

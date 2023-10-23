@@ -5,5 +5,7 @@ export default interface ResultSession extends Scenes.WizardSession {
   courseName: string;
   semester: string;
   dob: string;
-  ktuid: string;
+  regisNo: string;
+  examDefId: number;
+  schemeId: number;
 }
