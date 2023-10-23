@@ -44,7 +44,13 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
      See [env.example]("./env.example") file for example
 
-6. Start the bot:
+6. Build the bot:
+
+   ```bash
+   npm run build
+   ```
+
+7. Start the bot:
 
    ```bash
    npm run start
