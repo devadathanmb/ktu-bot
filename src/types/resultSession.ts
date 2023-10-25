@@ -8,4 +8,6 @@ export default interface ResultSession extends Scenes.WizardSession {
   regisNo: string;
   examDefId: number;
   schemeId: number;
+  resultMsgId: number;
+  courseMsgId: number;
 }

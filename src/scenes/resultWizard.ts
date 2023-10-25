@@ -8,6 +8,17 @@ import formatResultMessage from "../utils/formatResultMessage";
 import formatSummaryMessage from "../utils/formatSummaryMessage";
 import calculateSgpa from "../utils/calculateSgpa";
 
+const handleCancelCommand = async (ctx: ResultContext) => {
+  try {
+    await ctx.deleteMessage(ctx.session.courseMsgId);
+    await ctx.deleteMessage(ctx.session.resultMsgId);
+  } catch (error) {
+  } finally {
+    ctx.reply("Result look up cancelled. Please use /result to start again.");
+    return ctx.scene.leave();
+  }
+};
+
 const resultWizard = new Scenes.WizardScene<ResultContext>(
   "result-wizard",
   async (ctx: ResultContext) => {
@@ -18,7 +29,8 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
         callback_data: `course_${id}`,
       }));
       const keyboard = Markup.inlineKeyboard(courseButtons, { columns: 1 });
-      await ctx.sendMessage("Choose a course:", keyboard);
+      const msg = await ctx.sendMessage("Choose a course:", keyboard);
+      ctx.session.courseMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
       return handleError(ctx, error);
@@ -28,7 +40,9 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
     if (ctx.message) {
       return ctx.reply("Please choose a valid option");
     }
-    await ctx.deleteMessage();
+    try {
+      await ctx.deleteMessage(ctx.session.courseMsgId);
+    } catch (error) {}
     const courseId: number = Number.parseInt(
       (ctx.callbackQuery as any)?.data?.split("_")[1],
     );
@@ -42,7 +56,8 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
         }),
       );
       const keyboard = Markup.inlineKeyboard(resultButtons, { columns: 1 });
-      await ctx.sendMessage("Choose a result:", keyboard);
+      const msg = await ctx.sendMessage("Choose a result:", keyboard);
+      ctx.session.resultMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
       return handleError(ctx, error);
@@ -53,7 +68,9 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
       return ctx.reply("Please choose a valid option");
     }
     const [examDefId, schemeId] = (ctx.callbackQuery as any)?.data?.split("_");
-    await ctx.deleteMessage();
+    try {
+      await ctx.deleteMessage(ctx.session.resultMsgId);
+    } catch (error) {}
     ctx.session.examDefId = examDefId;
     ctx.session.schemeId = schemeId;
     await ctx.reply("Please enter your KTU Registration Number");
@@ -96,6 +113,8 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
     }
   },
 );
+
+resultWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
 
 function handleError(ctx: ResultContext, error: any) {
   console.error(error);
