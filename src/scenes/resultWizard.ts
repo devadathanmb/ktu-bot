@@ -49,6 +49,9 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
     }
   },
   async (ctx) => {
+    if (ctx.message) {
+      return ctx.reply("Please choose a valid option");
+    }
     const [examDefId, schemeId] = (ctx.callbackQuery as any)?.data?.split("_");
     await ctx.deleteMessage();
     ctx.session.examDefId = examDefId;
@@ -62,7 +65,7 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
       return ctx.reply("Please enter a valid registration number");
     }
     ctx.session.regisNo = regisNo.toUpperCase();
-    await ctx.reply("Enter your Date of Birth (DD/MM/YYYY)");
+    await ctx.reply("Please enter your Date of Birth (DD/MM/YYYY)");
     return ctx.wizard.next();
   },
   async (ctx) => {
