@@ -1,5 +1,5 @@
 import { Markup, Scenes } from "telegraf";
-import ResultContext from "../types/resultContext";
+import { CustomContext } from "../types/customContext";
 import fetchCourses from "../services/fetchCourses";
 import fetchPublishedResults from "../services/fetchPublishedResults";
 import { fetchResult, InvalidDataError } from "../services/fetchResult";
@@ -8,10 +8,10 @@ import formatResultMessage from "../utils/formatResultMessage";
 import formatSummaryMessage from "../utils/formatSummaryMessage";
 import calculateSgpa from "../utils/calculateSgpa";
 
-const handleCancelCommand = async (ctx: ResultContext) => {
+const handleCancelCommand = async (ctx: CustomContext) => {
   try {
-    await ctx.deleteMessage(ctx.session.courseMsgId);
-    await ctx.deleteMessage(ctx.session.resultMsgId);
+    await ctx.deleteMessage(ctx.scene.session.courseMsgId);
+    await ctx.deleteMessage(ctx.scene.session.resultMsgId);
   } catch (error) {
   } finally {
     ctx.reply("Result look up cancelled. Please use /result to start again.");
@@ -19,9 +19,9 @@ const handleCancelCommand = async (ctx: ResultContext) => {
   }
 };
 
-const resultWizard = new Scenes.WizardScene<ResultContext>(
+const resultWizard = new Scenes.WizardScene<CustomContext>(
   "result-wizard",
-  async (ctx: ResultContext) => {
+  async (ctx: CustomContext) => {
     try {
       const courses = await fetchCourses();
       const courseButtons = courses.map(({ id, name }) => ({
@@ -30,7 +30,7 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
       }));
       const keyboard = Markup.inlineKeyboard(courseButtons, { columns: 1 });
       const msg = await ctx.sendMessage("Choose a course:", keyboard);
-      ctx.session.courseMsgId = msg.message_id;
+      ctx.scene.session.courseMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
       return handleError(ctx, error);
@@ -41,12 +41,12 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
       return ctx.reply("Please choose a valid option");
     }
     try {
-      await ctx.deleteMessage(ctx.session.courseMsgId);
+      await ctx.deleteMessage(ctx.scene.session.courseMsgId);
     } catch (error) {}
     const courseId: number = Number.parseInt(
       (ctx.callbackQuery as any)?.data?.split("_")[1],
     );
-    ctx.session.courseId = courseId;
+    ctx.scene.session.courseId = courseId;
     try {
       const publishedResults = await fetchPublishedResults(courseId);
       const resultButtons = publishedResults.map(
@@ -57,7 +57,7 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
       );
       const keyboard = Markup.inlineKeyboard(resultButtons, { columns: 1 });
       const msg = await ctx.sendMessage("Choose a result:", keyboard);
-      ctx.session.resultMsgId = msg.message_id;
+      ctx.scene.session.resultMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
       return handleError(ctx, error);
@@ -69,10 +69,10 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
     }
     const [examDefId, schemeId] = (ctx.callbackQuery as any)?.data?.split("_");
     try {
-      await ctx.deleteMessage(ctx.session.resultMsgId);
+      await ctx.deleteMessage(ctx.scene.session.resultMsgId);
     } catch (error) {}
-    ctx.session.examDefId = examDefId;
-    ctx.session.schemeId = schemeId;
+    ctx.scene.session.examDefId = examDefId;
+    ctx.scene.session.schemeId = schemeId;
     await ctx.reply("Please enter your KTU Registration Number");
     return ctx.wizard.next();
   },
@@ -81,7 +81,7 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
     if (!regisNo) {
       return ctx.reply("Please enter a valid registration number");
     }
-    ctx.session.regisNo = regisNo.toUpperCase();
+    ctx.scene.session.regisNo = regisNo.toUpperCase();
     await ctx.reply("Please enter your Date of Birth (DD/MM/YYYY)");
     return ctx.wizard.next();
   },
@@ -95,13 +95,13 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
     } catch (error) {
       return ctx.reply("Please enter a valid date of birth");
     }
-    ctx.session.dob = dob;
+    ctx.scene.session.dob = dob;
     try {
       const { summary, resultDetails } = await fetchResult(
-        ctx.session.dob,
-        ctx.session.regisNo,
-        ctx.session.examDefId,
-        ctx.session.schemeId,
+        ctx.scene.session.dob,
+        ctx.scene.session.regisNo,
+        ctx.scene.session.examDefId,
+        ctx.scene.session.schemeId,
       );
 
       const sgpa = calculateSgpa(resultDetails);
@@ -116,7 +116,7 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
 
 resultWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
 
-async function handleError(ctx: ResultContext, error: any) {
+async function handleError(ctx: CustomContext, error: any) {
   if (error instanceof InvalidDataError) {
     await ctx.reply(
       "Invalid roll number or dob. Are you sure that the roll number and date of birth are correct?",

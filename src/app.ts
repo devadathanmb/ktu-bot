@@ -7,10 +7,10 @@ import result from "./commands/result";
 import defaultHandler from "./commands/defaultHandler";
 import { Scenes, session } from "telegraf";
 import resultWizard from "./scenes/resultWizard";
-import ResultContext from "./types/resultContext";
+import { CustomContext } from "./types/customContext";
 
-const bot = new Telegraf<ResultContext>(process.env.BOT_TOKEN!);
-const stage = new Scenes.Stage<ResultContext>([resultWizard]);
+const bot = new Telegraf<CustomContext>(process.env.BOT_TOKEN!);
+const stage = new Scenes.Stage<CustomContext>([resultWizard]);
 
 bot.use(session());
 bot.use(stage.middleware());
@@ -32,3 +32,7 @@ const launchBot = async () => {
 };
 
 launchBot();
+
+// Graceful stop
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));

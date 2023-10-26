@@ -1,6 +1,6 @@
 import { Scenes } from "telegraf";
 
-export default interface ResultSession extends Scenes.WizardSession {
+export interface ResultWizardSession extends Scenes.WizardSessionData {
   courseId: number;
   courseName: string;
   semester: string;
