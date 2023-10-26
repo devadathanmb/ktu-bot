@@ -2,7 +2,7 @@ import { Markup, Scenes } from "telegraf";
 import ResultContext from "../types/resultContext";
 import fetchCourses from "../services/fetchCourses";
 import fetchPublishedResults from "../services/fetchPublishedResults";
-import fetchResult from "../services/fetchResult";
+import { fetchResult, InvalidDataError } from "../services/fetchResult";
 import formatDob from "../utils/formatDob";
 import formatResultMessage from "../utils/formatResultMessage";
 import formatSummaryMessage from "../utils/formatSummaryMessage";
@@ -116,7 +116,14 @@ const resultWizard = new Scenes.WizardScene<ResultContext>(
 
 resultWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
 
-function handleError(ctx: ResultContext, error: any) {
+async function handleError(ctx: ResultContext, error: any) {
+  if (error instanceof InvalidDataError) {
+    await ctx.reply(
+      "Invalid roll number or dob. Are you sure that the roll number and date of birth are correct?",
+    );
+    await ctx.reply("Please use /result to start again.");
+    return ctx.scene.leave();
+  }
   console.error(error);
   ctx.reply("Something went wrong. Please try again later.");
   return ctx.scene.leave();

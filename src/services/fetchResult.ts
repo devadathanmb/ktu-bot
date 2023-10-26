@@ -8,6 +8,13 @@ const agent = new https.Agent({
   rejectUnauthorized: false,
 });
 
+class InvalidDataError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidDataError";
+  }
+}
+
 async function fetchResult(
   dob: string,
   regisNo: string,
@@ -56,11 +63,8 @@ async function fetchResult(
 
     return { summary, resultDetails };
   } catch (error) {
-    console.error("Error fetching data:", error);
-    throw new Error(
-      "Error while fetching data. Are you sure you entered the correct details?",
-    );
+    throw new InvalidDataError("Invalid data provided");
   }
 }
 
-export default fetchResult;
+export { fetchResult, InvalidDataError };
