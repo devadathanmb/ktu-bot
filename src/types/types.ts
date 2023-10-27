@@ -28,4 +28,22 @@ interface Course {
   name: string;
 }
 
-export { ResultDetails, ResultSummary, PublishedResultData, Course };
+interface Attachment {
+  name: string;
+  encryptId: string;
+}
+
+interface Announcement {
+  id: number;
+  subject: string;
+  date: string;
+  attachments: Attachment[];
+}
+export {
+  ResultDetails,
+  ResultSummary,
+  PublishedResultData,
+  Course,
+  Attachment,
+  Announcement,
+};

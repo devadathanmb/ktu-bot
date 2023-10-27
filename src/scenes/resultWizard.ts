@@ -1,5 +1,5 @@
 import { Markup, Scenes } from "telegraf";
-import { CustomContext } from "../types/customContext";
+import { CustomContext } from "../types/customContext.type";
 import fetchCourses from "../services/fetchCourses";
 import fetchPublishedResults from "../services/fetchPublishedResults";
 import { fetchResult, InvalidDataError } from "../services/fetchResult";
