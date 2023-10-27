@@ -10,6 +10,7 @@ import { Scenes, session } from "telegraf";
 import resultWizard from "./scenes/resultWizard";
 import announcementWizard from "./scenes/announcementWizard";
 import { CustomContext } from "./types/customContext.type";
+import availableCommands from "./constants/availableCommands";
 
 const bot = new Telegraf<CustomContext>(process.env.BOT_TOKEN!);
 const stage = new Scenes.Stage<CustomContext>([
@@ -19,6 +20,8 @@ const stage = new Scenes.Stage<CustomContext>([
 
 bot.use(session());
 bot.use(stage.middleware());
+
+bot.telegram.setMyCommands(availableCommands);
 
 bot.start((ctx) => start(ctx));
 bot.command("help", (ctx) => help(ctx));
