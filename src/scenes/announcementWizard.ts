@@ -28,6 +28,9 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
     }
   },
   async (ctx) => {
+    if (ctx.message){
+      return ctx.reply("Please use the buttons below to choose an announcement.");
+    }
     try {
       const chosenAnnoucement = Number.parseInt(
         (ctx.callbackQuery as any)?.data?.split("_")[1],
