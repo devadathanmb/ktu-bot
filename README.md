@@ -7,6 +7,7 @@ Find the bot [here](https://t.me/ktu_results_bot)
 ## Features
 
 - **Check Results**: Use the `/result` command to fetch your exam results.
+- **Download latest KTU notifications**: Use the `/notifications` command to fetch KTU notifications and download them.
 - **Help**: Get help using the `/help` command.
 
 ## Getting Started
@@ -91,6 +92,7 @@ The bot should now be running and accessible on Telegram.
 - `/start`: Start the bot and get a welcome message.
 - `/help`: Show a help message with available commands.
 - `/result`: Fetch your exam results.
+- `/notifications`: Find and download latest KTU notifications 
 
 ## Contributing
 
