@@ -10,7 +10,7 @@ const handleCancelCommand = async (ctx: CustomContext) => {
   } catch (error) {
   } finally {
     ctx.reply(
-      "Announcement look up cancelled. Please use /announcememnt to start again.",
+      "Notifications look up cancelled. Please use /notifications to start again.",
     );
     return ctx.scene.leave();
   }
@@ -28,8 +28,10 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
     }
   },
   async (ctx) => {
-    if (ctx.message){
-      return ctx.reply("Please use the buttons below to choose an announcement.");
+    if (ctx.message) {
+      return ctx.reply(
+        "Please use the buttons below to choose a notification.",
+      );
     }
     try {
       const chosenAnnoucement = Number.parseInt(
@@ -74,7 +76,7 @@ async function showAnnouncements(ctx: CustomContext) {
       columns: 1,
     },
   );
-  const msg = await ctx.sendMessage("Choose an announcement:", keyboard);
+  const msg = await ctx.sendMessage("Choose a notification:", keyboard);
   ctx.scene.session.announcementMsgId = msg.message_id;
   ctx.scene.session.announcements = announcements;
 }
