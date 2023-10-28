@@ -8,6 +8,7 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 - **Check Results**: Use the `/result` command to fetch your exam results.
 - **Download latest KTU notifications**: Use the `/notifications` command to fetch KTU notifications and download them.
+- **Subscribe to latest KTU notifications**: Use the `/subscribe` command to recieve new notifications as they arrive.
 - **Help**: Get help using the `/help` command.
 
 ## Getting Started
@@ -45,13 +46,17 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
      See [env.example]("./env.example") file for example
 
-6. Build the bot:
+6. Create a Firebase project and setup a Firestore database in [Firebase console](https://console.firebase.google.com/u/0/)
+
+7. Download the `serviceAccountKey.json` file and put it in the root directory
+
+8. Build the bot:
 
    ```bash
    npm run build
    ```
 
-7. Start the bot:
+9. Start the bot:
 
    ```bash
    npm run start
@@ -92,7 +97,10 @@ The bot should now be running and accessible on Telegram.
 - `/start`: Start the bot and get a welcome message.
 - `/help`: Show a help message with available commands.
 - `/result`: Fetch your exam results.
-- `/notifications`: Find and download latest KTU notifications 
+- `/notifications`: Find and download latest KTU notifications.
+- `/subscribe`: Subscribe to recieve latest KTU notifications as they arrive.
+- `/unsubscribe`: Unsubscribe from recieving KTU notifications.
+- `/cancel`: Cancel current process (only works when inside `/notifications` or `/result` wizard)
 
 ## Contributing
 
