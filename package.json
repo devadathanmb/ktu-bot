@@ -8,8 +8,13 @@
     "build": "npx tsc",
     "dev": "tsc -w & nodemon dist/app.js"
   },
-  "author": "",
-  "license": "ISC",
+  "nodemonConfig": {
+    "ignore": [
+      "data.json"
+    ]
+  },
+  "author": "Devadathan M B",
+  "license": "GPL 3.0",
   "devDependencies": {
     "@types/node": "^20.8.7",
     "@types/node-cron": "^3.0.10",
