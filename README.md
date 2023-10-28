@@ -1,6 +1,6 @@
-# KTU Results Bot
+# KTU Bot
 
-Welcome to the KTU Results Bot! This Telegram bot helps students check their exam results easily.
+Welcome to the KTU Bot! This Telegram bot helps students check their exam results, find latest KTU notifications and alert users when new notifications arrive.
 
 Find the bot [here](https://t.me/ktu_results_bot)
 
