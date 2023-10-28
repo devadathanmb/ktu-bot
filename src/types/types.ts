@@ -39,6 +39,7 @@ interface Announcement {
   date: string;
   attachments: Attachment[];
 }
+
 export {
   ResultDetails,
   ResultSummary,

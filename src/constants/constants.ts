@@ -3,9 +3,16 @@ const PUBLISHED_RESULTS_URL =
   "https://api.ktu.edu.in/ktu-web-service/anon/result";
 const RESULT_URL =
   "https://api.ktu.edu.in/ktu-web-service/anon/individualresult";
-const ANOUNCEMENTS_URL =
-  "https://api.ktu.edu.in/ktu-web-portal-api/anon/announcemnts";
+/* const ANOUNCEMENTS_URL = */
+/*   "https://api.ktu.edu.in/ktu-web-portal-api/anon/announcemnts"; */
 const ATTACHMENT_URL =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon/getAttachment";
+const ANOUNCEMENTS_URL = "http://localhost:3000/announcements";
 
-export { COURSES_URL, PUBLISHED_RESULTS_URL, RESULT_URL, ANOUNCEMENTS_URL, ATTACHMENT_URL };
+export {
+  COURSES_URL,
+  PUBLISHED_RESULTS_URL,
+  RESULT_URL,
+  ANOUNCEMENTS_URL,
+  ATTACHMENT_URL,
+};

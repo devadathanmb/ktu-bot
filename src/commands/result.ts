@@ -1,4 +1,6 @@
-function result(ctx: any) {
+import { CustomContext } from "../types/customContext.type";
+
+function result(ctx: CustomContext) {
   ctx.scene.enter("result-wizard");
 }
 

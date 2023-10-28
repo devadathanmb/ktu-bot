@@ -1,7 +1,7 @@
-import { Context } from "telegraf";
+import { CustomContext } from "../types/customContext.type";
 const randomQuotes = require("random-quotes");
 
-function defaultHandler(ctx: Context) {
+function defaultHandler(ctx: CustomContext) {
   const quote = randomQuotes.default();
   const message = `<i>${quote.body}</i>\n
   - <i>${quote.author}</i>`;
