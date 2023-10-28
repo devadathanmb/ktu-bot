@@ -9,7 +9,7 @@ import { Announcement, Attachment } from "../types/types";
 
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job created");
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/30 * * * *", async () => {
     console.log("Running cron job");
     readFile("data.json", "utf8", async (err, data) => {
       if (err?.code == "ENOENT") {
