@@ -27,7 +27,7 @@ async function fetchCourses(): Promise<Course[]> {
       if (
         error.response.status === 400 ||
         (error.response.status === 500 &&
-          error.response.data?.message === "No message available")
+          error.response.data?.message !== "No message available")
       ) {
         throw new InvalidDataError();
       } else if (error.response.status >= 500) {
