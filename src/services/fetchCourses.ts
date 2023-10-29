@@ -24,9 +24,13 @@ async function fetchCourses(): Promise<Course[]> {
     return relevantData;
   } catch (error: any) {
     if (error.response) {
-      if (error.response.status === 400 || error.response.status === 500) {
+      if (
+        error.response.status === 400 ||
+        (error.response.status === 500 &&
+          error.response.data?.message === "No message available")
+      ) {
         throw new InvalidDataError();
-      } else if (error.response.status > 500) {
+      } else if (error.response.status >= 500) {
         throw new ServerError();
       }
     }
