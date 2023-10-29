@@ -19,13 +19,13 @@ Find the bot [here](https://t.me/ktu_results_bot)
 2. Clone the repository:
 
    ```bash
-   git clone https://github.com/devadathanmb/ktu-results-bot.git
+   git clone https://github.com/devadathanmb/ktu-bot.git
    ```
 
 3. Navigate to the project directory:
 
    ```bash
-   cd ktu-results-bot
+   cd ktu-bot
    ```
 
 4. Install dependencies:
@@ -69,13 +69,13 @@ Find the bot [here](https://t.me/ktu_results_bot)
 2. Clone the repository:
 
    ```bash
-   git clone https://github.com/devadathanmb/ktu-results-bot.git
+   git clone https://github.com/devadathanmb/ktu-bot.git
    ```
 
 3. Navigate to the project directory:
 
    ```bash
-   cd ktu-results-bot
+   cd ktu-bot
    ```
 
 4. Create a `.env` file in the project root and add:

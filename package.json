@@ -1,7 +1,7 @@
 {
-  "name": "ktu-result-bot",
+  "name": "ktu-bot",
   "version": "1.0.0",
-  "description": "A telegram bot to view results from KTU portal",
+  "description": "An all in one telegram bot to view results, notifications and updates from KTU portal.",
   "main": "index.js",
   "scripts": {
     "start": "node dist/app.js",
