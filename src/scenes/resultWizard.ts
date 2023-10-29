@@ -14,10 +14,10 @@ const handleCancelCommand = async (ctx: CustomContext) => {
     await ctx.deleteMessage(ctx.scene.session.resultMsgId);
   } catch (error) {
   } finally {
-    ctx.reply(
+    await ctx.reply(
       "Result look up cancelled.\n\nPlease use /result to start again.",
     );
-    return ctx.scene.leave();
+    return await ctx.scene.leave();
   }
 };
 
@@ -40,7 +40,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
   async (ctx) => {
     if (ctx.message) {
-      return ctx.reply(
+      return await ctx.reply(
         "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup.",
       );
     }
@@ -69,7 +69,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
   async (ctx) => {
     if (ctx.message) {
-      return ctx.reply("Please choose a valid option");
+      return await ctx.reply("Please choose a valid option");
     }
     const [examDefId, schemeId] = (ctx.callbackQuery as any)?.data?.split("_");
     try {
@@ -78,12 +78,12 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     ctx.scene.session.examDefId = examDefId;
     ctx.scene.session.schemeId = schemeId;
     await ctx.reply("Please enter your KTU Registration Number");
-    return ctx.wizard.next();
+    return await ctx.wizard.next();
   },
   async (ctx) => {
     const regisNo: string = (ctx.message as any)?.text;
     if (!regisNo) {
-      return ctx.reply("Please enter a valid registration number");
+      return await ctx.reply("Please enter a valid registration number");
     }
     ctx.scene.session.regisNo = regisNo.toUpperCase();
     await ctx.reply("Please enter your Date of Birth (DD/MM/YYYY)");
@@ -92,12 +92,12 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   async (ctx) => {
     let dob: string = (ctx.message as any)?.text;
     if (!dob) {
-      return ctx.reply("Please enter a valid date of birth");
+      return await ctx.reply("Please enter a valid date of birth");
     }
     try {
       dob = formatDob(dob);
     } catch (error) {
-      return ctx.reply("Please enter a valid date of birth");
+      return await ctx.reply("Please enter a valid date of birth");
     }
     ctx.scene.session.dob = dob;
     try {
@@ -129,7 +129,7 @@ async function handleError(ctx: CustomContext, error: any) {
     return ctx.scene.leave();
   }
   console.error(error);
-  ctx.reply("Something went wrong. Please try again later.");
+  await ctx.reply("Something went wrong. Please try again later.");
   return ctx.scene.leave();
 }
 

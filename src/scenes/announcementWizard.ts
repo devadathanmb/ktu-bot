@@ -9,10 +9,10 @@ const handleCancelCommand = async (ctx: CustomContext) => {
     await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
   } catch (error) {
   } finally {
-    ctx.reply(
+    await ctx.reply(
       "Notifications look up cancelled.\n\nPlease use /notifications to start again.",
     );
-    return ctx.scene.leave();
+    return await ctx.scene.leave();
   }
 };
 
@@ -29,7 +29,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
   },
   async (ctx) => {
     if (ctx.message) {
-      return ctx.reply(
+      return await ctx.reply(
         "Please use the buttons to choose a notification.\n\nUse /cancel to cancel notifcations lookup.",
       );
     }
@@ -44,16 +44,16 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
           encryptId: attachment.encryptId,
         }));
       await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
-      ctx.reply("Fetching notification.. Please wait..");
+      await ctx.reply("Fetching notification.. Please wait..");
       attachments.forEach(async (attachment: Attachment) => {
         const file = await fetchAttachment(attachment.encryptId);
         const fileBuffer = Buffer.from(file, "base64");
-        ctx.replyWithDocument({
+        await ctx.replyWithDocument({
           source: fileBuffer,
           filename: attachment.name,
         });
       });
-      return ctx.scene.leave();
+      return await ctx.scene.leave();
     } catch (error) {
       return handleError(ctx, error);
     }
@@ -85,13 +85,13 @@ announcementWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
   await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
   await showAnnouncements(ctx);
-  return ctx.answerCbQuery();
+  return await ctx.answerCbQuery();
 });
 
-function handleError(ctx: CustomContext, error: any) {
+async function handleError(ctx: CustomContext, error: any) {
   console.error(error);
-  ctx.reply("Something went wrong. Please try again later.");
-  ctx.scene.leave();
+  await ctx.reply("Something went wrong. Please try again later.");
+  await ctx.scene.leave();
 }
 
 announcementWizard.command("cancel", (ctx) => handleCancelCommand(ctx));

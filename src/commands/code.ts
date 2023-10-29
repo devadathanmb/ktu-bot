@@ -1,6 +1,6 @@
 import { CustomContext } from "../types/customContext.type";
 
-function code(ctx: CustomContext) {
+async function code(ctx: CustomContext) {
   const replyMsg = `
 This bot is fully open source! 🌐
 
@@ -8,7 +8,7 @@ Check out the code in the <a href="https://github.com/devadathanmb/ktu-bot.git">
 
 Feel free to contribute to the project, or report any issues you encounter.
 `;
-  ctx.replyWithHTML(replyMsg);
+  await ctx.replyWithHTML(replyMsg);
 }
 
 export default code;

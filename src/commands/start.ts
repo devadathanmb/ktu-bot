@@ -1,6 +1,6 @@
 import { CustomContext } from "../types/customContext.type";
 
-function start(ctx: CustomContext) {
+async function start(ctx: CustomContext) {
   const replyMsg = `
 <b>👋 Welcome to the KTU Bot!</b>
 
@@ -29,7 +29,7 @@ I can help you get your exam results, latest KTU notifications and more!
   /**/
   /* const formattedMessage = `${welcomeMessage}\n\n${instructions}`; */
   /**/
-  ctx.replyWithHTML(replyMsg);
+  await ctx.replyWithHTML(replyMsg);
 }
 
 export default start;

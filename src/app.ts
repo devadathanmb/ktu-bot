@@ -30,15 +30,19 @@ bot.use(stage.middleware());
 
 bot.telegram.setMyCommands(availableCommands);
 
-bot.start((ctx) => start(ctx));
-bot.command("help", (ctx) => help(ctx));
-bot.command("result", (ctx) => result(ctx));
-bot.command("code", (ctx) => code(ctx));
-bot.command("cancel", (ctx) => cancel(ctx));
-bot.command("notifications", (ctx) => notifications(ctx));
-bot.command("subscribe", (ctx) => subscribe(ctx, db));
-bot.command("unsubscribe", (ctx) => unsubscribe(ctx, db));
-bot.on("message", (ctx) => defaultHandler(ctx));
+bot.start(async (ctx) => await start(ctx));
+bot.command("help", async (ctx) => await help(ctx));
+bot.command("result", async (ctx) => await result(ctx));
+bot.command("code", async (ctx) => await code(ctx));
+bot.command("cancel", async (ctx) => await cancel(ctx));
+bot.command("notifications", async (ctx) => await notifications(ctx));
+bot.command("subscribe", async (ctx) => await subscribe(ctx, db));
+bot.command("unsubscribe", async (ctx) => await unsubscribe(ctx, db));
+bot.on("message", async (ctx) => await defaultHandler(ctx));
+
+bot.catch((error) => {
+  console.log("telegraf error", error);
+});
 
 const launchBot = async () => {
   bot.launch();

@@ -4,7 +4,7 @@ import { CustomContext } from "../types/customContext.type";
 async function subscribe(ctx: CustomContext, db: Firestore) {
   const chatId = ctx.chat!.id;
   if (!chatId) {
-    ctx.reply("Chat id not found");
+    await ctx.reply("Chat id not found");
     throw new Error("Chat id not found");
   }
   try {

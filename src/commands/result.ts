@@ -1,7 +1,7 @@
 import { CustomContext } from "../types/customContext.type";
 
-function result(ctx: CustomContext) {
-  ctx.scene.enter("result-wizard");
+async function result(ctx: CustomContext) {
+  await ctx.scene.enter("result-wizard");
 }
 
 export default result;

@@ -1,6 +1,6 @@
 import { CustomContext } from "../types/customContext.type";
 
-function help(ctx: CustomContext) {
+async function help(ctx: CustomContext) {
   const helpMessage = `
 <b>Available Commands:</b>
 
@@ -23,7 +23,7 @@ If you encounter any issues, have feature suggestions, or want to contribute to 
 Thanks for using this bot!
 `;
 
-  ctx.replyWithHTML(helpMessage);
+  await ctx.replyWithHTML(helpMessage);
 }
 
 export default help;
