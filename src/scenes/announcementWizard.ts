@@ -3,17 +3,16 @@ import { CustomContext } from "../types/customContext.type";
 import fetchAnnouncements from "../services/fetchAnnouncements";
 import fetchAttachment from "../services/fetchAttachment";
 import { Attachment } from "../types/types";
+import deleteMessage from "../utils/deleteMessage";
+import handleError from "../utils/handleError";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
-  try {
-    await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
-  } catch (error) {
-  } finally {
-    await ctx.reply(
-      "Notifications look up cancelled.\n\nPlease use /notifications to start again.",
-    );
-    return await ctx.scene.leave();
-  }
+  await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+  await deleteMessage(ctx, ctx.scene.session.announcementMsgId);
+  await ctx.reply(
+    "Notifications look up cancelled.\n\nPlease use /notifications to start again.",
+  );
+  return await ctx.scene.leave();
 };
 
 const announcementWizard = new Scenes.WizardScene<CustomContext>(
@@ -24,7 +23,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       await showAnnouncements(ctx);
       return ctx.wizard.next();
     } catch (error: any) {
-      return handleError(ctx, error);
+      return await handleError(ctx, error);
     }
   },
   async (ctx) => {
@@ -44,7 +43,11 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
           encryptId: attachment.encryptId,
         }));
       await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
-      await ctx.reply("Fetching notification.. Please wait..");
+      const waitingMsg = await ctx.reply(
+        "Fetching notification.. Please wait..",
+      );
+      ctx.scene.session.waitingMsgId = waitingMsg.message_id;
+
       attachments.forEach(async (attachment: Attachment) => {
         const file = await fetchAttachment(attachment.encryptId);
         const fileBuffer = Buffer.from(file, "base64");
@@ -55,30 +58,39 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       });
       return await ctx.scene.leave();
     } catch (error) {
-      return handleError(ctx, error);
+      return await handleError(ctx, error);
     }
   },
 );
 
 async function showAnnouncements(ctx: CustomContext) {
-  const announcements = await fetchAnnouncements(
-    ctx.scene.session.pageNumber,
-    10,
-  );
-  const announcementButtons = announcements.map(({ id, subject }: any) => ({
-    text: subject,
-    callback_data: `announcement_${id}`,
-  }));
-  const nextPageButton = Markup.button.callback("Next Page", "next_page");
-  const keyboard = Markup.inlineKeyboard(
-    [...announcementButtons, nextPageButton],
-    {
-      columns: 1,
-    },
-  );
-  const msg = await ctx.sendMessage("Choose a notification:", keyboard);
-  ctx.scene.session.announcementMsgId = msg.message_id;
-  ctx.scene.session.announcements = announcements;
+  try {
+    const waitingMsg = await ctx.reply(
+      "Fetching notifications.. Please wait..",
+    );
+    ctx.scene.session.waitingMsgId = waitingMsg.message_id;
+    const announcements = await fetchAnnouncements(
+      ctx.scene.session.pageNumber,
+      10,
+    );
+    const announcementButtons = announcements.map(({ id, subject }: any) => ({
+      text: subject,
+      callback_data: `announcement_${id}`,
+    }));
+    const nextPageButton = Markup.button.callback("Next Page", "next_page");
+    const keyboard = Markup.inlineKeyboard(
+      [...announcementButtons, nextPageButton],
+      {
+        columns: 1,
+      },
+    );
+    await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+    const msg = await ctx.sendMessage("Choose a notification:", keyboard);
+    ctx.scene.session.announcementMsgId = msg.message_id;
+    ctx.scene.session.announcements = announcements;
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 }
 
 announcementWizard.action("next_page", async (ctx) => {
@@ -87,12 +99,6 @@ announcementWizard.action("next_page", async (ctx) => {
   await showAnnouncements(ctx);
   return await ctx.answerCbQuery();
 });
-
-async function handleError(ctx: CustomContext, error: any) {
-  console.error(error);
-  await ctx.reply("Something went wrong. Please try again later.");
-  await ctx.scene.leave();
-}
 
 announcementWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
 

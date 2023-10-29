@@ -1,19 +1,13 @@
 import axios from "axios";
 import * as https from "https";
 import { RESULT_URL } from "../constants/constants";
-
+import InvalidDataError from "../errors/InvalidDataError";
 import { ResultDetails, ResultSummary } from "../types/types";
+import ServerError from "../errors/ServerError";
 
 const agent = new https.Agent({
   rejectUnauthorized: false,
 });
-
-class InvalidDataError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "InvalidDataError";
-  }
-}
 
 async function fetchResult(
   dob: string,
@@ -62,9 +56,16 @@ async function fetchResult(
     };
 
     return { summary, resultDetails };
-  } catch (error) {
-    throw new InvalidDataError("Invalid data provided");
+  } catch (error: any) {
+    if (error.response) {
+      if (error.response.status === 400 || error.response.status === 500) {
+        throw new InvalidDataError();
+      } else if (error.response.status > 500) {
+        throw new ServerError();
+      }
+    }
+    throw new ServerError();
   }
 }
 
-export { fetchResult, InvalidDataError };
+export { fetchResult };

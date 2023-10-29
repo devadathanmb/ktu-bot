@@ -2,6 +2,8 @@ import axios from "axios";
 import * as https from "https";
 import { COURSES_URL } from "../constants/constants";
 import { Course } from "../types/types";
+import InvalidDataError from "../errors/InvalidDataError";
+import ServerError from "../errors/ServerError";
 
 const agent = new https.Agent({
   rejectUnauthorized: false,
@@ -20,9 +22,15 @@ async function fetchCourses(): Promise<Course[]> {
       }),
     );
     return relevantData;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    throw new Error("Something wrong with KTU servers right now");
+  } catch (error: any) {
+    if (error.response) {
+      if (error.response.status === 400 || error.response.status === 500) {
+        throw new InvalidDataError();
+      } else if (error.response.status > 500) {
+        throw new ServerError();
+      }
+    }
+    throw new ServerError();
   }
 }
 

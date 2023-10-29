@@ -15,6 +15,7 @@ import announcementWizard from "./scenes/announcementWizard";
 import { CustomContext } from "./types/customContext.type";
 import availableCommands from "./constants/availableCommands";
 import { initDb } from "./db/initDb";
+/* import loggingMiddleware from "./middlewares/loggingMiddleware"; */
 import notifyUserCron from "./cron/notifyUserCron";
 
 const db = initDb();
@@ -27,6 +28,7 @@ const stage = new Scenes.Stage<CustomContext>([
 
 bot.use(session());
 bot.use(stage.middleware());
+/* bot.use(loggingMiddleware); */
 
 bot.telegram.setMyCommands(availableCommands);
 

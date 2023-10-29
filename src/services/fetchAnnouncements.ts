@@ -2,6 +2,8 @@ import axios from "axios";
 import * as https from "https";
 import { ANOUNCEMENTS_URL } from "../constants/constants";
 import { Announcement } from "../types/types";
+import ServerError from "../errors/ServerError";
+import InvalidDataError from "../errors/InvalidDataError";
 
 const agent = new https.Agent({
   rejectUnauthorized: false,
@@ -32,9 +34,15 @@ async function fetchAnnouncements(
     }));
 
     return relevantData;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    throw new Error();
+  } catch (error: any) {
+    if (error.response) {
+      if (error.response.status === 400 || error.response.status === 500) {
+        throw new InvalidDataError();
+      } else if (error.response.status > 500) {
+        throw new ServerError();
+      }
+    }
+    throw new ServerError();
   }
 }
 

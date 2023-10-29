@@ -2,6 +2,9 @@ import axios from "axios";
 import * as https from "https";
 import { PUBLISHED_RESULTS_URL } from "../constants/constants";
 import { PublishedResultData } from "../types/types";
+import ServerError from "../errors/ServerError";
+import InvalidDataError from "../errors/InvalidDataError";
+import DataNotFoundError from "../errors/DataNotFoundError";
 
 const agent = new https.Agent({
   rejectUnauthorized: false,
@@ -22,13 +25,21 @@ async function fetchPublishedResults(
     const responseData: PublishedResultData[] = response.data;
 
     if (responseData.length === 0) {
-      throw "No results published yet for this course";
+      throw new DataNotFoundError(
+        "No results have been published for this course yet.",
+      );
     }
 
     return responseData;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    throw new Error("Something wrong with KTU servers right now");
+  } catch (error: any) {
+    if (error.response) {
+      if (error.response.status === 400 || error.response.status === 500) {
+        throw new InvalidDataError();
+      } else if (error.response.status > 500) {
+        throw new ServerError();
+      }
+    }
+    throw new ServerError();
   }
 }
 

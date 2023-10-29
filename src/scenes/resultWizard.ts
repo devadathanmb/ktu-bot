@@ -2,30 +2,34 @@ import { Markup, Scenes } from "telegraf";
 import { CustomContext } from "../types/customContext.type";
 import fetchCourses from "../services/fetchCourses";
 import fetchPublishedResults from "../services/fetchPublishedResults";
-import { fetchResult, InvalidDataError } from "../services/fetchResult";
+import { fetchResult } from "../services/fetchResult";
 import formatDob from "../utils/formatDob";
 import formatResultMessage from "../utils/formatResultMessage";
 import formatSummaryMessage from "../utils/formatSummaryMessage";
 import calculateSgpa from "../utils/calculateSgpa";
+import deleteMessage from "../utils/deleteMessage";
+import handleError from "../utils/handleError";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
-  try {
-    await ctx.deleteMessage(ctx.scene.session.courseMsgId);
-    await ctx.deleteMessage(ctx.scene.session.resultMsgId);
-  } catch (error) {
-  } finally {
-    await ctx.reply(
-      "Result look up cancelled.\n\nPlease use /result to start again.",
-    );
-    return await ctx.scene.leave();
-  }
+  await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+  await deleteMessage(ctx, ctx.scene.session.courseMsgId);
+  await deleteMessage(ctx, ctx.scene.session.resultMsgId);
+  await ctx.reply(
+    "Result look up cancelled.\n\nPlease use /result to start again.",
+  );
+  return await ctx.scene.leave();
 };
 
 const resultWizard = new Scenes.WizardScene<CustomContext>(
   "result-wizard",
   async (ctx: CustomContext) => {
     try {
+      const waitingMsg = await ctx.reply(
+        "Fetching available courses.. Please wait..",
+      );
+      ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const courses = await fetchCourses();
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       const courseButtons = courses.map(({ id, name }) => ({
         text: name,
         callback_data: `course_${id}`,
@@ -35,7 +39,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.courseMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
-      return handleError(ctx, error);
+      return await handleError(ctx, error);
     }
   },
   async (ctx) => {
@@ -44,15 +48,18 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup.",
       );
     }
-    try {
-      await ctx.deleteMessage(ctx.scene.session.courseMsgId);
-    } catch (error) {}
+    await deleteMessage(ctx, ctx.scene.session.courseMsgId);
     const courseId: number = Number.parseInt(
       (ctx.callbackQuery as any)?.data?.split("_")[1],
     );
     ctx.scene.session.courseId = courseId;
     try {
+      const waitingMsg = await ctx.reply(
+        "Fetching available results.. Please wait..",
+      );
+      ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const publishedResults = await fetchPublishedResults(courseId);
+      deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       const resultButtons = publishedResults.map(
         ({ resultName, examDefId, schemeId }) => ({
           text: resultName,
@@ -64,7 +71,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.resultMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
-      return handleError(ctx, error);
+      return await handleError(ctx, error);
     }
   },
   async (ctx) => {
@@ -72,13 +79,11 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       return await ctx.reply("Please choose a valid option");
     }
     const [examDefId, schemeId] = (ctx.callbackQuery as any)?.data?.split("_");
-    try {
-      await ctx.deleteMessage(ctx.scene.session.resultMsgId);
-    } catch (error) {}
+    await deleteMessage(ctx, ctx.scene.session.resultMsgId);
     ctx.scene.session.examDefId = examDefId;
     ctx.scene.session.schemeId = schemeId;
     await ctx.reply("Please enter your KTU Registration Number");
-    return await ctx.wizard.next();
+    return ctx.wizard.next();
   },
   async (ctx) => {
     const regisNo: string = (ctx.message as any)?.text;
@@ -101,6 +106,8 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     }
     ctx.scene.session.dob = dob;
     try {
+      const waitingMsg = await ctx.reply("Fetching result.. Please wait..");
+      ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const { summary, resultDetails } = await fetchResult(
         ctx.scene.session.dob,
         ctx.scene.session.regisNo,
@@ -109,28 +116,15 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       );
 
       const sgpa = calculateSgpa(resultDetails);
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       await ctx.replyWithHTML(formatSummaryMessage(summary));
       await ctx.replyWithHTML(formatResultMessage(resultDetails, sgpa));
       return ctx.scene.leave();
     } catch (error) {
-      return handleError(ctx, error);
+      return await handleError(ctx, error);
     }
   },
 );
-
 resultWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
-
-async function handleError(ctx: CustomContext, error: any) {
-  if (error instanceof InvalidDataError) {
-    await ctx.reply(
-      "Invalid roll number or dob.\nAre you sure that the roll number and date of birth are correct?",
-    );
-    await ctx.reply("Please use /result to start again.");
-    return ctx.scene.leave();
-  }
-  console.error(error);
-  await ctx.reply("Something went wrong. Please try again later.");
-  return ctx.scene.leave();
-}
 
 export default resultWizard;
