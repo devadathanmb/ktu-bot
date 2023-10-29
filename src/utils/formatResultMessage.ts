@@ -6,7 +6,7 @@ function formatResultMessage(resultDetails: any[], sgpa: string) {
     const shortenedCourse = shortenCourse(courseName);
     message += `<i>${courseName} (${shortenedCourse})</i>\n`;
     message += `   - <b>Grade:</b> <b>${grade}</b>\n`;
-    message += `   - <b>Credits:</b> <b>${credits}</b>\n\n\n`;
+    message += `   - <b>Credits:</b> <b>${credits ? credits : 0}</b>\n\n\n`;
   });
 
   message += `<b>SGPA:</b> <b>${sgpa}</b>\n\n`;

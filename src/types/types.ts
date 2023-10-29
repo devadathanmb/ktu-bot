@@ -1,7 +1,7 @@
 interface ResultDetails {
   courseName: string;
   grade: string;
-  credits: number;
+  credits: number | null;
 }
 
 interface ResultSummary {
