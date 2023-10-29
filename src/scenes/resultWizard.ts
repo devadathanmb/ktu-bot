@@ -14,7 +14,9 @@ const handleCancelCommand = async (ctx: CustomContext) => {
     await ctx.deleteMessage(ctx.scene.session.resultMsgId);
   } catch (error) {
   } finally {
-    ctx.reply("Result look up cancelled. Please use /result to start again.");
+    ctx.reply(
+      "Result look up cancelled.\n\nPlease use /result to start again.",
+    );
     return ctx.scene.leave();
   }
 };
@@ -38,7 +40,9 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
   async (ctx) => {
     if (ctx.message) {
-      return ctx.reply("Please choose a valid option");
+      return ctx.reply(
+        "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup.",
+      );
     }
     try {
       await ctx.deleteMessage(ctx.scene.session.courseMsgId);
@@ -119,7 +123,7 @@ resultWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
 async function handleError(ctx: CustomContext, error: any) {
   if (error instanceof InvalidDataError) {
     await ctx.reply(
-      "Invalid roll number or dob. Are you sure that the roll number and date of birth are correct?",
+      "Invalid roll number or dob.\nAre you sure that the roll number and date of birth are correct?",
     );
     await ctx.reply("Please use /result to start again.");
     return ctx.scene.leave();

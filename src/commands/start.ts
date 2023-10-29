@@ -1,13 +1,35 @@
 import { CustomContext } from "../types/customContext.type";
 
 function start(ctx: CustomContext) {
-  const welcomeMessage = `👋 Welcome to the KTU Results Bot!`;
+  const replyMsg = `
+<b>👋 Welcome to the KTU Bot!</b>
 
-  const instructions = `Available commands:\n/result - Get your exam results\n/help - Get help\n/notifications - Get the latest KTU notifications\n/subscribe - Subscribe to recieve new KTU notifications\n/unsubscribe - Unsubscribe from receiving new KTU notifications`;
+I can help you get your exam results, latest KTU notifications and more!
 
-  const formattedMessage = `${welcomeMessage}\n\n${instructions}`;
+<b>Available commands:</b>
 
-  ctx.replyWithHTML(formattedMessage);
+/result - Get your exam results
+
+/help - Get help
+
+/notifications - Get the latest KTU notifications
+
+/subscribe - Subscribe to recieve new KTU notifications
+
+/unsubscribe - Unsubscribe from receiving new KTU notifications
+
+/start - Get this message again
+
+/code - Get the source code of this bot
+`;
+
+  /* const welcomeMessage = `👋 Welcome to the KTU Bot!\n\nI can help you get your exam results, latest KTU notifications and more!\n\nI'm open source! Check out my code at`; */
+  /**/
+  /* const instructions = `Available commands:\n/result - Get your exam results\n/help - Get help\n/notifications - Get the latest KTU notifications\n/subscribe - Subscribe to recieve new KTU notifications\n/unsubscribe - Unsubscribe from receiving new KTU notifications`; */
+  /**/
+  /* const formattedMessage = `${welcomeMessage}\n\n${instructions}`; */
+  /**/
+  ctx.replyWithHTML(replyMsg);
 }
 
 export default start;

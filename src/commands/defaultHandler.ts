@@ -6,7 +6,7 @@ function defaultHandler(ctx: CustomContext) {
   const message = `<i>${quote.body}</i>\n
   - <i>${quote.author}</i>`;
   const invalidMsg =
-    "That doesn't seem like a valid command. Use /help for available commands";
+    "That doesn't seem like a valid command.\n\nUse /help for available commands";
 
   ctx
     .replyWithHTML(message, {

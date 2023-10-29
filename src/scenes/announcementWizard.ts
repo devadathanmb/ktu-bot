@@ -10,7 +10,7 @@ const handleCancelCommand = async (ctx: CustomContext) => {
   } catch (error) {
   } finally {
     ctx.reply(
-      "Notifications look up cancelled. Please use /notifications to start again.",
+      "Notifications look up cancelled.\n\nPlease use /notifications to start again.",
     );
     return ctx.scene.leave();
   }
@@ -30,7 +30,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
   async (ctx) => {
     if (ctx.message) {
       return ctx.reply(
-        "Please use the buttons below to choose a notification.",
+        "Please use the buttons to choose a notification.\n\nUse /cancel to cancel notifcations lookup.",
       );
     }
     try {
