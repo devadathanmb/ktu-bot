@@ -48,4 +48,4 @@ jobs:
             docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:latest ktu-bot:latest
             docker stop ktu-bot || true
             docker rm ktu-bot || true
-            docker run --restart always -d -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ktu-bot
+            docker run -d --restart always -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ktu-bot
