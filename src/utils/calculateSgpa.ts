@@ -22,12 +22,12 @@ function calculateSgpa(resultDetails: ResultDetails[]) {
   for (const result of resultDetails) {
     // will need to fix this
     // possibly with a database lookup
-    if (!result.credits) {
+    if (!result.credits && result.grade !== "P") {
       return "N/A";
     }
 
-    totalCredits += result.credits;
-    totalPoints += result.credits * grades[result.grade];
+    totalCredits += result.credits!;
+    totalPoints += result.credits! * grades[result.grade];
   }
 
   return (totalPoints / totalCredits).toFixed(2);
