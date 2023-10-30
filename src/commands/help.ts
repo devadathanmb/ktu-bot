@@ -12,6 +12,8 @@ async function help(ctx: CustomContext) {
 
 /cancel - Cancel the result lookup
 
+/notifications - Get the latest KTU notifications
+
 /subscribe - Subscribe to recieve new KTU notifications
 
 /unsubscribe - Unsubscribe from receiving new KTU notifications
