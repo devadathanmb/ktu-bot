@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    - "*"
+  pull_request:
+    - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up docker
+        uses: docker/setup-docker@v2
+
+      - name: Build docker image
+        run: docker build -t temp-image .
+
+      - name: Cleanup
+        run: docker system prune -f
