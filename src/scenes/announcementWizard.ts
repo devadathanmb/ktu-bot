@@ -56,6 +56,10 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
           filename: attachment.name,
         });
       });
+      if (attachments.length == 0) {
+        await ctx.reply("No attachments found.");
+      }
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       return await ctx.scene.leave();
     } catch (error) {
       return await handleError(ctx, error);
