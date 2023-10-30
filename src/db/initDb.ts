@@ -1,7 +1,7 @@
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-const serviceAccount = require("../../serviceAccountKey.json");
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!);
 
 function initDb() {
   initializeApp({
