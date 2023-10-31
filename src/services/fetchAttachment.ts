@@ -1,12 +1,7 @@
-import axios from "axios";
-import * as https from "https";
+import { axios, agent } from "../config/axiosConfig";
 import { ATTACHMENT_URL } from "../constants/constants";
 import InvalidDataError from "../errors/InvalidDataError";
 import ServerError from "../errors/ServerError";
-
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-});
 
 async function fetchAttachment(encryptId: string): Promise<any> {
   try {

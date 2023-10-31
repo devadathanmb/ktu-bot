@@ -1,13 +1,8 @@
-import axios from "axios";
-import * as https from "https";
+import { axios, agent } from "../config/axiosConfig";
 import { RESULT_URL } from "../constants/constants";
 import InvalidDataError from "../errors/InvalidDataError";
 import { ResultDetails, ResultSummary } from "../types/types";
 import ServerError from "../errors/ServerError";
-
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-});
 
 async function fetchResult(
   dob: string,

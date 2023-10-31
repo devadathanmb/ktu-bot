@@ -1,13 +1,8 @@
-import axios from "axios";
-import * as https from "https";
+import { axios, agent } from "../config/axiosConfig";
 import { COURSES_URL } from "../constants/constants";
 import { Course } from "../types/types";
 import InvalidDataError from "../errors/InvalidDataError";
 import ServerError from "../errors/ServerError";
-
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-});
 
 async function fetchCourses(): Promise<Course[]> {
   try {

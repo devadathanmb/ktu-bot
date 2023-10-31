@@ -1,13 +1,8 @@
-import axios from "axios";
-import * as https from "https";
+import { axios, agent } from "../config/axiosConfig";
 import { ANOUNCEMENTS_URL } from "../constants/constants";
 import { Announcement } from "../types/types";
 import ServerError from "../errors/ServerError";
 import InvalidDataError from "../errors/InvalidDataError";
-
-const agent = new https.Agent({
-  rejectUnauthorized: false,
-});
 
 async function fetchAnnouncements(
   pageNumber: number,
