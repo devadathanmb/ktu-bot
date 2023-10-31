@@ -37,6 +37,7 @@ interface Announcement {
   id: number;
   subject: string;
   date: string;
+  message: string;
   attachments: Attachment[];
 }
 

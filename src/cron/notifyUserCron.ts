@@ -9,7 +9,7 @@ import { Announcement, Attachment } from "../types/types";
 
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job created");
-  cron.schedule("*/30 * * * *", async () => {
+  cron.schedule("*/20 * * * *", async () => {
     console.log("Running cron job");
     readFile("data.json", "utf8", async (err, data) => {
       if (err?.code == "ENOENT") {
@@ -48,6 +48,16 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
           );
 
           for (const announcement of diff) {
+            const captionMsg = `
+
+<b>Subject:</b> ${announcement.subject}
+
+<b>Date:</b> ${announcement.date}
+
+<b>Message:</b> ${announcement.message}
+
+`;
+
             const attachments = announcement.attachments.map(
               (attachment: Attachment) => ({
                 name: attachment.name,
@@ -65,10 +75,14 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 const chatId = doc.data().chatId;
                 sendMessagePromises.push(
                   bot.telegram
-                    .sendDocument(chatId, {
-                      source: fileBuffer,
-                      filename: attachment.name,
-                    })
+                    .sendDocument(
+                      chatId,
+                      {
+                        source: fileBuffer,
+                        filename: attachment.name,
+                      },
+                      { caption: captionMsg, parse_mode: "HTML" },
+                    )
                     .catch((err) => {
                       console.error(
                         `Error sending message to chatId ${chatId}:`,

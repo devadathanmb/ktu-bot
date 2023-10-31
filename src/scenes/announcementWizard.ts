@@ -2,9 +2,10 @@ import { Markup, Scenes } from "telegraf";
 import { CustomContext } from "../types/customContext.type";
 import fetchAnnouncements from "../services/fetchAnnouncements";
 import fetchAttachment from "../services/fetchAttachment";
-import { Attachment } from "../types/types";
+import { Announcement, Attachment } from "../types/types";
 import deleteMessage from "../utils/deleteMessage";
 import handleError from "../utils/handleError";
+import announcement from "../commands/notifications";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
@@ -33,32 +34,52 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       );
     }
     try {
-      const chosenAnnoucement = Number.parseInt(
+      const chosenAnnouncementId = Number.parseInt(
         (ctx.callbackQuery as any)?.data?.split("_")[1],
       );
-      const attachments = ctx.scene.session.announcements
-        .find((announcement: any) => announcement.id == chosenAnnoucement)
-        .attachments.map((attachment: any) => ({
+      const chosenAnnouncement: Announcement =
+        ctx.scene.session.announcements.find(
+          (announcement: any) => announcement.id == chosenAnnouncementId,
+        );
+
+      const attachments: Attachment[] = chosenAnnouncement.attachments.map(
+        (attachment: Attachment) => ({
           name: attachment.name,
           encryptId: attachment.encryptId,
-        }));
+        }),
+      );
+
       await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
       const waitingMsg = await ctx.reply(
         "Fetching notification.. Please wait..",
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
-      attachments.forEach(async (attachment: Attachment) => {
-        const file = await fetchAttachment(attachment.encryptId);
-        const fileBuffer = Buffer.from(file, "base64");
-        await ctx.replyWithDocument({
-          source: fileBuffer,
-          filename: attachment.name,
-        });
-      });
       if (attachments.length == 0) {
         await ctx.reply("No attachments found.");
       }
+
+      attachments.forEach(async (attachment: Attachment) => {
+        const file = await fetchAttachment(attachment.encryptId);
+        const fileBuffer = Buffer.from(file, "base64");
+        const captionMsg = `
+
+<b>Subject:</b> ${chosenAnnouncement.subject}
+
+<b>Date:</b> ${chosenAnnouncement.date}
+
+<b>Message:</b> ${chosenAnnouncement.message}
+
+`;
+        await ctx.replyWithDocument(
+          {
+            source: fileBuffer,
+            filename: attachment.name,
+          },
+          { caption: captionMsg, parse_mode: "HTML" },
+        );
+      });
+
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       return await ctx.scene.leave();
     } catch (error) {
