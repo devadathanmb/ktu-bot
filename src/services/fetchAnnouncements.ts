@@ -2,7 +2,6 @@ import { axios, agent } from "../config/axiosConfig";
 import { ANOUNCEMENTS_URL } from "../constants/constants";
 import { Announcement } from "../types/types";
 import ServerError from "../errors/ServerError";
-import InvalidDataError from "../errors/InvalidDataError";
 
 async function fetchAnnouncements(
   pageNumber: number,
@@ -30,17 +29,6 @@ async function fetchAnnouncements(
 
     return relevantData;
   } catch (error: any) {
-    if (error.response) {
-      if (
-        error.response.status === 400 ||
-        (error.response.status === 500 &&
-          error.response.data?.message !== "No message available")
-      ) {
-        throw new InvalidDataError();
-      } else if (error.response.status >= 500) {
-        throw new ServerError();
-      }
-    }
     throw new ServerError();
   }
 }

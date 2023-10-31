@@ -56,7 +56,7 @@ async function fetchResult(
       if (
         error.response.status === 400 ||
         (error.response.status === 500 &&
-          error.response.data?.message !== "No message available")
+          error.response.data?.message === "Index 0 out of bounds for length 0")
       ) {
         throw new InvalidDataError();
       } else if (error.response.status >= 500) {

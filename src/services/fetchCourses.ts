@@ -1,7 +1,6 @@
 import { axios, agent } from "../config/axiosConfig";
 import { COURSES_URL } from "../constants/constants";
 import { Course } from "../types/types";
-import InvalidDataError from "../errors/InvalidDataError";
 import ServerError from "../errors/ServerError";
 
 async function fetchCourses(): Promise<Course[]> {
@@ -18,17 +17,6 @@ async function fetchCourses(): Promise<Course[]> {
     );
     return relevantData;
   } catch (error: any) {
-    if (error.response) {
-      if (
-        error.response.status === 400 ||
-        (error.response.status === 500 &&
-          error.response.data?.message !== "No message available")
-      ) {
-        throw new InvalidDataError();
-      } else if (error.response.status >= 500) {
-        throw new ServerError();
-      }
-    }
     throw new ServerError();
   }
 }
