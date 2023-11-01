@@ -14,6 +14,9 @@ async function fetchAnnouncements(
       searchText: "",
     };
     const response = await axios.post(ANOUNCEMENTS_URL, payload, {
+      cache: {
+        ttl: 1000 * 60 * 5,
+      },
       httpsAgent: agent,
     });
 
