@@ -20,35 +20,36 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
           }
         });
       } else {
-        const announcements: Announcement[] = await fetchAnnouncements(0, 10);
-        const previousAnnouncements: Announcement[] = JSON.parse(data);
-        let diff: Announcement[] = [];
+        try {
+          const announcements: Announcement[] = await fetchAnnouncements(0, 10);
+          const previousAnnouncements: Announcement[] = JSON.parse(data);
+          let diff: Announcement[] = [];
 
-        // hacky way to compare if both are equal :)
-        if (
-          JSON.stringify(announcements) !==
-          JSON.stringify(previousAnnouncements)
-        ) {
-          const previousAnnouncementIds = new Set(
-            previousAnnouncements.map((a: Announcement) => a.id),
-          );
-          diff = announcements.filter(
-            (announcement: Announcement) =>
-              !previousAnnouncementIds.has(announcement.id),
-          );
-          writeFile(
-            "data.json",
-            JSON.stringify(announcements),
-            "utf8",
-            (err) => {
-              if (err) {
-                console.error(err);
-              }
-            },
-          );
+          // hacky way to compare if both are equal :)
+          if (
+            JSON.stringify(announcements) !==
+            JSON.stringify(previousAnnouncements)
+          ) {
+            const previousAnnouncementIds = new Set(
+              previousAnnouncements.map((a: Announcement) => a.id),
+            );
+            diff = announcements.filter(
+              (announcement: Announcement) =>
+                !previousAnnouncementIds.has(announcement.id),
+            );
+            writeFile(
+              "data.json",
+              JSON.stringify(announcements),
+              "utf8",
+              (err) => {
+                if (err) {
+                  console.error(err);
+                }
+              },
+            );
 
-          for (const announcement of diff) {
-            const captionMsg = `
+            for (const announcement of diff) {
+              const captionMsg = `
 
 <b>Subject:</b> ${announcement.subject}
 
@@ -58,42 +59,45 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
 
 `;
 
-            const attachments = announcement.attachments.map(
-              (attachment: Attachment) => ({
-                name: attachment.name,
-                encryptId: attachment.encryptId,
-              }),
-            );
-            attachments.forEach(async (attachment: Attachment) => {
-              const file = await fetchAttachment(attachment.encryptId);
-              const fileBuffer = Buffer.from(file, "base64");
-              const usersRef = db.collection("subscribedUsers");
-              const snapshot = await usersRef.get();
+              const attachments = announcement.attachments.map(
+                (attachment: Attachment) => ({
+                  name: attachment.name,
+                  encryptId: attachment.encryptId,
+                }),
+              );
+              attachments.forEach(async (attachment: Attachment) => {
+                const file = await fetchAttachment(attachment.encryptId);
+                const fileBuffer = Buffer.from(file, "base64");
+                const usersRef = db.collection("subscribedUsers");
+                const snapshot = await usersRef.get();
 
-              const sendMessagePromises: Promise<any>[] = [];
-              snapshot.forEach((doc) => {
-                const chatId = doc.data().chatId;
-                sendMessagePromises.push(
-                  bot.telegram
-                    .sendDocument(
-                      chatId,
-                      {
-                        source: fileBuffer,
-                        filename: attachment.name,
-                      },
-                      { caption: captionMsg, parse_mode: "HTML" },
-                    )
-                    .catch((err) => {
-                      console.error(
-                        `Error sending message to chatId ${chatId}:`,
-                        err,
-                      );
-                    }),
-                );
+                const sendMessagePromises: Promise<any>[] = [];
+                snapshot.forEach((doc) => {
+                  const chatId = doc.data().chatId;
+                  sendMessagePromises.push(
+                    bot.telegram
+                      .sendDocument(
+                        chatId,
+                        {
+                          source: fileBuffer,
+                          filename: attachment.name,
+                        },
+                        { caption: captionMsg, parse_mode: "HTML" },
+                      )
+                      .catch((err) => {
+                        console.error(
+                          `Error sending message to chatId ${chatId}:`,
+                          err,
+                        );
+                      }),
+                  );
+                });
+                await Promise.all(sendMessagePromises);
               });
-              await Promise.all(sendMessagePromises);
-            });
+            }
           }
+        } catch (error) {
+          console.log(error);
         }
       }
     });
