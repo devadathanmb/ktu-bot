@@ -5,7 +5,6 @@ import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
 import deleteMessage from "../utils/deleteMessage";
 import handleError from "../utils/handleError";
-import announcement from "../commands/notifications";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
@@ -55,14 +54,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
-      if (attachments.length == 0) {
-        await ctx.reply("No attachments found.");
-      }
-
-      attachments.forEach(async (attachment: Attachment) => {
-        const file = await fetchAttachment(attachment.encryptId);
-        const fileBuffer = Buffer.from(file, "base64");
-        const captionMsg = `
+      const captionMsg = `
 
 <b>Subject:</b> ${chosenAnnouncement.subject}
 
@@ -71,6 +63,15 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
 <b>Message:</b> ${chosenAnnouncement.message}
 
 `;
+      if (attachments.length == 0) {
+        await ctx.replyWithHTML(captionMsg);
+        await ctx.reply("No attachments found.");
+      }
+
+      attachments.forEach(async (attachment: Attachment) => {
+        const file = await fetchAttachment(attachment.encryptId);
+        const fileBuffer = Buffer.from(file, "base64");
+
         await ctx.replyWithDocument(
           {
             source: fileBuffer,
