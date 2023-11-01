@@ -48,19 +48,29 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 6. Create a Firebase project and setup a Firestore database in [Firebase console](https://console.firebase.google.com/u/0/)
 
-7. Download the `serviceAccountKey.json` file and put it in the root directory
+7. Download the `serviceAccountKey.json` file, `minify` it and `base64` encode it using
 
-8. Build the bot:
+    ```bash
+    jq -r tostring serviceAccountKey.json  | base64
+    ```
+
+8. Copy the `base64` encoded `serviceAccountKey.json` string to `.env`
+
+    ```
+    FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
+    ```
+
+9. Build the bot:
 
    ```bash
    npm run build
    ```
 
-9. Start the bot:
+10. Start the bot:
 
-   ```bash
-   npm run start
-   ```
+    ```bash
+    npm run start
+    ```
 
 ### Running with Docker Compose
 
@@ -84,7 +94,21 @@ Find the bot [here](https://t.me/ktu_results_bot)
    BOT_TOKEN="your-telegram-bot-token"
    ```
 
-5. Run the application using Docker Compose:
+5. Create a Firebase project and setup a Firestore database in [Firebase console](https://console.firebase.google.com/u/0/)
+
+6. Download the `serviceAccountKey.json` file, `minify` it and `base64` encode it using
+
+    ```bash
+    jq -r tostring serviceAccountKey.json  | base64
+    ```
+
+7. Copy the `base64` encoded `serviceAccountKey.json` string to `.env`
+
+    ```
+    FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
+    ```
+
+8. Run the application using Docker Compose:
 
    ```bash
    docker-compose up
@@ -95,12 +119,20 @@ The bot should now be running and accessible on Telegram.
 ## Commands
 
 - `/start`: Start the bot and get a welcome message.
+
 - `/help`: Show a help message with available commands.
+
 - `/result`: Fetch your exam results.
+
 - `/notifications`: Find and download latest KTU notifications.
+
 - `/subscribe`: Subscribe to recieve latest KTU notifications as they arrive.
+
 - `/unsubscribe`: Unsubscribe from recieving KTU notifications.
+
 - `/cancel`: Cancel current process (only works when inside `/notifications` or `/result` wizard)
+
+- `/code` : See project source code
 
 ## Contributing
 

@@ -1,5 +1,5 @@
 import { Telegraf } from "telegraf";
-/* import "dotenv/config"; */
+import "dotenv/config";
 import start from "./commands/start";
 import help from "./commands/help";
 import cancel from "./commands/cancel";
