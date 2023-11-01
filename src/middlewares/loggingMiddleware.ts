@@ -1,11 +1,15 @@
 import { Middleware } from "telegraf";
 import { CustomContext } from "../types/customContext.type";
 
-// Only to be used for testing purposes, not in production
+// For testing purposes
 const loggingMiddleware: Middleware<CustomContext> = async (ctx, next) => {
-  console.log(`Message from username ${ctx.from?.username}:`);
+  const time = new Date();
   console.log(
-    `Message from name ${ctx.from?.first_name} ${ctx.from?.last_name}:`,
+    `Message from name ${ctx.from?.first_name} ${ctx.from?.last_name}`,
+  );
+  console.log(
+    `ℹ️   [${time.toLocaleString()}]  ${ctx.updateType} from ${ctx.from
+      ?.first_name} ${ctx.from?.last_name} ID : ${ctx.from?.id}`,
   );
   console.log(ctx.message);
   return next();
