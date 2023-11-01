@@ -8,6 +8,7 @@ const agent = new https.Agent({
 
 const axios = setupCache(Axios, {
   methods: ["post"],
+  ttl: 1000 * 60 * 10,
 });
 
 export { axios, agent };
