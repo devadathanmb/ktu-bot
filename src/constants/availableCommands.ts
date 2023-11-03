@@ -10,6 +10,7 @@ const availableCommands: Command[] = [
   { command: "cancel", description: "Cancel any ongoing operation" },
   { command: "subscribe", description: "Subscribe to notifications" },
   { command: "unsubscribe", description: "Unsubscribe from notifications" },
+  { command: "code", description: "Show the source code for the bot" },
 ];
 
 export default availableCommands;
