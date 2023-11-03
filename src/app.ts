@@ -26,9 +26,9 @@ const stage = new Scenes.Stage<CustomContext>([
   announcementWizard,
 ]);
 
+bot.use(loggingMiddleware);
 bot.use(session());
 bot.use(stage.middleware());
-bot.use(loggingMiddleware);
 
 bot.telegram.setMyCommands(availableCommands);
 
