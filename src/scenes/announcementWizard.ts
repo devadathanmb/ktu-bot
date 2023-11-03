@@ -104,8 +104,9 @@ async function showAnnouncements(ctx: CustomContext) {
       callback_data: `announcement_${id}`,
     }));
     const nextPageButton = Markup.button.callback("Next Page", "next_page");
+    const prevPageButton = Markup.button.callback("Previous Page", "prev_page");
     const keyboard = Markup.inlineKeyboard(
-      [...announcementButtons, nextPageButton],
+      [...announcementButtons, nextPageButton, prevPageButton],
       {
         columns: 1,
       },
@@ -118,6 +119,17 @@ async function showAnnouncements(ctx: CustomContext) {
     await handleError(ctx, error);
   }
 }
+
+announcementWizard.action("prev_page", async (ctx) => {
+  if (ctx.scene.session.pageNumber == 0) {
+    await ctx.answerCbQuery();
+    return await ctx.reply("You are already on the first page.");
+  }
+  ctx.scene.session.pageNumber--;
+  await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
+  await showAnnouncements(ctx);
+  return await ctx.answerCbQuery();
+});
 
 announcementWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
