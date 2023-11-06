@@ -47,7 +47,7 @@ bot.catch((error) => {
 });
 
 const launchBot = async () => {
-  if (process.env.ENY_TYPE === "DEVELOPMENT") {
+  if (process.env.ENV_TYPE === "DEVELOPMENT") {
     bot.launch();
     if (bot)
       bot.telegram.getMe().then((res) => {
