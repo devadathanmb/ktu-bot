@@ -22,7 +22,10 @@ function calculateSgpa(resultDetails: ResultDetails[]) {
   for (const result of resultDetails) {
     // will need to fix this
     // possibly with a database lookup
-    if (!result.credits && result.grade !== "P") {
+    if (
+      !result.credits &&
+      (result.grade == "F" || result.grade == "FE" || result.grade == "I")
+    ) {
       return "N/A";
     }
 
