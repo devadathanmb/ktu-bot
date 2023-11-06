@@ -50,23 +50,29 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 7. Download the `serviceAccountKey.json` file, `minify` it and `base64` encode it using
 
-    ```bash
-    jq -r tostring serviceAccountKey.json  | base64
-    ```
+   ```bash
+   jq -r tostring serviceAccountKey.json  | base64
+   ```
 
 8. Copy the `base64` encoded `serviceAccountKey.json` string to `.env`
 
-    ```
-    FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
-    ```
-
-9. Build the bot:
-
-   ```bash
-   npm run build
+   ```
+   FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
    ```
 
-10. Start the bot:
+9. Set the `ENV_TYPE` variable to `DEVELOPMENT` in `.env`
+
+   ```
+   ENV_TYPE="DEVELOPMENT"
+   ```
+
+10. Build the bot:
+
+    ```bash
+    npm run build
+    ```
+
+11. Start the bot:
 
     ```bash
     npm run start
@@ -98,17 +104,23 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 6. Download the `serviceAccountKey.json` file, `minify` it and `base64` encode it using
 
-    ```bash
-    jq -r tostring serviceAccountKey.json  | base64
-    ```
+   ```bash
+   jq -r tostring serviceAccountKey.json  | base64
+   ```
 
 7. Copy the `base64` encoded `serviceAccountKey.json` string to `.env`
 
-    ```
-    FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
-    ```
+   ```
+   FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
+   ```
 
-8. Run the application using Docker Compose:
+8. Set the `ENV_TYPE` variable to `DEVELOPMENT` in `.env`
+
+   ```
+   ENV_TYPE="DEVELOPMENT"
+   ```
+
+9. Run the application using Docker Compose:
 
    ```bash
    docker-compose up
