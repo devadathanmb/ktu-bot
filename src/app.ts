@@ -47,12 +47,30 @@ bot.catch((error) => {
 });
 
 const launchBot = async () => {
-  bot.launch();
-  if (bot)
-    bot.telegram.getMe().then((res) => {
-      console.log(`Bot started on https://t.me/${res.username}`);
-      notifyUserCron(db, bot);
+  if (process.env.ENY_TYPE === "DEVELOPMENT") {
+    bot.launch();
+    if (bot)
+      bot.telegram.getMe().then((res) => {
+        console.log(
+          `Bot started in polling mode. Available at https://t.me/${res.username}`,
+        );
+        notifyUserCron(db, bot);
+      });
+  } else {
+    bot.launch({
+      webhook: {
+        domain: process.env.WEBHOOK_DOMAIN!,
+        port: Number(process.env.WEBHOOK_PORT),
+      },
     });
+    if (bot)
+      bot.telegram.getMe().then((res) => {
+        console.log(
+          `Bot started in webhook mode. Available at https://t.me/${res.username}`,
+        );
+        notifyUserCron(db, bot);
+      });
+  }
 };
 
 launchBot();
