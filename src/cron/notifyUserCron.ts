@@ -7,6 +7,11 @@ import { readFile, writeFile } from "fs";
 import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
 
+// This is a hacky way to do this
+// Will need to use some kind of queing mechanism in the future
+const batchSize = 25;
+const delayBetweenBatches = 2000;
+
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job created");
   cron.schedule("*/20 * * * *", async () => {
@@ -48,52 +53,58 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
               },
             );
 
-            for (const announcement of diff) {
-              const captionMsg = `
+            for (let i = 0; i < diff.length; i += batchSize) {
+              const batch = diff.slice(i, i + batchSize);
 
-<b>Subject:</b> ${announcement.subject}
+              await Promise.all(
+                batch.map(async (announcement) => {
+                  const captionMsg = `
+                  <b>Subject:</b> ${announcement.subject}
+                  <b>Date:</b> ${announcement.date}
+                  <b>Message:</b> ${announcement.message}
+                `;
 
-<b>Date:</b> ${announcement.date}
+                  const attachments = announcement.attachments.map(
+                    (attachment: Attachment) => ({
+                      name: attachment.name,
+                      encryptId: attachment.encryptId,
+                    }),
+                  );
 
-<b>Message:</b> ${announcement.message}
+                  await Promise.all(
+                    attachments.map(async (attachment: Attachment) => {
+                      const file = await fetchAttachment(attachment.encryptId);
+                      const fileBuffer = Buffer.from(file, "base64");
+                      const usersRef = db.collection("subscribedUsers");
+                      const snapshot = await usersRef.get();
 
-`;
-
-              const attachments = announcement.attachments.map(
-                (attachment: Attachment) => ({
-                  name: attachment.name,
-                  encryptId: attachment.encryptId,
+                      await Promise.all(
+                        snapshot.docs.map(async (doc) => {
+                          const chatId = doc.data().chatId;
+                          await bot.telegram
+                            .sendDocument(
+                              chatId,
+                              {
+                                source: fileBuffer,
+                                filename: attachment.name,
+                              },
+                              { caption: captionMsg, parse_mode: "HTML" },
+                            )
+                            .catch((err) => {
+                              console.error(
+                                `Error sending message to chatId ${chatId}:`,
+                                err,
+                              );
+                            });
+                        }),
+                      );
+                    }),
+                  );
                 }),
               );
-              attachments.forEach(async (attachment: Attachment) => {
-                const file = await fetchAttachment(attachment.encryptId);
-                const fileBuffer = Buffer.from(file, "base64");
-                const usersRef = db.collection("subscribedUsers");
-                const snapshot = await usersRef.get();
-
-                const sendMessagePromises: Promise<any>[] = [];
-                snapshot.forEach((doc) => {
-                  const chatId = doc.data().chatId;
-                  sendMessagePromises.push(
-                    bot.telegram
-                      .sendDocument(
-                        chatId,
-                        {
-                          source: fileBuffer,
-                          filename: attachment.name,
-                        },
-                        { caption: captionMsg, parse_mode: "HTML" },
-                      )
-                      .catch((err) => {
-                        console.error(
-                          `Error sending message to chatId ${chatId}:`,
-                          err,
-                        );
-                      }),
-                  );
-                });
-                await Promise.all(sendMessagePromises);
-              });
+              await new Promise((resolve) =>
+                setTimeout(resolve, delayBetweenBatches),
+              );
             }
           }
         } catch (error) {
@@ -101,7 +112,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
         }
       }
     });
-    console.log("Finshed running cron job");
+    console.log("Finished running cron job");
   });
 }
 
