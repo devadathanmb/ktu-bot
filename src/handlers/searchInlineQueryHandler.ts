@@ -12,6 +12,7 @@ async function searchInlineQueryHandler(ctx: CustomContext) {
     type: "article",
     id: announcement.id.toString(),
     title: announcement.subject,
+    description: announcement.subject,
     input_message_content: {
       message_text: `<b>Subject</b> : ${
         announcement.subject ? announcement.subject : "N/A"
