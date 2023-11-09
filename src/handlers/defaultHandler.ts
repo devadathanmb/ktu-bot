@@ -2,6 +2,17 @@ import { CustomContext } from "../types/customContext.type";
 const randomQuotes = require("random-quotes");
 
 async function defaultHandler(ctx: CustomContext) {
+  // I could'nt find a better way to do this
+  if ("text" in ctx.message!) {
+    if (
+      (ctx.message.text.includes("Subject") &&
+        ctx.message.text.includes("Date") &&
+        ctx.message.text.includes("Message")) ||
+      ctx.message.text.includes("No results found.")
+    ) {
+      return;
+    }
+  }
   const quote = randomQuotes.default();
   const message = `<i>${quote.body}</i>\n
   - <i>${quote.author}</i>`;

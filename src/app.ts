@@ -17,6 +17,10 @@ import availableCommands from "./constants/availableCommands";
 import { initDb } from "./db/initDb";
 import loggingMiddleware from "./middlewares/loggingMiddleware";
 import notifyUserCron from "./cron/notifyUserCron";
+import {
+  inlineQueryResltHandler,
+  searchInlineQueryHandler,
+} from "./handlers/searchInlineQueryHandler";
 
 const db = initDb();
 
@@ -40,6 +44,10 @@ bot.command("cancel", async (ctx) => await cancel(ctx));
 bot.command("notifications", async (ctx) => await notifications(ctx));
 bot.command("subscribe", async (ctx) => await subscribe(ctx, db));
 bot.command("unsubscribe", async (ctx) => await unsubscribe(ctx, db));
+bot.on("inline_query", async (ctx) => await searchInlineQueryHandler(ctx));
+bot.on("chosen_inline_result", async (ctx) => {
+  await inlineQueryResltHandler(ctx.chosenInlineResult, bot);
+});
 bot.on("message", async (ctx) => await defaultHandler(ctx));
 
 bot.catch((error) => {
