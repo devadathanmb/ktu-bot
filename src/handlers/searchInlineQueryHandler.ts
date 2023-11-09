@@ -31,7 +31,7 @@ async function searchInlineQueryHandler(ctx: CustomContext) {
       },
     });
   }
-  await ctx.answerInlineQuery(results, { cache_time: 0 });
+  await ctx.answerInlineQuery(results);
 }
 
 async function inlineQueryResltHandler(
