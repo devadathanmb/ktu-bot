@@ -54,6 +54,18 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
+      if (!chosenAnnouncement.subject) {
+        chosenAnnouncement.subject = "N/A";
+      }
+
+      if (!chosenAnnouncement.date) {
+        chosenAnnouncement.date = "N/A";
+      }
+
+      if (!chosenAnnouncement.message) {
+        chosenAnnouncement.message = "N/A";
+      }
+
       const captionMsg = `
 
 <b>Subject:</b> ${chosenAnnouncement.subject}
