@@ -7,10 +7,12 @@ import { readFile, writeFile } from "fs";
 import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
 
-// This is a hacky way to do this
-// Will need to use some kind of queing mechanism in the future
-const batchSize = 25;
-const delayBetweenBatches = 2000;
+// Telegram API only allows 30 messages per second
+// So to be safe, we will send 20 messages per second
+// And wait 1 minute between batches
+// This will not block the bot from receiving messages since everything is asynchronous
+const batchSize = 20;
+const delayBetweenBatches = 1000 * 60;
 
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job created");
@@ -25,94 +27,104 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
           }
         });
       } else {
-        try {
-          const announcements: Announcement[] = await fetchAnnouncements(0, 10);
-          const previousAnnouncements: Announcement[] = JSON.parse(data);
-          let diff: Announcement[] = [];
+        const announcements: Announcement[] = await fetchAnnouncements(0, 10);
+        const previousAnnouncements: Announcement[] = JSON.parse(data);
+        let diff: Announcement[] = [];
 
-          // hacky way to compare if both are equal :)
-          if (
-            JSON.stringify(announcements) !==
-            JSON.stringify(previousAnnouncements)
-          ) {
-            const previousAnnouncementIds = new Set(
-              previousAnnouncements.map((a: Announcement) => a.id),
+        // hacky way to compare if both are equal :)
+        if (
+          JSON.stringify(announcements) !==
+          JSON.stringify(previousAnnouncements)
+        ) {
+          const previousAnnouncementIds = new Set(
+            previousAnnouncements.map((a: Announcement) => a.id),
+          );
+          diff = announcements.filter(
+            (announcement: Announcement) =>
+              !previousAnnouncementIds.has(announcement.id),
+          );
+          writeFile(
+            "data.json",
+            JSON.stringify(announcements),
+            "utf8",
+            (err) => {
+              if (err) {
+                console.error(err);
+              }
+            },
+          );
+
+          // Loop through each new annoucement
+          for (const announcement of diff) {
+            const captionMsg = `
+
+<b>Subject:</b> ${announcement.subject}
+
+<b>Date:</b> ${announcement.date}
+
+<b>Message:</b> ${announcement.message}
+
+`;
+
+            // Get the data to fetch the attachments
+            const attachments = announcement.attachments.map(
+              (attachment: Attachment) => ({
+                name: attachment.name,
+                encryptId: attachment.encryptId,
+              }),
             );
-            diff = announcements.filter(
-              (announcement: Announcement) =>
-                !previousAnnouncementIds.has(announcement.id),
-            );
-            writeFile(
-              "data.json",
-              JSON.stringify(announcements),
-              "utf8",
-              (err) => {
-                if (err) {
-                  console.error(err);
-                }
-              },
-            );
 
-            for (let i = 0; i < diff.length; i += batchSize) {
-              const batch = diff.slice(i, i + batchSize);
+            // Get all the chatIds
+            const usersRef = db.collection("subscribedUsers");
+            const snapshot = await usersRef.get();
+            const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
 
-              await Promise.all(
-                batch.map(async (announcement) => {
-                  const captionMsg = `
-                  <b>Subject:</b> ${announcement.subject}
-                  <b>Date:</b> ${announcement.date}
-                  <b>Message:</b> ${announcement.message}
-                `;
+            // For each attachment, fetch the annoucement, send the attachment to each chatIds in batches
+            attachments.forEach(async (attachment: Attachment) => {
+              const file = await fetchAttachment(attachment.encryptId);
+              const fileBuffer = Buffer.from(file, "base64");
 
-                  const attachments = announcement.attachments.map(
-                    (attachment: Attachment) => ({
-                      name: attachment.name,
-                      encryptId: attachment.encryptId,
-                    }),
+              // Send the attachment in batches
+              for (let i = 0; i < chatIds.length; i += batchSize) {
+                // Get the current batch
+                const batch = chatIds.slice(i, i + batchSize);
+                let batchPromises: Promise<any>[] = [];
+
+                // Push each sendDocument promise to the batchPromises array
+                batch.forEach((chatId) => {
+                  batchPromises.push(
+                    bot.telegram
+                      .sendDocument(
+                        chatId,
+                        {
+                          source: fileBuffer,
+                          filename: attachment.name,
+                        },
+                        { caption: captionMsg, parse_mode: "HTML" },
+                      )
+                      .catch((err) => {
+                        console.error(
+                          `Error sending message to chatId ${chatId}:`,
+                          err,
+                        );
+                      }),
                   );
+                });
 
-                  await Promise.all(
-                    attachments.map(async (attachment: Attachment) => {
-                      const file = await fetchAttachment(attachment.encryptId);
-                      const fileBuffer = Buffer.from(file, "base64");
-                      const usersRef = db.collection("subscribedUsers");
-                      const snapshot = await usersRef.get();
+                // Wait for the batch to finish sending
+                await Promise.all(batchPromises);
 
-                      await Promise.all(
-                        snapshot.docs.map(async (doc) => {
-                          const chatId = doc.data().chatId;
-                          await bot.telegram
-                            .sendDocument(
-                              chatId,
-                              {
-                                source: fileBuffer,
-                                filename: attachment.name,
-                              },
-                              { caption: captionMsg, parse_mode: "HTML" },
-                            )
-                            .catch((err) => {
-                              console.error(
-                                `Error sending message to chatId ${chatId}:`,
-                                err,
-                              );
-                            });
-                        }),
-                      );
-                    }),
-                  );
-                }),
-              );
-              await new Promise((resolve) =>
-                setTimeout(resolve, delayBetweenBatches),
-              );
-            }
+                // Wait for the delay between batches
+                await new Promise((resolve) =>
+                  setTimeout(resolve, delayBetweenBatches),
+                );
+              }
+            });
           }
-        } catch (error) {
-          console.log(error);
         }
       }
     });
-    console.log("Finished running cron job");
+    console.log("Finshed running cron job");
   });
 }
 
