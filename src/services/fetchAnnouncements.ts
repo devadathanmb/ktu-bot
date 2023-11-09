@@ -1,4 +1,4 @@
-import { axios, agent } from "../config/axiosConfig";
+import { axios } from "../config/axiosConfig";
 import { ANOUNCEMENTS_URL } from "../constants/constants";
 import { Announcement } from "../types/types";
 import ServerError from "../errors/ServerError";
@@ -6,18 +6,18 @@ import ServerError from "../errors/ServerError";
 async function fetchAnnouncements(
   pageNumber: number,
   dataSize: number,
+  searchText = "",
 ): Promise<Announcement[]> {
   try {
     const payload = {
       number: pageNumber,
       size: dataSize,
-      searchText: "",
+      searchText,
     };
     const response = await axios.post(ANOUNCEMENTS_URL, payload, {
       cache: {
         ttl: 1000 * 60 * 5,
       },
-      httpsAgent: agent,
     });
 
     const relevantData = response.data.content.map((obj: any) => ({

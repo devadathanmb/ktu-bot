@@ -1,21 +1,16 @@
-import { axios, agent } from "../config/axiosConfig";
+import { axios } from "../config/axiosConfig";
 import { PUBLISHED_RESULTS_URL } from "../constants/constants";
 import { PublishedResultData } from "../types/types";
 import ServerError from "../errors/ServerError";
-import InvalidDataError from "../errors/InvalidDataError";
 import DataNotFoundError from "../errors/DataNotFoundError";
 
 async function fetchPublishedResults(
   courseId: number,
 ): Promise<PublishedResultData[]> {
   try {
-    const response = await axios.post(
-      PUBLISHED_RESULTS_URL,
-      { program: courseId },
-      {
-        httpsAgent: agent,
-      },
-    );
+    const response = await axios.post(PUBLISHED_RESULTS_URL, {
+      program: courseId,
+    });
 
     const responseData: PublishedResultData[] = response.data;
 

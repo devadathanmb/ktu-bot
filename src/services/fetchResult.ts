@@ -1,4 +1,4 @@
-import { axios, agent } from "../config/axiosConfig";
+import { axios } from "../config/axiosConfig";
 import { RESULT_URL } from "../constants/constants";
 import InvalidDataError from "../errors/InvalidDataError";
 import { ResultDetails, ResultSummary } from "../types/types";
@@ -18,9 +18,7 @@ async function fetchResult(
       schemeId: schemeId,
     };
 
-    const response = await axios.post(RESULT_URL, payload, {
-      httpsAgent: agent,
-    });
+    const response = await axios.post(RESULT_URL, payload);
 
     const resultDetails: ResultDetails[] = response.data.resultDetails.map(
       ({ courseName, grade, credits }: ResultDetails) => ({
