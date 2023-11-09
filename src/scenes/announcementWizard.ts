@@ -80,7 +80,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
         await ctx.reply("No attachments found.");
       }
 
-      attachments.forEach(async (attachment: Attachment) => {
+      for (const attachment of attachments) {
         const file = await fetchAttachment(attachment.encryptId);
         const fileBuffer = Buffer.from(file, "base64");
 
@@ -91,7 +91,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
           },
           { caption: captionMsg, parse_mode: "HTML" },
         );
-      });
+      }
 
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       return await ctx.scene.leave();
