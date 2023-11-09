@@ -20,15 +20,18 @@ I can help you get your exam results, latest KTU notifications and more!
 
 /start - Get this message again
 
-/code - Get the source code of this bot
-`;
+/code - Find the source code of this bot, report bugs and contribute
 
-  /* const welcomeMessage = `👋 Welcome to the KTU Bot!\n\nI can help you get your exam results, latest KTU notifications and more!\n\nI'm open source! Check out my code at`; */
-  /**/
-  /* const instructions = `Available commands:\n/result - Get your exam results\n/help - Get help\n/notifications - Get the latest KTU notifications\n/subscribe - Subscribe to recieve new KTU notifications\n/unsubscribe - Unsubscribe from receiving new KTU notifications`; */
-  /**/
-  /* const formattedMessage = `${welcomeMessage}\n\n${instructions}`; */
-  /**/
+<b>Inline Query</b>:
+
+Use the inline query feature to live search for notifications. 
+
+Simply type @ktu_results_bot followed by a keyword you want to search for.
+
+eg: <code>@ktu_results_bot exam</code>
+
+ `;
+
   await ctx.replyWithHTML(replyMsg);
 }
 
