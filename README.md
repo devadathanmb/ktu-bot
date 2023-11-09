@@ -1,4 +1,5 @@
 # KTU Bot
+
 ![Deploy](https://github.com/devadathanmb/ktu-bot/actions/workflows/build-deploy.yml/badge.svg)
 ![CI](https://github.com/devadathanmb/ktu-bot/actions/workflows/ci.yml/badge.svg)
 
@@ -12,6 +13,33 @@ Find the bot [here](https://t.me/ktu_results_bot)
 - **Download latest KTU notifications**: Use the `/notifications` command to fetch KTU notifications and download them.
 - **Subscribe to latest KTU notifications**: Use the `/subscribe` command to recieve new notifications as they arrive.
 - **Help**: Get help using the `/help` command.
+- **Live search notifications**: Live search and find KTU notifications using _inline queries_
+
+## Commands
+
+- `/start`: Start the bot and get a welcome message.
+
+- `/help`: Show a help message with available commands.
+
+- `/result`: Fetch your exam results.
+
+- `/notifications`: Find and download latest KTU notifications.
+
+- `/subscribe`: Subscribe to recieve latest KTU notifications as they arrive.
+
+- `/unsubscribe`: Unsubscribe from recieving KTU notifications.
+
+- `/cancel`: Cancel current process (only works when inside `/notifications` or `/result` wizard)
+
+- `/code` : See project source code
+
+## Inline Query
+
+Use inline query to live search the notification you want to. No more pain of scrolling through the webpage for the notification.
+
+```
+eg: @ktu_results_bot calendar : This returns all the results that matches word "calendar" like Academic calendars etc.
+```
 
 ## Getting Started
 
@@ -129,24 +157,6 @@ Find the bot [here](https://t.me/ktu_results_bot)
    ```
 
 The bot should now be running and accessible on Telegram.
-
-## Commands
-
-- `/start`: Start the bot and get a welcome message.
-
-- `/help`: Show a help message with available commands.
-
-- `/result`: Fetch your exam results.
-
-- `/notifications`: Find and download latest KTU notifications.
-
-- `/subscribe`: Subscribe to recieve latest KTU notifications as they arrive.
-
-- `/unsubscribe`: Unsubscribe from recieving KTU notifications.
-
-- `/cancel`: Cancel current process (only works when inside `/notifications` or `/result` wizard)
-
-- `/code` : See project source code
 
 ## Contributing
 
