@@ -34,7 +34,7 @@ async function searchInlineQueryHandler(ctx: CustomContext) {
   await ctx.answerInlineQuery(results);
 }
 
-async function inlineQueryResltHandler(
+async function inlineQueryResultHandler(
   chosenInlineResult: ChosenInlineResult,
   bot: Telegraf<CustomContext>,
 ) {
@@ -71,4 +71,4 @@ async function inlineQueryResltHandler(
   } catch (error) {}
 }
 
-export { searchInlineQueryHandler, inlineQueryResltHandler };
+export { searchInlineQueryHandler, inlineQueryResultHandler };
