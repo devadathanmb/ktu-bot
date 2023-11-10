@@ -48,4 +48,4 @@ jobs:
             docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }} ktu-bot:latest
             docker stop ktu-bot || true
             docker rm ktu-bot || true
-            docker run -d --restart always -p 5000:5000 -e ENV_TYPE=${{ secrets.ENV_TYPE }} -e WEBHOOK_DOMAIN=${{ secrets.WEBHOOK_DOMAIN }} -e WEBHOOK_PORT=${{ secrets.WEBHOOK_PORT }} -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" --name ktu-bot ktu-bot:latest
+            docker run -d --restart always -p 5000:5000 -e TZ=Asia/Kolkata -e ENV_TYPE=${{ secrets.ENV_TYPE }} -e WEBHOOK_DOMAIN=${{ secrets.WEBHOOK_DOMAIN }} -e WEBHOOK_PORT=${{ secrets.WEBHOOK_PORT }} -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" --name ktu-bot ktu-bot:latest
