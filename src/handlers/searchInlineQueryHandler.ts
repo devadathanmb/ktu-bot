@@ -47,7 +47,7 @@ async function inlineQueryResultHandler(
   const waitingMsgId = await bot.telegram
     .sendMessage(chatId, "Fetching attachments.. Please wait..")
     .then((msg) => msg.message_id);
-  const announcements = await fetchAnnouncements(0, 10, query);
+  const announcements = await fetchAnnouncements(0, 20, query);
   const chosenAnnouncement = announcements.find(
     (announcement) => announcement.id === Number(id),
   );
