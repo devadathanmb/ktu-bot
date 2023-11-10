@@ -4,6 +4,7 @@ import start from "./handlers/start";
 import help from "./handlers/help";
 import cancel from "./handlers/cancel";
 import result from "./handlers/result";
+import search from "./handlers/search";
 import code from "./handlers/code";
 import notifications from "./handlers/notifications";
 import subscribe from "./handlers/subscribe";
@@ -38,6 +39,7 @@ bot.telegram.setMyCommands(availableCommands);
 
 bot.start(async (ctx) => await start(ctx));
 bot.command("help", async (ctx) => await help(ctx));
+bot.command("search", async (ctx) => await search(ctx));
 bot.command("result", async (ctx) => await result(ctx));
 bot.command("code", async (ctx) => await code(ctx));
 bot.command("cancel", async (ctx) => await cancel(ctx));
