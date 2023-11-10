@@ -54,6 +54,11 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
             },
           );
 
+          // Get all the chatIds
+          const usersRef = db.collection("subscribedUsers");
+          const snapshot = await usersRef.get();
+          const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
+
           // Loop through each new annoucement
           for (const announcement of diff) {
             const captionMsg = `
@@ -73,11 +78,6 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 encryptId: attachment.encryptId,
               }),
             );
-
-            // Get all the chatIds
-            const usersRef = db.collection("subscribedUsers");
-            const snapshot = await usersRef.get();
-            const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
 
             // For each attachment, fetch the annoucement, send the attachment to each chatIds in batches
             attachments.forEach(async (attachment: Attachment) => {
