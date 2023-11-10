@@ -15,9 +15,10 @@ const batchSize = 20;
 const delayBetweenBatches = 1000 * 60;
 
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
-  console.log("Cron job created");
+  console.log("Cron job initialized");
   cron.schedule("*/30 * * * *", async () => {
-    console.log("Running cron job");
+    const startTime = new Date().toString();
+    console.log(`🔴 Cron job started at ${startTime}`);
     readFile("data.json", "utf8", async (err, data) => {
       if (err?.code == "ENOENT") {
         const announcements = JSON.stringify(await fetchAnnouncements(0, 10));
@@ -124,7 +125,11 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
         }
       }
     });
-    console.log("Finshed running cron job");
+    const endTime = new Date().toString();
+    console.log(`🔴 Cron job ended at ${endTime}`);
+    console.log(
+      `🔴 Time taken: ${Date.parse(endTime) - Date.parse(startTime)}`,
+    );
   });
 }
 
