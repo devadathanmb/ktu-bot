@@ -12,7 +12,7 @@ async function fetchPublishedResults(
       program: courseId,
     });
 
-    const responseData: PublishedResultData[] = response.data;
+    let responseData: PublishedResultData[] = response.data;
 
     if (responseData.length === 0) {
       throw new DataNotFoundError(
@@ -20,6 +20,11 @@ async function fetchPublishedResults(
       );
     }
 
+    responseData = responseData.map((result) => ({
+      resultName: result.resultName,
+      examDefId: result.examDefId,
+      schemeId: result.schemeId,
+    }));
     return responseData;
   } catch (error: any) {
     throw new ServerError();
