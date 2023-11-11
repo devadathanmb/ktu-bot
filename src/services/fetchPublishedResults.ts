@@ -25,6 +25,18 @@ async function fetchPublishedResults(
       examDefId: result.examDefId,
       schemeId: result.schemeId,
     }));
+
+    // TODO: Remove this when the API is fixed
+    // This is a temporary fix for the API last 10 data
+    // Fix would be to create a wrapper API that runs a cron which fetches the data from the original API and then returns the data
+    if (courseId === 1) {
+      responseData.push({
+        resultName: "B.Tech S6 (R, S) Exam June 2023 (2019 Scheme)",
+        examDefId: 894,
+        schemeId: 17,
+      });
+    }
+
     return responseData;
   } catch (error: any) {
     throw new ServerError();
