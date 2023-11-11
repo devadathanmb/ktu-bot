@@ -16,9 +16,7 @@ interface ResultSummary {
 }
 
 interface PublishedResultData {
-  id: number;
   resultName: string;
-  publishedData: string;
   examDefId: number;
   schemeId: number;
 }
