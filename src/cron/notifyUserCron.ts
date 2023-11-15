@@ -87,6 +87,10 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
 
               // Send the attachment in batches
               for (let i = 0; i < chatIds.length; i += batchSize) {
+                console.log(
+                  `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`,
+                );
+
                 // Get the current batch
                 const batch = chatIds.slice(i, i + batchSize);
                 let batchPromises: Promise<any>[] = [];
@@ -115,6 +119,12 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 // Wait for the batch to finish sending
                 await Promise.all(batchPromises);
 
+                // Log the batch stats
+                console.log(
+                  `🔴 Batch ${batch} finished sending at ${new Date()}`,
+                );
+                console.log(`🔴 Successfully sent to ${batch.length} users`);
+
                 // Wait for the delay between batches
                 await new Promise((resolve) =>
                   setTimeout(resolve, delayBetweenBatches),
@@ -125,11 +135,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
         }
       }
     });
-    const endTime = new Date().toString();
-    console.log(`🔴 Cron job ended at ${endTime}`);
-    console.log(
-      `🔴 Time taken: ${Date.parse(endTime) - Date.parse(startTime)}`,
-    );
+    console.log(`🔴 Cron job ended`);
   });
 }
 
