@@ -91,7 +91,9 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       return await ctx.reply("Please enter a valid registration number");
     }
     ctx.scene.session.regisNo = regisNo.toUpperCase();
-    await ctx.reply("Please enter your Date of Birth (DD/MM/YYYY)");
+    await ctx.reply(
+      "Please enter your Date of Birth\n\nFormat: DD/MM/YYYY \n\nExample: 01/01/2000",
+    );
     return ctx.wizard.next();
   },
   async (ctx) => {
