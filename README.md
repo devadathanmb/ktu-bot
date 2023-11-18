@@ -41,7 +41,9 @@ Use inline query to live search the notification you want to. No more pain of sc
 eg: @ktu_results_bot calendar : This returns all the results that matches word "calendar" like Academic calendars etc.
 ```
 
-## Getting Started
+## Local development setup
+
+*Note: If you don't want or don't want to work on the `notification` feature and don't want to setup the database, then just comment out the corresponding calls in `app.ts` and skip the **firebase** configuration part below.*
 
 ### Running Locally (Without Docker)
 
