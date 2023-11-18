@@ -8,15 +8,15 @@ import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
 
 // Telegram API only allows 30 messages per second
-// So to be safe, we will send 20 messages per second
+// So to be safe, we will send 25 messages per second
 // And wait 1 minute between batches
 // This will not block the bot from receiving messages since everything is asynchronous
-const batchSize = 20;
+const batchSize = 25;
 const delayBetweenBatches = 1000 * 60;
 
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job initialized");
-  cron.schedule("*/30 * * * *", async () => {
+  cron.schedule("*/15 * * * *", async () => {
     const startTime = new Date().toString();
     console.log(`🔴 Cron job started at ${startTime}`);
     readFile("data.json", "utf8", async (err, data) => {
@@ -135,7 +135,6 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
         }
       }
     });
-    console.log(`🔴 Cron job ended`);
   });
 }
 
