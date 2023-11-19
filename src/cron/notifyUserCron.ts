@@ -64,12 +64,11 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
           for (const announcement of diff) {
             const captionMsg = `
 
-<b>Subject:</b> ${announcement.subject}
+<b>Subject:</b> ${announcement.subject ? announcement.subject : "N/A"}
 
-<b>Date:</b> ${announcement.date}
+<b>Date:</b> ${announcement.date ? announcement.date : "N/A"}
 
-<b>Message:</b> ${announcement.message}
-
+<b>Message:</b> ${announcement.message ? announcement.message : "N/A"}
 `;
 
             // Get the data to fetch the attachments
