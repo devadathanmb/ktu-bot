@@ -4,7 +4,9 @@ function shortenCourse(subject: string): string {
     .trim()
     .split(" ")
     .forEach((word) => {
-      shortenedName = shortenedName.concat(word[0]);
+      if (word) {
+        shortenedName = shortenedName.concat(word[0]);
+      }
     });
   return shortenedName;
 }
