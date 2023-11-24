@@ -8,10 +8,10 @@ async function unsubscribe(ctx: CustomContext, db: Firestore) {
     throw new Error("Chat id not found");
   }
   try {
-    const usersRef = db.collection("subscribedUsers").doc(chatId.toString());
-    const doc = await usersRef.get();
+    const userRef = db.collection("subscribedUsers").doc(chatId.toString());
+    const doc = await userRef.get();
     if (doc.exists) {
-      await usersRef.delete();
+      await userRef.delete();
       await ctx.reply("You are now unsubscribed from notifications");
     } else {
       await ctx.reply(
