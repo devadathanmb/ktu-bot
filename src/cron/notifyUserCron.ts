@@ -1,6 +1,6 @@
 import * as cron from "node-cron";
 import { Firestore } from "firebase-admin/firestore";
-import { Telegraf } from "telegraf";
+import { Telegraf, TelegramError } from "telegraf";
 import { CustomContext } from "../types/customContext.type";
 import fetchAnnouncements from "../services/fetchAnnouncements";
 import { readFile, writeFile } from "fs";
@@ -106,11 +106,21 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                         },
                         { caption: captionMsg, parse_mode: "HTML" },
                       )
-                      .catch((err) => {
-                        console.error(
-                          `Error sending message to chatId ${chatId}:`,
-                          err,
-                        );
+                      .catch(async (err: TelegramError) => {
+                        // If the user has blocked the bot, or the account is deleted
+                        // or the bot was removed from the group
+                        // then remove the chatid from the database
+                        // because this leads to bot slowing down
+                        if (err.code === 403) {
+                          console.log(
+                            `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`,
+                          );
+                          try {
+                            await usersRef.doc(chatId.toString()).delete();
+                          } catch (error) {
+                            console.log(error);
+                          }
+                        }
                       }),
                   );
                 });
