@@ -16,7 +16,7 @@ const delayBetweenBatches = 1000 * 60;
 
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job initialized");
-  cron.schedule("*/15 * * * *", async () => {
+  cron.schedule("*/10 * * * *", async () => {
     const startTime = new Date().toString();
     console.log(`🔴 Cron job started at ${startTime}`);
     readFile("data.json", "utf8", async (err, data) => {
