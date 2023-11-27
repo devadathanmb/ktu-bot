@@ -21,48 +21,51 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
     console.log(`🔴 Cron job started at ${startTime}`);
     readFile("data.json", "utf8", async (err, data) => {
       if (err?.code == "ENOENT") {
-        const announcements = JSON.stringify(await fetchAnnouncements(0, 10));
-        writeFile("data.json", announcements, "utf8", (err) => {
-          if (err) {
-            console.error(err);
-          }
-        });
+        try {
+          const announcements = JSON.stringify(await fetchAnnouncements(0, 10));
+          writeFile("data.json", announcements, "utf8", (err) => {
+            if (err) {
+              console.error(err);
+            }
+          });
+        } catch (error) {}
       } else {
-        const announcements: Announcement[] = await fetchAnnouncements(0, 10);
-        const previousAnnouncements: Announcement[] = JSON.parse(data);
-        let diff: Announcement[] = [];
+        try {
+          const announcements: Announcement[] = await fetchAnnouncements(0, 10);
+          const previousAnnouncements: Announcement[] = JSON.parse(data);
+          let diff: Announcement[] = [];
 
-        // hacky way to compare if both are equal :)
-        if (
-          JSON.stringify(announcements) !==
-          JSON.stringify(previousAnnouncements)
-        ) {
-          const previousAnnouncementIds = new Set(
-            previousAnnouncements.map((a: Announcement) => a.id),
-          );
-          diff = announcements.filter(
-            (announcement: Announcement) =>
-              !previousAnnouncementIds.has(announcement.id),
-          );
-          writeFile(
-            "data.json",
-            JSON.stringify(announcements),
-            "utf8",
-            (err) => {
-              if (err) {
-                console.error(err);
-              }
-            },
-          );
+          // hacky way to compare if both are equal :)
+          if (
+            JSON.stringify(announcements) !==
+            JSON.stringify(previousAnnouncements)
+          ) {
+            const previousAnnouncementIds = new Set(
+              previousAnnouncements.map((a: Announcement) => a.id),
+            );
+            diff = announcements.filter(
+              (announcement: Announcement) =>
+                !previousAnnouncementIds.has(announcement.id),
+            );
+            writeFile(
+              "data.json",
+              JSON.stringify(announcements),
+              "utf8",
+              (err) => {
+                if (err) {
+                  console.error(err);
+                }
+              },
+            );
 
-          // Get all the chatIds
-          const usersRef = db.collection("subscribedUsers");
-          const snapshot = await usersRef.get();
-          const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
+            // Get all the chatIds
+            const usersRef = db.collection("subscribedUsers");
+            const snapshot = await usersRef.get();
+            const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
 
-          // Loop through each new annoucement
-          for (const announcement of diff) {
-            const captionMsg = `
+            // Loop through each new annoucement
+            for (const announcement of diff) {
+              const captionMsg = `
 
 <b>Subject:</b> ${announcement.subject ? announcement.subject : "N/A"}
 
@@ -71,76 +74,79 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
 <b>Message:</b> ${announcement.message ? announcement.message : "N/A"}
 `;
 
-            // Get the data to fetch the attachments
-            const attachments = announcement.attachments.map(
-              (attachment: Attachment) => ({
-                name: attachment.name,
-                encryptId: attachment.encryptId,
-              }),
-            );
+              // Get the data to fetch the attachments
+              const attachments = announcement.attachments.map(
+                (attachment: Attachment) => ({
+                  name: attachment.name,
+                  encryptId: attachment.encryptId,
+                }),
+              );
 
-            // For each attachment, fetch the annoucement, send the attachment to each chatIds in batches
-            attachments.forEach(async (attachment: Attachment) => {
-              const file = await fetchAttachment(attachment.encryptId);
-              const fileBuffer = Buffer.from(file, "base64");
+              // For each attachment, fetch the annoucement, send the attachment to each chatIds in batches
+              attachments.forEach(async (attachment: Attachment) => {
+                const file = await fetchAttachment(attachment.encryptId);
+                const fileBuffer = Buffer.from(file, "base64");
 
-              // Send the attachment in batches
-              for (let i = 0; i < chatIds.length; i += batchSize) {
-                console.log(
-                  `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`,
-                );
-
-                // Get the current batch
-                const batch = chatIds.slice(i, i + batchSize);
-                let batchPromises: Promise<any>[] = [];
-
-                // Push each sendDocument promise to the batchPromises array
-                batch.forEach((chatId) => {
-                  batchPromises.push(
-                    bot.telegram
-                      .sendDocument(
-                        chatId,
-                        {
-                          source: fileBuffer,
-                          filename: attachment.name,
-                        },
-                        { caption: captionMsg, parse_mode: "HTML" },
-                      )
-                      .catch(async (err: TelegramError) => {
-                        // If the user has blocked the bot, or the account is deleted
-                        // or the bot was removed from the group
-                        // then remove the chatid from the database
-                        // because this leads to bot slowing down
-                        if (err.code === 403) {
-                          console.log(
-                            `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`,
-                          );
-                          try {
-                            await usersRef.doc(chatId.toString()).delete();
-                          } catch (error) {
-                            console.log(error);
-                          }
-                        }
-                      }),
+                // Send the attachment in batches
+                for (let i = 0; i < chatIds.length; i += batchSize) {
+                  console.log(
+                    `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`,
                   );
-                });
 
-                // Wait for the batch to finish sending
-                await Promise.all(batchPromises);
+                  // Get the current batch
+                  const batch = chatIds.slice(i, i + batchSize);
+                  let batchPromises: Promise<any>[] = [];
 
-                // Log the batch stats
-                console.log(
-                  `🔴 Batch ${batch} finished sending at ${new Date()}`,
-                );
-                console.log(`🔴 Successfully sent to ${batch.length} users`);
+                  // Push each sendDocument promise to the batchPromises array
+                  batch.forEach((chatId) => {
+                    batchPromises.push(
+                      bot.telegram
+                        .sendDocument(
+                          chatId,
+                          {
+                            source: fileBuffer,
+                            filename: attachment.name,
+                          },
+                          { caption: captionMsg, parse_mode: "HTML" },
+                        )
+                        .catch(async (err: TelegramError) => {
+                          // If the user has blocked the bot, or the account is deleted
+                          // or the bot was removed from the group
+                          // then remove the chatid from the database
+                          // because this leads to bot slowing down
+                          if (err.code === 403) {
+                            console.log(
+                              `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`,
+                            );
+                            try {
+                              await usersRef.doc(chatId.toString()).delete();
+                            } catch (error) {
+                              console.log(error);
+                            }
+                          }
+                        }),
+                    );
+                  });
 
-                // Wait for the delay between batches
-                await new Promise((resolve) =>
-                  setTimeout(resolve, delayBetweenBatches),
-                );
-              }
-            });
+                  // Wait for the batch to finish sending
+                  await Promise.all(batchPromises);
+
+                  // Log the batch stats
+                  console.log(
+                    `🔴 Batch ${batch} finished sending at ${new Date()}`,
+                  );
+                  console.log(`🔴 Successfully sent to ${batch.length} users`);
+
+                  // Wait for the delay between batches
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, delayBetweenBatches),
+                  );
+                }
+              });
+            }
           }
+        } catch (error) {
+          console.log(error);
         }
       }
     });
