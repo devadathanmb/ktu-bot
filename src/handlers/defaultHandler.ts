@@ -8,7 +8,10 @@ async function defaultHandler(ctx: CustomContext) {
       (ctx.message.text.includes("Subject") &&
         ctx.message.text.includes("Date") &&
         ctx.message.text.includes("Message")) ||
-      ctx.message.text.includes("No results found.")
+      ctx.message.text.includes("No results found.") ||
+      ctx.message.text.includes(
+        "KTU servers are having issues right now. Please try again later.",
+      )
     ) {
       return;
     }
