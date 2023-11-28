@@ -7,6 +7,8 @@ const ANOUNCEMENTS_URL =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon/announcemnts";
 const ATTACHMENT_URL =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon/getAttachment";
+const ACADEMIC_CALENDAR_URL =
+  "https://api.ktu.edu.in/ktu-web-portal-api/anon/academicCalendar";
 
 export {
   COURSES_URL,
@@ -14,4 +16,5 @@ export {
   RESULT_URL,
   ANOUNCEMENTS_URL,
   ATTACHMENT_URL,
+  ACADEMIC_CALENDAR_URL,
 };
