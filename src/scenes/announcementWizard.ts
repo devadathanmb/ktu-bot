@@ -38,7 +38,8 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       );
       const chosenAnnouncement: Announcement =
         ctx.scene.session.announcements.find(
-          (announcement: any) => announcement.id == chosenAnnouncementId,
+          (announcement: Announcement) =>
+            announcement.id == chosenAnnouncementId,
         );
 
       const attachments: Attachment[] = chosenAnnouncement.attachments.map(
