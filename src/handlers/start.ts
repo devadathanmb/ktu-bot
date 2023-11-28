@@ -14,6 +14,8 @@ I can help you get your exam results, latest KTU notifications and more!
 
 /notifications - Get the latest KTU notifications
 
+/calendar - Get the KTU academic calendars
+
 /subscribe - Subscribe to recieve new KTU notifications
 
 /unsubscribe - Unsubscribe from receiving new KTU notifications
