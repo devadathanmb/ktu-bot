@@ -7,6 +7,7 @@ const availableCommands: Command[] = [
   { command: "help", description: "Show help message" },
   { command: "result", description: "Fetch your exam results" },
   { command: "notifications", description: "Fetch latest KTU notifications" },
+  { command: "calendar", description: "Fetch KTU academic calendars" },
   { command: "search", description: "See how to search for KTU notifications" },
   { command: "cancel", description: "Cancel any ongoing operation" },
   { command: "subscribe", description: "Subscribe to notifications" },
