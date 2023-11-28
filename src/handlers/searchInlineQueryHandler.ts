@@ -35,7 +35,22 @@ async function searchInlineQueryHandler(ctx: CustomContext) {
     }
     await ctx.answerInlineQuery(results);
   } catch (error) {
-    console.log(error);
+    if (error instanceof TelegramError) {
+      console.log(error);
+    } else if (error instanceof ServerError) {
+      const errorResult: InlineQueryResult[] = [
+        {
+          type: "article",
+          id: "-1",
+          title:
+            "KTU servers are having issues right now. Please try again later.",
+          input_message_content: {
+            message_text: error.message,
+          },
+        },
+      ];
+      await ctx.answerInlineQuery(errorResult);
+    }
   }
 }
 
@@ -78,8 +93,6 @@ async function inlineQueryResultHandler(
       console.log(error);
     } else if (error instanceof ServerError) {
       await bot.telegram.sendMessage(chosenInlineResult.from.id, error.message);
-    } else {
-      console.log(error);
     }
   }
 }
