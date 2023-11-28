@@ -13,7 +13,7 @@ async function handleError(ctx: CustomContext, error: any) {
     await ctx.reply("Please use /result to start again.");
     return ctx.scene.leave();
   } else if (error instanceof ServerError) {
-    await ctx.reply("KTU servers are down right now. Please try again later.");
+    await ctx.reply(error.message);
   } else if (error instanceof DataNotFoundError) {
     await ctx.reply(error.message);
   } else {
