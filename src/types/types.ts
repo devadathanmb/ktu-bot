@@ -39,6 +39,12 @@ interface Announcement {
   attachments: Attachment[];
 }
 
+interface AcademicCalendar {
+  id: number;
+  title: string;
+  encryptId: string;
+}
+
 export {
   ResultDetails,
   ResultSummary,
@@ -46,4 +52,5 @@ export {
   Course,
   Attachment,
   Announcement,
+  AcademicCalendar,
 };

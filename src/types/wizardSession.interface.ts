@@ -17,4 +17,8 @@ export interface WizardSessionData extends Scenes.WizardSessionData {
   encryptId: string;
   announcementMsgId: number;
   announcements: any[];
+
+  // academic calendar stuff
+  calendarMsgId: number;
+  calendars: any[];
 }
