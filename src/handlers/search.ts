@@ -8,9 +8,9 @@ Type <code>@ktu_results_bot query</code> in the bot chat and then choose the not
 
 <b>Examples:</b>
 
-<code>@ktu_results_bot timetable</code> : To search for timetable notifications
+<code>@ktu_results_bot btech</code> : To search for btech related notifications
 
-<code>@ktu_results_bot calendar</code> : To search for academic calendar notifications
+<code>@ktu_results_bot exam registration</code> : To search for exam registration related notifications
 
 <i>Copy the above examples and paste it in the bot chat to see the results.</i>
 `;
