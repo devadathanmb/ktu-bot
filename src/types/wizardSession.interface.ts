@@ -1,4 +1,5 @@
 import { Scenes } from "telegraf";
+import { AcademicCalendar, Announcement, Timetable } from "./types";
 
 export interface WizardSessionData extends Scenes.WizardSessionData {
   courseId: number;
@@ -21,4 +22,8 @@ export interface WizardSessionData extends Scenes.WizardSessionData {
   // academic calendar stuff
   calendarMsgId: number;
   calendars: any[];
+
+  // timetable stuff
+  timetableMsgId: number;
+  timetables: any[];
 }
