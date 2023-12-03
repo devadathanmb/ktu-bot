@@ -45,6 +45,14 @@ interface AcademicCalendar {
   encryptId: string;
 }
 
+interface Timetable {
+  id: number;
+  title: string;
+  encryptId: string;
+  details: string;
+  fileName: string;
+}
+
 export {
   ResultDetails,
   ResultSummary,
@@ -53,4 +61,5 @@ export {
   Attachment,
   Announcement,
   AcademicCalendar,
+  Timetable
 };
