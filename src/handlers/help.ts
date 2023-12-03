@@ -10,11 +10,13 @@ async function help(ctx: CustomContext) {
 
 /result - Fetch your exam results
 
-/cancel - Cancel ongoing result/notifications/calendar lookup
+/cancel - Cancel ongoing lookup process
 
-/notifications - Get the latest KTU notifications
+/notifications - Get published KTU notifications
 
-/calendar - Get the KTU academic calendars
+/calendar - Get published KTU academic calendars
+
+/timetable - Get published KTU exam time tables 
 
 /subscribe - Subscribe to recieve new KTU notifications
 
