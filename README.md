@@ -3,7 +3,7 @@
 ![Deploy](https://github.com/devadathanmb/ktu-bot/actions/workflows/build-deploy.yml/badge.svg)
 ![CI](https://github.com/devadathanmb/ktu-bot/actions/workflows/ci.yml/badge.svg)
 
-Welcome to the KTU Bot! This Telegram bot helps students check their exam results, find latest KTU notifications and alert users when new notifications arrive.
+Welcome to the KTU Bot! This Telegram bot helps students check their exam results, find latest KTU notifications, academic calendars, exam time tables and alert users when new notifications arrive.
 
 Find the bot [here](https://t.me/ktu_results_bot)
 
@@ -11,6 +11,8 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 - **Check Results**: Use the `/result` command to fetch your exam results.
 - **Download latest KTU notifications**: Use the `/notifications` command to fetch KTU notifications and download them.
+- **Dowbload published academic calendars**: Use the `/calendar` command to fetch published KTU academic calendars and download them.
+- **Download exam time tables**: Use the `/timetable` command to fetch published KTU exam time tables and download them.
 - **Subscribe to latest KTU notifications**: Use the `/subscribe` command to recieve new notifications as they arrive.
 - **Help**: Get help using the `/help` command.
 - **Live search notifications**: Live search and find KTU notifications using _inline queries_
@@ -24,6 +26,10 @@ Find the bot [here](https://t.me/ktu_results_bot)
 - `/result`: Fetch your exam results.
 
 - `/notifications`: Find and download latest KTU notifications.
+
+- `/calendar`: Find and download published KTU academic calendars.
+
+- `/timetable`: Find and download published KTU exam time tables.
 
 - `/subscribe`: Subscribe to recieve latest KTU notifications as they arrive.
 
@@ -43,7 +49,7 @@ eg: @ktu_results_bot calendar : This returns all the results that matches word "
 
 ## Local development setup
 
-*Note: If you don't want or don't want to work on the `notification` feature and don't want to setup the database, then just comment out the corresponding calls in `app.ts` and skip the **firebase** configuration part below.*
+_Note: If you don't want or don't want to work on the `notification` feature and don't want to setup the database, then just comment out the corresponding calls in `app.ts` and skip the **firebase** configuration part below._
 
 ### Running Locally (Without Docker)
 
