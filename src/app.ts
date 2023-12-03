@@ -10,11 +10,13 @@ import code from "./handlers/code";
 import notifications from "./handlers/notifications";
 import subscribe from "./handlers/subscribe";
 import unsubscribe from "./handlers/unsubscribe";
+import timetable from "./handlers/timetable";
 import defaultHandler from "./handlers/defaultHandler";
 import { Scenes, session } from "telegraf";
 import resultWizard from "./scenes/resultWizard";
 import academicCalendarWizard from "./scenes/calendarWizard";
 import announcementWizard from "./scenes/announcementWizard";
+import timetableWizard from "./scenes/timeTableWizard";
 import { CustomContext } from "./types/customContext.type";
 import availableCommands from "./constants/availableCommands";
 import { initDb } from "./db/initDb";
@@ -32,6 +34,7 @@ const stage = new Scenes.Stage<CustomContext>([
   resultWizard,
   announcementWizard,
   academicCalendarWizard,
+  timetableWizard,
 ]);
 
 bot.use(loggingMiddleware);
@@ -49,6 +52,7 @@ bot.command("cancel", async (ctx) => await cancel(ctx));
 bot.command("notifications", async (ctx) => await notifications(ctx));
 bot.command("subscribe", async (ctx) => await subscribe(ctx, db));
 bot.command("unsubscribe", async (ctx) => await unsubscribe(ctx, db));
+bot.command("timetable", async (ctx) => await timetable(ctx));
 bot.command("calendar", async (ctx) => await calendar(ctx));
 bot.on("inline_query", async (ctx) => await searchInlineQueryHandler(ctx));
 bot.on("chosen_inline_result", async (ctx) => {
