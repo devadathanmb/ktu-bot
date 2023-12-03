@@ -12,9 +12,11 @@ I can help you get your exam results, latest KTU notifications and more!
 
 /help - Get help
 
-/notifications - Get the latest KTU notifications
+/notifications - Get published KTU notifications
 
-/calendar - Get the KTU academic calendars
+/calendar - Get published KTU academic calendars
+
+/timetable - Get published KTU exam time tables
 
 /subscribe - Subscribe to recieve new KTU notifications
 
