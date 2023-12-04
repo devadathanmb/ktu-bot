@@ -49,10 +49,22 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
       const file = await fetchAttachment(chosenCalendar.encryptId);
       const fileBuffer = Buffer.from(file, "base64");
 
-      await ctx.replyWithDocument({
-        source: fileBuffer,
-        filename: "calendar.pdf",
-      });
+      const captionMsg = `
+<b>Title:</b> ${chosenCalendar.title}
+
+<b>Date:</b> ${chosenCalendar.date}
+`;
+
+      await ctx.replyWithDocument(
+        {
+          source: fileBuffer,
+          filename: chosenCalendar.attachmentName,
+        },
+        {
+          caption: captionMsg,
+          parse_mode: "HTML",
+        },
+      );
 
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       return await ctx.scene.leave();

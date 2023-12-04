@@ -2,6 +2,7 @@ import { axios } from "../config/axiosConfig";
 import { TIMETABLE_URL } from "../constants/constants";
 import { Timetable } from "../types/types";
 import ServerError from "../errors/ServerError";
+import formatDate from "../utils/formatDate";
 
 async function fetchTimetables(
   pageNumber: number,
@@ -18,11 +19,13 @@ async function fetchTimetables(
       id: obj.id,
       title: obj.timeTableTitle,
       encryptId: obj.encryptId,
+      date: formatDate(obj.modifiedDate.split("T")[0]),
       fileName: obj.fileName,
     }));
 
     return relevantData;
   } catch (error: any) {
+    console.log(error);
     throw new ServerError();
   }
 }

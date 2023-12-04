@@ -47,10 +47,19 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       const file = await fetchAttachment(chosenTimetable.encryptId);
       const fileBuffer = Buffer.from(file, "base64");
 
-      await ctx.replyWithDocument({
-        source: fileBuffer,
-        filename: chosenTimetable.fileName,
-      });
+      const captionMsg = `
+<b>Title:</b> ${chosenTimetable.title}
+
+<b>Date:</b> ${chosenTimetable.date}
+`;
+
+      await ctx.replyWithDocument(
+        {
+          source: fileBuffer,
+          filename: chosenTimetable.fileName,
+        },
+        { caption: captionMsg, parse_mode: "HTML" },
+      );
 
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       return await ctx.scene.leave();
