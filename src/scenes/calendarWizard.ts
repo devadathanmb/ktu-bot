@@ -55,6 +55,13 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
 <b>Date:</b> ${chosenCalendar.date}
 `;
 
+      // Some academic calendars do not have attachments
+      if (!chosenCalendar.attachmentId) {
+        await ctx.reply("No attachment found for this academic calendar.");
+        await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+        return await ctx.scene.leave();
+      }
+
       await ctx.replyWithDocument(
         {
           source: fileBuffer,

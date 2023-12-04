@@ -44,6 +44,13 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       const waitingMsg = await ctx.reply("Fetching time table.. Please wait..");
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
+      // Some time tables do not have attachments
+      if (!chosenTimetable.attachmentId) {
+        await ctx.reply("No attachment found for this time table.");
+        await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+        return await ctx.scene.leave();
+      }
+
       const file = await fetchAttachment(chosenTimetable.encryptId);
       const fileBuffer = Buffer.from(file, "base64");
 

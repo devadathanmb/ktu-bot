@@ -42,6 +42,7 @@ interface Announcement {
 interface AcademicCalendar {
   id: number;
   title: string;
+  attachmentId: number;
   date: string;
   attachmentName: string;
   encryptId: string;
@@ -49,6 +50,7 @@ interface AcademicCalendar {
 
 interface Timetable {
   id: number;
+  attachmentId: number;
   title: string;
   encryptId: string;
   details: string;

@@ -20,6 +20,7 @@ async function fetchAcademicCalendars(
       title: obj.academicCalendarTitle,
       date: formatDate(obj.modifiedDate.split("T")[0]),
       attachmentName: obj.attachmentName,
+      attachmentId: obj.attachmentId,
       encryptId: obj.encryptAttachmentId,
     }));
 

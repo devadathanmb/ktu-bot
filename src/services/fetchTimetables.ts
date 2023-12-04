@@ -19,6 +19,7 @@ async function fetchTimetables(
       id: obj.id,
       title: obj.timeTableTitle,
       encryptId: obj.encryptId,
+      attachmentId: obj.attachmentId,
       date: formatDate(obj.modifiedDate.split("T")[0]),
       fileName: obj.fileName,
     }));
