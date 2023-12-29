@@ -166,6 +166,42 @@ _Note: If you don't want or don't want to work on the `notification` feature and
 
 The bot should now be running and accessible on Telegram.
 
+## Production setup
+
+This bot makes use of Telegram bot API's [webhook](https://core.telegram.org/bots/webhooks) mechanism in production.
+
+This is because of certain performance benefits that webhook offers with high concurrent load during peak times. For more info see [this](https://grammy.dev/guide/deployment-types#how-to-use-webhooks).
+
+**NOTE : Using webhooks in production is optional but recommended if your bot has heavy concurrent traffic. If you don't want to setup webhooks, just follow the above development setup guide and you are good to go.**
+
+### Pre-requisites
+
+To run the bot using webhooks in production, some pre-requisites are required. They are mentioned below:
+
+- A VPS
+- A domain
+- SSL certificate for the domain (you can use [let's encrypt](https://letsencrypt.org/) for that)
+- Docker
+- A reverse proxy (like [nginx](https://www.nginx.com/))
+
+**NOTE : The below guide makes use of _nginx_ as the reverse proxy and assumes that you have reverse proxy configured for the webhook endpoint with HTTPS traffic handling**
+
+1. Set up an nginx reverse proxy for the webhook endpoint. See [this](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for more information. Checkout basic example in [webhook.conf](./webhook.conf)
+
+2. Clone the repository using
+
+   ```bash
+   git clone https://github.com/devadathanmb/ktu-bot.git && cd ktu-bot/
+   ```
+
+3. Set `ENV_TYPE=PRODUCTION` in `.env` file. See [env.example](./env.example)
+
+4. Build and run the docker using `docker compose up -d`
+
+5. Start the nginx server (eg : `sudo systemctl restart nginx`)
+
+That's it. Your bot should be running now in webhook mode.
+
 ## Contributing
 
 If you encounter any issues, have feature suggestions, or want to contribute to the project, please feel free to fork and make a PR.
