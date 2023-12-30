@@ -58,6 +58,11 @@ interface Timetable {
   fileName: string;
 }
 
+interface Command {
+  command: string;
+  description: string;
+}
+
 export {
   ResultDetails,
   ResultSummary,
@@ -67,4 +72,5 @@ export {
   Announcement,
   AcademicCalendar,
   Timetable,
+  Command,
 };

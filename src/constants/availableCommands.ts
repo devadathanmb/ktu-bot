@@ -1,7 +1,5 @@
-interface Command {
-  command: string;
-  description: string;
-}
+import { Command } from "../types/types";
+
 const availableCommands: Command[] = [
   { command: "start", description: "Start the bot" },
   { command: "help", description: "Show help message" },
