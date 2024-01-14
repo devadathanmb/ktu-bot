@@ -1,22 +1,41 @@
 import { Firestore } from "firebase-admin/firestore";
 import { CustomContext } from "../types/customContext.type";
+import { FILTERS } from "../constants/constants";
+import { Markup } from "telegraf";
+import deleteMessage from "../utils/deleteMessage";
 
 async function subscribe(ctx: CustomContext, db: Firestore) {
+  const waitingMsg = await ctx.reply("Please wait...");
   const chatId = ctx.chat!.id;
-  if (!chatId) {
-    await ctx.reply("Chat id not found");
-    throw new Error("Chat id not found");
-  }
   try {
     const usersRef = db.collection("subscribedUsers").doc(chatId.toString());
     const doc = await usersRef.get();
-    if (!doc.exists) {
-      await usersRef.set({
-        chatId,
-      });
-      await ctx.reply("You are now subscribed to notifications");
+    if (doc.exists) {
+      await ctx.reply(
+        "You are already subscribed to notifications.\n\nUse /changefilter to change your notification filter."
+      );
+      await deleteMessage(ctx, waitingMsg.message_id);
     } else {
-      await ctx.reply("You are already subscribed to notifications");
+      const msg = `
+Choose the type of notifications you want to receive. Please select <b>ALL NOTIFCATIONS</b> if you want to receive all notifications.
+
+Otherwise, select the specific course you want to receive notifications for.
+
+Choose a filter from the options below:
+`;
+      const filterButtons = Object.keys(FILTERS).map((filter) => ({
+        text: FILTERS[filter],
+        callback_data: `filter_${filter}`,
+      }));
+
+      filterButtons.push({
+        text: "Cancel operation ❌",
+        callback_data: "filter_cancel",
+      });
+
+      const keyboard = Markup.inlineKeyboard(filterButtons, { columns: 2 });
+      await ctx.replyWithHTML(msg, keyboard);
+      await deleteMessage(ctx, waitingMsg.message_id);
     }
   } catch (err) {
     console.log(err);
