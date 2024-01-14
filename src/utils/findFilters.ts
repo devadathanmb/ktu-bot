@@ -1,4 +1,4 @@
-import { AVAILABLE_FILTERS } from "../constants/constants";
+import { FILTERS_REGEX } from "../constants/constants";
 // This function will find the list of course filters based on the input text message
 // using basic string matching
 
@@ -15,9 +15,9 @@ function findFilters(msg: string): Array<string> {
   // Return the list of matched filters
   let matchedFilters: Array<string> = [];
 
-  Object.keys(AVAILABLE_FILTERS).forEach((filter) => {
+  Object.keys(FILTERS_REGEX).forEach((filter) => {
     if (lowerCaseMsg.search(new RegExp(filter)) !== -1) {
-      matchedFilters.push(AVAILABLE_FILTERS[filter]);
+      matchedFilters.push(FILTERS_REGEX[filter]);
     }
   });
 

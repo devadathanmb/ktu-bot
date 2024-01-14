@@ -12,7 +12,7 @@ const ACADEMIC_CALENDAR_URL =
 const TIMETABLE_URL =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon/timetable";
 
-const AVAILABLE_FILTERS: Record<string, string> = {
+const FILTERS_REGEX: Record<string, string> = {
   "b\\.? ?tech": "btech",
   "m\\.? ?tech": "mtech",
   "\\bmca\\b": "mca",
@@ -51,6 +51,6 @@ export {
   ATTACHMENT_URL,
   ACADEMIC_CALENDAR_URL,
   TIMETABLE_URL,
-  AVAILABLE_FILTERS,
+  FILTERS_REGEX,
   FILTERS,
 };
