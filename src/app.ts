@@ -76,7 +76,7 @@ const launchBot = async () => {
     if (bot)
       bot.telegram.getMe().then((res) => {
         console.log(
-          `Bot started in polling mode. Available at https://t.me/${res.username}`,
+          `Bot started in polling mode. Available at https://t.me/${res.username}`
         );
         notifyUserCron(db, bot);
       });
@@ -90,7 +90,7 @@ const launchBot = async () => {
     if (bot)
       bot.telegram.getMe().then((res) => {
         console.log(
-          `Bot started in webhook mode. Available at https://t.me/${res.username}`,
+          `Bot started in webhook mode. Available at https://t.me/${res.username}`
         );
         notifyUserCron(db, bot);
       });
