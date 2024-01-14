@@ -13,17 +13,18 @@ const TIMETABLE_URL =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon/timetable";
 
 const FILTERS_REGEX: Record<string, string> = {
-  "b\\.? ?tech": "btech",
-  "m\\.? ?tech": "mtech",
+  "\\bb\\.? ?tech": "btech",
+  "\\bm\\.? ?tech": "mtech",
   "\\bmca\\b": "mca",
   "\\bphd\\b": "phd",
-  "b\\.? ?des": "bdes",
+  "\\bb\\.? ?des": "bdes",
   "\\bmba\\b": "mba",
-  "b\\. ?arch": "barch",
-  "m\\.? ?arch": "march",
-  "b\\.? ?voc": "bvoc",
-  "m\\.? ?plan": "mplan",
+  "\\bb\\. ?arch": "barch",
+  "\\bm\\.? ?arch": "march",
+  "\\bb\\.? ?voc": "bvoc",
+  "\\bm\\.? ?plan": "mplan",
   "hotel management": "hmct",
+  "\\bbhmct": "hmct",
   "\\bmhm\\b": "mhm",
 };
 
