@@ -27,6 +27,22 @@ const AVAILABLE_FILTERS: Record<string, string> = {
   "\\bmhm\\b": "mhm",
 };
 
+const FILTERS: Record<string, string> = {
+  all: "ALL NOTIFICATIONS",
+  btech: "B.Tech",
+  mtech: "M.Tech",
+  mca: "MCA",
+  phd: "PhD",
+  bdes: "B.Des",
+  mba: "MBA",
+  barch: "B.Arch",
+  march: "M.Arch",
+  bvoc: "B.Voc",
+  mplan: "M.Plan",
+  hmct: "Hotel Management & Catering Technology",
+  mhm: "MHM",
+};
+
 export {
   COURSES_URL,
   PUBLISHED_RESULTS_URL,
@@ -36,4 +52,5 @@ export {
   ACADEMIC_CALENDAR_URL,
   TIMETABLE_URL,
   AVAILABLE_FILTERS,
+  FILTERS,
 };
