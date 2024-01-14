@@ -22,6 +22,8 @@ async function help(ctx: CustomContext) {
 
 /unsubscribe - Unsubscribe from receiving new KTU notifications
 
+/changefilter - Change the filter for notifications
+
 /code - Get the source code of this bot
 
 
