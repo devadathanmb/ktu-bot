@@ -32,10 +32,14 @@ async function broadcast(ctx: CustomContext, db: Firestore) {
     let batchPromises: Promise<any>[] = [];
     batch.forEach((chatId) => {
       batchPromises.push(
-        ctx.telegram.sendMessage(chatId, message, {
-          parse_mode: "HTML",
-          disable_web_page_preview: true,
-        })
+        ctx.telegram
+          .sendMessage(chatId, message, {
+            parse_mode: "HTML",
+            disable_web_page_preview: true,
+          })
+          .catch((error) => {
+            console.log(error);
+          })
       );
     });
 
