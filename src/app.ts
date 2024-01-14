@@ -28,6 +28,7 @@ import {
   searchInlineQueryHandler,
 } from "./handlers/searchInlineQueryHandler";
 import filterCallbackHandler from "./handlers/filterCallbackHandler";
+import broadcast from "./handlers/broadcast";
 
 const db = initDb();
 
@@ -57,6 +58,7 @@ bot.command("unsubscribe", async (ctx) => await unsubscribe(ctx, db));
 bot.command("timetable", async (ctx) => await timetable(ctx));
 bot.command("calendar", async (ctx) => await calendar(ctx));
 bot.command("changefilter", async (ctx) => await changeFilter(ctx, db));
+bot.command("broadcast", async (ctx) => await broadcast(ctx, db));
 bot.action(/filter_*/, async (ctx) => await filterCallbackHandler(ctx, db));
 bot.on("inline_query", async (ctx) => await searchInlineQueryHandler(ctx));
 bot.on("chosen_inline_result", async (ctx) => {
