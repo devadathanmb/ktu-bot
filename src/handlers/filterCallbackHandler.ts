@@ -40,7 +40,7 @@ async function filterCallbackHandler(ctx: CustomContext, db: Firestore) {
       );
     } else {
       await usersRef.set({
-        chaatId: chatId,
+        chatId: chatId,
         courseFilter: chosenFilter,
       });
       await ctx.replyWithHTML(
