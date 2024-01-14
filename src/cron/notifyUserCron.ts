@@ -6,6 +6,7 @@ import fetchAnnouncements from "../services/fetchAnnouncements";
 import { readFile, writeFile } from "fs";
 import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
+import findFilters from "../utils/findFilters";
 
 // Telegram API only allows 30 messages per second
 // So to be safe, we will send 25 messages per second
@@ -41,11 +42,11 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
             JSON.stringify(previousAnnouncements)
           ) {
             const previousAnnouncementIds = new Set(
-              previousAnnouncements.map((a: Announcement) => a.id),
+              previousAnnouncements.map((a: Announcement) => a.id)
             );
             diff = announcements.filter(
               (announcement: Announcement) =>
-                !previousAnnouncementIds.has(announcement.id),
+                !previousAnnouncementIds.has(announcement.id)
             );
             writeFile(
               "data.json",
@@ -55,16 +56,36 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 if (err) {
                   console.error(err);
                 }
-              },
+              }
             );
 
             // Get all the chatIds
             const usersRef = db.collection("subscribedUsers");
-            const snapshot = await usersRef.get();
-            const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
 
             // Loop through each new annoucement
             for (const announcement of diff) {
+              // Find the filters based on subject
+              const filters = findFilters(announcement.subject);
+
+              let snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>;
+
+              // Find all the chatIds that match the filters
+              // If the filters is "general", then send to all users
+              if (filters.length == 1 && filters[0] != "general") {
+                snapshot = await usersRef
+                  .where("courseFilter", "in", [...filters, "all"])
+                  .get();
+              } else {
+                snapshot = await usersRef.get();
+              }
+
+              const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
+
+              // If there are no chatIds for this filter, then skip this announcement
+              if (chatIds.length == 0) {
+                continue;
+              }
+
               const captionMsg = `
 
 <b>Subject:</b> ${announcement.subject ? announcement.subject : "N/A"}
@@ -79,7 +100,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 (attachment: Attachment) => ({
                   name: attachment.name,
                   encryptId: attachment.encryptId,
-                }),
+                })
               );
 
               // For each attachment, fetch the annoucement, send the attachment to each chatIds in batches
@@ -90,7 +111,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 // Send the attachment in batches
                 for (let i = 0; i < chatIds.length; i += batchSize) {
                   console.log(
-                    `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`,
+                    `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`
                   );
 
                   // Get the current batch
@@ -107,7 +128,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                             source: fileBuffer,
                             filename: attachment.name,
                           },
-                          { caption: captionMsg, parse_mode: "HTML" },
+                          { caption: captionMsg, parse_mode: "HTML" }
                         )
                         .catch(async (err: TelegramError) => {
                           // If the user has blocked the bot, or the account is deleted
@@ -116,7 +137,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                           // because this leads to bot slowing down
                           if (err.code === 403) {
                             console.log(
-                              `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`,
+                              `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`
                             );
                             try {
                               await usersRef.doc(chatId.toString()).delete();
@@ -124,7 +145,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                               console.log(error);
                             }
                           }
-                        }),
+                        })
                     );
                   });
 
@@ -133,13 +154,13 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
 
                   // Log the batch stats
                   console.log(
-                    `🔴 Batch ${batch} finished sending at ${new Date()}`,
+                    `🔴 Batch ${batch} finished sending at ${new Date()}`
                   );
                   console.log(`🔴 Successfully sent to ${batch.length} users`);
 
                   // Wait for the delay between batches
                   await new Promise((resolve) =>
-                    setTimeout(resolve, delayBetweenBatches),
+                    setTimeout(resolve, delayBetweenBatches)
                   );
                 }
               });
