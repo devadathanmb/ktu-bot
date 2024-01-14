@@ -26,6 +26,7 @@ async function broadcast(ctx: CustomContext, db: Firestore) {
   const batchSize = 25;
   const delay = 60000;
 
+  await ctx.reply("Broadcasting message...");
   for (let i = 0; i < chatIds.length; i += batchSize) {
     console.log(`⚡ Broadcasting batch ${i / batchSize + 1} at ${new Date()}`);
     const batch = chatIds.slice(i, i + batchSize);
@@ -47,6 +48,7 @@ async function broadcast(ctx: CustomContext, db: Firestore) {
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
   console.log(`⚡ Broadcast completed at ${new Date()}`);
+  await ctx.reply("Broadcast completed");
 }
 
 export default broadcast;
