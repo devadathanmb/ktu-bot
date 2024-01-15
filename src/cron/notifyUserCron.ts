@@ -71,7 +71,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
 
               // Find all the chatIds that match the filters
               // If the filters is "general", then send to all users
-              if (filters.length == 1 && filters[0] != "general") {
+              if (filters.length === 1 && filters[0] != "general") {
                 snapshot = await usersRef
                   .where("courseFilter", "in", [...filters, "all"])
                   .get();
@@ -82,7 +82,7 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
               const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
 
               // If there are no chatIds for this filter, then skip this announcement
-              if (chatIds.length == 0) {
+              if (chatIds.length === 0) {
                 continue;
               }
 
