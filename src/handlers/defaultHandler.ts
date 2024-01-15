@@ -18,6 +18,7 @@ async function defaultHandler(ctx: CustomContext) {
     }
   }
 
+  // Don't be too serious people
   const stickers = [
     "CAACAgUAAxkBAAIjEmWkDMdaYjUf4T6uEmKZqP3_XVt9AALEAwACGvW5VeOu79-faKRbNAQ",
     "CAACAgUAAxUAAWWkDMfX4fHEJcG-8rQB7GW7fgrhAAKsAQACxUqCEX-1oD1MyKOlNAQ",
@@ -27,6 +28,14 @@ async function defaultHandler(ctx: CustomContext) {
     "CAACAgEAAxkBAAIjEWWkDMdNH59blIPM4VHkEs7-T-nBAAK4AQACk6LJRl5lhi-hVIdMNAQ",
     "CAACAgEAAxkBAAIjEGWkDMf7GJvzwlPi_o_tgZFLRx3MAAJuAQACuNfRRthcVisvOTPVNAQ",
     "CAACAgEAAxkBAAIDG2WkDs1753AJ5CqxUEaKKeKXn_MfAALiAAMJxtFG486SznOuxC40BA",
+    "CAACAgEAAxkBAAIjb2Wku0h9ffSH5o3KrG-_G8n3ZX2_AAKaAQACF3HRRqGX8GqX54aMNAQ",
+    "CAACAgEAAxkBAAIjdGWku4a5-5D8WqiTrk3flix-f6K_AALXAQAC2-fJRmz1bGhY0X9JNAQ",
+    "CAACAgEAAxkBAAIjeWWku5C4aUyWv3yBYvt-pMdLItVgAALfAwACqLbIRvsns46pgYiUNAQ",
+    "CAACAgEAAxkBAAIjfmWku7Jdec5Q8H4SLFFl_oq4VbaoAALmDwACWBTJRv3vDkn03B_vNAQ",
+    "CAACAgEAAxkBAAIjg2Wku7vOEJEIit0R8iyE9nucMgi3AALkAQACSmLRRgXYcdEaCiaKNAQ",
+    "CAACAgEAAxkBAAIjiGWku9bjzu1ZiQABSnc3NZcL1eyZHwACUgEAAq890EaH6BJJGefbNTQE",
+    "CAACAgEAAxkBAAIjjWWku-5dQEvKuIdjUMSIyrXgh-C2AAKwAQAC_H3QRsdi-nhAGWSPNAQ",
+    "CAACAgUAAxkBAAIjkmWkvC9iQKmt-mpQeQZjcpSf2CnbAALHAAPFSoIR_HnuH9xjO_k0BA",
   ];
 
   const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
