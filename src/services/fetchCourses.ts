@@ -11,7 +11,7 @@ async function fetchCourses(): Promise<Course[]> {
       (course: { id: number; name: string }) => ({
         id: course.id,
         name: course.name,
-      }),
+      })
     );
     return relevantData;
   } catch (error: any) {

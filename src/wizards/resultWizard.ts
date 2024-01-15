@@ -15,7 +15,7 @@ const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.courseMsgId);
   await deleteMessage(ctx, ctx.scene.session.resultMsgId);
   await ctx.reply(
-    "Result look up cancelled.\n\nPlease use /result to start again.",
+    "Result look up cancelled.\n\nPlease use /result to start again."
   );
   return await ctx.scene.leave();
 };
@@ -25,7 +25,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   async (ctx: CustomContext) => {
     try {
       const waitingMsg = await ctx.reply(
-        "Fetching available courses.. Please wait..",
+        "Fetching available courses.. Please wait.."
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const courses = await fetchCourses();
@@ -45,17 +45,17 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   async (ctx) => {
     if (ctx.message) {
       return await ctx.reply(
-        "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup.",
+        "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup."
       );
     }
     await deleteMessage(ctx, ctx.scene.session.courseMsgId);
     const courseId: number = Number.parseInt(
-      (ctx.callbackQuery as any)?.data?.split("_")[1],
+      (ctx.callbackQuery as any)?.data?.split("_")[1]
     );
     ctx.scene.session.courseId = courseId;
     try {
       const waitingMsg = await ctx.reply(
-        "Fetching available results.. Please wait..",
+        "Fetching available results.. Please wait.."
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const publishedResults = await fetchPublishedResults(courseId);
@@ -64,7 +64,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         ({ resultName, examDefId, schemeId }) => ({
           text: resultName,
           callback_data: `${examDefId}_${schemeId}`,
-        }),
+        })
       );
       const keyboard = Markup.inlineKeyboard(resultButtons, { columns: 1 });
       const msg = await ctx.sendMessage("Choose a result:", keyboard);
@@ -92,7 +92,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     }
     ctx.scene.session.regisNo = regisNo.toUpperCase();
     await ctx.replyWithHTML(
-      "Please enter your Date of Birth\n\n<b>Format: DD/MM/YYYY</b> \n\n<b><i>Example: 01/01/2000</i></b>",
+      "Please enter your Date of Birth\n\n<b>Format: DD/MM/YYYY</b> \n\n<b><i>Example: 01/01/2000</i></b>"
     );
     return ctx.wizard.next();
   },
@@ -114,7 +114,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         ctx.scene.session.dob,
         ctx.scene.session.regisNo,
         ctx.scene.session.examDefId,
-        ctx.scene.session.schemeId,
+        ctx.scene.session.schemeId
       );
 
       const sgpa = calculateSgpa(resultDetails);
@@ -125,7 +125,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     } catch (error) {
       return await handleError(ctx, error);
     }
-  },
+  }
 );
 resultWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
 

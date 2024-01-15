@@ -10,7 +10,7 @@ const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   await deleteMessage(ctx, ctx.scene.session.calendarMsgId);
   await ctx.reply(
-    "Academic calendar look up cancelled.\n\nPlease use /calendar to start again.",
+    "Academic calendar look up cancelled.\n\nPlease use /calendar to start again."
   );
   return await ctx.scene.leave();
 };
@@ -29,20 +29,20 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
   async (ctx) => {
     if (ctx.message) {
       return await ctx.reply(
-        "Please use the buttons to choose a academic calendar.\n\nUse /cancel to cancel academic calendar lookup.",
+        "Please use the buttons to choose a academic calendar.\n\nUse /cancel to cancel academic calendar lookup."
       );
     }
     try {
       const chosenCalendarId = Number.parseInt(
-        (ctx.callbackQuery as any)?.data?.split("_")[1],
+        (ctx.callbackQuery as any)?.data?.split("_")[1]
       );
       const chosenCalendar: AcademicCalendar = ctx.scene.session.calendars.find(
-        (calendar: AcademicCalendar) => calendar.id === chosenCalendarId,
+        (calendar: AcademicCalendar) => calendar.id === chosenCalendarId
       );
 
       await ctx.deleteMessage(ctx.scene.session.calendarMsgId);
       const waitingMsg = await ctx.reply(
-        "Fetching academic calendar.. Please wait..",
+        "Fetching academic calendar.. Please wait.."
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
@@ -70,7 +70,7 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
         {
           caption: captionMsg,
           parse_mode: "HTML",
-        },
+        }
       );
 
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
@@ -78,18 +78,18 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
     } catch (error) {
       return await handleError(ctx, error);
     }
-  },
+  }
 );
 
 async function showAcademicCalendars(ctx: CustomContext) {
   try {
     const waitingMsg = await ctx.reply(
-      "Fetching academic calendars.. Please wait..",
+      "Fetching academic calendars.. Please wait.."
     );
     ctx.scene.session.waitingMsgId = waitingMsg.message_id;
     const calendars = await fetchAcademicCalendars(
       ctx.scene.session.pageNumber,
-      10,
+      10
     );
     const calendarButtons = calendars.map(({ id, title }: any) => ({
       text: title,
@@ -101,7 +101,7 @@ async function showAcademicCalendars(ctx: CustomContext) {
       [...calendarButtons, nextPageButton, prevPageButton],
       {
         columns: 1,
-      },
+      }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     const msg = await ctx.sendMessage("Choose an academic calendar:", keyboard);

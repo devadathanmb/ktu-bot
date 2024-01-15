@@ -1,5 +1,6 @@
 // Handler to broadcast messages to all subscribed users
 // Only to be used by admin
+// This current implementation is blocking the main thread, will need to be fixed in future
 import { Firestore } from "firebase-admin/firestore";
 import { CustomContext } from "../types/customContext.type";
 

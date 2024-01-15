@@ -10,7 +10,7 @@ const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   await deleteMessage(ctx, ctx.scene.session.timetableMsgId);
   await ctx.reply(
-    "Time table look up cancelled.\n\nPlease use /timetable to start again.",
+    "Time table look up cancelled.\n\nPlease use /timetable to start again."
   );
   return await ctx.scene.leave();
 };
@@ -29,15 +29,15 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
   async (ctx) => {
     if (ctx.message) {
       return await ctx.reply(
-        "Please use the buttons to choose a time table.\n\nUse /cancel to cancel time table lookup.",
+        "Please use the buttons to choose a time table.\n\nUse /cancel to cancel time table lookup."
       );
     }
     try {
       const chosenTimetableid = Number.parseInt(
-        (ctx.callbackQuery as any)?.data?.split("_")[1],
+        (ctx.callbackQuery as any)?.data?.split("_")[1]
       );
       const chosenTimetable: Timetable = ctx.scene.session.timetables.find(
-        (timetable: Timetable) => timetable.id === chosenTimetableid,
+        (timetable: Timetable) => timetable.id === chosenTimetableid
       );
 
       await ctx.deleteMessage(ctx.scene.session.timetableMsgId);
@@ -65,7 +65,7 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
           source: fileBuffer,
           filename: chosenTimetable.fileName,
         },
-        { caption: captionMsg, parse_mode: "HTML" },
+        { caption: captionMsg, parse_mode: "HTML" }
       );
 
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
@@ -73,7 +73,7 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
     } catch (error) {
       return await handleError(ctx, error);
     }
-  },
+  }
 );
 
 async function showTimetables(ctx: CustomContext) {
@@ -91,7 +91,7 @@ async function showTimetables(ctx: CustomContext) {
       [...timetableButtons, nextPageButton, prevPageButton],
       {
         columns: 1,
-      },
+      }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     const msg = await ctx.sendMessage("Choose a time table:", keyboard);

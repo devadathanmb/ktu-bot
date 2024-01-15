@@ -15,7 +15,7 @@ async function unsubscribe(ctx: CustomContext, db: Firestore) {
       await ctx.reply("You are now unsubscribed from notifications");
     } else {
       await ctx.reply(
-        "You are not subscribed to notifications. Please use /subscribe to subscribe to notifications.",
+        "You are not subscribed to notifications. Please use /subscribe to subscribe to notifications."
       );
     }
   } catch (error) {

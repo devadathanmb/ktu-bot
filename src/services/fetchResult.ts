@@ -8,7 +8,7 @@ async function fetchResult(
   dob: string,
   regisNo: string,
   examDefId: number,
-  schemeId: number,
+  schemeId: number
 ): Promise<{ summary: ResultSummary; resultDetails: ResultDetails[] }> {
   try {
     const payload = {
@@ -25,7 +25,7 @@ async function fetchResult(
         courseName,
         grade,
         credits,
-      }),
+      })
     );
 
     const firstName = response.data.firstName;
