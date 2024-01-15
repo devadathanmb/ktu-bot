@@ -10,7 +10,7 @@ function formatDate(date: string) {
     .format(new Date(date))
     .toString();
   formattedDate = formattedDate.concat(
-    ` (${date.split("-").reverse().join("/")})`,
+    ` (${date.split("-").reverse().join("/")})`
   );
   return formattedDate;
 }

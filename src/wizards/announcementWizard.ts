@@ -10,7 +10,7 @@ const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   await deleteMessage(ctx, ctx.scene.session.announcementMsgId);
   await ctx.reply(
-    "Notifications look up cancelled.\n\nPlease use /notifications to start again.",
+    "Notifications look up cancelled.\n\nPlease use /notifications to start again."
   );
   return await ctx.scene.leave();
 };
@@ -29,29 +29,29 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
   async (ctx) => {
     if (ctx.message) {
       return await ctx.reply(
-        "Please use the buttons to choose a notification.\n\nUse /cancel to cancel notifcations lookup.",
+        "Please use the buttons to choose a notification.\n\nUse /cancel to cancel notifcations lookup."
       );
     }
     try {
       const chosenAnnouncementId = Number.parseInt(
-        (ctx.callbackQuery as any)?.data?.split("_")[1],
+        (ctx.callbackQuery as any)?.data?.split("_")[1]
       );
       const chosenAnnouncement: Announcement =
         ctx.scene.session.announcements.find(
           (announcement: Announcement) =>
-            announcement.id == chosenAnnouncementId,
+            announcement.id == chosenAnnouncementId
         );
 
       const attachments: Attachment[] = chosenAnnouncement.attachments.map(
         (attachment: Attachment) => ({
           name: attachment.name,
           encryptId: attachment.encryptId,
-        }),
+        })
       );
 
       await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
       const waitingMsg = await ctx.reply(
-        "Fetching notification.. Please wait..",
+        "Fetching notification.. Please wait.."
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
@@ -90,7 +90,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
             source: fileBuffer,
             filename: attachment.name,
           },
-          { caption: captionMsg, parse_mode: "HTML" },
+          { caption: captionMsg, parse_mode: "HTML" }
         );
       }
 
@@ -99,18 +99,18 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
     } catch (error) {
       return await handleError(ctx, error);
     }
-  },
+  }
 );
 
 async function showAnnouncements(ctx: CustomContext) {
   try {
     const waitingMsg = await ctx.reply(
-      "Fetching notifications.. Please wait..",
+      "Fetching notifications.. Please wait.."
     );
     ctx.scene.session.waitingMsgId = waitingMsg.message_id;
     const announcements = await fetchAnnouncements(
       ctx.scene.session.pageNumber,
-      10,
+      10
     );
     const announcementButtons = announcements.map(({ id, subject }: any) => ({
       text: subject,
@@ -122,7 +122,7 @@ async function showAnnouncements(ctx: CustomContext) {
       [...announcementButtons, nextPageButton, prevPageButton],
       {
         columns: 1,
-      },
+      }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     const msg = await ctx.sendMessage("Choose a notification:", keyboard);

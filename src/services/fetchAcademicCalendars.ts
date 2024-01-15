@@ -6,7 +6,7 @@ import formatDate from "../utils/formatDate";
 
 async function fetchAcademicCalendars(
   pageNumber: number,
-  dataSize: number,
+  dataSize: number
 ): Promise<AcademicCalendar[]> {
   try {
     const payload = {

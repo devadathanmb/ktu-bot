@@ -7,7 +7,7 @@ import formatDate from "../utils/formatDate";
 async function fetchAnnouncements(
   pageNumber: number,
   dataSize: number,
-  searchText = "",
+  searchText = ""
 ): Promise<Announcement[]> {
   try {
     const payload = {

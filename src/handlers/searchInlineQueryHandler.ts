@@ -56,7 +56,7 @@ async function searchInlineQueryHandler(ctx: CustomContext) {
 
 async function inlineQueryResultHandler(
   chosenInlineResult: ChosenInlineResult,
-  bot: Telegraf<CustomContext>,
+  bot: Telegraf<CustomContext>
 ) {
   try {
     const query = chosenInlineResult.query;
@@ -70,7 +70,7 @@ async function inlineQueryResultHandler(
       .then((msg) => msg.message_id);
     const announcements = await fetchAnnouncements(0, 20, query);
     const chosenAnnouncement = announcements.find(
-      (announcement) => announcement.id === Number(id),
+      (announcement) => announcement.id === Number(id)
     );
     const attachments = chosenAnnouncement!.attachments;
     if (attachments.length == 0) {

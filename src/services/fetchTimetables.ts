@@ -6,7 +6,7 @@ import formatDate from "../utils/formatDate";
 
 async function fetchTimetables(
   pageNumber: number,
-  dataSize: number,
+  dataSize: number
 ): Promise<Timetable[]> {
   try {
     const payload = {
