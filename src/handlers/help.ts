@@ -41,7 +41,9 @@ If you encounter any issues, have feature suggestions, or want to contribute to 
 Thanks for using this bot!
 `;
 
-  await ctx.replyWithHTML(helpMessage);
+  await ctx.replyWithHTML(helpMessage, {
+    disable_web_page_preview: true,
+  });
 }
 
 export default help;
