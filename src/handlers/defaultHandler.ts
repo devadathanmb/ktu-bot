@@ -18,13 +18,6 @@ async function defaultHandler(ctx: CustomContext) {
     }
   }
 
-  /*
-  const quote = randomQuotes.default();
-  const message = `<i>${quote.body}</i>\n
-  - <i>${quote.author}</i>`;
-  */
-
-  // Sometimes life gets too hard, so I just use stickers
   const stickers = [
     "CAACAgUAAxkBAAIjEmWkDMdaYjUf4T6uEmKZqP3_XVt9AALEAwACGvW5VeOu79-faKRbNAQ",
     "CAACAgUAAxUAAWWkDMfX4fHEJcG-8rQB7GW7fgrhAAKsAQACxUqCEX-1oD1MyKOlNAQ",
@@ -45,15 +38,9 @@ async function defaultHandler(ctx: CustomContext) {
     reply_to_message_id: ctx.message!.message_id,
   });
 
-  /*
-  const quoteMsg = await ctx.replyWithHTML(message, {
-    reply_to_message_id: ctx.message!.message_id,
-  });
-  */
   await ctx.reply(invalidMsg);
 
   setTimeout(() => {
-    /* deleteMessage(ctx, quoteMsg.message_id); */
     deleteMessage(ctx, stickerMsg.message_id);
   }, 5000);
 }
