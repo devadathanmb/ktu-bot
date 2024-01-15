@@ -103,6 +103,58 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 })
               );
 
+              // Some notifications do not have attachments
+              // this is messy code, need to be refactored later
+              if (attachments.length === 0) {
+                for (let i = 0; i < chatIds.length; i += batchSize) {
+                  console.log(
+                    `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`
+                  );
+
+                  // Get the current batch
+                  const batch = chatIds.slice(i, i + batchSize);
+                  let batchPromises: Promise<any>[] = [];
+
+                  // Push each sendDocument promise to the batchPromises array
+                  batch.forEach((chatId) => {
+                    batchPromises.push(
+                      bot.telegram
+                        .sendMessage(chatId, captionMsg, { parse_mode: "HTML" })
+                        .catch(async (err: TelegramError) => {
+                          // If the user has blocked the bot, or the account is deleted
+                          // or the bot was removed from the group
+                          // then remove the chatid from the database
+                          // because this leads to bot slowing down
+                          if (err.code === 403) {
+                            console.log(
+                              `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`
+                            );
+                            try {
+                              await usersRef.doc(chatId.toString()).delete();
+                            } catch (error) {
+                              console.log(error);
+                            }
+                          }
+                        })
+                    );
+                  });
+
+                  // Wait for the batch to finish sending
+                  await Promise.all(batchPromises);
+
+                  // Log the batch stats
+                  console.log(
+                    `🔴 Batch ${batch} finished sending at ${new Date()}`
+                  );
+                  console.log(`🔴 Successfully sent to ${batch.length} users`);
+
+                  // Wait for the delay between batches
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, delayBetweenBatches)
+                  );
+                }
+              }
+
               // For each attachment, fetch the annoucement, send the attachment to each chatIds in batches
               attachments.forEach(async (attachment: Attachment) => {
                 const file = await fetchAttachment(attachment.encryptId);
