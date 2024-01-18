@@ -91,16 +91,23 @@ async function showAcademicCalendars(ctx: CustomContext) {
       ctx.scene.session.pageNumber,
       10
     );
-    const calendarButtons = calendars.map(({ id, title }: any) => ({
-      text: title,
-      callback_data: `calendar_${id}`,
-    }));
-    const nextPageButton = Markup.button.callback("Next Page", "next_page");
-    const prevPageButton = Markup.button.callback("Previous Page", "prev_page");
+    const calendarButtons = calendars.map(({ id, title }) =>
+      Markup.button.callback(title, `calendar_${id}`)
+    );
+    const nextPageButton = Markup.button.callback("Next Page ⏭️", "next_page");
+    const prevPageButton = Markup.button.callback(
+      "Previous Page ⏮️",
+      "prev_page"
+    );
     const keyboard = Markup.inlineKeyboard(
-      [...calendarButtons, nextPageButton, prevPageButton],
+      [...calendarButtons, prevPageButton, nextPageButton],
       {
-        columns: 1,
+        wrap(_btn, _index, currentRow) {
+          if (!currentRow.includes(prevPageButton)) {
+            return true;
+          }
+          return false;
+        },
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
