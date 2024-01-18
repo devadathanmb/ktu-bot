@@ -89,8 +89,12 @@ async function showTimetables(ctx: CustomContext) {
       "Previous Page ⏮️",
       "prev_page"
     );
+    const pageButton = Markup.button.callback(
+      `Page : ${ctx.scene.session.pageNumber + 1}`,
+      "page"
+    );
     const keyboard = Markup.inlineKeyboard(
-      [...timetableButtons, prevPageButton, nextPageButton],
+      [...timetableButtons, prevPageButton, pageButton, nextPageButton],
       {
         wrap(_btn, _index, currentRow) {
           if (!currentRow.includes(prevPageButton)) {
@@ -108,6 +112,10 @@ async function showTimetables(ctx: CustomContext) {
     await handleError(ctx, error);
   }
 }
+
+timetableWizard.action("page", async (ctx) => {
+  await ctx.answerCbQuery();
+});
 
 timetableWizard.action("prev_page", async (ctx) => {
   if (ctx.scene.session.pageNumber == 0) {

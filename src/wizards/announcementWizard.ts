@@ -120,8 +120,12 @@ async function showAnnouncements(ctx: CustomContext) {
       "Previous Page ⏮️",
       "prev_page"
     );
+    const pageInfoButton = Markup.button.callback(
+      `Page : ${ctx.scene.session.pageNumber + 1}`,
+      "page"
+    );
     const keyboard = Markup.inlineKeyboard(
-      [...announcementButtons, prevPageButton, nextPageButton],
+      [...announcementButtons, prevPageButton, pageInfoButton, nextPageButton],
       {
         wrap(_btn, _index, currentRow) {
           if (!currentRow.includes(prevPageButton)) {
@@ -139,6 +143,10 @@ async function showAnnouncements(ctx: CustomContext) {
     await handleError(ctx, error);
   }
 }
+
+announcementWizard.action("page", async (ctx) => {
+  return await ctx.answerCbQuery();
+});
 
 announcementWizard.action("prev_page", async (ctx) => {
   if (ctx.scene.session.pageNumber == 0) {
