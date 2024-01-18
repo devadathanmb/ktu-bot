@@ -60,10 +60,8 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       const publishedResults = await fetchPublishedResults(courseId);
       deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       const resultButtons = publishedResults.map(
-        ({ resultName, examDefId, schemeId }) => ({
-          text: resultName,
-          callback_data: `${examDefId}_${schemeId}`,
-        })
+        ({ resultName, examDefId, schemeId }) =>
+          Markup.button.callback(resultName, `${examDefId}_${schemeId}`)
       );
       const keyboard = Markup.inlineKeyboard(resultButtons, { columns: 1 });
       const msg = await ctx.sendMessage("Choose a result:", keyboard);
