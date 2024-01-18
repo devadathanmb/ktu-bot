@@ -99,8 +99,12 @@ async function showAcademicCalendars(ctx: CustomContext) {
       "Previous Page ⏮️",
       "prev_page"
     );
+    const pageInfoButton = Markup.button.callback(
+      `Page : ${ctx.scene.session.pageNumber + 1}`,
+      "page"
+    );
     const keyboard = Markup.inlineKeyboard(
-      [...calendarButtons, prevPageButton, nextPageButton],
+      [...calendarButtons, prevPageButton, pageInfoButton, nextPageButton],
       {
         wrap(_btn, _index, currentRow) {
           if (!currentRow.includes(prevPageButton)) {
@@ -118,6 +122,10 @@ async function showAcademicCalendars(ctx: CustomContext) {
     await handleError(ctx, error);
   }
 }
+
+academicCalendarWizard.action("page", async (ctx) => {
+  await ctx.answerCbQuery();
+});
 
 academicCalendarWizard.action("prev_page", async (ctx) => {
   if (ctx.scene.session.pageNumber == 0) {
