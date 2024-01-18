@@ -137,6 +137,6 @@ academicCalendarWizard.action("next_page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
-academicCalendarWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
+academicCalendarWizard.command("cancel", handleCancelCommand);
 
 export default academicCalendarWizard;

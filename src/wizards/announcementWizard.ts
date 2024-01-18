@@ -158,6 +158,6 @@ announcementWizard.action("next_page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
-announcementWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
+announcementWizard.command("cancel", handleCancelCommand);
 
 export default announcementWizard;

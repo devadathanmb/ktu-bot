@@ -127,6 +127,6 @@ timetableWizard.action("next_page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
-timetableWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
+timetableWizard.command("cancel", handleCancelCommand);
 
 export default timetableWizard;
