@@ -30,10 +30,9 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const courses = await fetchCourses();
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-      const courseButtons = courses.map(({ id, name }) => ({
-        text: name,
-        callback_data: `course_${id}`,
-      }));
+      const courseButtons = courses.map(({ id, name }) =>
+        Markup.button.callback(name, `course_${id}`)
+      );
       const keyboard = Markup.inlineKeyboard(courseButtons, { columns: 1 });
       const msg = await ctx.sendMessage("Choose a course:", keyboard);
       ctx.scene.session.courseMsgId = msg.message_id;
