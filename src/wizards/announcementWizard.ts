@@ -112,16 +112,23 @@ async function showAnnouncements(ctx: CustomContext) {
       ctx.scene.session.pageNumber,
       10
     );
-    const announcementButtons = announcements.map(({ id, subject }: any) => ({
-      text: subject,
-      callback_data: `announcement_${id}`,
-    }));
-    const nextPageButton = Markup.button.callback("Next Page", "next_page");
-    const prevPageButton = Markup.button.callback("Previous Page", "prev_page");
+    const announcementButtons = announcements.map(({ id, subject }) =>
+      Markup.button.callback(subject, `announcement_${id}`)
+    );
+    const nextPageButton = Markup.button.callback("Next Page ⏭️", "next_page");
+    const prevPageButton = Markup.button.callback(
+      "Previous Page ⏮️",
+      "prev_page"
+    );
     const keyboard = Markup.inlineKeyboard(
-      [...announcementButtons, nextPageButton, prevPageButton],
+      [...announcementButtons, prevPageButton, nextPageButton],
       {
-        columns: 1,
+        wrap(_btn, _index, currentRow) {
+          if (!currentRow.includes(prevPageButton)) {
+            return true;
+          }
+          return false;
+        },
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
