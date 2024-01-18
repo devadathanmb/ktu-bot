@@ -36,6 +36,10 @@ async function defaultHandler(ctx: CustomContext) {
     "CAACAgEAAxkBAAIjiGWku9bjzu1ZiQABSnc3NZcL1eyZHwACUgEAAq890EaH6BJJGefbNTQE",
     "CAACAgEAAxkBAAIjjWWku-5dQEvKuIdjUMSIyrXgh-C2AAKwAQAC_H3QRsdi-nhAGWSPNAQ",
     "CAACAgUAAxkBAAIjkmWkvC9iQKmt-mpQeQZjcpSf2CnbAALHAAPFSoIR_HnuH9xjO_k0BA",
+    "CAACAgEAAxkBAAIkAmWo82ZR8iaexHGcZDq3sNY8UvT9AAJWAQACzMHRRl4YPy05Xs2HNAQ",
+    "CAACAgUAAxUAAWWo82rpI38WV0jq6qMAARi8ukCQsQAC5QEAAuG8kQTvnIzSTjMkFjQE",
+    "CAACAgUAAxkBAAIkDGWo83NnPOrKvL8aFzpayI_6I1_TAALjAQAC4byRBMnaRVi-I79aNAQ",
+    "CAACAgUAAxkBAAIkG2Wo8_GT5h5BvRaBtywQWhpPkIuNAAI7BAACIlhAVVgi-y9wL25NNAQ",
   ];
 
   const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
