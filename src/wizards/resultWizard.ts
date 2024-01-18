@@ -124,6 +124,6 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     }
   }
 );
-resultWizard.command("cancel", (ctx) => handleCancelCommand(ctx));
+resultWizard.command("cancel", handleCancelCommand);
 
 export default resultWizard;
