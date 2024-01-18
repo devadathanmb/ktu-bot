@@ -81,16 +81,23 @@ async function showTimetables(ctx: CustomContext) {
     const waitingMsg = await ctx.reply("Fetching time tables.. Please wait..");
     ctx.scene.session.waitingMsgId = waitingMsg.message_id;
     const timetables = await fetchTimetables(ctx.scene.session.pageNumber, 10);
-    const timetableButtons = timetables.map(({ id, title }: any) => ({
-      text: title,
-      callback_data: `timetable_${id}`,
-    }));
-    const nextPageButton = Markup.button.callback("Next Page", "next_page");
-    const prevPageButton = Markup.button.callback("Previous Page", "prev_page");
+    const timetableButtons = timetables.map(({ id, title }) =>
+      Markup.button.callback(title, `timetable_${id}`)
+    );
+    const nextPageButton = Markup.button.callback("Next Page ⏭️", "next_page");
+    const prevPageButton = Markup.button.callback(
+      "Previous Page ⏮️",
+      "prev_page"
+    );
     const keyboard = Markup.inlineKeyboard(
-      [...timetableButtons, nextPageButton, prevPageButton],
+      [...timetableButtons, prevPageButton, nextPageButton],
       {
-        columns: 1,
+        wrap(_btn, _index, currentRow) {
+          if (!currentRow.includes(prevPageButton)) {
+            return true;
+          }
+          return false;
+        },
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
