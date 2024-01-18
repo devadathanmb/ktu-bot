@@ -84,11 +84,8 @@ async function showTimetables(ctx: CustomContext) {
     const timetableButtons = timetables.map(({ id, title }) =>
       Markup.button.callback(title, `timetable_${id}`)
     );
-    const nextPageButton = Markup.button.callback("Next Page ⏭️", "next_page");
-    const prevPageButton = Markup.button.callback(
-      "Previous Page ⏮️",
-      "prev_page"
-    );
+    const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
+    const prevPageButton = Markup.button.callback("Prev ⏮️", "prev_page");
     const pageButton = Markup.button.callback(
       `Page : ${ctx.scene.session.pageNumber + 1}`,
       "page"

@@ -115,11 +115,8 @@ async function showAnnouncements(ctx: CustomContext) {
     const announcementButtons = announcements.map(({ id, subject }) =>
       Markup.button.callback(subject, `announcement_${id}`)
     );
-    const nextPageButton = Markup.button.callback("Next Page ⏭️", "next_page");
-    const prevPageButton = Markup.button.callback(
-      "Previous Page ⏮️",
-      "prev_page"
-    );
+    const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
+    const prevPageButton = Markup.button.callback("Prev ⏮️", "prev_page");
     const pageInfoButton = Markup.button.callback(
       `Page : ${ctx.scene.session.pageNumber + 1}`,
       "page"
