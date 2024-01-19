@@ -12,20 +12,35 @@ const ACADEMIC_CALENDAR_URL =
 const TIMETABLE_URL =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon/timetable";
 
-const FILTERS_REGEX: Record<string, string> = {
-  "\\bb\\.? ?tech": "btech",
-  "\\bm\\.? ?tech": "mtech",
-  "\\bmca\\b": "mca",
-  "\\bphd\\b": "phd",
-  "\\bb\\.? ?des": "bdes",
-  "\\bmba\\b": "mba",
-  "\\bb\\. ?arch": "barch",
-  "\\bm\\.? ?arch": "march",
-  "\\bb\\.? ?voc": "bvoc",
-  "\\bm\\.? ?plan": "mplan",
-  "hotel management": "hmct",
-  "\\bbhmct": "hmct",
-  "\\bmhm\\b": "mhm",
+const FILTERS_REGEX: Record<string, Array<string>> = {
+  "\\bb\\.? ?tech": ["btech"],
+  "\\bm\\.? ?tech": ["mtech"],
+  "\\bmca\\b": ["mca"],
+  "\\bphd\\b": ["phd"],
+  "\\bb\\.? ?des": ["bdes"],
+  "\\bmba\\b": ["mba"],
+  "\\bb\\. ?arch": ["barch"],
+  "\\bm\\.? ?arch": ["march"],
+  "\\bb\\.? ?voc": ["bvoc"],
+  "\\bm\\.? ?plan": ["mplan"],
+  "hotel management": ["hmct"],
+  "\\bbhmct": ["hmct"],
+  "\\bmhm\\b": ["mhm"],
+  "(\\bug\\b)|(\\bundergraduate\\b)": [
+    "btech",
+    "bdes",
+    "barch",
+    "bvoc",
+    "hmct",
+  ],
+  "(\\bpg\\b)|(\\bpostgraduate\\b)": [
+    "mtech",
+    "mca",
+    "mba",
+    "march",
+    "mplan",
+    "mhm",
+  ],
 };
 
 const FILTERS: Record<string, string> = {
