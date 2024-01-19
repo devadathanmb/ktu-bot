@@ -71,12 +71,12 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
 
               // Find all the chatIds that match the filters
               // If the filters is "general", then send to all users
-              if (filters.length === 1 && filters[0] != "general") {
+              if (filters.length === 1 && filters[0] === "general") {
+                snapshot = await usersRef.get();
+              } else {
                 snapshot = await usersRef
                   .where("courseFilter", "in", [...filters, "all"])
                   .get();
-              } else {
-                snapshot = await usersRef.get();
               }
 
               const chatIds = snapshot.docs.map((doc) => doc.data().chatId);
