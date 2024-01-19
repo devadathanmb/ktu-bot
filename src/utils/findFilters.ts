@@ -17,7 +17,7 @@ function findFilters(msg: string): Array<string> {
 
   Object.keys(FILTERS_REGEX).forEach((filter) => {
     if (lowerCaseMsg.search(new RegExp(filter)) !== -1) {
-      matchedFilters.push(FILTERS_REGEX[filter]);
+      matchedFilters.push(...FILTERS_REGEX[filter]);
     }
   });
 
