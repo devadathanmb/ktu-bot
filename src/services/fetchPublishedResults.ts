@@ -39,6 +39,7 @@ async function fetchPublishedResults(
 
     return responseData;
   } catch (error: any) {
+    if (error instanceof DataNotFoundError) throw error;
     throw new ServerError();
   }
 }
