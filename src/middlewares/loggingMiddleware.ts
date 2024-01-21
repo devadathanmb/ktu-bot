@@ -10,7 +10,8 @@ const loggingMiddleware: Middleware<CustomContext> = async (ctx, next) => {
       ctx.from?.first_name ? ctx.from.first_name : ""
     } ${ctx.from?.last_name ? ctx.from.last_name : ""}  ID : ${ctx.from?.id}`
   );
-  console.log(ctx.message);
+  if (ctx.updateType === "message") console.log(ctx.message);
+  else if (ctx.updateType === "callback_query") console.log(ctx.callbackQuery);
   return next();
 };
 
