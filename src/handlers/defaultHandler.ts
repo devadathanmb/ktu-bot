@@ -3,6 +3,11 @@ import deleteMessage from "../utils/deleteMessage";
 /* const randomQuotes = require("random-quotes"); */
 
 async function defaultHandler(ctx: CustomContext) {
+  // Events like adding, removing memebers from groups are considered as messages
+  // For groups, only direct messages are considered
+  // Bot permission "can delete messages" should be unset for this to work
+  if (ctx.message!.chat.type !== "private" && !("text" in ctx.message!)) return;
+
   // I could'nt find a better way to do this
   if ("text" in ctx.message!) {
     if (
