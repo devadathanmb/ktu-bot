@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/app.js",
     "build": "npx tsc",
-    "dev": "tsc -w & nodemon dist/app.js"
+    "dev": "npx nodemon -w *.ts -e ts -x ts-node --files -H -T ./src/app.ts"
   },
   "nodemonConfig": {
     "ignore": [
@@ -19,6 +19,7 @@
     "@types/node": "^20.8.7",
     "@types/node-cron": "^3.0.10",
     "nodemon": "^3.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.2.2"
   },
   "dependencies": {
