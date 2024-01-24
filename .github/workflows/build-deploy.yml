@@ -1,4 +1,4 @@
-name: KTU Bot CI/CD
+name: KTU Bot build and deploy
 
 on:
   push:
