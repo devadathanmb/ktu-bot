@@ -1,5 +1,6 @@
 # KTU Bot
 
+![Made with telegrafjs](https://img.shields.io/badge/Made%20With-Telegraf.JS-%23E74625?style=flat&link=https%3A%2F%2Ftelegraf.js.org%2F)
 ![Deploy](https://github.com/devadathanmb/ktu-bot/actions/workflows/build-deploy.yml/badge.svg)
 ![CI](https://github.com/devadathanmb/ktu-bot/actions/workflows/ci.yml/badge.svg)
 
@@ -15,7 +16,8 @@ Find the bot [here](https://t.me/ktu_results_bot)
 - **Download exam time tables**: Use the `/timetable` command to fetch published KTU exam time tables and download them.
 - **Subscribe to latest KTU notifications**: Use the `/subscribe` command to recieve new notifications as they arrive.
 - **Help**: Get help using the `/help` command.
-- **Live search notifications**: Live search and find KTU notifications using _inline queries_
+- **Live search notifications**: Live search and find KTU notifications using _inline queries_.
+- **Set course filter for notifications** : Use /changefilter command to set course based filter for notifications.
 
 ## Commands
 
@@ -34,6 +36,8 @@ Find the bot [here](https://t.me/ktu_results_bot)
 - `/subscribe`: Subscribe to recieve latest KTU notifications as they arrive.
 
 - `/unsubscribe`: Unsubscribe from recieving KTU notifications.
+
+- `/changefilter`: Change currently set notification filter
 
 - `/cancel`: Cancel current process (only works when inside `/notifications` or `/result` wizard)
 
