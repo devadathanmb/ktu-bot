@@ -13,7 +13,7 @@ const axios = setupCache(Axios, {
 
 // KTU servers are known to be slow during high traffic
 // This results in telegram api timing out on their end due no response
-axios.defaults.timeout = 1000 * 30;
+axios.defaults.timeout = 1000 * 25;
 
 axios.interceptors.request.use((config) => {
   config.httpsAgent = agent;
