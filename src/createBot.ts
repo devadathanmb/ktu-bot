@@ -22,7 +22,6 @@ import { CustomContext } from "./types/customContext.type";
 import availableCommands from "./constants/availableCommands";
 import { initDb } from "./db/initDb";
 import loggingMiddleware from "./middlewares/loggingMiddleware";
-import broadcast from "./handlers/broadcast";
 import throttler from "./middlewares/throttler";
 import {
   inlineQueryResultHandler,
@@ -62,7 +61,6 @@ function createBot() {
 
   // Register handlers
   bot.start(async (ctx) => await start(ctx));
-  bot.command("broadcast", async (ctx) => await broadcast(ctx, db));
   bot.command("help", async (ctx) => await help(ctx));
   bot.command("search", async (ctx) => await search(ctx));
   bot.command("result", async (ctx) => await result(ctx));
