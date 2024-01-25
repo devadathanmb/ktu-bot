@@ -22,6 +22,7 @@ import { CustomContext } from "./types/customContext.type";
 import availableCommands from "./constants/availableCommands";
 import { initDb } from "./db/initDb";
 import loggingMiddleware from "./middlewares/loggingMiddleware";
+import throttler from "./middlewares/throttler";
 import notifyUserCron from "./cron/notifyUserCron";
 import {
   inlineQueryResultHandler,
@@ -39,6 +40,7 @@ const stage = new Scenes.Stage<CustomContext>([
   timetableWizard,
 ]);
 
+bot.use(throttler);
 bot.use(loggingMiddleware);
 bot.use(session());
 bot.use(stage.middleware());
@@ -97,8 +99,8 @@ const launchBot = async () => {
   }
 };
 
-launchBot();
-
 // Graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
+launchBot();
