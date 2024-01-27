@@ -7,13 +7,7 @@ import { readFile, writeFile } from "fs";
 import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
 import findFilters from "../utils/findFilters";
-
-// Telegram API only allows 30 messages per second
-// So to be safe, we will send 25 messages per second
-// And wait 1 minute between batches
-// This will not block the bot from receiving messages since everything is asynchronous
-const batchSize = 25;
-const delayBetweenBatches = 1000 * 60;
+import Bull = require("bull");
 
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job initialized");
@@ -103,118 +97,88 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 })
               );
 
-              // Some notifications do not have attachments
-              // this is messy code, need to be refactored later
+              // Create queue
+              const queue = new Bull("notify-user-queue");
+
+              // Add all the chatIds to the queue
+              for (let i = 0; i < chatIds.length; i++) {
+                await queue.add({
+                  chatId: chatIds[i],
+                });
+              }
+
+              // Consumer
               if (attachments.length === 0) {
-                for (let i = 0; i < chatIds.length; i += batchSize) {
-                  console.log(
-                    `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`
-                  );
-
-                  // Get the current batch
-                  const batch = chatIds.slice(i, i + batchSize);
-                  let batchPromises: Promise<any>[] = [];
-
-                  // Push each sendDocument promise to the batchPromises array
-                  batch.forEach((chatId) => {
-                    batchPromises.push(
-                      bot.telegram
-                        .sendMessage(chatId, captionMsg, { parse_mode: "HTML" })
-                        .catch(async (err: TelegramError) => {
-                          // If the user has blocked the bot, or the account is deleted
-                          // or the bot was removed from the group
-                          // then remove the chatid from the database
-                          // because this leads to bot slowing down
-                          if (err.code === 403) {
-                            console.log(
-                              `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`
-                            );
-                            try {
-                              await usersRef.doc(chatId.toString()).delete();
-                            } catch (error) {
-                              console.log(error);
-                            }
+                queue.process(async (job) => {
+                  const { chatId } = job.data;
+                  try {
+                    await bot.telegram.sendMessage(chatId, captionMsg, {
+                      parse_mode: "HTML",
+                    });
+                  } catch (error: any) {
+                    if (error instanceof TelegramError) {
+                      console.log(error);
+                      if (error.code === 429) {
+                        const retryAfter = error.parameters?.retry_after!;
+                        await new Promise((resolve) =>
+                          setTimeout(resolve, retryAfter * 1000 + 2000)
+                        );
+                        await job.retry();
+                      } else if (error.code === 403) {
+                        try {
+                          await usersRef.doc(chatId.toString()).delete();
+                          await job.remove();
+                        } catch (error) {
+                          console.log(error);
+                        }
+                      }
+                    }
+                  }
+                });
+              } else {
+                // fetch attachments
+                // send each attachment to each chatId
+                for (let i = 0; i < attachments.length; i++) {
+                  const file = await fetchAttachment(attachments[i].encryptId);
+                  const fileBuffer = Buffer.from(file, "base64");
+                  queue.process(async (job) => {
+                    const chatId = job.data.chatId;
+                    try {
+                      await bot.telegram.sendDocument(
+                        chatId,
+                        {
+                          source: fileBuffer,
+                          filename: attachments[i].name,
+                        },
+                        { caption: captionMsg, parse_mode: "HTML" }
+                      );
+                    } catch (error: any) {
+                      if (error instanceof TelegramError) {
+                        console.log(error);
+                        if (error.code === 429) {
+                          const retryAfter = error.parameters?.retry_after!;
+                          await new Promise((resolve) =>
+                            setTimeout(resolve, retryAfter * 1000 + 2000)
+                          );
+                          await job.retry();
+                        } else if (error.code === 403) {
+                          try {
+                            await usersRef.doc(chatId.toString()).delete();
+                            await job.remove();
+                          } catch (error) {
+                            console.log(error);
                           }
-                        })
-                    );
+                        }
+                      }
+                    }
                   });
-
-                  // Wait for the batch to finish sending
-                  await Promise.all(batchPromises);
-
-                  // Log the batch stats
-                  console.log(
-                    `🔴 Batch ${batch} finished sending at ${new Date()}`
-                  );
-                  console.log(`🔴 Successfully sent to ${batch.length} users`);
-
-                  // Wait for the delay between batches
-                  await new Promise((resolve) =>
-                    setTimeout(resolve, delayBetweenBatches)
-                  );
                 }
               }
 
-              // For each attachment, fetch the annoucement, send the attachment to each chatIds in batches
-              attachments.forEach(async (attachment: Attachment) => {
-                const file = await fetchAttachment(attachment.encryptId);
-                const fileBuffer = Buffer.from(file, "base64");
-
-                // Send the attachment in batches
-                for (let i = 0; i < chatIds.length; i += batchSize) {
-                  console.log(
-                    `🔴 Sending batch ${i / batchSize + 1} at ${new Date()}`
-                  );
-
-                  // Get the current batch
-                  const batch = chatIds.slice(i, i + batchSize);
-                  let batchPromises: Promise<any>[] = [];
-
-                  // Push each sendDocument promise to the batchPromises array
-                  batch.forEach((chatId) => {
-                    batchPromises.push(
-                      bot.telegram
-                        .sendDocument(
-                          chatId,
-                          {
-                            source: fileBuffer,
-                            filename: attachment.name,
-                          },
-                          { caption: captionMsg, parse_mode: "HTML" }
-                        )
-                        .catch(async (err: TelegramError) => {
-                          // If the user has blocked the bot, or the account is deleted
-                          // or the bot was removed from the group
-                          // then remove the chatid from the database
-                          // because this leads to bot slowing down
-                          if (err.code === 403) {
-                            console.log(
-                              `🔴 Telegram Error: 403. Removing chatId ${chatId} from database`
-                            );
-                            try {
-                              await usersRef.doc(chatId.toString()).delete();
-                            } catch (error) {
-                              console.log(error);
-                            }
-                          }
-                        })
-                    );
-                  });
-
-                  // Wait for the batch to finish sending
-                  await Promise.all(batchPromises);
-
-                  // Log the batch stats
-                  console.log(
-                    `🔴 Batch ${batch} finished sending at ${new Date()}`
-                  );
-                  console.log(`🔴 Successfully sent to ${batch.length} users`);
-
-                  // Wait for the delay between batches
-                  await new Promise((resolve) =>
-                    setTimeout(resolve, delayBetweenBatches)
-                  );
-                }
+              // Job completed event
+              queue.on("completed", async (job) => {
+                console.log(`✅ Message sent to ${job.data.chatId}`);
+                await job.remove();
               });
             }
           }
