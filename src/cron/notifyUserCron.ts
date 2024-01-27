@@ -117,7 +117,6 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                     });
                   } catch (error: any) {
                     if (error instanceof TelegramError) {
-                      console.log(error);
                       if (error.code === 429) {
                         const retryAfter = error.parameters?.retry_after!;
                         await new Promise((resolve) =>
@@ -154,7 +153,6 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                       );
                     } catch (error: any) {
                       if (error instanceof TelegramError) {
-                        console.log(error);
                         if (error.code === 429) {
                           const retryAfter = error.parameters?.retry_after!;
                           await new Promise((resolve) =>
