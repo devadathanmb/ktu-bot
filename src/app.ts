@@ -1,5 +1,7 @@
 import createBot from "./createBot";
 import notifyUserCron from "./cron/notifyUserCron";
+import Bull = require("bull");
+const notifyUserQueue = new Bull("notify-user-queue");
 
 // Create the bot and initialize the database
 const { bot, db } = createBot();
@@ -36,7 +38,13 @@ const launchBot = async () => {
 };
 
 // Graceful stop
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
+process.once("SIGINT", async () => {
+  bot.stop("SIGINT");
+  await notifyUserQueue.obliterate({ force: true });
+});
+process.once("SIGTERM", async () => {
+  bot.stop("SIGTERM");
+  await notifyUserQueue.obliterate({ force: true });
+});
 
 launchBot();
