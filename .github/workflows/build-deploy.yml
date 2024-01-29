@@ -48,8 +48,10 @@ jobs:
             docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }} ktu-bot:latest
             docker logs ktu-bot >> ~/bot.log || true
             docker stop ktu-bot || true
-            docker stop redis-queue || true
+            docker stop redis-queue-db || true
             docker rm ktu-bot || true
-            docker rm redis-queue || true
-            docker run -d --restart always -p 5000:5000 -e TZ=Asia/Kolkata -e ENV_TYPE=${{ secrets.ENV_TYPE }} -e ADMIN_ID=${{ secrets.ADMIN_ID }} -e WEBHOOK_DOMAIN=${{ secrets.WEBHOOK_DOMAIN }} -e WEBHOOK_PORT=${{ secrets.WEBHOOK_PORT }} -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" --name ktu-bot ktu-bot:latest
-            docker run -d --restart always -p 6379:6379 --name redis-queue redis
+            docker rm redis-queue-db || true
+            docker network rm ktu-bot-network || true
+            docker network create ktu-bot-network || true
+            docker run -d --restart always -p 6379:6379 --network ktu-bot --network-alias redis-queue-db --name redis-db redis
+            docker run -d --restart always -p 5000:5000 -e TZ=Asia/Kolkata --network ktu-bot -e ENV_TYPE=${{ secrets.ENV_TYPE }} -e ADMIN_ID=${{ secrets.ADMIN_ID }} -e WEBHOOK_DOMAIN=${{ secrets.WEBHOOK_DOMAIN }} -e WEBHOOK_PORT=${{ secrets.WEBHOOK_PORT }} -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" --name ktu-bot ktu-bot:latest
