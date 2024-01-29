@@ -4,10 +4,10 @@ services:
     build: .
     restart: always
     depends_on:
-      redis-queue:
+      redis-queue-db:
         condition: service_healthy
 
-  redis-queue:
+  redis-queue-db:
     image: redis
     restart: always
     ports:
