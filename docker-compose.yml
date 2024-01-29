@@ -10,8 +10,6 @@ services:
   redis-queue-db:
     image: redis
     restart: always
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
