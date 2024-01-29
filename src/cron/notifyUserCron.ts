@@ -98,7 +98,11 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
               );
 
               // Create queue
-              const queue = new Bull("notify-user-queue");
+              const queue = new Bull("notify-user-queue", {
+                redis: {
+                  host: "redis-queue-db",
+                },
+              });
 
               // Add all the chatIds to the queue
               for (let i = 0; i < chatIds.length; i++) {
