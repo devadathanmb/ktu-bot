@@ -53,9 +53,11 @@ eg: @ktu_results_bot calendar : This returns all the results that matches word "
 
 ## Local development setup
 
-_Note: If you don't want or don't want to work on the `notification` feature and don't want to setup the database, then just comment out the corresponding calls in `app.ts` and skip the **firebase** configuration part below._
+- NOTE :
+  1. If you don't want or don't want to work on the `notification` feature and don't want to setup the database, then just comment out the corresponding calls in `app.ts` and skip the **firebase** configuration part below.
+  2. The bot makes use of [bull queue](https://github.com/OptimalBits/bull), a redis based nodejs queue, for the live notifications feature. Thus, it requires you to have a redis db instance running. The docker compose method below already does that for you.
 
-### Running Locally (Without Docker)
+### Running Locally (Without Docker - Not preferred)
 
 1. Install Node.js and npm on your machine.
 2. Clone the repository:
@@ -120,7 +122,7 @@ _Note: If you don't want or don't want to work on the `notification` feature and
     npm run start
     ```
 
-### Running with Docker Compose
+### Running with Docker Compose (Preferred)
 
 1. Install Docker and Docker Compose on your machine.
 
