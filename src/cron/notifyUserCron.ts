@@ -9,6 +9,13 @@ import { Announcement, Attachment } from "../types/types";
 import findFilters from "../utils/findFilters";
 import Bull = require("bull");
 
+// Create queue
+const queue = new Bull("notify-user-queue", {
+  redis: {
+    host: "redis-queue-db",
+  },
+});
+
 async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
   console.log("Cron job initialized");
   cron.schedule("*/10 * * * *", async () => {
@@ -56,6 +63,8 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
             // Get all the chatIds
             const usersRef = db.collection("subscribedUsers");
 
+            console.log(diff);
+
             // Loop through each new annoucement
             for (const announcement of diff) {
               // Find the filters based on subject
@@ -96,13 +105,6 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                   encryptId: attachment.encryptId,
                 })
               );
-
-              // Create queue
-              const queue = new Bull("notify-user-queue", {
-                redis: {
-                  host: "redis-queue-db",
-                },
-              });
 
               // Add all the chatIds to the queue
               for (let i = 0; i < chatIds.length; i++) {
