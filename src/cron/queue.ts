@@ -6,7 +6,11 @@ import db from "../db/initDb";
 
 function createJobQueue(bot: Telegraf<CustomContext>) {
   // Create queue
-  const queue = new Bull<JobData>("notify-user-queue");
+  const queue = new Bull<JobData>("notify-user-queue", {
+    redis: {
+      host: "redis-queue-db",
+    },
+  });
 
   // Job completed event
   queue.on("completed", async (job) => {
