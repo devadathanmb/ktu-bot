@@ -17,4 +17,6 @@ function initDb() {
   return getFirestore();
 }
 
-export { initDb };
+const db = initDb();
+
+export default db;
