@@ -1,10 +1,10 @@
 // Callback handler for the change filter / subscribe command
 import { CustomContext } from "../types/customContext.type";
-import { Firestore } from "firebase-admin/firestore";
 import deleteMessage from "../utils/deleteMessage";
 import { FILTERS } from "../constants/constants";
+import db from "../db/initDb";
 
-async function filterCallbackHandler(ctx: CustomContext, db: Firestore) {
+async function filterCallbackHandler(ctx: CustomContext) {
   await ctx.answerCbQuery();
   const waitingMsg = await ctx.reply("Please wait...");
   const chosenFilter = (ctx.callbackQuery as any)?.data?.split("_")[1];

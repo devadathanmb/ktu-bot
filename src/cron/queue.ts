@@ -2,6 +2,7 @@ import { Telegraf, TelegramError } from "telegraf";
 import { CustomContext } from "../types/customContext.type";
 import Bull = require("bull");
 import { JobData } from "../types/types";
+import db from "../db/initDb";
 
 function createJobQueue(bot: Telegraf<CustomContext>) {
   // Create queue
@@ -44,7 +45,10 @@ function createJobQueue(bot: Telegraf<CustomContext>) {
           await job.retry();
         } else if (error.code === 403) {
           try {
-            /* await usersRef.doc(chatId.toString()).delete(); */
+            const usersRef = db.collection("subscribedUsers");
+            await usersRef.doc(chatId.toString()).delete();
+            // This apparently has some issues
+            // TODO: Fix later
             await job.remove();
           } catch (error) {
             console.log(error);

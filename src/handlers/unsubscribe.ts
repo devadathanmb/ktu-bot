@@ -1,7 +1,7 @@
-import { Firestore } from "firebase-admin/firestore";
 import { CustomContext } from "../types/customContext.type";
+import db from "../db/initDb";
 
-async function unsubscribe(ctx: CustomContext, db: Firestore) {
+async function unsubscribe(ctx: CustomContext) {
   const chatId = ctx.chat!.id;
   if (!chatId) {
     await ctx.reply("Chat id not found");

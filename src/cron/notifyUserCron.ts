@@ -1,5 +1,4 @@
 import * as cron from "node-cron";
-import { Firestore } from "firebase-admin/firestore";
 import fetchAnnouncements from "../services/fetchAnnouncements";
 import { readFile, writeFile } from "fs";
 import fetchAttachment from "../services/fetchAttachment";
@@ -7,10 +6,11 @@ import { Announcement, Attachment } from "../types/types";
 import findFilters from "../utils/findFilters";
 import getCaptionMsg from "../utils/getCaptionMsg";
 import Bull = require("bull");
+import db from "../db/initDb";
 
-async function notifyUserCron(db: Firestore, queue: Bull.Queue) {
+async function notifyUserCron(queue: Bull.Queue) {
   console.log("Cron job initialized");
-  cron.schedule("*/10 * * * *", async () => {
+  cron.schedule("*/1 * * * *", async () => {
     const startTime = new Date().toString();
     console.log(`🔴 Cron job started at ${startTime}`);
     readFile("data.json", "utf8", async (err, data) => {

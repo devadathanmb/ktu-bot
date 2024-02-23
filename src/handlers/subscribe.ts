@@ -1,10 +1,10 @@
-import { Firestore } from "firebase-admin/firestore";
 import { CustomContext } from "../types/customContext.type";
 import { FILTERS } from "../constants/constants";
 import { Markup } from "telegraf";
 import deleteMessage from "../utils/deleteMessage";
+import db from "../db/initDb";
 
-async function subscribe(ctx: CustomContext, db: Firestore) {
+async function subscribe(ctx: CustomContext) {
   const waitingMsg = await ctx.reply("Please wait...");
   const chatId = ctx.chat!.id;
   try {

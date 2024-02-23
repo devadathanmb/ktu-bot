@@ -1,11 +1,11 @@
 // Handler to change notification filter of user
 import { CustomContext } from "../types/customContext.type";
-import { Firestore } from "firebase-admin/firestore";
 import { FILTERS } from "../constants/constants";
 import { Markup } from "telegraf";
 import deleteMessage from "../utils/deleteMessage";
+import db from "../db/initDb";
 
-async function changeFilter(ctx: CustomContext, db: Firestore) {
+async function changeFilter(ctx: CustomContext) {
   const waitingMsg = await ctx.reply("Please wait...");
   const chatId = ctx.chat!.id;
   try {

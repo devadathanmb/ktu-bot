@@ -20,7 +20,6 @@ import announcementWizard from "./wizards/announcementWizard";
 import timetableWizard from "./wizards/timeTableWizard";
 import { CustomContext } from "./types/customContext.type";
 import availableCommands from "./constants/availableCommands";
-import { initDb } from "./db/initDb";
 import loggingMiddleware from "./middlewares/loggingMiddleware";
 import throttler from "./middlewares/throttler";
 import {
@@ -30,9 +29,6 @@ import {
 import filterCallbackHandler from "./handlers/filterCallbackHandler";
 
 function createBot() {
-  // Initialize the database
-  const db = initDb();
-
   // Create the bot
   const opts = {
     // During result publish times, KTU servers will be slow to respond, this makes the API requests to be slower
@@ -67,12 +63,12 @@ function createBot() {
   bot.command("code", async (ctx) => await code(ctx));
   bot.command("cancel", async (ctx) => await cancel(ctx));
   bot.command("notifications", async (ctx) => await notifications(ctx));
-  bot.command("subscribe", async (ctx) => await subscribe(ctx, db));
-  bot.command("unsubscribe", async (ctx) => await unsubscribe(ctx, db));
+  bot.command("subscribe", async (ctx) => await subscribe(ctx));
+  bot.command("unsubscribe", async (ctx) => await unsubscribe(ctx));
   bot.command("timetable", async (ctx) => await timetable(ctx));
   bot.command("calendar", async (ctx) => await calendar(ctx));
-  bot.command("changefilter", async (ctx) => await changeFilter(ctx, db));
-  bot.action(/filter_*/, async (ctx) => await filterCallbackHandler(ctx, db));
+  bot.command("changefilter", async (ctx) => await changeFilter(ctx));
+  bot.action(/filter_*/, async (ctx) => await filterCallbackHandler(ctx));
   bot.on("inline_query", async (ctx) => await searchInlineQueryHandler(ctx));
   bot.on("chosen_inline_result", async (ctx) => {
     await inlineQueryResultHandler(ctx.chosenInlineResult, bot);
@@ -85,7 +81,7 @@ function createBot() {
     console.log("telegraf error", error);
   });
 
-  return { bot, db };
+  return bot;
 }
 
 export default createBot;
