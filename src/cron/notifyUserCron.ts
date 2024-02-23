@@ -1,22 +1,14 @@
 import * as cron from "node-cron";
 import { Firestore } from "firebase-admin/firestore";
-import { Telegraf, TelegramError } from "telegraf";
-import { CustomContext } from "../types/customContext.type";
 import fetchAnnouncements from "../services/fetchAnnouncements";
 import { readFile, writeFile } from "fs";
 import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
 import findFilters from "../utils/findFilters";
+import getCaptionMsg from "../utils/getCaptionMsg";
 import Bull = require("bull");
 
-// Create queue
-const queue = new Bull("notify-user-queue", {
-  redis: {
-    host: "redis-queue-db",
-  },
-});
-
-async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
+async function notifyUserCron(db: Firestore, queue: Bull.Queue) {
   console.log("Cron job initialized");
   cron.schedule("*/10 * * * *", async () => {
     const startTime = new Date().toString();
@@ -89,14 +81,8 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 continue;
               }
 
-              const captionMsg = `
-
-<b>Subject:</b> ${announcement.subject ? announcement.subject : "N/A"}
-
-<b>Date:</b> ${announcement.date ? announcement.date : "N/A"}
-
-<b>Message:</b> ${announcement.message ? announcement.message : "N/A"}
-`;
+              // Get the caption message
+              const captionMsg = getCaptionMsg(announcement);
 
               // Get the data to fetch the attachments
               const attachments = announcement.attachments.map(
@@ -106,84 +92,40 @@ async function notifyUserCron(db: Firestore, bot: Telegraf<CustomContext>) {
                 })
               );
 
-              // Add all the chatIds to the queue
-              for (let i = 0; i < chatIds.length; i++) {
-                await queue.add({
-                  chatId: chatIds[i],
-                });
-              }
-
-              // Consumer
+              // Add stuff to the queue
+              // Pass fileBuffer as null since there are no attachments
               if (attachments.length === 0) {
-                queue.process(async (job) => {
-                  const { chatId } = job.data;
+                for (let i = 0; i < chatIds.length; i++) {
                   try {
-                    await bot.telegram.sendMessage(chatId, captionMsg, {
-                      parse_mode: "HTML",
+                    await queue.add({
+                      chatId: chatIds[i],
+                      fileBuffer: null,
+                      captionMsg: captionMsg,
+                      fileName: null,
                     });
-                  } catch (error: any) {
-                    if (error instanceof TelegramError) {
-                      if (error.code === 429) {
-                        const retryAfter = error.parameters?.retry_after!;
-                        await new Promise((resolve) =>
-                          setTimeout(resolve, retryAfter * 1000 + 2000)
-                        );
-                        await job.retry();
-                      } else if (error.code === 403) {
-                        try {
-                          await usersRef.doc(chatId.toString()).delete();
-                          await job.remove();
-                        } catch (error) {
-                          console.log(error);
-                        }
-                      }
-                    }
+                  } catch (error) {
+                    console.log(error);
                   }
-                });
+                }
               } else {
-                // fetch attachments
-                // send each attachment to each chatId
+                // Loop through each attachment and add to the queue
                 for (let i = 0; i < attachments.length; i++) {
                   const file = await fetchAttachment(attachments[i].encryptId);
-                  const fileBuffer = Buffer.from(file, "base64");
-                  queue.process(async (job) => {
-                    const chatId = job.data.chatId;
+
+                  for (let j = 0; j < chatIds.length; j++) {
                     try {
-                      await bot.telegram.sendDocument(
-                        chatId,
-                        {
-                          source: fileBuffer,
-                          filename: attachments[i].name,
-                        },
-                        { caption: captionMsg, parse_mode: "HTML" }
-                      );
-                    } catch (error: any) {
-                      if (error instanceof TelegramError) {
-                        if (error.code === 429) {
-                          const retryAfter = error.parameters?.retry_after!;
-                          await new Promise((resolve) =>
-                            setTimeout(resolve, retryAfter * 1000 + 2000)
-                          );
-                          await job.retry();
-                        } else if (error.code === 403) {
-                          try {
-                            await usersRef.doc(chatId.toString()).delete();
-                            await job.remove();
-                          } catch (error) {
-                            console.log(error);
-                          }
-                        }
-                      }
+                      await queue.add({
+                        chatId: chatIds[i],
+                        file: file,
+                        captionMsg: captionMsg,
+                        fileName: attachments[i].name,
+                      });
+                    } catch (error) {
+                      console.log(error);
                     }
-                  });
+                  }
                 }
               }
-
-              // Job completed event
-              queue.on("completed", async (job) => {
-                console.log(`✅ Message sent to ${job.data.chatId}`);
-                await job.remove();
-              });
             }
           }
         } catch (error) {

@@ -63,6 +63,13 @@ interface Command {
   description: string;
 }
 
+interface JobData {
+  chatId: number;
+  file: string | null;
+  captionMsg: string;
+  fileName: string | null;
+}
+
 export {
   ResultDetails,
   ResultSummary,
@@ -73,4 +80,5 @@ export {
   AcademicCalendar,
   Timetable,
   Command,
+  JobData,
 };
