@@ -72,6 +72,9 @@ async function notifyUserCron(queue: Bull.Queue) {
               // If not relevant send to users with ALL filter only
               if (filters.length === 1 && filters[0] === "general") {
                 relevancy = await getRelevancy(announcement.subject);
+                console.log(
+                  `➡️  Announcement : ${announcement.subject} Relevancy : ${relevancy}`
+                );
                 if (relevancy) {
                   snapshot = await usersRef.get();
                 } else {
