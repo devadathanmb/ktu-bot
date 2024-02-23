@@ -10,7 +10,7 @@ import db from "../db/initDb";
 
 async function notifyUserCron(queue: Bull.Queue) {
   console.log("Cron job initialized");
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/15 * * * *", async () => {
     const startTime = new Date().toString();
     console.log(`🔴 Cron job started at ${startTime}`);
     readFile("data.json", "utf8", async (err, data) => {
