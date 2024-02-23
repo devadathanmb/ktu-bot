@@ -7,6 +7,7 @@ import findFilters from "../utils/findFilters";
 import getCaptionMsg from "../utils/getCaptionMsg";
 import Bull = require("bull");
 import db from "../db/initDb";
+import getRelevancy from "../services/getRelevancy";
 
 async function notifyUserCron(queue: Bull.Queue) {
   console.log("Cron job initialized");
@@ -65,12 +66,27 @@ async function notifyUserCron(queue: Bull.Queue) {
               let snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>;
 
               // Find all the chatIds that match the filters
-              // If the filters is "general", then send to all users
+              let relevancy = true;
+              // If no filters were matched, check if it is relevant or not first
+              // If it is relevant, send to all users
+              // If not relevant send to users with ALL filter only
               if (filters.length === 1 && filters[0] === "general") {
-                snapshot = await usersRef.get();
+                relevancy = await getRelevancy(announcement.subject);
+                console.log(
+                  `➡️  Announcement : ${announcement.subject} Relevancy : ${relevancy}`
+                );
+                if (relevancy) {
+                  snapshot = await usersRef.get();
+                } else {
+                  snapshot = await usersRef
+                    .where("courseFilter", "==", "all")
+                    .get();
+                }
               } else {
+                // If already matched by a course filter, then it is definitely relevant
+                // So send it to all users with the course filter, ALL filter and relevant filter
                 snapshot = await usersRef
-                  .where("courseFilter", "in", [...filters, "all"])
+                  .where("courseFilter", "in", [...filters, "all", "relevant"])
                   .get();
               }
 
