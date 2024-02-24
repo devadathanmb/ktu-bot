@@ -45,7 +45,7 @@ const FILTERS_REGEX: Record<string, Array<string>> = {
 
 const FILTERS: Record<string, string> = {
   all: "ALL NOTIFICATIONS",
-  relevant: "ALL RELEVANT NOTIFICATIONS",
+  relevant: "ALL RELEVANT NOTIFS",
   btech: "B.Tech",
   mtech: "M.Tech",
   mca: "MCA",
