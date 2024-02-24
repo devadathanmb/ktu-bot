@@ -17,13 +17,15 @@ async function subscribe(ctx: CustomContext) {
       await deleteMessage(ctx, waitingMsg.message_id);
     } else {
       const msg = `
-Choose the type of notifications you want to receive. Please select <b>ALL NOTIFCATIONS</b> if you want to receive all notifications.
+🔴 Choose the type of notifications you want to receive. 
 
-Choose <b>RELEVANT NOTIFICATIONS</b> if you want to receive ALL notifications but only relevant to students.
+• Please select <b>ALL NOTIFCATIONS</b> if you want to receive all notifications.
 
-Otherwise, select the specific course you want to receive notifications for.
+• Choose <b>ALL RELEVANT NOTFIS</b> if you want to receive ALL notifications but only relevant to students of <b>all courses</b>.
 
-<b>NOTE : Choosing course specific notifications will include only other notifications that are relevant to students.</b>
+• Otherwise, select the specific course you want to receive notifications for.
+
+<b>NOTE : Choosing course specific notifications will include other important notifications relevant for students.</b>
 
 Choose a filter from the options below:
 `;
