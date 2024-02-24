@@ -66,12 +66,11 @@ async function notifyUserCron(queue: Bull.Queue) {
               let snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>;
 
               // Find all the chatIds that match the filters
-              let relevancy = true;
               // If no filters were matched, check if it is relevant or not first
               // If it is relevant, send to all users
               // If not relevant send to users with ALL filter only
               if (filters.length === 1 && filters[0] === "general") {
-                relevancy = await getRelevancy(announcement.subject);
+                const relevancy = await getRelevancy(announcement.subject);
                 console.log(
                   `➡️  Announcement : ${announcement.subject} Relevancy : ${relevancy}`
                 );
