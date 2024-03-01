@@ -1,12 +1,10 @@
 import createBot from "./createBot";
 import notifyUserCron from "./cron/notifyUserCron";
-import Bull = require("bull");
-const notifyUserQueue = new Bull("notify-user-queue");
 import createJobQueue from "./cron/queue";
 
 // Create the bot and initialize the database
 const bot = createBot();
-const queue = createJobQueue(bot);
+const notifyUserQueue = createJobQueue(bot);
 
 // Launch the bot
 const launchBot = async () => {
@@ -18,7 +16,7 @@ const launchBot = async () => {
         console.log(
           `Bot started in polling mode. Available at https://t.me/${res.username}`
         );
-        notifyUserCron(queue);
+        notifyUserCron(notifyUserQueue);
       });
   }
   // Launch in webhook mode if in production
@@ -34,7 +32,7 @@ const launchBot = async () => {
         console.log(
           `Bot started in webhook mode. Available at https://t.me/${res.username}`
         );
-        notifyUserCron(queue);
+        notifyUserCron(notifyUserQueue);
       });
   }
 };
