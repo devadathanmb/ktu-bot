@@ -39,7 +39,6 @@ function createJobQueue(bot: Telegraf<CustomContext>) {
         );
       }
     } catch (error: any) {
-      console.log(error);
       if (error instanceof TelegramError) {
         if (error.code === 429) {
           const retryAfter = error.parameters?.retry_after!;
@@ -47,12 +46,13 @@ function createJobQueue(bot: Telegraf<CustomContext>) {
             setTimeout(resolve, retryAfter * 1000 + 2000)
           );
           await job.retry();
-        } else if (error.code === 403) {
+        } else if (error.code === 403 || error.code === 400) {
           try {
             const usersRef = db.collection("subscribedUsers");
             await usersRef.doc(chatId.toString()).delete();
-            // This apparently has some issues
-            // TODO: Fix later
+
+            // Remove the lock from the job and remove it
+            await job.releaseLock();
             await job.remove();
           } catch (error) {
             console.log(error);
