@@ -5,11 +5,11 @@ import fetchAttachment from "../services/fetchAttachment";
 import { Announcement, Attachment } from "../types/types";
 import findFilters from "../utils/findFilters";
 import getCaptionMsg from "../utils/getCaptionMsg";
-import { Queue } from "bullmq";
+import Bull = require("bull");
 import db from "../db/initDb";
 import getRelevancy from "../services/getRelevancy";
 
-async function notifyUserCron(queue: Queue) {
+async function notifyUserCron(queue: Bull.Queue) {
   console.log("Cron job initialized");
   cron.schedule("*/15 * * * *", async () => {
     const startTime = new Date().toString();
@@ -108,60 +108,41 @@ async function notifyUserCron(queue: Queue) {
               // Add stuff to the queue
               // Pass fileBuffer as null since there are no attachments
               if (attachments.length === 0) {
-                const name = `msg-${captionMsg.slice(5)}`;
-                let jobs = [];
                 for (let i = 0; i < chatIds.length; i++) {
-                  jobs.push({
-                    name: name,
-                    data: {
+                  try {
+                    await queue.add({
                       chatId: chatIds[i],
                       fileBuffer: null,
                       captionMsg: captionMsg,
                       fileName: null,
-                    },
-                    opts: {
-                      removeOnComplete: true,
-                      removeOnFail: true,
-                    },
-                  });
-                }
-                try {
-                  await queue.addBulk(jobs);
-                } catch (error) {
-                  console.error(error);
+                    });
+                  } catch (error) {
+                    console.log(error);
+                  }
                 }
               } else {
                 // Loop through each attachment and add to the queue
-                let jobs = [];
                 for (let i = 0; i < attachments.length; i++) {
                   const file = await fetchAttachment(attachments[i].encryptId);
-                  const name = `msg-${captionMsg.slice(5)}-attach-${i}`;
+
                   for (let j = 0; j < chatIds.length; j++) {
-                    jobs.push({
-                      name: name,
-                      data: {
-                        chatId: chatIds[j],
+                    try {
+                      await queue.add({
+                        chatId: chatIds[i],
                         file: file,
                         captionMsg: captionMsg,
                         fileName: attachments[i].name,
-                      },
-                      opts: {
-                        removeOnComplete: true,
-                        removeOnFail: true,
-                      },
-                    });
+                      });
+                    } catch (error) {
+                      console.log(error);
+                    }
                   }
-                }
-                try {
-                  await queue.addBulk(jobs);
-                } catch (error) {
-                  console.error(error);
                 }
               }
             }
           }
         } catch (error) {
-          console.error(error);
+          console.log(error);
         }
       }
     });
