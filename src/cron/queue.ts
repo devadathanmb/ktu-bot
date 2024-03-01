@@ -1,65 +1,75 @@
 import { Telegraf, TelegramError } from "telegraf";
 import { CustomContext } from "../types/customContext.type";
-import Bull = require("bull");
+import { Queue } from "bullmq";
+import { Worker } from "bullmq";
 import { JobData } from "../types/types";
 import db from "../db/initDb";
+import IORedis from "ioredis";
 
 function createJobQueue(bot: Telegraf<CustomContext>) {
-  // Create queue
-  const queue = new Bull<JobData>("notify-user-queue", {
-    redis: {
-      host: "redis-queue-db",
-    },
+  const connection = new IORedis({
+    host: "redis-queue-db",
+    maxRetriesPerRequest: null,
   });
 
-  // Job completed event
-  queue.on("completed", async (job) => {
-    console.log(`✅ Message sent to ${job.data.chatId}`);
-    await job.remove();
-  });
+  const queue = new Queue<JobData>("notify-user-queue", { connection });
 
-  // Consumer
-  queue.process(async (job) => {
-    const { chatId, file, captionMsg, fileName } = job.data;
+  const worker = new Worker<JobData, number>(
+    "notify-user-queue",
+    async (job) => {
+      const { chatId, file, captionMsg, fileName } = job.data;
 
-    try {
-      if (!file || !fileName) {
-        await bot.telegram.sendMessage(chatId, captionMsg, {
-          parse_mode: "HTML",
-        });
-      } else {
-        const fileBuffer = Buffer.from(file as string, "base64");
-        await bot.telegram.sendDocument(
-          chatId,
-          {
-            source: fileBuffer,
-            filename: fileName,
-          },
-          { caption: captionMsg, parse_mode: "HTML" }
-        );
-      }
-    } catch (error: any) {
-      if (error instanceof TelegramError) {
-        if (error.code === 429) {
-          const retryAfter = error.parameters?.retry_after!;
-          await new Promise((resolve) =>
-            setTimeout(resolve, retryAfter * 1000 + 2000)
+      try {
+        if (!file || !fileName) {
+          await bot.telegram.sendMessage(chatId, captionMsg, {
+            parse_mode: "HTML",
+          });
+        } else {
+          const fileBuffer = Buffer.from(file as string, "base64");
+          await bot.telegram.sendDocument(
+            chatId,
+            {
+              source: fileBuffer,
+              filename: fileName,
+            },
+            { caption: captionMsg, parse_mode: "HTML" }
           );
-          await job.retry();
-        } else if (error.code === 403 || error.code === 400) {
-          try {
-            const usersRef = db.collection("subscribedUsers");
-            await usersRef.doc(chatId.toString()).delete();
-
-            // Remove the lock from the job and remove it
-            await job.releaseLock();
-            await job.remove();
-          } catch (error) {
-            console.log(error);
+        }
+        return job.data.chatId;
+      } catch (error: any) {
+        if (error instanceof TelegramError) {
+          if (error.code === 429) {
+            const retryAfter = error.parameters?.retry_after!;
+            await new Promise((resolve) =>
+              setTimeout(resolve, retryAfter * 1000 + 2000)
+            );
+            await job.retry();
+            return job.data.chatId;
+          } else if (error.code === 403 || error.code === 400) {
+            try {
+              const usersRef = db.collection("subscribedUsers");
+              await usersRef.doc(chatId.toString()).delete();
+            } catch (error) {
+              console.error(error);
+            }
           }
         }
+        return job.data.chatId;
       }
-    }
+    },
+    { connection }
+  );
+
+  worker.on("completed", async (_job, result) => {
+    console.log(`✅ Message sent to ${result}`);
+  });
+
+  worker.on("failed", async (_job, err) => {
+    console.error(err);
+  });
+
+  worker.on("error", (err) => {
+    console.error(err);
   });
 
   return queue;
