@@ -56,8 +56,6 @@ async function notifyUserCron(queue: Bull.Queue) {
             // Get all the chatIds
             const usersRef = db.collection("subscribedUsers");
 
-            console.log(diff);
-
             // Loop through each new annoucement
             for (const announcement of diff) {
               // Find the filters based on subject
