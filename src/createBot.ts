@@ -1,4 +1,4 @@
-import bot from "./bot";
+import bot from "@/bot";
 import start from "@handlers/start";
 import help from "@handlers/help";
 import cancel from "@handlers/cancel";
@@ -76,9 +76,9 @@ function attachListeners() {
 }
 
 // Attach all commands, middlewares and listeners to the bot
-async function createBot() {
-  attachMiddlewares();
+function createBot() {
   setCommands();
+  attachMiddlewares();
   attachCommands();
   attachListeners();
 }

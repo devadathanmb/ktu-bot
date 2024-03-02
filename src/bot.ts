@@ -9,6 +9,7 @@ const opts = {
   handlerTimeout: 1000 * 30,
 };
 
+// Create a new bot instance
 const bot = new Telegraf<CustomContext>(process.env.BOT_TOKEN!, opts);
 
 // The top level error handler
