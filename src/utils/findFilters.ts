@@ -1,4 +1,4 @@
-import { FILTERS_REGEX } from "../constants/constants";
+import { FILTERS_REGEX } from "@/constants/constants";
 // This function will find the list of course filters based on the input text message
 // using basic string matching
 

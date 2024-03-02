@@ -4,7 +4,25 @@
     "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@errors/*": ["errors/*"],
+      "@db/*": ["db/*"],
+      "@constants/*": ["constants/*"],
+      "@handlers/*": ["handlers/*"],
+      "@wizards/*": ["wizards/*"],
+      "@types/*": ["types/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@services/*": ["services/*"],
+      "@utils/*": ["utils/*"],
+      "@config/*": ["config/*"],
+      "@queues/*": ["queues/*"]
+    },
     "strict": true
+  },
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]

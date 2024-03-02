@@ -1,10 +1,10 @@
 import { Markup, Scenes } from "telegraf";
-import { CustomContext } from "../types/customContext.type";
-import fetchAttachment from "../services/fetchAttachment";
-import fetchTimetables from "../services/fetchTimetables";
-import { Timetable } from "../types/types";
-import deleteMessage from "../utils/deleteMessage";
-import handleError from "../utils/handleError";
+import { CustomContext } from "@/types/customContext.type";
+import fetchAttachment from "@/services/fetchAttachment";
+import fetchTimetables from "@/services/fetchTimetables";
+import { Timetable } from "@/types/types";
+import deleteMessage from "@/utils/deleteMessage";
+import handleError from "@/utils/handleError";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);

@@ -1,7 +1,7 @@
-import { axios } from "../config/axiosConfig";
-import { COURSES_URL } from "../constants/constants";
-import { Course } from "../types/types";
-import ServerError from "../errors/ServerError";
+import { axios } from "@/config/axiosConfig";
+import { COURSES_URL } from "@/constants/constants";
+import { Course } from "@/types/types";
+import ServerError from "@/errors/ServerError";
 
 async function fetchCourses(): Promise<Course[]> {
   try {
