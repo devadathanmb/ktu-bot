@@ -1,4 +1,4 @@
-import { CustomContext } from "../types/customContext.type";
+import { CustomContext } from "@/types/customContext.type";
 
 async function cancel(ctx: CustomContext) {
   await ctx.reply(

@@ -1,14 +1,14 @@
 import { Markup, Scenes } from "telegraf";
-import { CustomContext } from "../types/customContext.type";
-import fetchCourses from "../services/fetchCourses";
-import fetchPublishedResults from "../services/fetchPublishedResults";
-import { fetchResult } from "../services/fetchResult";
-import formatDob from "../utils/formatDob";
-import formatResultMessage from "../utils/formatResultMessage";
-import formatSummaryMessage from "../utils/formatSummaryMessage";
-import calculateSgpa from "../utils/calculateSgpa";
-import deleteMessage from "../utils/deleteMessage";
-import handleError from "../utils/handleError";
+import { CustomContext } from "@/types/customContext.type";
+import fetchCourses from "@/services/fetchCourses";
+import fetchPublishedResults from "@/services/fetchPublishedResults";
+import { fetchResult } from "@/services/fetchResult";
+import formatDob from "@/utils/formatDob";
+import formatResultMessage from "@/utils/formatResultMessage";
+import formatSummaryMessage from "@/utils/formatSummaryMessage";
+import calculateSgpa from "@/utils/calculateSgpa";
+import deleteMessage from "@/utils/deleteMessage";
+import handleError from "@/utils/handleError";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);

@@ -1,8 +1,8 @@
-import { axios } from "../config/axiosConfig";
-import { PUBLISHED_RESULTS_URL } from "../constants/constants";
-import { PublishedResultData } from "../types/types";
-import ServerError from "../errors/ServerError";
-import DataNotFoundError from "../errors/DataNotFoundError";
+import { axios } from "@/config/axiosConfig";
+import { PUBLISHED_RESULTS_URL } from "@/constants/constants";
+import { PublishedResultData } from "@/types/types";
+import ServerError from "@/errors/ServerError";
+import DataNotFoundError from "@/errors/DataNotFoundError";
 
 async function fetchPublishedResults(
   courseId: number
