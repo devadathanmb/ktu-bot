@@ -1,9 +1,9 @@
-import { CustomContext } from "../types/customContext.type";
+import { CustomContext } from "@/types/customContext.type";
 import { ChosenInlineResult, InlineQueryResult } from "telegraf/types";
-import fetchAnnouncements from "../services/fetchAnnouncements";
-import fetchAttachment from "../services/fetchAttachment";
+import fetchAnnouncements from "@/services/fetchAnnouncements";
+import fetchAttachment from "@/services/fetchAttachment";
 import { Telegraf, TelegramError } from "telegraf";
-import ServerError from "../errors/ServerError";
+import ServerError from "@/errors/ServerError";
 
 async function searchInlineQueryHandler(ctx: CustomContext) {
   try {
