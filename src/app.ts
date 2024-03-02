@@ -1,10 +1,8 @@
-import createBot from "./createBot";
+import createBot from "@/createBot";
 import notifyUserCron from "@/cron/notifyUserCron";
 import queue from "@queues/notiyUserQueue/queue";
-import bot from "./bot";
+import bot from "@/bot";
 
-createBot();
-// Launch the bot
 const launchBot = async () => {
   // Launch in long polling mode if in development
   if (process.env.ENV_TYPE === "DEVELOPMENT") {
@@ -45,4 +43,8 @@ process.once("SIGTERM", async () => {
   await queue.obliterate({ force: true });
 });
 
+// Create the bot by initializing all handlers
+createBot();
+
+//Launch the bot
 launchBot();
