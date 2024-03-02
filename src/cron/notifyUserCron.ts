@@ -1,15 +1,25 @@
 import * as cron from "node-cron";
-import fetchAnnouncements from "../services/fetchAnnouncements";
+import fetchAnnouncements from "@services/fetchAnnouncements";
 import { readFile, writeFile } from "fs";
-import fetchAttachment from "../services/fetchAttachment";
-import { Announcement, Attachment } from "../types/types";
-import findFilters from "../utils/findFilters";
-import getCaptionMsg from "../utils/getCaptionMsg";
-import { Queue } from "bullmq";
-import db from "../db/initDb";
-import getRelevancy from "../services/getRelevancy";
+import fetchAttachment from "@/services/fetchAttachment";
+import { Announcement, Attachment, JobData } from "@/types/types";
+import findFilters from "@/utils/findFilters";
+import getCaptionMsg from "@/utils/getCaptionMsg";
+import db from "@/db/initDb";
+import getRelevancy from "@/services/getRelevancy";
+import queue from "@/queues/notiyUserQueue/queue";
 
-async function notifyUserCron(queue: Queue) {
+// Type of the notification job in the notification job queue
+interface NotifJobs {
+  name: string;
+  data: JobData;
+  opts: {
+    removeOnComplete: boolean;
+    removeOnFail: boolean;
+  };
+}
+
+async function notifyUserCron() {
   console.log("Cron job initialized");
   cron.schedule("*/15 * * * *", async () => {
     const startTime = new Date().toString();
@@ -109,15 +119,15 @@ async function notifyUserCron(queue: Queue) {
               // Pass fileBuffer as null since there are no attachments
               if (attachments.length === 0) {
                 const name = `msg-${captionMsg.slice(5)}`;
-                let jobs = [];
+                let jobs: NotifJobs[] = [];
                 for (let i = 0; i < chatIds.length; i++) {
                   jobs.push({
                     name: name,
                     data: {
                       chatId: chatIds[i],
-                      fileBuffer: null,
                       captionMsg: captionMsg,
                       fileName: null,
+                      file: null,
                     },
                     opts: {
                       removeOnComplete: true,
@@ -132,7 +142,7 @@ async function notifyUserCron(queue: Queue) {
                 }
               } else {
                 // Loop through each attachment and add to the queue
-                let jobs = [];
+                let jobs: NotifJobs[] = [];
                 for (let i = 0; i < attachments.length; i++) {
                   const file = await fetchAttachment(attachments[i].encryptId);
                   const name = `msg-${captionMsg.slice(5)}-attach-${i}`;

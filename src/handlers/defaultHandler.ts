@@ -1,6 +1,5 @@
-import { CustomContext } from "../types/customContext.type";
-import deleteMessage from "../utils/deleteMessage";
-/* const randomQuotes = require("random-quotes"); */
+import { CustomContext } from "@/types/customContext.type";
+import deleteMessage from "@/utils/deleteMessage";
 
 async function defaultHandler(ctx: CustomContext) {
   // Events like adding, removing memebers from groups are considered as messages
