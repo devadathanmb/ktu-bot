@@ -8,6 +8,21 @@ Welcome to the KTU Bot! This Telegram bot helps students check their exam result
 
 Find the bot [here](https://t.me/ktu_results_bot)
 
+## Table of Contents
+
+- [KTU Bot](#ktu-bot)
+  - [Features](#features)
+  - [Commands](#commands)
+  - [Inline Query](#inline-query)
+  - [Local development setup](#local-development-setup)
+    - [Running Locally (Without Docker - Not preferred)](#running-locally-without-docker---not-preferred)
+    - [Running with Docker Compose (Preferred)](#running-with-docker-compose-preferred)
+  - [Production setup](#production-setup)
+    - [Pre-requisites](#pre-requisites)
+  - [Contributing](#contributing)
+  - [Bugs and Feedback](#bugs-and-feedback)
+  - [License](#license)
+
 ## Features
 
 - **Check Results**: Use the `/result` command to fetch your exam results.
@@ -55,7 +70,7 @@ eg: @ktu_results_bot calendar : This returns all the results that matches word "
 
 - NOTE :
   1. If you don't want or don't want to work on the `notification` feature and don't want to setup the database, then just comment out the corresponding calls in `app.ts` and skip the **firebase** configuration part below.
-  2. The bot makes use of [bull queue](https://github.com/OptimalBits/bull), a redis based nodejs queue, for the live notifications feature. Thus, it requires you to have a redis db instance running. The docker compose method below already does that for you.
+  2. The bot makes use of [BullMQ](https://github.com/taskforcesh/bullmq), a redis based nodejs queue, for the live notifications feature. Thus, it requires you to have a redis db instance running. The docker compose method below already does that for you.
 
 ### Running Locally (Without Docker - Not preferred)
 
@@ -164,11 +179,13 @@ eg: @ktu_results_bot calendar : This returns all the results that matches word "
    ENV_TYPE="DEVELOPMENT"
    ```
 
-9. Run the application using Docker Compose:
+9. Make sure to add all necessary environment variables to `.env` mentioned in [env.example](./env.example)
 
-   ```bash
-   docker-compose up
-   ```
+10. Run the application using Docker Compose:
+
+    ```bash
+    docker-compose up
+    ```
 
 The bot should now be running and accessible on Telegram.
 
@@ -202,9 +219,11 @@ To run the bot using webhooks in production, some pre-requisites are required. T
 
 3. Set `ENV_TYPE=PRODUCTION` in `.env` file. See [env.example](./env.example)
 
-4. Build and run the docker using `docker compose up -d`
+4. Make sure to add all necessary environment variables to `.env` mentioned in [env.example](./env.example)
 
-5. Start the nginx server (eg : `sudo systemctl restart nginx`)
+5. Build and run the docker using `docker compose up -d`
+
+6. Start the nginx server (eg : `sudo systemctl restart nginx`)
 
 That's it. Your bot should be running now in webhook mode.
 
