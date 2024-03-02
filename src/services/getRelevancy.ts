@@ -1,4 +1,4 @@
-import { axios } from "../config/axiosConfig";
+import { axios } from "@/config/axiosConfig";
 
 // eg : [[{"label":"LABEL_1","score":0.9968029260635376},{"label":"LABEL_0","score":0.0031970764975994825}]]
 interface Relevancy {

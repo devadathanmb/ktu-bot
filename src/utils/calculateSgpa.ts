@@ -1,4 +1,4 @@
-import { ResultDetails } from "../types/types";
+import { ResultDetails } from "@/types/types";
 
 function calculateSgpa(resultDetails: ResultDetails[]) {
   const grades: Record<string, number> = {

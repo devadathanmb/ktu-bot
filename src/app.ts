@@ -1,11 +1,9 @@
 import createBot from "./createBot";
-import notifyUserCron from "./cron/notifyUserCron";
-import createJobQueue from "./cron/queue";
+import notifyUserCron from "@/cron/notifyUserCron";
+import queue from "@queues/notiyUserQueue/queue";
+import bot from "./bot";
 
-// Create the bot and initialize the database
-const bot = createBot();
-const notifyUserQueue = createJobQueue(bot);
-
+createBot();
 // Launch the bot
 const launchBot = async () => {
   // Launch in long polling mode if in development
@@ -16,7 +14,7 @@ const launchBot = async () => {
         console.log(
           `Bot started in polling mode. Available at https://t.me/${res.username}`
         );
-        notifyUserCron(notifyUserQueue);
+        notifyUserCron();
       });
   }
   // Launch in webhook mode if in production
@@ -32,7 +30,7 @@ const launchBot = async () => {
         console.log(
           `Bot started in webhook mode. Available at https://t.me/${res.username}`
         );
-        notifyUserCron(notifyUserQueue);
+        notifyUserCron();
       });
   }
 };
@@ -40,11 +38,11 @@ const launchBot = async () => {
 // Graceful stop
 process.once("SIGINT", async () => {
   bot.stop("SIGINT");
-  await notifyUserQueue.obliterate({ force: true });
+  await queue.obliterate({ force: true });
 });
 process.once("SIGTERM", async () => {
   bot.stop("SIGTERM");
-  await notifyUserQueue.obliterate({ force: true });
+  await queue.obliterate({ force: true });
 });
 
 launchBot();
