@@ -126,12 +126,13 @@ async function notifyUserCron() {
             })
           );
 
-          // Add stuff to the queue
-          // Pass fileBuffer as null since there are no attachments
+          // Loop through each chatId, add it to the job array
+          // And then add the jobs to the queue in bulk at the end (this saves IO operations)
           if (attachments.length === 0) {
             const name = `msg-${captionMsg.slice(5)}`;
             let jobs: NotifJobs[] = [];
             for (let i = 0; i < chatIds.length; i++) {
+              // Keep filename and file as null since there are no attachments
               jobs.push({
                 name: name,
                 data: {
@@ -148,7 +149,8 @@ async function notifyUserCron() {
             }
             await queue.addBulk(jobs);
           } else {
-            // Loop through each attachment and add to the queue
+            // Loop through each attachment, fetch the file and add it to the job array for each chatId
+            // And then add the jobs to the queue in bulk at the end (this saves IO operations)
             let jobs: NotifJobs[] = [];
             for (let i = 0; i < attachments.length; i++) {
               const file = await fetchAttachment(attachments[i].encryptId);
