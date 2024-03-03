@@ -11,6 +11,8 @@ export interface WizardSessionData extends Scenes.WizardSessionData {
   resultMsgId: number;
   courseMsgId: number;
   waitingMsgId: number;
+  dobMsgId: number;
+  regMsgId: number;
 
   // announcement stuff, there is no other way to separate this out for now
   pageNumber: number;
