@@ -146,11 +146,7 @@ async function notifyUserCron() {
                 },
               });
             }
-            try {
-              await queue.addBulk(jobs);
-            } catch (error) {
-              console.error(error);
-            }
+            await queue.addBulk(jobs);
           } else {
             // Loop through each attachment and add to the queue
             let jobs: NotifJobs[] = [];
@@ -173,11 +169,7 @@ async function notifyUserCron() {
                 });
               }
             }
-            try {
-              await queue.addBulk(jobs);
-            } catch (error) {
-              console.error(error);
-            }
+            await queue.addBulk(jobs);
           }
         }
       }
