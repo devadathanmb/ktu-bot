@@ -5,7 +5,7 @@ async function start(ctx: CustomContext) {
   const name = ctx.from?.first_name;
   const greeting = `Hello ${name ? name + "!" : "there!"}`;
   const replyMsg = `
-${greeting}
+${greeting} 👋
 
 <b>Welcome to KTU Bot!</b>
 
