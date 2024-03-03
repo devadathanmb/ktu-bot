@@ -7,6 +7,15 @@ import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
 import { callbackQuery } from "telegraf/filters";
 
+/*
+  - Exam time table lookup is also desinged as a WizardScene.
+  - This wizard only has two steps. The first step fetches the time tables and displays them to the user.
+    And the second step fetches the selected time table and sends it to the user.
+  - Previous and next buttons are also available to navigate through the time tables.
+
+  - Just like in /result wizard, only /cancel command is defined to work inside the wizard. No other commands will work inside the wizard.
+*/
+
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   await deleteMessage(ctx, ctx.scene.session.timetableMsgId);
@@ -18,6 +27,8 @@ const handleCancelCommand = async (ctx: CustomContext) => {
 
 const timetableWizard = new Scenes.WizardScene<CustomContext>(
   "timetable-wizard",
+
+  // Wizard Step 0
   async (ctx: CustomContext) => {
     try {
       ctx.scene.session.pageNumber = 0;
@@ -27,6 +38,8 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       return await handleError(ctx, error);
     }
   },
+
+  // Wizard Step 1
   async (ctx) => {
     if (ctx.message) {
       return await ctx.reply(
@@ -81,6 +94,7 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
   }
 );
 
+// Function to show time tables to the user
 async function showTimetables(ctx: CustomContext) {
   try {
     const waitingMsg = await ctx.reply("Fetching time tables.. Please wait..");
@@ -115,10 +129,12 @@ async function showTimetables(ctx: CustomContext) {
   }
 }
 
+// Page number button action : Do nothing
 timetableWizard.action("page", async (ctx) => {
   await ctx.answerCbQuery();
 });
 
+// Previous page button action : Decrement page number and show time tables
 timetableWizard.action("prev_page", async (ctx) => {
   if (ctx.scene.session.pageNumber == 0) {
     await ctx.answerCbQuery();
@@ -130,6 +146,7 @@ timetableWizard.action("prev_page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
+// Next page button action : Increment page number and show time tables
 timetableWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
   await ctx.deleteMessage(ctx.scene.session.timetableMsgId);
