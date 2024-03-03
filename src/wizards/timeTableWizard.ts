@@ -5,6 +5,7 @@ import fetchTimetables from "@/services/fetchTimetables";
 import { Timetable } from "@/types/types";
 import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
+import { callbackQuery } from "telegraf/filters";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
@@ -33,8 +34,12 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       );
     }
     try {
+      if (!ctx.has(callbackQuery("data"))) {
+        await ctx.reply("An error occured. Please try again.");
+        return ctx.scene.leave();
+      }
       const chosenTimetableid = Number.parseInt(
-        (ctx.callbackQuery as any)?.data?.split("_")[1]
+        ctx.callbackQuery.data.split("_")[1]
       );
       const chosenTimetable: Timetable = ctx.scene.session.timetables.find(
         (timetable: Timetable) => timetable.id === chosenTimetableid
