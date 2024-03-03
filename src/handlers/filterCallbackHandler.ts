@@ -3,11 +3,19 @@ import { CustomContext } from "@/types/customContext.type";
 import deleteMessage from "@/utils/deleteMessage";
 import { FILTERS } from "@/constants/constants";
 import db from "@/db/initDb";
+import { callbackQuery } from "telegraf/filters";
 
 async function filterCallbackHandler(ctx: CustomContext) {
   await ctx.answerCbQuery();
   const waitingMsg = await ctx.reply("Please wait...");
-  const chosenFilter = (ctx.callbackQuery as any)?.data?.split("_")[1];
+  if (!ctx.has(callbackQuery("data"))) {
+    await deleteMessage(ctx, waitingMsg.message_id);
+    await ctx.reply(
+      "Invalid filter. Please choose a valid filter from the options."
+    );
+    return;
+  }
+  const chosenFilter = ctx.callbackQuery.data.split("_")[1];
   const changeFilterMsgId = ctx.callbackQuery!.message!.message_id;
   if (chosenFilter === "cancel") {
     await ctx.reply("Notification filter operation cancelled.");
