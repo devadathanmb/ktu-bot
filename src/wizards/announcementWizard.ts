@@ -7,6 +7,16 @@ import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
 import { callbackQuery } from "telegraf/filters";
 
+/*
+  - Announcement lookup is also desinged as a WizardScene.
+  - This wizard only has two steps. The first step fetches the announcements and displays them to the user.
+    And the second step fetches the selected announcement and sends it to the user.
+
+  - Previous and next buttons are also available to navigate through the announcements.
+
+  - Just like in /result wizard, only /cancel command is defined to work inside the wizard. No other commands will work inside the wizard.
+*/
+
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   await deleteMessage(ctx, ctx.scene.session.announcementMsgId);
@@ -18,6 +28,8 @@ const handleCancelCommand = async (ctx: CustomContext) => {
 
 const announcementWizard = new Scenes.WizardScene<CustomContext>(
   "announcement-wizard",
+
+  // Wizard Step 0
   async (ctx: CustomContext) => {
     try {
       ctx.scene.session.pageNumber = 0;
@@ -27,6 +39,8 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       return await handleError(ctx, error);
     }
   },
+
+  // Wizard Step 1
   async (ctx) => {
     if (ctx.message) {
       return await ctx.reply(
@@ -107,6 +121,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
   }
 );
 
+// Function to show announcements
 async function showAnnouncements(ctx: CustomContext) {
   try {
     const waitingMsg = await ctx.reply(
@@ -146,10 +161,12 @@ async function showAnnouncements(ctx: CustomContext) {
   }
 }
 
+// Page button action : Answer callback query and do nothing
 announcementWizard.action("page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
+// Previous page button action : Decrement page number and show announcements
 announcementWizard.action("prev_page", async (ctx) => {
   if (ctx.scene.session.pageNumber == 0) {
     await ctx.answerCbQuery();
@@ -161,6 +178,7 @@ announcementWizard.action("prev_page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
+// Next page button action : Increment page number and show announcements
 announcementWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
   await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
