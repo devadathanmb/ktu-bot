@@ -240,9 +240,9 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       );
 
       const sgpa = calculateSgpa(resultDetails);
-      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       await ctx.replyWithHTML(formatSummaryMessage(summary));
       await ctx.replyWithHTML(formatResultMessage(resultDetails, sgpa));
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       return ctx.scene.leave();
     } catch (error) {
       return await handleError(ctx, error);
