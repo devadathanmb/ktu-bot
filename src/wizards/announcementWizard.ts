@@ -5,6 +5,7 @@ import fetchAttachment from "@/services/fetchAttachment";
 import { Announcement, Attachment } from "@/types/types";
 import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
+import { callbackQuery } from "telegraf/filters";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
@@ -33,8 +34,12 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
       );
     }
     try {
+      if (!ctx.has(callbackQuery("data"))) {
+        await ctx.reply("An error occured. Please try again.");
+        return ctx.scene.leave();
+      }
       const chosenAnnouncementId = Number.parseInt(
-        (ctx.callbackQuery as any)?.data?.split("_")[1]
+        ctx.callbackQuery.data.split("_")[1]
       );
       const chosenAnnouncement: Announcement =
         ctx.scene.session.announcements.find(
