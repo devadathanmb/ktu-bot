@@ -19,6 +19,7 @@ Find the bot [here](https://t.me/ktu_results_bot)
     - [Running with Docker Compose (Preferred)](#running-with-docker-compose-preferred)
   - [Production setup](#production-setup)
     - [Pre-requisites](#pre-requisites)
+    - [Steps](#steps)
   - [Contributing](#contributing)
   - [Bugs and Feedback](#bugs-and-feedback)
   - [License](#license)
@@ -208,6 +209,8 @@ To run the bot using webhooks in production, some pre-requisites are required. T
 - A reverse proxy (like [nginx](https://www.nginx.com/))
 
 **NOTE : The below guide makes use of _nginx_ as the reverse proxy and assumes that you have reverse proxy configured for the webhook endpoint with HTTPS traffic handling**
+
+### Steps
 
 1. Set up an nginx reverse proxy for the webhook endpoint. See [this](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for more information. Checkout basic example in [webhook.conf](./webhook.conf)
 
