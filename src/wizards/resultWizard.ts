@@ -122,7 +122,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
 
   // Wizard Step 2
-  async (ctx) => {
+  async (ctx, next) => {
     if (ctx.message) {
       return await ctx.reply("Please choose a valid option");
     }
@@ -135,7 +135,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.wizard.selectStep(0);
 
       if (typeof ctx.wizard.step === "function") {
-        return ctx.wizard.step(ctx, async () => {});
+        return ctx.wizard.step(ctx, next);
       }
     }
     if (!ctx.has(callbackQuery("data"))) {
@@ -162,7 +162,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
 
   // Wizard Step 3
-  async (ctx) => {
+  async (ctx, next) => {
     await deleteMessage(ctx, ctx.scene.session.regMsgId);
     if (
       ctx.has(callbackQuery("data")) &&
@@ -170,7 +170,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     ) {
       ctx.wizard.selectStep(1);
       if (typeof ctx.wizard.step === "function") {
-        return ctx.wizard.step(ctx, async () => {});
+        return ctx.wizard.step(ctx, next);
       }
     }
 
@@ -203,7 +203,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
 
   // Wizard Step 4
-  async (ctx) => {
+  async (ctx, next) => {
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_2"
@@ -212,7 +212,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
 
       await deleteMessage(ctx, ctx.scene.session.dobMsgId);
       if (typeof ctx.wizard.step === "function") {
-        return ctx.wizard.step(ctx, async () => {});
+        return ctx.wizard.step(ctx, next);
       }
     }
     if (!ctx.has(message("text"))) {
