@@ -1,11 +1,14 @@
 import { CustomContext } from "@/types/customContext.type";
-import { ChosenInlineResult, InlineQueryResult } from "telegraf/types";
+import { InlineQueryResult, Update } from "telegraf/types";
 import fetchAnnouncements from "@/services/fetchAnnouncements";
 import fetchAttachment from "@/services/fetchAttachment";
-import { Telegraf, TelegramError } from "telegraf";
+import { NarrowedContext, TelegramError } from "telegraf";
 import ServerError from "@/errors/ServerError";
+import bot from "@/bot";
 
-async function searchInlineQueryHandler(ctx: CustomContext) {
+async function searchInlineQueryHandler(
+  ctx: NarrowedContext<CustomContext, Update.InlineQueryUpdate>
+) {
   try {
     const query = ctx.inlineQuery?.query;
     const announcements = await fetchAnnouncements(0, 10, query);
@@ -55,9 +58,9 @@ async function searchInlineQueryHandler(ctx: CustomContext) {
 }
 
 async function inlineQueryResultHandler(
-  chosenInlineResult: ChosenInlineResult,
-  bot: Telegraf<CustomContext>
+  ctx: NarrowedContext<CustomContext, Update.ChosenInlineResultUpdate>
 ) {
+  const chosenInlineResult = ctx.chosenInlineResult;
   try {
     const query = chosenInlineResult.query;
     const id = chosenInlineResult.result_id;
