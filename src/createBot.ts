@@ -51,28 +51,26 @@ function setCommands() {
 
 // Attach all command handlers to the bot
 function attachCommands() {
-  bot.command("help", async (ctx) => await help(ctx));
-  bot.command("search", async (ctx) => await search(ctx));
-  bot.command("result", async (ctx) => await result(ctx));
-  bot.command("code", async (ctx) => await code(ctx));
-  bot.command("cancel", async (ctx) => await cancel(ctx));
-  bot.command("notifications", async (ctx) => await notifications(ctx));
-  bot.command("subscribe", async (ctx) => await subscribe(ctx));
-  bot.command("unsubscribe", async (ctx) => await unsubscribe(ctx));
-  bot.command("timetable", async (ctx) => await timetable(ctx));
-  bot.command("calendar", async (ctx) => await calendar(ctx));
-  bot.command("changefilter", async (ctx) => await changeFilter(ctx));
+  bot.command("help", help);
+  bot.command("search", search);
+  bot.command("result", result);
+  bot.command("code", code);
+  bot.command("cancel", cancel);
+  bot.command("notifications", notifications);
+  bot.command("subscribe", subscribe);
+  bot.command("unsubscribe", unsubscribe);
+  bot.command("timetable", timetable);
+  bot.command("calendar", calendar);
+  bot.command("changefilter", changeFilter);
 }
 
 // Attach all other event listeners to the bot
 function attachListeners() {
-  bot.start(async (ctx) => await start(ctx));
-  bot.action(/filter_*/, async (ctx) => await filterCallbackHandler(ctx));
-  bot.on("inline_query", async (ctx) => await searchInlineQueryHandler(ctx));
-  bot.on("chosen_inline_result", async (ctx) => {
-    await inlineQueryResultHandler(ctx.chosenInlineResult, bot);
-  });
-  bot.on("message", async (ctx) => await defaultHandler(ctx));
+  bot.start(start);
+  bot.action(/filter_*/, filterCallbackHandler);
+  bot.on("inline_query", searchInlineQueryHandler);
+  bot.on("chosen_inline_result", inlineQueryResultHandler);
+  bot.on("message", defaultHandler);
 }
 
 // Attach all commands, middlewares and listeners to the bot
