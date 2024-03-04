@@ -52,7 +52,9 @@ async function defaultHandler(ctx: CustomContext) {
     "That doesn't seem like a valid command.\n\nUse /help for available commands";
 
   const stickerMsg = await ctx.replyWithSticker(randomSticker, {
-    reply_to_message_id: ctx.message!.message_id,
+    reply_parameters: {
+      message_id: ctx.message!.message_id,
+    },
   });
 
   await ctx.reply(invalidMsg);

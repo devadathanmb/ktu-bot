@@ -38,7 +38,9 @@ If you encounter any issues, have feature suggestions, or want to contribute to 
 `;
 
   await ctx.replyWithHTML(helpMessage, {
-    disable_web_page_preview: true,
+    link_preview_options: {
+      is_disabled: true,
+    },
   });
 }
 
