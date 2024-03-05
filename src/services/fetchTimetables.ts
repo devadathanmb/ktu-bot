@@ -26,7 +26,6 @@ async function fetchTimetables(
 
     return relevantData;
   } catch (error: any) {
-    console.log(error);
     throw new ServerError();
   }
 }
