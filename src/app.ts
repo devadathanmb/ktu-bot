@@ -22,7 +22,7 @@ const launchBot = async () => {
         domain: process.env.WEBHOOK_DOMAIN!,
         port: Number(process.env.WEBHOOK_PORT),
         // NOTE: This needs to be tested to see how much concurrent connections can the bot server handle
-        maxConnections: 60,
+        maxConnections: 100,
       },
     });
     if (bot)
