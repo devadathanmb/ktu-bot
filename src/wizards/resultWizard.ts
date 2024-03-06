@@ -10,6 +10,7 @@ import formatSummaryMessage from "@/utils/formatSummaryMessage";
 import calculateSgpa from "@/utils/calculateSgpa";
 import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
+import ServerError from "@/errors/ServerError";
 
 /*
   - Result lookup is designed as a WizardScene. This is similar to how an installation wizards works.
@@ -27,30 +28,47 @@ import handleError from "@/utils/handleError";
 */
 
 /*
-  - The below wizard has 5 steps. Starting from 0 to 4.
+  - The below wizard has 6 steps. Starting from 0 to 5
 
   - Step 0 -> Step 1 -> Step 2 -> Step 3 -> Step 4
+  - Step 5 is an optional step, which is used to handle retry button click.
 
   - Step 0 : Fetch available courses and show them as buttons 
   - Step 1 : Handle user's course selection and fetch available results and show them as buttons
   - Step 2 : Handle user's result selection and ask for registration number
   - Step 3 : Handle user's registration number response and ask for date of birth
   - Step 4 : Handle user's date of birth response and fetch the result and show it to the user. And leave the wizard.
+  - Step 5 : Handle retry button click [OPTIONAL]
 
   - Step 1, 2, 3 and 4 have a back button to go back to the previous step, which is handled in the corresponding steps.
+  - Step 4 also has a retry button, which is handled as a separate step [step 5]
 */
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-  await deleteMessage(ctx, ctx.scene.session.courseMsgId);
-  await deleteMessage(ctx, ctx.scene.session.resultMsgId);
-  await deleteMessage(ctx, ctx.scene.session.regMsgId);
-  await deleteMessage(ctx, ctx.scene.session.dobMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
   await ctx.reply(
     "Result look up cancelled.\n\nPlease use /result to start again."
   );
   return await ctx.scene.leave();
 };
+
+// Helper function to fetch final result
+async function sendFinalResult(ctx: CustomContext) {
+  const waitingMsg = await ctx.reply("Fetching result.. Please wait..");
+  ctx.scene.session.waitingMsgId = waitingMsg.message_id;
+  const { summary, resultDetails } = await fetchResult(
+    ctx.scene.session.dob,
+    ctx.scene.session.regisNo,
+    ctx.scene.session.examDefId,
+    ctx.scene.session.schemeId
+  );
+
+  const sgpa = calculateSgpa(resultDetails);
+  await ctx.replyWithHTML(formatSummaryMessage(summary));
+  await ctx.replyWithHTML(formatResultMessage(resultDetails, sgpa));
+  await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+}
 
 const resultWizard = new Scenes.WizardScene<CustomContext>(
   "result-wizard",
@@ -69,7 +87,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       );
       const keyboard = Markup.inlineKeyboard(courseButtons, { columns: 1 });
       const msg = await ctx.sendMessage("Choose a course:", keyboard);
-      ctx.scene.session.courseMsgId = msg.message_id;
+      ctx.scene.session.tempMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
       return await handleError(ctx, error);
@@ -83,7 +101,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup."
       );
     }
-    await deleteMessage(ctx, ctx.scene.session.courseMsgId);
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
     let courseId: number;
     if (ctx.has(callbackQuery("data"))) {
       if (ctx.callbackQuery.data === "back_to_1") {
@@ -114,7 +132,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         columns: 1,
       });
       const msg = await ctx.sendMessage("Choose a result:", keyboard);
-      ctx.scene.session.resultMsgId = msg.message_id;
+      ctx.scene.session.tempMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
       return await handleError(ctx, error);
@@ -127,7 +145,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       return await ctx.reply("Please choose a valid option");
     }
 
-    await deleteMessage(ctx, ctx.scene.session.resultMsgId);
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_0"
@@ -157,13 +175,13 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         ],
       },
     });
-    ctx.scene.session.regMsgId = msg.message_id;
+    ctx.scene.session.tempMsgId = msg.message_id;
     return ctx.wizard.next();
   },
 
   // Wizard Step 3
   async (ctx, next) => {
-    await deleteMessage(ctx, ctx.scene.session.regMsgId);
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_1"
@@ -198,7 +216,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         },
       }
     );
-    ctx.scene.session.dobMsgId = msg.message_id;
+    ctx.scene.session.tempMsgId = msg.message_id;
     return ctx.wizard.next();
   },
 
@@ -210,7 +228,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     ) {
       ctx.wizard.selectStep(2);
 
-      await deleteMessage(ctx, ctx.scene.session.dobMsgId);
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       if (typeof ctx.wizard.step === "function") {
         return ctx.wizard.step(ctx, next);
       }
@@ -227,25 +245,85 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     } catch (error) {
       return await ctx.reply("Please enter a valid date of birth");
     }
-    await deleteMessage(ctx, ctx.scene.session.dobMsgId);
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
     ctx.scene.session.dob = dob;
     try {
-      const waitingMsg = await ctx.reply("Fetching result.. Please wait..");
-      ctx.scene.session.waitingMsgId = waitingMsg.message_id;
-      const { summary, resultDetails } = await fetchResult(
-        ctx.scene.session.dob,
-        ctx.scene.session.regisNo,
-        ctx.scene.session.examDefId,
-        ctx.scene.session.schemeId
-      );
-
-      const sgpa = calculateSgpa(resultDetails);
-      await ctx.replyWithHTML(formatSummaryMessage(summary));
-      await ctx.replyWithHTML(formatResultMessage(resultDetails, sgpa));
-      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      await sendFinalResult(ctx);
       return ctx.scene.leave();
     } catch (error) {
-      return await handleError(ctx, error);
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      // If the error is a server error
+      // Add a retry button along with the error message
+      // If retry button clicked, go back and execute step 4 again
+      if (error instanceof ServerError) {
+        const retryMsg = await ctx.sendMessage(error.message, {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "Retry 🔁",
+                  callback_data: "retry",
+                },
+                {
+                  text: "Cancel ❌",
+                  callback_data: "cancel",
+                },
+              ],
+            ],
+          },
+        });
+        ctx.scene.session.tempMsgId = retryMsg.message_id;
+        return ctx.wizard.next();
+      } else {
+        return await handleError(ctx, error);
+      }
+    }
+  },
+
+  // Step 5 [OPTIONAL] : To handle retry result lookup, in case of a server error
+  async (ctx: CustomContext) => {
+    if (ctx.has(callbackQuery("data")) && ctx.callbackQuery.data === "cancel") {
+      return await handleCancelCommand(ctx);
+    } else if (
+      ctx.has(callbackQuery("data")) &&
+      ctx.callbackQuery.data === "retry"
+    ) {
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      await ctx.reply(
+        `Checking rersult of :\nREGNO: ${ctx.scene.session.regisNo}\nDOB: ${ctx.scene.session.dob}`
+      );
+      try {
+        await sendFinalResult(ctx);
+        await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+        return await ctx.scene.leave();
+      } catch (error) {
+        if (error instanceof ServerError) {
+          await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+          const retryMsg = await ctx.sendMessage(error.message, {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Retry 🔁",
+                    callback_data: "retry",
+                  },
+                  {
+                    text: "Cancel ❌",
+                    callback_data: "cancel",
+                  },
+                ],
+              ],
+            },
+          });
+          ctx.scene.session.tempMsgId = retryMsg.message_id;
+          return;
+        } else {
+          return await handleError(ctx, error);
+        }
+      }
+    } else {
+      return await ctx.reply("Please click the buttons to choose an option.");
     }
   }
 );
