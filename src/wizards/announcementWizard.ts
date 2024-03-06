@@ -19,7 +19,7 @@ import { callbackQuery } from "telegraf/filters";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-  await deleteMessage(ctx, ctx.scene.session.announcementMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
   await ctx.reply(
     "Notifications look up cancelled.\n\nPlease use /notifications to start again."
   );
@@ -68,7 +68,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
         })
       );
 
-      await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
+      await ctx.deleteMessage(ctx.scene.session.tempMsgId);
       const waitingMsg = await ctx.reply(
         "Fetching notification.. Please wait.."
       );
@@ -154,7 +154,7 @@ async function showAnnouncements(ctx: CustomContext) {
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     const msg = await ctx.sendMessage("Choose a notification:", keyboard);
-    ctx.scene.session.announcementMsgId = msg.message_id;
+    ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.announcements = announcements;
   } catch (error) {
     await handleError(ctx, error);
@@ -173,7 +173,7 @@ announcementWizard.action("prev_page", async (ctx) => {
     return await ctx.reply("You are already on the first page.");
   }
   ctx.scene.session.pageNumber--;
-  await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
+  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
   await showAnnouncements(ctx);
   return await ctx.answerCbQuery();
 });
@@ -181,7 +181,7 @@ announcementWizard.action("prev_page", async (ctx) => {
 // Next page button action : Increment page number and show announcements
 announcementWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
-  await ctx.deleteMessage(ctx.scene.session.announcementMsgId);
+  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
   await showAnnouncements(ctx);
   return await ctx.answerCbQuery();
 });
