@@ -8,23 +8,19 @@ export interface WizardSessionData extends Scenes.WizardSessionData {
   regisNo: string;
   examDefId: number;
   schemeId: number;
-  resultMsgId: number;
-  courseMsgId: number;
   waitingMsgId: number;
-  dobMsgId: number;
-  regMsgId: number;
+
+  // Temporary message id to track send messages in wizards
+  tempMsgId: number;
 
   // announcement stuff, there is no other way to separate this out for now
   pageNumber: number;
   encryptId: string;
-  announcementMsgId: number;
   announcements: any[];
 
   // academic calendar stuff
-  calendarMsgId: number;
   calendars: any[];
 
   // timetable stuff
-  timetableMsgId: number;
   timetables: any[];
 }
