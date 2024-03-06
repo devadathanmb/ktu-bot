@@ -1,17 +1,17 @@
 import bot from "@/bot";
-import help from "@handlers/help";
-import cancel from "@handlers/cancel";
-import result from "@handlers/result";
-import calendar from "@handlers/calendar";
-import search from "@handlers/search";
-import code from "@handlers/code";
-import changeFilter from "@handlers/changeFilter";
-import notifications from "@handlers/notifications";
-import subscribe from "@handlers/subscribe";
-import unsubscribe from "@handlers/unsubscribe";
-import timetable from "@handlers/timetable";
+import help from "@handlers/commands/help";
+import cancel from "@handlers/commands/cancel";
+import result from "@handlers/commands/result";
+import calendar from "@handlers/commands/calendar";
+import search from "@handlers/commands/search";
+import code from "@handlers/commands/code";
+import changeFilter from "@handlers/commands/changeFilter";
+import notifications from "@handlers/commands/notifications";
+import subscribe from "@handlers/commands/subscribe";
+import unsubscribe from "@handlers/commands/unsubscribe";
+import timetable from "@handlers/commands/timetable";
 
-// Attach all command handlers to the bot
+// Attach all command handlers/commands to the bot
 function attachCommands() {
   bot.command("help", help);
   bot.command("search", search);
