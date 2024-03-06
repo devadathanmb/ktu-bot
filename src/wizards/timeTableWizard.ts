@@ -18,7 +18,7 @@ import { callbackQuery } from "telegraf/filters";
 
 const handleCancelCommand = async (ctx: CustomContext) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-  await deleteMessage(ctx, ctx.scene.session.timetableMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
   await ctx.reply(
     "Time table look up cancelled.\n\nPlease use /timetable to start again."
   );
@@ -58,7 +58,7 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
         (timetable: Timetable) => timetable.id === chosenTimetableid
       );
 
-      await ctx.deleteMessage(ctx.scene.session.timetableMsgId);
+      await ctx.deleteMessage(ctx.scene.session.tempMsgId);
       const waitingMsg = await ctx.reply("Fetching time table.. Please wait..");
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
@@ -122,7 +122,7 @@ async function showTimetables(ctx: CustomContext) {
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     const msg = await ctx.sendMessage("Choose a time table:", keyboard);
-    ctx.scene.session.timetableMsgId = msg.message_id;
+    ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.timetables = timetables;
   } catch (error) {
     await handleError(ctx, error);
@@ -141,7 +141,7 @@ timetableWizard.action("prev_page", async (ctx) => {
     return await ctx.reply("You are already on the first page.");
   }
   ctx.scene.session.pageNumber--;
-  await ctx.deleteMessage(ctx.scene.session.timetableMsgId);
+  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
   await showTimetables(ctx);
   return await ctx.answerCbQuery();
 });
@@ -149,7 +149,7 @@ timetableWizard.action("prev_page", async (ctx) => {
 // Next page button action : Increment page number and show time tables
 timetableWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
-  await ctx.deleteMessage(ctx.scene.session.timetableMsgId);
+  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
   await showTimetables(ctx);
   return await ctx.answerCbQuery();
 });
