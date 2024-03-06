@@ -5,7 +5,13 @@ import ServerError from "@/errors/ServerError";
 
 async function fetchCourses(): Promise<Course[]> {
   try {
-    const response = await axios.post(COURSES_URL, "data=programs");
+    const response = await axios.post(COURSES_URL, "data=programs", {
+      cache: {
+        // This route is not expected to change frequently
+        // So we can cache it for a long time
+        ttl: 1000 * 60 * 30,
+      },
+    });
 
     const relevantData: Course[] = response.data.program.map(
       (course: { id: number; name: string }) => ({
