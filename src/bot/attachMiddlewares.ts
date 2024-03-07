@@ -1,6 +1,5 @@
 import bot from "@/bot";
 import loggingMiddleware from "@middlewares/loggingMiddleware";
-import throttler from "@middlewares/throttler";
 import { Scenes, session } from "telegraf";
 import resultWizard from "@wizards/resultWizard";
 import academicCalendarWizard from "@wizards/calendarWizard";
@@ -19,7 +18,7 @@ function attachMiddlewares() {
   ]);
 
   // Register middlewares
-  bot.use(throttler);
+  /* bot.use(throttler); */
   bot.use(loggingMiddleware);
   bot.use(session());
   bot.use(stage.middleware());
