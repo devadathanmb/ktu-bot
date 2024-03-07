@@ -1,21 +1,21 @@
 import { Command } from "@/types/types";
 
 const availableCommands: Command[] = [
-  { command: "start", description: "Start the bot" },
-  { command: "help", description: "Show help message" },
-  { command: "result", description: "Fetch your exam results" },
-  { command: "notifications", description: "Fetch latest KTU notifications" },
-  { command: "calendar", description: "Fetch KTU academic calendars" },
-  { command: "timetable", description: "Fetch KTU exam time tables" },
+  { command: "start", description: "🚀 Get started!" },
+  { command: "help", description: "Help me!" },
+  { command: "result", description: "KTU result lookup" },
+  { command: "notifications", description: "KTU notifications lookup" },
+  { command: "calendar", description: "KTU academic calendar lookup" },
+  { command: "timetable", description: "KTU exam time table lookup" },
   { command: "search", description: "See how to search for KTU notifications" },
-  { command: "cancel", description: "Cancel any ongoing operation" },
+  { command: "cancel", description: "Cancel operation" },
   { command: "subscribe", description: "Subscribe to notifications" },
   { command: "unsubscribe", description: "Unsubscribe from notifications" },
   {
     command: "changefilter",
-    description: "Change the filter for notifications",
+    description: "Change notification filter",
   },
-  { command: "code", description: "Show the source code for the bot" },
+  { command: "code", description: "Show bot source code" },
 ];
 
 export default availableCommands;
