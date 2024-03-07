@@ -2,31 +2,31 @@ import { CustomContext } from "@/types/customContext.type";
 
 async function help(ctx: CustomContext) {
   const helpMessage = `
-➡️ <b>Available Commands</b>
+➡️ <b><u>Available Commands</u></b>
 
 • /start - Start the bot
 
-• /help - Show this help message
+• /help - Show help message
  
-• /result - Fetch your exam results
+• /result - Exam results lookup 
  
-• /cancel - Cancel ongoing lookup process
+• /cancel - Cancel operation
  
-• /notifications - Get published KTU notifications
+• /notifications - Notifications lookup
  
-• /calendar - Get published KTU academic calendars
+• /calendar - Academic calendar lookup
  
-• /timetable - Get published KTU exam time tables 
+• /timetable - Exam time table lookup
  
-• /subscribe - Subscribe to recieve new KTU notifications
+• /subscribe - Subscribe for KTU notifications
  
-• /unsubscribe - Unsubscribe from receiving new KTU notifications
+• /unsubscribe - Unsubscribe from KTU notifications
  
-• /changefilter - Change the filter for notifications
+• /changefilter - Change notification filter
  
-• /code - Get the source code of this bot
+• /code - See bot source code 
 
-➡️ <b>Inline Query</b>:
+➡️ <b><u>Inline Query</u></b>:
 
 Use the inline query feature to live search for notifications. 
 
