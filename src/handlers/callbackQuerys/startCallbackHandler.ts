@@ -28,10 +28,11 @@ async function startCallbackHandler(ctx: CustomContext) {
         try {
           const botUptime = format(uptime());
           const caption = `
-<b>
-○ Name : KTU Bot
+○ Name : ${ctx.botInfo.first_name}
 
-○ Username : <code>@${ctx.me}</code>
+○ Username : <code>@${ctx.botInfo.username}</code>
+
+○ Bot ID : <code>${ctx.botInfo.id}</code>
 
 ○ Uptime : ${botUptime}
 
@@ -41,8 +42,7 @@ async function startCallbackHandler(ctx: CustomContext) {
 
 ○ Framework : <a href="https://telegraf.js.org">TelegrafJS v4</a>
 
-○ Source code : <a href="https://github.com/devadathanmb/ktu-bot.git">GitHub repo</a>
-</b>
+○ Source code : <a href="https://github.com/devadathanmb/ktu-bot.git">GitHub Repo</a>
 `;
           await ctx.editMessageCaption(caption, {
             parse_mode: "HTML",
