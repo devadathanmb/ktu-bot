@@ -18,7 +18,6 @@ function attachMiddlewares() {
   ]);
 
   // Register middlewares
-  /* bot.use(throttler); */
   bot.use(loggingMiddleware);
   bot.use(session());
   bot.use(stage.middleware());
