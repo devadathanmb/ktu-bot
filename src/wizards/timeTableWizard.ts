@@ -122,7 +122,13 @@ async function showTimetables(ctx: CustomContext) {
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-    const msg = await ctx.sendMessage("Choose a time table:", keyboard);
+    const msg = await ctx.sendMessage(
+      "Choose a time table:\n\n(Use <code>/page number</code> to jump to a specific page)",
+      {
+        parse_mode: "HTML",
+        ...keyboard,
+      }
+    );
     ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.timetables = timetables;
   } catch (error) {
