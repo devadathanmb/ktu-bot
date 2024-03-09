@@ -13,6 +13,17 @@ const connection = new IORedis({
 
 const queue = new Queue<JobData>("notify-user-queue", { connection });
 
+// If there is any issue with initializing the queue, stop the bot and exit the process
+queue.on("error", (err: any) => {
+  if (
+    (err.hasOwnProperty("code") && err.code === "ECONNREFUSED") ||
+    err.code === "ENOTFOUND"
+  ) {
+    console.error("Redis server is not running");
+    process.exit(1);
+  }
+});
+
 const worker = new Worker<JobData, number>(
   "notify-user-queue",
   async (job) => {
