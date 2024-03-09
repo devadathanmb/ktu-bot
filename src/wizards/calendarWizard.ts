@@ -131,7 +131,13 @@ async function showAcademicCalendars(ctx: CustomContext) {
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-    const msg = await ctx.sendMessage("Choose an academic calendar:", keyboard);
+    const msg = await ctx.sendMessage(
+      "Choose an academic calendar:\n\n(Use <code>/page number</code> to jump to a specific page)",
+      {
+        parse_mode: "HTML",
+        ...keyboard,
+      }
+    );
     ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.calendars = calendars;
   } catch (error) {

@@ -154,7 +154,13 @@ async function showAnnouncements(ctx: CustomContext) {
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-    const msg = await ctx.sendMessage("Choose a notification:", keyboard);
+    const msg = await ctx.sendMessage(
+      "Choose a notification:\n\n(Use <code>/page number</code> to jump to a specific page)",
+      {
+        parse_mode: "HTML",
+        ...keyboard,
+      }
+    );
     ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.announcements = announcements;
   } catch (error) {

@@ -7,11 +7,15 @@ async function handlePageCommand(
   showItemsFn: (ctx: CustomContext) => Promise<void>
 ) {
   if (!ctx.has(message("text"))) {
-    return await ctx.reply("Please enter a valid page number.");
+    return await ctx.replyWithHTML(
+      "Please enter a valid page number.\n\nExample: <code>/page 1</code>"
+    );
   }
   const page = Number.parseInt(ctx.message.text.split(" ")[1]);
   if (isNaN(page) || page < 1) {
-    return await ctx.reply("Please enter a valid page number.");
+    return await ctx.replyWithHTML(
+      "Please enter a valid page number.\n\nExample: <code>/page 1</code>"
+    );
   }
   ctx.scene.session.pageNumber = page - 1;
   await deleteMsgFn(ctx, ctx.scene.session.tempMsgId);
