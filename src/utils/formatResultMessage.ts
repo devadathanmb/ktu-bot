@@ -1,10 +1,10 @@
 import shortenCourse from "./shortenCourse";
 function formatResultMessage(resultDetails: any[], sgpa: string) {
-  let message = "<b>Your Exam Results</b>\n\n";
+  let message = "<u><b>Your Exam Results</b></u>\n\n";
 
   resultDetails.forEach(({ courseName, grade, credits }) => {
     const shortenedCourse = shortenCourse(courseName);
-    message += `<i>${courseName} (${shortenedCourse})</i>\n`;
+    message += `<u><i>${courseName} (${shortenedCourse})</i></u>\n`;
     message += `   - <b>Grade:</b> <b>${grade}</b>\n`;
     message += `   - <b>Earned credits:</b> <b>${
       credits ? credits : 0
