@@ -6,7 +6,7 @@ function formatSummaryMessage(summary: any) {
     : summary.firstName;
 
   return (
-    `<b>Result Details</b>\n\n\n` +
+    `<u><b>Result Details</b></u>\n\n\n` +
     `<b>Name:</b> <b>${fullName}</b>\n\n` +
     `<b>Branch:</b> <b>${summary.branch}</b>\n\n` +
     `<b>Semester:</b> <b>${summary.semester}</b>\n\n` +
