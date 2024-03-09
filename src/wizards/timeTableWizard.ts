@@ -6,6 +6,7 @@ import { Timetable } from "@/types/types";
 import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
 import { callbackQuery } from "telegraf/filters";
+import handlePageCommand from "wizards/utils/handlePageCommand";
 
 /*
   - Exam time table lookup is also desinged as a WizardScene.
@@ -155,5 +156,10 @@ timetableWizard.action("next_page", async (ctx) => {
 });
 
 timetableWizard.command("cancel", handleCancelCommand);
+
+// Quick page jump
+timetableWizard.command("page", (ctx) =>
+  handlePageCommand(ctx, deleteMessage, showTimetables)
+);
 
 export default timetableWizard;

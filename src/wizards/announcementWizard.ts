@@ -6,6 +6,7 @@ import { Announcement, Attachment } from "@/types/types";
 import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
 import { callbackQuery } from "telegraf/filters";
+import handlePageCommand from "wizards/utils/handlePageCommand";
 
 /*
   - Announcement lookup is also desinged as a WizardScene.
@@ -187,5 +188,10 @@ announcementWizard.action("next_page", async (ctx) => {
 });
 
 announcementWizard.command("cancel", handleCancelCommand);
+
+// Quick page jump
+announcementWizard.command("page", (ctx) =>
+  handlePageCommand(ctx, deleteMessage, showAnnouncements)
+);
 
 export default announcementWizard;

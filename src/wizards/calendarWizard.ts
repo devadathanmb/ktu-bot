@@ -6,6 +6,7 @@ import { AcademicCalendar } from "@/types/types";
 import deleteMessage from "@/utils/deleteMessage";
 import handleError from "@/utils/handleError";
 import { callbackQuery } from "telegraf/filters";
+import handlePageCommand from "wizards/utils/handlePageCommand";
 
 /*
   - Academic calendar lookup is also desinged as a WizardScene.
@@ -164,5 +165,10 @@ academicCalendarWizard.action("next_page", async (ctx) => {
 });
 
 academicCalendarWizard.command("cancel", handleCancelCommand);
+
+// Quick page jump
+academicCalendarWizard.command("page", (ctx) =>
+  handlePageCommand(ctx, deleteMessage, showAcademicCalendars)
+);
 
 export default academicCalendarWizard;
