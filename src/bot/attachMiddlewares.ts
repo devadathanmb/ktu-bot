@@ -1,11 +1,11 @@
 import bot from "@/bot";
-import loggingMiddleware from "@middlewares/loggingMiddleware";
+import loggingMiddleware from "middlewares/loggingMiddleware";
 import { Scenes, session } from "telegraf";
-import resultWizard from "@wizards/resultWizard";
-import academicCalendarWizard from "@wizards/calendarWizard";
-import announcementWizard from "@wizards/announcementWizard";
-import timetableWizard from "@wizards/timeTableWizard";
-import { CustomContext } from "@/types/customContext.type";
+import resultWizard from "wizards/resultWizard";
+import academicCalendarWizard from "wizards/calendarWizard";
+import announcementWizard from "wizards/announcementWizard";
+import timetableWizard from "wizards/timeTableWizard";
+import { CustomContext } from "types/customContext.type";
 
 // Attach all middlewares to the bot
 function attachMiddlewares() {

@@ -1,8 +1,8 @@
 import deleteMessage from "./deleteMessage";
-import { CustomContext } from "@/types/customContext.type";
-import InvalidDataError from "@/errors/InvalidDataError";
-import ServerError from "@/errors/ServerError";
-import DataNotFoundError from "@/errors/DataNotFoundError";
+import { CustomContext } from "types/customContext.type";
+import InvalidDataError from "errors/InvalidDataError";
+import ServerError from "errors/ServerError";
+import DataNotFoundError from "errors/DataNotFoundError";
 
 async function handleError(ctx: CustomContext, error: any) {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);

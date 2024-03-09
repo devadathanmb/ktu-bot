@@ -1,5 +1,5 @@
 import { Telegraf } from "telegraf";
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 import "dotenv/config";
 
 const opts = {

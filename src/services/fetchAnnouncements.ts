@@ -1,8 +1,8 @@
-import { axios } from "@/config/axiosConfig";
-import { ANOUNCEMENTS_URL } from "@/constants/constants";
-import { Announcement } from "@/types/types";
-import ServerError from "@/errors/ServerError";
-import formatDate from "@/utils/formatDate";
+import { axios } from "config/axiosConfig";
+import { ANOUNCEMENTS_URL } from "constants/constants";
+import { Announcement } from "types/types";
+import ServerError from "errors/ServerError";
+import formatDate from "utils/formatDate";
 
 async function fetchAnnouncements(
   pageNumber: number,

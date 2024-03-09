@@ -1,5 +1,5 @@
 import { Middleware } from "telegraf";
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 
 // Logging middleware
 // For testing purposes

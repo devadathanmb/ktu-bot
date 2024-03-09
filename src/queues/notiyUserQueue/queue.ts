@@ -1,13 +1,13 @@
 import { TelegramError } from "telegraf";
 import { Queue } from "bullmq";
 import { Worker } from "bullmq";
-import { JobData } from "@/types/types";
-import db from "@db/initDb";
-import bot from "@/bot";
+import { JobData } from "types/types";
+import db from "db/initDb";
+import bot from "bot";
 import IORedis from "ioredis";
 
 const connection = new IORedis({
-  host: "redis-queue-db",
+  host: "localhost",
   maxRetriesPerRequest: null,
 });
 

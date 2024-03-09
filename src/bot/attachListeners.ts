@@ -1,8 +1,8 @@
 import bot from "@/bot";
-import start from "@handlers/start";
-import defaultHandler from "@handlers/defaultHandler";
-import filterCallbackHandler from "@handlers/callbackQuerys/filterCallbackHandler";
-import startCallbackHandler from "@handlers/callbackQuerys/startCallbackHandler";
+import start from "handlers/start";
+import defaultHandler from "handlers/defaultHandler";
+import filterCallbackHandler from "handlers/callbackQuerys/filterCallbackHandler";
+import startCallbackHandler from "handlers/callbackQuerys/startCallbackHandler";
 
 import {
   inlineQueryResultHandler,

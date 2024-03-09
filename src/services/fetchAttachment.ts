@@ -1,6 +1,6 @@
-import { axios } from "@/config/axiosConfig";
-import { ATTACHMENT_URL } from "@/constants/constants";
-import ServerError from "@/errors/ServerError";
+import { axios } from "config/axiosConfig";
+import { ATTACHMENT_URL } from "constants/constants";
+import ServerError from "errors/ServerError";
 
 async function fetchAttachment(encryptId: string): Promise<any> {
   try {

@@ -1,5 +1,5 @@
 // Utility function to get the caption message from the message object
-import { Announcement } from "@/types/types";
+import { Announcement } from "types/types";
 
 function getCaptionMsg(announcement: Announcement) {
   const captionMsg = `

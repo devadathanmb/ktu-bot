@@ -1,9 +1,9 @@
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 import { InlineQueryResult, Update } from "telegraf/types";
-import fetchAnnouncements from "@/services/fetchAnnouncements";
-import fetchAttachment from "@/services/fetchAttachment";
+import fetchAnnouncements from "services/fetchAnnouncements";
+import fetchAttachment from "services/fetchAttachment";
 import { NarrowedContext, TelegramError } from "telegraf";
-import ServerError from "@/errors/ServerError";
+import ServerError from "errors/ServerError";
 import bot from "@/bot";
 
 async function searchInlineQueryHandler(

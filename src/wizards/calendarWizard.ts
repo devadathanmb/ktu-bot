@@ -1,10 +1,10 @@
 import { Markup, Scenes } from "telegraf";
-import { CustomContext } from "@/types/customContext.type";
-import fetchAcademicCalendars from "@/services/fetchAcademicCalendars";
-import fetchAttachment from "@/services/fetchAttachment";
-import { AcademicCalendar } from "@/types/types";
-import deleteMessage from "@/utils/deleteMessage";
-import handleError from "@/utils/handleError";
+import { CustomContext } from "types/customContext.type";
+import fetchAcademicCalendars from "services/fetchAcademicCalendars";
+import fetchAttachment from "services/fetchAttachment";
+import { AcademicCalendar } from "types/types";
+import deleteMessage from "utils/deleteMessage";
+import handleError from "utils/handleError";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 

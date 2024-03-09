@@ -1,6 +1,6 @@
 import createBot from "@/createBot";
-import notifyUserCron from "@/cron/notifyUserCron";
-import queue from "@queues/notiyUserQueue/queue";
+import notifyUserCron from "cron/notifyUserCron";
+import queue from "queues/notiyUserQueue/queue";
 import bot from "@/bot";
 
 const launchBot = async () => {

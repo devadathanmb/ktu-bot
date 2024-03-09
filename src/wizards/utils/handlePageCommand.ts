@@ -1,4 +1,4 @@
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 import { message } from "telegraf/filters";
 
 async function handlePageCommand(

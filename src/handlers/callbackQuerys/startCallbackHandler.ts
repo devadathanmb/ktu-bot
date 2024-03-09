@@ -1,8 +1,8 @@
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 import { callbackQuery } from "telegraf/filters";
-import help from "@handlers/commands/help";
+import help from "handlers/commands/help";
 import { uptime, version } from "node:process";
-import { startMsg } from "@handlers/start";
+import { startMsg } from "handlers/start";
 
 function format(seconds: number) {
   function pad(s: number) {
