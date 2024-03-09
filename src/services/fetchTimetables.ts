@@ -1,8 +1,8 @@
-import { axios } from "@/config/axiosConfig";
-import { TIMETABLE_URL } from "@/constants/constants";
-import { Timetable } from "@/types/types";
-import ServerError from "@/errors/ServerError";
-import formatDate from "@/utils/formatDate";
+import { axios } from "config/axiosConfig";
+import { TIMETABLE_URL } from "constants/constants";
+import { Timetable } from "types/types";
+import ServerError from "errors/ServerError";
+import formatDate from "utils/formatDate";
 
 async function fetchTimetables(
   pageNumber: number,

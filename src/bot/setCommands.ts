@@ -1,5 +1,5 @@
 import bot from "@/bot";
-import availableCommands from "@constants/availableCommands";
+import availableCommands from "constants/availableCommands";
 
 // Set the available commands for the bot
 function setCommands() {

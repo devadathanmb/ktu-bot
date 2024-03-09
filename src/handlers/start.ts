@@ -1,4 +1,4 @@
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 
 const startMsg = `
 <b>Welcome to KTU Bot!</b>

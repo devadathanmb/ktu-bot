@@ -1,5 +1,5 @@
-import { CustomContext } from "@/types/customContext.type";
-import db from "@/db/initDb";
+import { CustomContext } from "types/customContext.type";
+import db from "db/initDb";
 
 async function unsubscribe(ctx: CustomContext) {
   const chatId = ctx.chat!.id;

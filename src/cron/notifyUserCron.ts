@@ -1,13 +1,13 @@
 import * as cron from "node-cron";
 import fetchAnnouncements from "@services/fetchAnnouncements";
 import { readFile, writeFile } from "node:fs/promises";
-import fetchAttachment from "@/services/fetchAttachment";
-import { Announcement, Attachment, JobData } from "@/types/types";
-import findFilters from "@/utils/findFilters";
-import getCaptionMsg from "@/utils/getCaptionMsg";
-import db from "@/db/initDb";
-import getRelevancy from "@/services/getRelevancy";
-import queue from "@/queues/notiyUserQueue/queue";
+import fetchAttachment from "services/fetchAttachment";
+import { Announcement, Attachment, JobData } from "types/types";
+import findFilters from "utils/findFilters";
+import getCaptionMsg from "utils/getCaptionMsg";
+import db from "db/initDb";
+import getRelevancy from "services/getRelevancy";
+import queue from "queues/notiyUserQueue/queue";
 
 const CRON_JOB_INTERVAL = "*/15 * * * *";
 

@@ -1,4 +1,4 @@
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 
 async function help(ctx: CustomContext) {
   const helpMessage = `

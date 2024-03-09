@@ -1,8 +1,8 @@
 // Callback handler for the change filter / subscribe command
-import { CustomContext } from "@/types/customContext.type";
-import deleteMessage from "@/utils/deleteMessage";
-import { FILTERS } from "@/constants/constants";
-import db from "@/db/initDb";
+import { CustomContext } from "types/customContext.type";
+import deleteMessage from "utils/deleteMessage";
+import { FILTERS } from "constants/constants";
+import db from "db/initDb";
 import { callbackQuery } from "telegraf/filters";
 
 async function filterCallbackHandler(ctx: CustomContext) {

@@ -1,16 +1,16 @@
 import { Markup, Scenes } from "telegraf";
-import { CustomContext } from "@/types/customContext.type";
+import { CustomContext } from "types/customContext.type";
 import { callbackQuery, message } from "telegraf/filters";
-import fetchCourses from "@/services/fetchCourses";
-import fetchPublishedResults from "@/services/fetchPublishedResults";
-import { fetchResult } from "@/services/fetchResult";
-import formatDob from "@/utils/formatDob";
-import formatResultMessage from "@/utils/formatResultMessage";
-import formatSummaryMessage from "@/utils/formatSummaryMessage";
-import calculateSgpa from "@/utils/calculateSgpa";
-import deleteMessage from "@/utils/deleteMessage";
-import handleError from "@/utils/handleError";
-import ServerError from "@/errors/ServerError";
+import fetchCourses from "services/fetchCourses";
+import fetchPublishedResults from "services/fetchPublishedResults";
+import { fetchResult } from "services/fetchResult";
+import formatDob from "utils/formatDob";
+import formatResultMessage from "utils/formatResultMessage";
+import formatSummaryMessage from "utils/formatSummaryMessage";
+import calculateSgpa from "utils/calculateSgpa";
+import deleteMessage from "utils/deleteMessage";
+import handleError from "utils/handleError";
+import ServerError from "errors/ServerError";
 
 /*
   - Result lookup is designed as a WizardScene. This is similar to how an installation wizards works.

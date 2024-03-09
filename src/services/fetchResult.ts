@@ -1,8 +1,8 @@
-import { axios } from "@/config/axiosConfig";
-import { RESULT_URL } from "@/constants/constants";
-import InvalidDataError from "@/errors/InvalidDataError";
-import { ResultDetails, ResultSummary } from "@/types/types";
-import ServerError from "@/errors/ServerError";
+import { axios } from "config/axiosConfig";
+import { RESULT_URL } from "constants/constants";
+import InvalidDataError from "errors/InvalidDataError";
+import { ResultDetails, ResultSummary } from "types/types";
+import ServerError from "errors/ServerError";
 
 async function fetchResult(
   dob: string,
