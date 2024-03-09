@@ -7,7 +7,7 @@ import bot from "bot";
 import IORedis from "ioredis";
 
 const connection = new IORedis({
-  host: "localhost",
+  host: "redis-queue-db",
   maxRetriesPerRequest: null,
 });
 
