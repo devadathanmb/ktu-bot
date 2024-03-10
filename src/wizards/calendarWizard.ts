@@ -59,7 +59,8 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
         (calendar: AcademicCalendar) => calendar.id === chosenCalendarId
       );
 
-      await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.tempMsgId = null;
       const waitingMsg = await ctx.reply(
         "Fetching academic calendar.. Please wait.."
       );
@@ -131,6 +132,7 @@ async function showAcademicCalendars(ctx: CustomContext) {
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+    ctx.scene.session.waitingMsgId = null;
     const msg = await ctx.sendMessage(
       "Choose an academic calendar:\n\n(Use <code>/page number</code> to jump to a specific page)",
       {
@@ -157,7 +159,8 @@ academicCalendarWizard.action("prev_page", async (ctx) => {
     return await ctx.reply("You are already on the first page.");
   }
   ctx.scene.session.pageNumber--;
-  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+  ctx.scene.session.tempMsgId = null;
   await showAcademicCalendars(ctx);
   return await ctx.answerCbQuery();
 });
@@ -165,7 +168,8 @@ academicCalendarWizard.action("prev_page", async (ctx) => {
 // Next page button action : Increment page number and show academic calendars
 academicCalendarWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
-  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+  ctx.scene.session.tempMsgId = null;
   await showAcademicCalendars(ctx);
   return await ctx.answerCbQuery();
 });

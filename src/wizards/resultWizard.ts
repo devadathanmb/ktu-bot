@@ -82,6 +82,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const courses = await fetchCourses();
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      ctx.scene.session.waitingMsgId = null;
       const courseButtons = courses.map(({ id, name }) =>
         Markup.button.callback(name, `course_${id}`)
       );
@@ -120,7 +121,8 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const publishedResults = await fetchPublishedResults(courseId);
-      deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      ctx.scene.session.waitingMsgId = null;
       const resultButtons = publishedResults.map(
         ({ resultName, examDefId, schemeId }) =>
           Markup.button.callback(resultName, `${examDefId}_${schemeId}`)
@@ -146,6 +148,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     }
 
     await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_0"
@@ -182,6 +185,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   // Wizard Step 3
   async (ctx, next) => {
     await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_1"
@@ -229,6 +233,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.wizard.selectStep(2);
 
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.tempMsgId = null;
       if (typeof ctx.wizard.step === "function") {
         return ctx.wizard.step(ctx, next);
       }
@@ -246,12 +251,14 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       return await ctx.reply("Please enter a valid date of birth");
     }
     await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
     ctx.scene.session.dob = dob;
     try {
       await sendFinalResult(ctx);
       return ctx.scene.leave();
     } catch (error) {
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      ctx.scene.session.waitingMsgId = null;
       // If the error is a server error
       // Add a retry button along with the error message
       // If retry button clicked, go back and execute step 4 again
@@ -290,6 +297,8 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     ) {
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.waitingMsgId = null;
+      ctx.scene.session.tempMsgId = null;
       await ctx.reply(
         `Checking rersult of :\nREGNO: ${ctx.scene.session.regisNo}\nDOB: ${ctx.scene.session.dob}`
       );
@@ -300,6 +309,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       } catch (error) {
         if (error instanceof ServerError) {
           await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+          ctx.scene.session.waitingMsgId = null;
           const retryMsg = await ctx.sendMessage(error.message, {
             reply_markup: {
               inline_keyboard: [

@@ -3,7 +3,7 @@ import { message } from "telegraf/filters";
 
 async function handlePageCommand(
   ctx: CustomContext,
-  deleteMsgFn: (ctx: CustomContext, msgId: number) => Promise<void>,
+  deleteMsgFn: (ctx: CustomContext, msgId: number | null) => Promise<void>,
   showItemsFn: (ctx: CustomContext) => Promise<void>
 ) {
   if (!ctx.has(message("text"))) {

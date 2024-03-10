@@ -8,10 +8,10 @@ export interface WizardSessionData extends Scenes.WizardSessionData {
   regisNo: string;
   examDefId: number;
   schemeId: number;
-  waitingMsgId: number;
+  waitingMsgId: number | null;
 
   // Temporary message id to track send messages in wizards
-  tempMsgId: number;
+  tempMsgId: number | null;
 
   // announcement stuff, there is no other way to separate this out for now
   pageNumber: number;
