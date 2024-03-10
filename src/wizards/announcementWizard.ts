@@ -69,7 +69,8 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
         })
       );
 
-      await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.tempMsgId = null;
       const waitingMsg = await ctx.reply(
         "Fetching notification.. Please wait.."
       );
@@ -154,6 +155,7 @@ async function showAnnouncements(ctx: CustomContext) {
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+    ctx.scene.session.waitingMsgId = null;
     const msg = await ctx.sendMessage(
       "Choose a notification:\n\n(Use <code>/page number</code> to jump to a specific page)",
       {
@@ -180,7 +182,8 @@ announcementWizard.action("prev_page", async (ctx) => {
     return await ctx.reply("You are already on the first page.");
   }
   ctx.scene.session.pageNumber--;
-  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+  ctx.scene.session.tempMsgId = null;
   await showAnnouncements(ctx);
   return await ctx.answerCbQuery();
 });
@@ -188,7 +191,8 @@ announcementWizard.action("prev_page", async (ctx) => {
 // Next page button action : Increment page number and show announcements
 announcementWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
-  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+  ctx.scene.session.tempMsgId = null;
   await showAnnouncements(ctx);
   return await ctx.answerCbQuery();
 });

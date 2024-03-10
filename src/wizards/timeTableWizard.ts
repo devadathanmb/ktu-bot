@@ -59,7 +59,8 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
         (timetable: Timetable) => timetable.id === chosenTimetableid
       );
 
-      await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.tempMsgId = null;
       const waitingMsg = await ctx.reply("Fetching time table.. Please wait..");
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
 
@@ -122,6 +123,7 @@ async function showTimetables(ctx: CustomContext) {
       }
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+    ctx.scene.session.waitingMsgId = null;
     const msg = await ctx.sendMessage(
       "Choose a time table:\n\n(Use <code>/page number</code> to jump to a specific page)",
       {
@@ -148,7 +150,8 @@ timetableWizard.action("prev_page", async (ctx) => {
     return await ctx.reply("You are already on the first page.");
   }
   ctx.scene.session.pageNumber--;
-  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+  ctx.scene.session.tempMsgId = null;
   await showTimetables(ctx);
   return await ctx.answerCbQuery();
 });
@@ -156,7 +159,8 @@ timetableWizard.action("prev_page", async (ctx) => {
 // Next page button action : Increment page number and show time tables
 timetableWizard.action("next_page", async (ctx) => {
   ctx.scene.session.pageNumber++;
-  await ctx.deleteMessage(ctx.scene.session.tempMsgId);
+  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+  ctx.scene.session.tempMsgId = null;
   await showTimetables(ctx);
   return await ctx.answerCbQuery();
 });
