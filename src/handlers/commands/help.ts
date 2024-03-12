@@ -9,20 +9,20 @@ async function help(ctx: CustomContext) {
 • /help - Show help message
  
 • /result - Exam results lookup 
- 
-• /cancel - Cancel operation
- 
+
 • /notifications - Notifications lookup
  
 • /calendar - Academic calendar lookup
  
-• /timetable - Exam time table lookup
+• /timetable - Exam timetable lookup
  
-• /subscribe - Subscribe for KTU notifications
+• /subscribe - Subscribe to KTU notifications
  
 • /unsubscribe - Unsubscribe from KTU notifications
  
 • /changefilter - Change notification filter
+  
+• /cancel - Cancel operation
  
 • /code - See bot source code 
 
@@ -32,7 +32,7 @@ Use the inline query feature to live search for notifications.
 
 Simply type @ktu_results_bot followed by a keyword you want to search for.
 
-eg: <code>@ktu_results_bot exam</code>
+Use /search for more info.
 `;
 
   await ctx.replyWithHTML(helpMessage, {
