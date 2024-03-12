@@ -55,7 +55,9 @@ const handleCancelCommand = async (ctx: CustomContext) => {
 
 // Helper function to fetch final result
 async function sendFinalResult(ctx: CustomContext) {
-  const waitingMsg = await ctx.reply("Fetching result.. Please wait..");
+  const waitingMsg = await ctx.replyWithHTML(
+    "Fetching result.. Please wait..\n\n<i>(This may take some time)</i>"
+  );
   ctx.scene.session.waitingMsgId = waitingMsg.message_id;
   const { summary, resultDetails } = await fetchResult(
     ctx.scene.session.dob,
