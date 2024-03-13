@@ -114,8 +114,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         ctx.scene.session.courseId = courseId;
       }
     } else {
-      await ctx.reply("An error occured. Please try again.");
-      return ctx.scene.leave();
+      return await ctx.scene.leave();
     }
     try {
       const waitingMsg = await ctx.reply(
@@ -162,8 +161,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       }
     }
     if (!ctx.has(callbackQuery("data"))) {
-      ctx.reply("An error occured. Please try again.");
-      return ctx.scene.leave();
+      return await ctx.scene.leave();
     }
     const [examDefId, schemeId] = ctx.callbackQuery.data.split("_");
     ctx.scene.session.examDefId = Number(examDefId);
@@ -257,7 +255,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     ctx.scene.session.dob = dob;
     try {
       await sendFinalResult(ctx);
-      return ctx.scene.leave();
+      return await ctx.scene.leave();
     } catch (error) {
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       ctx.scene.session.waitingMsgId = null;
