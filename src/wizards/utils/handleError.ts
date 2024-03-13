@@ -1,4 +1,4 @@
-import deleteMessage from "./deleteMessage";
+import deleteMessage from "utils/deleteMessage";
 import { CustomContext } from "types/customContext.type";
 import InvalidDataError from "errors/InvalidDataError";
 import ServerError from "errors/ServerError";

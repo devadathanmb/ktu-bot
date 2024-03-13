@@ -4,7 +4,7 @@ import fetchAcademicCalendars from "services/fetchAcademicCalendars";
 import fetchAttachment from "services/fetchAttachment";
 import { AcademicCalendar } from "types/types";
 import deleteMessage from "utils/deleteMessage";
-import handleError from "utils/handleError";
+import handleError from "wizards/utils/handleError";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 

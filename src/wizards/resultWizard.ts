@@ -9,7 +9,7 @@ import formatResultMessage from "utils/formatResultMessage";
 import formatSummaryMessage from "utils/formatSummaryMessage";
 import calculateSgpa from "utils/calculateSgpa";
 import deleteMessage from "utils/deleteMessage";
-import handleError from "utils/handleError";
+import handleError from "wizards/utils/handleError";
 import ServerError from "errors/ServerError";
 
 /*

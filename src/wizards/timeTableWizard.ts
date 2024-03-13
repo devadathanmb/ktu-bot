@@ -4,7 +4,7 @@ import fetchAttachment from "services/fetchAttachment";
 import fetchTimetables from "services/fetchTimetables";
 import { Timetable } from "types/types";
 import deleteMessage from "utils/deleteMessage";
-import handleError from "utils/handleError";
+import handleError from "wizards/utils/handleError";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 
