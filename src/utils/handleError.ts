@@ -20,7 +20,7 @@ async function handleError(ctx: CustomContext, error: any) {
     console.error(error);
   }
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-  return ctx.scene.leave();
+  return await ctx.scene.leave();
 }
 
 export default handleError;
