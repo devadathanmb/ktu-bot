@@ -18,12 +18,10 @@ import handlePageCommand from "wizards/utils/handlePageCommand";
   - Just like in /result wizard, only /cancel command is defined to work inside the wizard. No other commands will work inside the wizard.
 */
 
-const handleCancelCommand = async (ctx: CustomContext) => {
+const handleCancelCommand = async (ctx: CustomContext, replyMsg: string) => {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  await ctx.reply(
-    "Notifications look up cancelled.\n\nPlease use /notifications to start again."
-  );
+  await ctx.reply(replyMsg);
   return await ctx.scene.leave();
 };
 
@@ -196,7 +194,12 @@ announcementWizard.action("next_page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
-announcementWizard.command("cancel", handleCancelCommand);
+announcementWizard.command("cancel", async (ctx) => {
+  await handleCancelCommand(
+    ctx,
+    "Notifications look up cancelled.\n\nPlease use /notifications to start again."
+  );
+});
 
 // Quick page jump
 announcementWizard.command("page", (ctx) =>

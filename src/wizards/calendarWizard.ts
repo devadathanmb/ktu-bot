@@ -7,6 +7,7 @@ import deleteMessage from "utils/deleteMessage";
 import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
+import handleCancelCommand from "wizards/utils/handleCancelCommand";
 
 /*
   - Academic calendar lookup is also desinged as a WizardScene.
@@ -16,15 +17,6 @@ import handlePageCommand from "wizards/utils/handlePageCommand";
 
   - Just like in /result wizard, only /cancel command is defined to work inside the wizard. No other commands will work inside the wizard.
 */
-
-const handleCancelCommand = async (ctx: CustomContext) => {
-  await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  await ctx.reply(
-    "Academic calendar look up cancelled.\n\nPlease use /calendar to start again."
-  );
-  return await ctx.scene.leave();
-};
 
 const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
   "academic-calendar-wizard",
@@ -173,11 +165,16 @@ academicCalendarWizard.action("next_page", async (ctx) => {
   return await ctx.answerCbQuery();
 });
 
-academicCalendarWizard.command("cancel", handleCancelCommand);
+academicCalendarWizard.command("cancel", async (ctx) =>
+  handleCancelCommand(
+    ctx,
+    "Academic calendar look up cancelled.\n\nPlease use /calendar to start again."
+  )
+);
 
 // Quick page jump
-academicCalendarWizard.command("page", (ctx) =>
-  handlePageCommand(ctx, deleteMessage, showAcademicCalendars)
-);
+academicCalendarWizard.command("page", async (ctx) => {
+  await handlePageCommand(ctx, deleteMessage, showAcademicCalendars);
+});
 
 export default academicCalendarWizard;

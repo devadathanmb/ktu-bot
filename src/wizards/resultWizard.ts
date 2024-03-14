@@ -10,6 +10,7 @@ import formatSummaryMessage from "utils/formatSummaryMessage";
 import calculateSgpa from "utils/calculateSgpa";
 import deleteMessage from "utils/deleteMessage";
 import handleError from "wizards/utils/wizardErrorHandler";
+import handleCancelCommand from "wizards/utils/handleCancelCommand";
 import ServerError from "errors/ServerError";
 
 /*
@@ -43,15 +44,6 @@ import ServerError from "errors/ServerError";
   - Step 1, 2, 3 and 4 have a back button to go back to the previous step, which is handled in the corresponding steps.
   - Step 4 also has a retry button, which is handled as a separate step [step 5]
 */
-
-const handleCancelCommand = async (ctx: CustomContext) => {
-  await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  await ctx.reply(
-    "Result look up cancelled.\n\nPlease use /result to start again."
-  );
-  return await ctx.scene.leave();
-};
 
 // Helper function to fetch final result
 async function sendFinalResult(ctx: CustomContext) {
@@ -290,7 +282,10 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   // Step 5 [OPTIONAL] : To handle retry result lookup, in case of a server error
   async (ctx: CustomContext) => {
     if (ctx.has(callbackQuery("data")) && ctx.callbackQuery.data === "cancel") {
-      return await handleCancelCommand(ctx);
+      return await handleCancelCommand(
+        ctx,
+        "Result look up cancelled.\n\nPlease use /result to start again."
+      );
     } else if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "retry"
@@ -337,6 +332,12 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     }
   }
 );
-resultWizard.command("cancel", handleCancelCommand);
+
+resultWizard.command("cancel", async (ctx) => {
+  await handleCancelCommand(
+    ctx,
+    "Result look up cancelled.\n\nPlease use /result to start again."
+  );
+});
 
 export default resultWizard;
