@@ -4,6 +4,7 @@ import * as https from "https";
 
 const agent = new https.Agent({
   rejectUnauthorized: false,
+  keepAlive: true,
 });
 
 const axios = setupCache(Axios, {

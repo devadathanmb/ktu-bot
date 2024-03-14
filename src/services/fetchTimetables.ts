@@ -1,4 +1,4 @@
-import { axios } from "config/axiosConfig";
+import { axios } from "api/axiosInstance";
 import { TIMETABLE_URL } from "constants/constants";
 import { Timetable } from "types/types";
 import ServerError from "errors/ServerError";

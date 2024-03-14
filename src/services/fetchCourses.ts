@@ -1,4 +1,4 @@
-import { axios } from "config/axiosConfig";
+import { axios } from "api/axiosInstance";
 import { COURSES_URL } from "constants/constants";
 import { Course } from "types/types";
 import ServerError from "errors/ServerError";

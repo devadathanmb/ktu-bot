@@ -1,4 +1,4 @@
-import { axios } from "config/axiosConfig";
+import { axios } from "api/axiosInstance";
 import { PUBLISHED_RESULTS_URL } from "constants/constants";
 import { PublishedResultData } from "types/types";
 import ServerError from "errors/ServerError";

@@ -1,4 +1,4 @@
-import { axios } from "config/axiosConfig";
+import { axios } from "api/axiosInstance";
 import { ANOUNCEMENTS_URL } from "constants/constants";
 import { Announcement } from "types/types";
 import ServerError from "errors/ServerError";
