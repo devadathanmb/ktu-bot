@@ -1,4 +1,4 @@
-import { axios } from "config/axiosConfig";
+import { axios } from "api/axiosInstance";
 import { RESULT_URL } from "constants/constants";
 import InvalidDataError from "errors/InvalidDataError";
 import { ResultDetails, ResultSummary } from "types/types";
