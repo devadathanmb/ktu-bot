@@ -1,3 +1,4 @@
+// Helper to handle errors in wizards
 import deleteMessage from "utils/deleteMessage";
 import { CustomContext } from "types/customContext.type";
 import InvalidDataError from "errors/InvalidDataError";

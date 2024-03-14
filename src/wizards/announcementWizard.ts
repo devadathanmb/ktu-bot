@@ -4,7 +4,7 @@ import fetchAnnouncements from "services/fetchAnnouncements";
 import fetchAttachment from "services/fetchAttachment";
 import { Announcement, Attachment } from "types/types";
 import deleteMessage from "utils/deleteMessage";
-import handleError from "wizards/utils/handleError";
+import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 
