@@ -48,7 +48,7 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
       );
       const chosenCalendar: AcademicCalendar = ctx.scene.session.calendars.find(
         (calendar: AcademicCalendar) => calendar.id === chosenCalendarId
-      );
+      )!;
 
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       ctx.scene.session.tempMsgId = null;
