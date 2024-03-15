@@ -7,6 +7,7 @@ import deleteMessage from "utils/deleteMessage";
 import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
+import handlePageInfoCommand from "./utils/handlePageInfoCommand";
 
 /*
   - Announcement lookup is also desinged as a WizardScene.
@@ -154,7 +155,7 @@ async function showAnnouncements(ctx: CustomContext) {
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     ctx.scene.session.waitingMsgId = null;
     const msg = await ctx.sendMessage(
-      "Choose a notification:\n\n(Use <code>/page number</code> to jump to a specific page)",
+      "Choose a notification:\n\n(Use <code>/page number</code> to jump to a specific page)\n\n(Use <code>/pageinfo</code> to show the current page in detailed message)",
       {
         parse_mode: "HTML",
         ...keyboard,
@@ -205,6 +206,17 @@ announcementWizard.command("cancel", async (ctx) => {
 announcementWizard.command(
   "page",
   async (ctx) => await handlePageCommand(ctx, deleteMessage, showAnnouncements)
+);
+
+// Show page information
+announcementWizard.command(
+  "pageinfo",
+  async (ctx) =>
+    await handlePageInfoCommand(
+      ctx,
+      ctx.scene.session.announcements,
+      "announcement"
+    )
 );
 
 export default announcementWizard;

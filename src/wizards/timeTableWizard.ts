@@ -8,6 +8,7 @@ import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 import handleCancelCommand from "./utils/handleCancelCommand";
+import handlePageInfoCommand from "./utils/handlePageInfoCommand";
 
 /*
   - Exam time table lookup is also desinged as a WizardScene.
@@ -116,7 +117,7 @@ async function showTimetables(ctx: CustomContext) {
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     ctx.scene.session.waitingMsgId = null;
     const msg = await ctx.sendMessage(
-      "Choose a time table:\n\n(Use <code>/page number</code> to jump to a specific page)",
+      "Choose a time table:\n\n(Use <code>/page number</code> to jump to a specific page)\n\n(Use <code>/pageinfo</code> to show the current page in detailed message)",
       {
         parse_mode: "HTML",
         ...keyboard,
@@ -167,6 +168,13 @@ timetableWizard.command("cancel", async (ctx) => {
 timetableWizard.command(
   "page",
   async (ctx) => await handlePageCommand(ctx, deleteMessage, showTimetables)
+);
+
+// Show page information
+timetableWizard.command(
+  "pageinfo",
+  async (ctx) =>
+    await handlePageInfoCommand(ctx, ctx.scene.session.timetables, "timetable")
 );
 
 export default timetableWizard;
