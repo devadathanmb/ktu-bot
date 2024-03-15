@@ -48,7 +48,7 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       );
       const chosenTimetable: Timetable = ctx.scene.session.timetables.find(
         (timetable: Timetable) => timetable.id === chosenTimetableid
-      );
+      )!;
 
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       ctx.scene.session.tempMsgId = null;
@@ -164,8 +164,9 @@ timetableWizard.command("cancel", async (ctx) => {
 });
 
 // Quick page jump
-timetableWizard.command("page", (ctx) =>
-  handlePageCommand(ctx, deleteMessage, showTimetables)
+timetableWizard.command(
+  "page",
+  async (ctx) => await handlePageCommand(ctx, deleteMessage, showTimetables)
 );
 
 export default timetableWizard;
