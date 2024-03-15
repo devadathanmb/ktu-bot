@@ -8,7 +8,7 @@ async function handlePageInfoCommand(
   items: any[],
   itemType: string
 ) {
-  let currentPageInfo = `<b>Page : ${ctx.scene.session.pageNumber + 1}</b>\n\n`;
+  let currentPageInfo = `<b>Page - ${ctx.scene.session.pageNumber + 1} Detailed View : </b>\n\n`;
 
   // Define the title field based on the item type
   let title: string;
@@ -33,6 +33,7 @@ async function handlePageInfoCommand(
     currentPageInfo += `${index + 1}) ` + item[title] + "\n\n";
   });
 
+  currentPageInfo += `<b>• <i>Choose an item using the buttons above. Or go to a different page.</i></b>`;
   await ctx.replyWithHTML(currentPageInfo);
 }
 
