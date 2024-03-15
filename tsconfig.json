@@ -16,7 +16,6 @@
       "@middlewares/*": ["middlewares/*"],
       "@services/*": ["services/*"],
       "@utils/*": ["utils/*"],
-      "@config/*": ["config/*"],
       "@queues/*": ["queues/*"]
     },
     "strict": true
