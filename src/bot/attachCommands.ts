@@ -10,6 +10,7 @@ import notifications from "handlers/commands/notifications";
 import subscribe from "handlers/commands/subscribe";
 import unsubscribe from "handlers/commands/unsubscribe";
 import timetable from "handlers/commands/timetable";
+import page from "handlers/commands/page";
 
 // Attach all command handlers/commands to the bot
 function attachCommands() {
@@ -24,6 +25,8 @@ function attachCommands() {
   bot.command("timetable", timetable);
   bot.command("calendar", calendar);
   bot.command("changefilter", changeFilter);
+  bot.command("page", page);
+  bot.command("pageinfo", page);
 }
 
 export default attachCommands;
