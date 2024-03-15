@@ -15,6 +15,14 @@ const availableCommands: Command[] = [
     description: "🔧 Change notification filter",
   },
   {
+    command: "page",
+    description: "🦘 Quick jump to a page",
+  },
+  {
+    command: "pageinfo",
+    description: "📄 Get page info",
+  },
+  {
     command: "search",
     description: "🧐 See how to search for KTU notifications",
   },
