@@ -57,7 +57,7 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
         ctx.scene.session.announcements.find(
           (announcement: Announcement) =>
             announcement.id == chosenAnnouncementId
-        );
+        )!;
 
       const attachments: Attachment[] = chosenAnnouncement.attachments.map(
         (attachment: Attachment) => ({
@@ -202,8 +202,9 @@ announcementWizard.command("cancel", async (ctx) => {
 });
 
 // Quick page jump
-announcementWizard.command("page", (ctx) =>
-  handlePageCommand(ctx, deleteMessage, showAnnouncements)
+announcementWizard.command(
+  "page",
+  async (ctx) => await handlePageCommand(ctx, deleteMessage, showAnnouncements)
 );
 
 export default announcementWizard;
