@@ -25,6 +25,8 @@ async function getRelevancy(inputText: string): Promise<boolean> {
       "https://api-inference.huggingface.co/models/devadathanmb/ktu-notifs-relevancy-bert";
     const response = await axios.post(INFERENCER_URL, payload, {
       headers: headers,
+      // Hugging face api might take ~20 seconds to load the model
+      timeout: 30 * 1000,
     });
 
     const relevantData: Relevancy[] = response.data[0];
