@@ -94,8 +94,8 @@ async function showTimetables(ctx: CustomContext) {
     const waitingMsg = await ctx.reply("Fetching time tables.. Please wait..");
     ctx.scene.session.waitingMsgId = waitingMsg.message_id;
     const timetables = await fetchTimetables(ctx.scene.session.pageNumber, 10);
-    const timetableButtons = timetables.map(({ id, title }) =>
-      Markup.button.callback(title, `timetable_${id}`)
+    const timetableButtons = timetables.map(({ id, title }, index) =>
+      Markup.button.callback(`${index + 1}) ${title}`, `timetable_${id}`)
     );
     const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
     const prevPageButton = Markup.button.callback("Prev ⏮️", "prev_page");
