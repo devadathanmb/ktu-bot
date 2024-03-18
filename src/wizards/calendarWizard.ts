@@ -114,7 +114,7 @@ async function showAcademicCalendars(ctx: CustomContext) {
       );
     });
 
-    calendarMsg += `<b>• <i>Choose an academic caledar using the buttons below</i></b>\n`;
+    calendarMsg += `<b>• <i>Choose an academic calendar using the buttons below</i></b>\n\n`;
     calendarMsg += `<b>• <i>Use <code>/page pageno</code> to jump to a specific page</i></b>`;
 
     const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
