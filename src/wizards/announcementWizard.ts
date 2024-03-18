@@ -7,7 +7,8 @@ import deleteMessage from "utils/deleteMessage";
 import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
-import handlePageInfoCommand from "./utils/handlePageInfoCommand";
+import { InlineKeyboardButton } from "telegraf/types";
+import shortenString from "wizards/utils/shortenString";
 
 /*
   - Announcement lookup is also desinged as a WizardScene.
@@ -132,9 +133,19 @@ async function showAnnouncements(ctx: CustomContext) {
       ctx.scene.session.pageNumber,
       10
     );
-    const announcementButtons = announcements.map(({ id, subject }, index) =>
-      Markup.button.callback(`${index + 1}) ${subject}`, `announcement_${id}`)
-    );
+    let announcementMsg = "<b>Announcements</b>:\n\n";
+    let announcementButtons: InlineKeyboardButton.CallbackButton[] = [];
+
+    announcements.forEach(({ id, subject }, index) => {
+      announcementMsg += `${index + 1}) ${shortenString(subject)}\n\n`;
+      announcementButtons.push(
+        Markup.button.callback(`${index + 1}`, `announcement_${id}`)
+      );
+    });
+
+    announcementMsg += `<b>• <i>Choose a notification using the buttons below</i></b>\n`;
+    announcementMsg += `<b>• <i>Use <code>/page pageno</code> to jump to a specific page</i></b>`;
+
     const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
     const prevPageButton = Markup.button.callback("Prev ⏮️", "prev_page");
     const pageInfoButton = Markup.button.callback(
@@ -144,8 +155,13 @@ async function showAnnouncements(ctx: CustomContext) {
     const keyboard = Markup.inlineKeyboard(
       [...announcementButtons, prevPageButton, pageInfoButton, nextPageButton],
       {
-        wrap(_btn, _index, currentRow) {
-          if (!currentRow.includes(prevPageButton)) {
+        wrap(btn, index, _currentRow) {
+          if (!isNaN(Number(btn.text))) {
+            if (index % 5 === 0) {
+              return true;
+            }
+            return false;
+          } else if (btn === prevPageButton) {
             return true;
           }
           return false;
@@ -154,13 +170,10 @@ async function showAnnouncements(ctx: CustomContext) {
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     ctx.scene.session.waitingMsgId = null;
-    const msg = await ctx.sendMessage(
-      "Choose a notification:\n\n(Use <code>/page number</code> to jump to a specific page)\n\n(Use <code>/pageinfo</code> to show the current page in detailed message)",
-      {
-        parse_mode: "HTML",
-        ...keyboard,
-      }
-    );
+    const msg = await ctx.sendMessage(announcementMsg, {
+      parse_mode: "HTML",
+      ...keyboard,
+    });
     ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.announcements = announcements;
   } catch (error) {
@@ -206,17 +219,6 @@ announcementWizard.command("cancel", async (ctx) => {
 announcementWizard.command(
   "page",
   async (ctx) => await handlePageCommand(ctx, deleteMessage, showAnnouncements)
-);
-
-// Show page information
-announcementWizard.command(
-  "pageinfo",
-  async (ctx) =>
-    await handlePageInfoCommand(
-      ctx,
-      ctx.scene.session.announcements,
-      "announcement"
-    )
 );
 
 export default announcementWizard;

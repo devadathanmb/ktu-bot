@@ -18,7 +18,7 @@ function attachMiddlewares() {
   ]);
 
   // Register middlewares
-  bot.use(loggingMiddleware);
+  /* bot.use(loggingMiddleware); */
   bot.use(session());
   bot.use(stage.middleware());
 }

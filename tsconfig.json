@@ -6,17 +6,7 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"],
-      "@errors/*": ["errors/*"],
-      "@db/*": ["db/*"],
-      "@constants/*": ["constants/*"],
-      "@handlers/*": ["handlers/*"],
-      "@wizards/*": ["wizards/*"],
-      "@types/*": ["types/*"],
-      "@middlewares/*": ["middlewares/*"],
-      "@services/*": ["services/*"],
-      "@utils/*": ["utils/*"],
-      "@queues/*": ["queues/*"]
+      "@/*": ["*"]
     },
     "strict": true
   },
