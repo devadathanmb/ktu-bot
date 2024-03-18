@@ -1,5 +1,5 @@
 import * as cron from "node-cron";
-import fetchAnnouncements from "@services/fetchAnnouncements";
+import fetchAnnouncements from "services/fetchAnnouncements";
 import { readFile, writeFile } from "node:fs/promises";
 import fetchAttachment from "services/fetchAttachment";
 import { Announcement, Attachment, JobData } from "types/types";
