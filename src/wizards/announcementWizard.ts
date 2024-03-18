@@ -143,7 +143,8 @@ async function showAnnouncements(ctx: CustomContext) {
       );
     });
 
-    announcementMsg += `<b>• <i>Choose notification using the buttons below</i></b>`;
+    announcementMsg += `<b>• <i>Choose a notification using the buttons below</i></b>`;
+    announcementMsg += `<b>• <i>Use <code>/page pageno</code> to jump to a specific page</i></b>`;
 
     const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
     const prevPageButton = Markup.button.callback("Prev ⏮️", "prev_page");
