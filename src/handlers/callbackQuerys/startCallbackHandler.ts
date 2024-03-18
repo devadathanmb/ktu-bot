@@ -34,7 +34,7 @@ async function startCallbackHandler(ctx: CustomContext) {
 
 ○ Bot ID : <code>${ctx.botInfo.id}</code>
 
-○ Uptime : ${botUptime} hrs (since last update/restart)
+○ Uptime : ${botUptime} hrs
 
 ○ Language : <a href="https://www.typescriptlang.org/">TypeScript</a>
 
