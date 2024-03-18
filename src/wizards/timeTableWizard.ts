@@ -106,7 +106,7 @@ async function showTimetables(ctx: CustomContext) {
       );
     });
 
-    timetableMsg += `<b>• <i>Choose an exam time table using the buttons below</i></b>\n`;
+    timetableMsg += `<b>• <i>Choose an exam time table using the buttons below</i></b>\n\n`;
     timetableMsg += `<b>• <i>Use <code>/page pageno</code> to jump to a specific page</i></b>`;
 
     const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
