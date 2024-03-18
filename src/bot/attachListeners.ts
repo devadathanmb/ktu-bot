@@ -7,7 +7,7 @@ import startCallbackHandler from "handlers/callbackQuerys/startCallbackHandler";
 import {
   inlineQueryResultHandler,
   searchInlineQueryHandler,
-} from "@handlers/searchInlineQueryHandler";
+} from "handlers/searchInlineQueryHandler";
 
 function attachListeners() {
   bot.start(start);
