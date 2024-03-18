@@ -8,7 +8,8 @@ import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 import handleCancelCommand from "wizards/utils/handleCancelCommand";
-import handlePageInfoCommand from "./utils/handlePageInfoCommand";
+import { InlineKeyboardButton } from "telegraf/types";
+import shortenString from "@/wizards/utils/shortenString";
 
 /*
   - Academic calendar lookup is also desinged as a WizardScene.
@@ -103,9 +104,19 @@ async function showAcademicCalendars(ctx: CustomContext) {
       ctx.scene.session.pageNumber,
       10
     );
-    const calendarButtons = calendars.map(({ id, title }, index) =>
-      Markup.button.callback(`${index + 1}) ${title}`, `calendar_${id}`)
-    );
+    let calendarMsg = "<b>Exam time tables</b>:\n\n";
+    let calendarButtons: InlineKeyboardButton.CallbackButton[] = [];
+
+    calendars.forEach(({ id, title }, index) => {
+      calendarMsg += `${index + 1}) ${shortenString(title)}\n\n`;
+      calendarButtons.push(
+        Markup.button.callback(`${index}`, `calendar_${id}`)
+      );
+    });
+
+    calendarMsg += `<b>• <i>Choose an academic caledar using the buttons below</i></b>\n`;
+    calendarMsg += `<b>• <i>Use <code>/page pageno</code> to jump to a specific page</i></b>`;
+
     const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
     const prevPageButton = Markup.button.callback("Prev ⏮️", "prev_page");
     const pageInfoButton = Markup.button.callback(
@@ -115,8 +126,13 @@ async function showAcademicCalendars(ctx: CustomContext) {
     const keyboard = Markup.inlineKeyboard(
       [...calendarButtons, prevPageButton, pageInfoButton, nextPageButton],
       {
-        wrap(_btn, _index, currentRow) {
-          if (!currentRow.includes(prevPageButton)) {
+        wrap(btn, index, _currentRow) {
+          if (!isNaN(Number(btn.text))) {
+            if (index % 5 === 0) {
+              return true;
+            }
+            return false;
+          } else if (btn === prevPageButton) {
             return true;
           }
           return false;
@@ -125,13 +141,10 @@ async function showAcademicCalendars(ctx: CustomContext) {
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     ctx.scene.session.waitingMsgId = null;
-    const msg = await ctx.sendMessage(
-      "Choose an academic calendar:\n\n(Use <code>/page number</code> to jump to a specific page)\n\n(Use <code>/pageinfo</code> to show the current page in detailed message)",
-      {
-        parse_mode: "HTML",
-        ...keyboard,
-      }
-    );
+    const msg = await ctx.sendMessage(calendarMsg, {
+      parse_mode: "HTML",
+      ...keyboard,
+    });
     ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.calendars = calendars;
   } catch (error) {
@@ -177,12 +190,5 @@ academicCalendarWizard.command("cancel", async (ctx) =>
 academicCalendarWizard.command("page", async (ctx) => {
   await handlePageCommand(ctx, deleteMessage, showAcademicCalendars);
 });
-
-// Show page information
-academicCalendarWizard.command(
-  "pageinfo",
-  async (ctx) =>
-    await handlePageInfoCommand(ctx, ctx.scene.session.calendars, "calendar")
-);
 
 export default academicCalendarWizard;

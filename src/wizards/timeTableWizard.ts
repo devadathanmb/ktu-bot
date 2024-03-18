@@ -8,7 +8,8 @@ import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 import handleCancelCommand from "./utils/handleCancelCommand";
-import handlePageInfoCommand from "./utils/handlePageInfoCommand";
+import { InlineKeyboardButton } from "telegraf/types";
+import shortenString from "@/wizards/utils/shortenString";
 
 /*
   - Exam time table lookup is also desinged as a WizardScene.
@@ -94,9 +95,20 @@ async function showTimetables(ctx: CustomContext) {
     const waitingMsg = await ctx.reply("Fetching time tables.. Please wait..");
     ctx.scene.session.waitingMsgId = waitingMsg.message_id;
     const timetables = await fetchTimetables(ctx.scene.session.pageNumber, 10);
-    const timetableButtons = timetables.map(({ id, title }, index) =>
-      Markup.button.callback(`${index + 1}) ${title}`, `timetable_${id}`)
-    );
+
+    let timetableMsg = "<b>Exam time tables</b>:\n\n";
+    let timetableButtons: InlineKeyboardButton.CallbackButton[] = [];
+
+    timetables.forEach(({ id, title }, index) => {
+      timetableMsg += `${index + 1}) ${shortenString(title)}\n\n`;
+      timetableButtons.push(
+        Markup.button.callback(`${index + 1}`, `timetable_${id}`)
+      );
+    });
+
+    timetableMsg += `<b>• <i>Choose an exam time table using the buttons below</i></b>\n`;
+    timetableMsg += `<b>• <i>Use <code>/page pageno</code> to jump to a specific page</i></b>`;
+
     const nextPageButton = Markup.button.callback("Next ⏭️", "next_page");
     const prevPageButton = Markup.button.callback("Prev ⏮️", "prev_page");
     const pageButton = Markup.button.callback(
@@ -106,8 +118,13 @@ async function showTimetables(ctx: CustomContext) {
     const keyboard = Markup.inlineKeyboard(
       [...timetableButtons, prevPageButton, pageButton, nextPageButton],
       {
-        wrap(_btn, _index, currentRow) {
-          if (!currentRow.includes(prevPageButton)) {
+        wrap(btn, index, _currentRow) {
+          if (!isNaN(Number(btn.text))) {
+            if (index % 5 === 0) {
+              return true;
+            }
+            return false;
+          } else if (btn === prevPageButton) {
             return true;
           }
           return false;
@@ -116,13 +133,10 @@ async function showTimetables(ctx: CustomContext) {
     );
     await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
     ctx.scene.session.waitingMsgId = null;
-    const msg = await ctx.sendMessage(
-      "Choose a time table:\n\n(Use <code>/page number</code> to jump to a specific page)\n\n(Use <code>/pageinfo</code> to show the current page in detailed message)",
-      {
-        parse_mode: "HTML",
-        ...keyboard,
-      }
-    );
+    const msg = await ctx.sendMessage(timetableMsg, {
+      parse_mode: "HTML",
+      ...keyboard,
+    });
     ctx.scene.session.tempMsgId = msg.message_id;
     ctx.scene.session.timetables = timetables;
   } catch (error) {
@@ -168,13 +182,6 @@ timetableWizard.command("cancel", async (ctx) => {
 timetableWizard.command(
   "page",
   async (ctx) => await handlePageCommand(ctx, deleteMessage, showTimetables)
-);
-
-// Show page information
-timetableWizard.command(
-  "pageinfo",
-  async (ctx) =>
-    await handlePageInfoCommand(ctx, ctx.scene.session.timetables, "timetable")
 );
 
 export default timetableWizard;
