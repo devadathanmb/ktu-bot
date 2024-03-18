@@ -104,7 +104,7 @@ async function showAcademicCalendars(ctx: CustomContext) {
       ctx.scene.session.pageNumber,
       10
     );
-    let calendarMsg = "<b>Exam time tables</b>:\n\n";
+    let calendarMsg = "<b>Academic calendars</b>:\n\n";
     let calendarButtons: InlineKeyboardButton.CallbackButton[] = [];
 
     calendars.forEach(({ id, title }, index) => {
