@@ -1,18 +1,26 @@
+import { ResultDetails } from "@/types/types";
 import shortenCourse from "./shortenCourse";
-function formatResultMessage(resultDetails: any[], sgpa: string) {
+function formatResultMessage(resultDetails: ResultDetails[], sgpa: string) {
+  let messages: string[] = [];
   let message = "<u><b>Your Exam Results</b></u>\n\n";
 
-  resultDetails.forEach(({ courseName, grade, credits }) => {
-    const shortenedCourse = shortenCourse(courseName);
-    message += `<u><i>${courseName} (${shortenedCourse})</i></u>\n`;
-    message += `   - <b>Grade:</b> <b>${grade}</b>\n`;
-    message += `   - <b>Earned credits:</b> <b>${
-      credits ? credits : 0
-    }</b>\n\n\n`;
-  });
+  // If result payload contains lots of courses, then we need split the message into multiple messages
 
-  message += `<b>SGPA:</b> <b>${sgpa}</b>\n\n`;
-  return message;
+  for (let i = 0; i < resultDetails.length; i += 1) {
+    if (i % 6 === 0 && i !== 0) {
+      messages.push(message);
+      message = "";
+    }
+    const shortenedCourse = shortenCourse(resultDetails[i].courseName);
+    message += `<u><i>${resultDetails[i].courseName} (${shortenedCourse})</i></u>\n`;
+    message += `   - <b>Grade:</b> <b>${resultDetails[i].grade}</b>\n`;
+    message += `   - <b>Earned credits:</b> <b>${
+      resultDetails[i].credits ? resultDetails[i].credits : 0
+    }</b>\n\n\n`;
+  }
+
+  messages[messages.length - 1] += `<b>SGPA:</b> <b>${sgpa}</b>\n\n`;
+  return messages;
 }
 
 export default formatResultMessage;

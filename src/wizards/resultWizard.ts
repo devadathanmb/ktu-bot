@@ -60,7 +60,10 @@ async function sendFinalResult(ctx: CustomContext) {
 
   const sgpa = calculateSgpa(resultDetails);
   await ctx.replyWithHTML(formatSummaryMessage(summary));
-  await ctx.replyWithHTML(formatResultMessage(resultDetails, sgpa));
+  const resultMessages = formatResultMessage(resultDetails, sgpa);
+  for (let i = 0; i < resultMessages.length; i++) {
+    await ctx.replyWithHTML(resultMessages[i]);
+  }
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
 }
 
