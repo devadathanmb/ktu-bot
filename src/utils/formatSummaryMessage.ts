@@ -7,12 +7,12 @@ function formatSummaryMessage(summary: any) {
 
   return (
     `<u><b>Result Details</b></u>\n\n` +
-    `<b>• Name:</b> <b>${fullName}</b>\n\n` +
-    `<b>• Branch:</b> <b>${summary.branch}</b>\n\n` +
-    `<b>• Semester:</b> <b>${summary.semester}</b>\n\n` +
-    `<b>• Register No:</b> <b>${summary.registrerNo}</b>\n\n` +
-    `<b>• Institution:</b> <b>${summary.institutionName}</b>\n\n` +
-    `<b>• Result Name:</b> <b>${summary.resultName}</b>\n\n`
+    `<b>• Name:</b> ${fullName}\n\n` +
+    `<b>• Branch:</b> ${summary.branch}\n\n` +
+    `<b>• Semester:</b> ${summary.semester}\n\n` +
+    `<b>• Register No:</b> ${summary.registrerNo}\n\n` +
+    `<b>• Institution:</b> ${summary.institutionName}\n\n` +
+    `<b>• Result Name:</b> ${summary.resultName}\n\n`
   );
 }
 
