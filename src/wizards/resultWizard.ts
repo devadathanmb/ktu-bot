@@ -155,12 +155,20 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         return ctx.wizard.step(ctx, next);
       }
     }
+
+    if (
+      ctx.has(callbackQuery("data")) &&
+      ctx.callbackQuery.data !== "back_to_2"
+    ) {
+      const [examDefId, schemeId] = ctx.callbackQuery.data.split("_");
+      ctx.scene.session.examDefId = Number(examDefId);
+      ctx.scene.session.schemeId = Number(schemeId);
+    }
+
     if (!ctx.has(callbackQuery("data"))) {
       return await ctx.scene.leave();
     }
-    const [examDefId, schemeId] = ctx.callbackQuery.data.split("_");
-    ctx.scene.session.examDefId = Number(examDefId);
-    ctx.scene.session.schemeId = Number(schemeId);
+
     const msg = await ctx.reply("Please enter your KTU Registration Number", {
       reply_markup: {
         inline_keyboard: [
