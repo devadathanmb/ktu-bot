@@ -110,7 +110,7 @@ async function showAcademicCalendars(ctx: CustomContext) {
     calendars.forEach(({ id, title }, index) => {
       calendarMsg += `${index + 1}) ${shortenString(title)}\n\n`;
       calendarButtons.push(
-        Markup.button.callback(`${index}`, `calendar_${id}`)
+        Markup.button.callback(`${index + 1}`, `calendar_${id}`)
       );
     });
 
