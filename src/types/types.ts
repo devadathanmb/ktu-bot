@@ -19,6 +19,7 @@ interface PublishedResultData {
   resultName: string;
   examDefId: number;
   schemeId: number;
+  date: string;
 }
 
 interface Course {
