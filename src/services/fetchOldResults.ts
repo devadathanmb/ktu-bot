@@ -5,13 +5,26 @@ import ServerError from "errors/ServerError";
 import DataNotFoundError from "errors/DataNotFoundError";
 import NodeCache = require("node-cache");
 
+// Fetching old results is possible only due to a bug in the KTU API
+// The KTU API returns all the results when the program is empty
+// So we can fetch all the results and filter them based on the course name
+// This is a bandwidth intensive operation, and the filter process can be CPU intensive
+// Thus we cache everything for 24 hours
+
+const CACHE_TTL = 24 * 60 * 60; // 24 hours
+
+const resultsCache = new NodeCache({
+  stdTTL: CACHE_TTL,
+});
+
 const COURSES_REGEX: Record<string, string> = {
   "\\bb\\.? ?tech": "btech",
-  "\\bm\\.? ?tech": "mtech",
-  "\bmcas*((?:twos*year|2s*year))": "mcaTwoYear",
-  "\bmcas*((?:seconds*years*direct))": "mcaSecondYearDirect",
-  "\bmcas*integrated\b": "mcaIntegrated",
-  "\\bmca\\b": "mca",
+  "\\b(m\\.? ?tech)\\b(?![^\\(]*\\))": "mtech",
+  "\\bmca\\s*\\(?(?:two\\s*years?|2\\s*years?)\\)?": "mcaTwoYear",
+  "\\bmca\\s*\\(?(?:second\\s*years?\\s*direct)\\)?": "mcaSecondYearDirect",
+  "\\bmca\\s*integrated\b": "mcaIntegrated",
+  "\\bmca\\b(?![\\s\\S]*(?:\\b(?:two\\s*year|2\\s*year|second\\s*years*direct|integrated)\\b))":
+    "mca",
   "\\bphd\\b": "phd",
   "\\bb\\.? ?des": "bdes",
   "\\bmba\\b": "mba",
@@ -19,36 +32,11 @@ const COURSES_REGEX: Record<string, string> = {
   "\\bm\\.? ?arch": "march",
   "\\bb\\.? ?voc": "bvoc",
   "\\bm\\.? ?plan": "mplan",
-  "hotel management": "hmct",
   "\\bbhmct": "hmct",
   "\\bmhm\\b": "mhm",
 };
 
-const COURSES: Record<string, string> = {
-  btech: "B.Tech",
-  mtech: "M.Tech",
-  mcaTwoYear: "MCA (2 Year)",
-  mcaSecondYearDirect: "MCA (Second Year Direct)",
-  mcaIntegrated: "MCA Dual degree (INTEGRATED)",
-  mca: "MCA",
-  phd: "PhD",
-  bdes: "B.Des",
-  mba: "MBA",
-  barch: "B.Arch",
-  march: "M.Arch",
-  bvoc: "B.Voc",
-  mplan: "M.Plan",
-  hmct: "Hotel Management & Catering Technology",
-  mhm: "MHM",
-};
-
 async function fetchAllOldResults(): Promise<PublishedResultData[]> {
-  const CACHE_TTL = 24 * 60 * 60; // 24 hours
-
-  const filteredResultsCache = new NodeCache({
-    stdTTL: CACHE_TTL,
-  });
-
   try {
     const response = await axios.post(
       PUBLISHED_RESULTS_URL,
@@ -63,30 +51,53 @@ async function fetchAllOldResults(): Promise<PublishedResultData[]> {
       }
     );
 
-    let responseData: PublishedResultData[] = response.data;
+    let responseData: PublishedResultData[] = response.data.reverse();
 
     if (responseData.length === 0) {
       throw new DataNotFoundError("No results found");
     }
 
     let filteredResponseData: PublishedResultData[] | undefined =
-      filteredResultsCache.get("filteredResults");
+      resultsCache.get("filteredResults");
 
     if (!filteredResponseData) {
       const data = responseData.map((result) => ({
         resultName: result.resultName,
         examDefId: result.examDefId,
         schemeId: result.schemeId,
-        date: result.date,
+        publishDate: result.publishDate,
       }));
-      filteredResultsCache.set("filteredResults", data);
+      resultsCache.set("filteredResults", data);
     }
 
-    return filteredResultsCache.get("filteredResults") as PublishedResultData[];
+    return resultsCache.get("filteredResults") as PublishedResultData[];
   } catch (error: any) {
     if (error instanceof DataNotFoundError) throw error;
     throw new ServerError();
   }
 }
 
-function fetchResults(courseName: string, range: number) {}
+function fetchOldResults(courseName: string, page: number) {
+  // Coursename will be a key in COURSES_REGEX
+  // So match all the results that matches this regex string
+  const PAGE_SIZE = 10;
+  const data: PublishedResultData[] | undefined = resultsCache.get(courseName);
+  if (data) {
+    return data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }
+
+  const courseRegex = Object.keys(COURSES_REGEX).find(
+    (key) => COURSES_REGEX[key] === courseName
+  )!;
+
+  const filteredResults = resultsCache.get(
+    "filteredResults"
+  ) as PublishedResultData[];
+  const matchedResults = filteredResults.filter((result) => {
+    return new RegExp(courseRegex, "i").test(result.resultName);
+  });
+  resultsCache.set(courseName, matchedResults);
+  return matchedResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+}
+
+export { fetchAllOldResults, fetchOldResults };

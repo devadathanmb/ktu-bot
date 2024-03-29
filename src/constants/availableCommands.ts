@@ -5,6 +5,7 @@ const availableCommands: Command[] = [
   { command: "cancel", description: "❌ Cancel operation" },
   { command: "help", description: "🆘 Help me!" },
   { command: "result", description: "🔍 KTU result lookup" },
+  { command: "oldresults", description: "🔎 Old results lookup" },
   { command: "notifications", description: "💬 KTU notifications lookup" },
   { command: "calendar", description: "📅 KTU academic calendar lookup" },
   { command: "timetable", description: "📰 KTU exam time table lookup" },
