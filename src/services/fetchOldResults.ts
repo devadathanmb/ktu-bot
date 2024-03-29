@@ -83,7 +83,7 @@ function fetchOldResults(courseName: string, page: number) {
   const PAGE_SIZE = 10;
   const data: PublishedResultData[] | undefined = resultsCache.get(courseName);
   if (data) {
-    return data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    return data.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   }
 
   const courseRegex = Object.keys(COURSES_REGEX).find(
