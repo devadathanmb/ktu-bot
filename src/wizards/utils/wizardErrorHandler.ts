@@ -6,6 +6,9 @@ import ServerError from "errors/ServerError";
 import DataNotFoundError from "errors/DataNotFoundError";
 
 async function handleError(ctx: CustomContext, error: any) {
+  if (ctx.updateType === "callback_query") {
+    await ctx.answerCbQuery();
+  }
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   if (error instanceof InvalidDataError) {
     await ctx.reply(

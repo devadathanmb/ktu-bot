@@ -102,6 +102,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     await deleteMessage(ctx, ctx.scene.session.tempMsgId);
     let courseId: number;
     if (ctx.has(callbackQuery("data"))) {
+      await ctx.answerCbQuery();
       if (ctx.callbackQuery.data === "back_to_1") {
         courseId = ctx.scene.session.courseId;
       } else {
@@ -143,6 +144,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       return await ctx.reply("Please choose a valid option");
     }
 
+    await ctx.answerCbQuery();
     await deleteMessage(ctx, ctx.scene.session.tempMsgId);
     ctx.scene.session.tempMsgId = null;
     if (
@@ -193,6 +195,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_1"
     ) {
+      await ctx.answerCbQuery();
       ctx.wizard.selectStep(1);
       if (typeof ctx.wizard.step === "function") {
         return ctx.wizard.step(ctx, next);
@@ -233,6 +236,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_2"
     ) {
+      await ctx.answerCbQuery();
       ctx.wizard.selectStep(2);
 
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
@@ -293,6 +297,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   // Step 5 [OPTIONAL] : To handle retry result lookup, in case of a server error
   async (ctx: CustomContext) => {
     if (ctx.has(callbackQuery("data")) && ctx.callbackQuery.data === "cancel") {
+      await ctx.answerCbQuery();
       return await handleCancelCommand(
         ctx,
         "Result look up cancelled.\n\nPlease use /result to start again."
@@ -301,6 +306,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "retry"
     ) {
+      await ctx.answerCbQuery();
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       ctx.scene.session.waitingMsgId = null;
