@@ -24,6 +24,7 @@ async function fetchPublishedResults(
       resultName: result.resultName,
       examDefId: result.examDefId,
       schemeId: result.schemeId,
+      publishDate: result.publishDate,
     }));
 
     // TODO: Remove this when the API is fixed
