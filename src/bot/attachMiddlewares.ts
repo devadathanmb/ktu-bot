@@ -2,6 +2,7 @@ import bot from "@/bot";
 import loggingMiddleware from "middlewares/loggingMiddleware";
 import { Scenes, session } from "telegraf";
 import resultWizard from "wizards/resultWizard";
+import oldResultsWizard from "wizards/oldResultsWizard";
 import academicCalendarWizard from "wizards/calendarWizard";
 import announcementWizard from "wizards/announcementWizard";
 import timetableWizard from "wizards/timeTableWizard";
@@ -15,6 +16,7 @@ function attachMiddlewares() {
     announcementWizard,
     academicCalendarWizard,
     timetableWizard,
+    oldResultsWizard,
   ]);
 
   // Register middlewares

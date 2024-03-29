@@ -10,6 +10,8 @@ async function help(ctx: CustomContext) {
  
 • /result - Exam results lookup 
 
+• /oldresults - Old exam results lookup 
+
 • /notifications - Notifications lookup
  
 • /calendar - Academic calendar lookup
