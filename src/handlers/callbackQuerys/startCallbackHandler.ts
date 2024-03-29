@@ -16,15 +16,14 @@ function format(seconds: number) {
 }
 
 async function startCallbackHandler(ctx: CustomContext) {
+  await ctx.answerCbQuery();
   if (ctx.has(callbackQuery("data"))) {
     const action = ctx.callbackQuery.data.split("_")[2];
     switch (action) {
       case "help":
-        await ctx.answerCbQuery();
         return await help(ctx);
 
       case "about":
-        await ctx.answerCbQuery();
         try {
           const botUptime = format(uptime());
           const caption = `
@@ -62,7 +61,6 @@ async function startCallbackHandler(ctx: CustomContext) {
           return;
         }
       case "back":
-        await ctx.answerCbQuery();
         const name = ctx.from?.first_name;
         const greeting = `Hello ${name ? name + "!" : "there!"}`;
         const caption = `${greeting} 👋\n` + startMsg;
