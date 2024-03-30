@@ -18,6 +18,18 @@ async function fetchResult(
       schemeId: schemeId,
     };
 
+    if (!examDefId || !schemeId) {
+      throw new InvalidDataError(
+        "Invalid course or result choosen. Please try again."
+      );
+    }
+
+    if (!dob || !regisNo) {
+      throw new InvalidDataError(
+        "Invalid DOB or register number. Please try again."
+      );
+    }
+
     const response = await axios.post(RESULT_URL, payload);
 
     const resultDetails: ResultDetails[] = response.data.resultDetails.map(
@@ -50,13 +62,18 @@ async function fetchResult(
 
     return { summary, resultDetails };
   } catch (error: any) {
+    if (error instanceof InvalidDataError) {
+      throw new InvalidDataError(error.message);
+    }
     if (error.response) {
       if (
         error.response.status === 400 ||
         (error.response.status === 500 &&
           error.response.data?.message === "Index 0 out of bounds for length 0")
       ) {
-        throw new InvalidDataError();
+        throw new InvalidDataError(
+          "Invalid DOB or register number. Please try again."
+        );
       } else if (error.response.status >= 500) {
         throw new ServerError();
       }

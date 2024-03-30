@@ -11,9 +11,7 @@ async function handleError(ctx: CustomContext, error: any) {
   }
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   if (error instanceof InvalidDataError) {
-    await ctx.reply(
-      "Invalid roll number or dob.\n\nAre you sure that the roll number and date of birth are correct?"
-    );
+    await ctx.reply(error.message);
     await ctx.reply("Please use /result to start again.");
     return ctx.scene.leave();
   } else if (error instanceof ServerError) {
