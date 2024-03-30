@@ -99,17 +99,21 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup."
       );
     }
-    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
     let courseId: number;
     if (ctx.has(callbackQuery("data"))) {
       await ctx.answerCbQuery();
       if (ctx.callbackQuery.data === "back_to_1") {
+        await deleteMessage(ctx, ctx.scene.session.tempMsgId);
         courseId = ctx.scene.session.courseId;
-      } else {
+      } else if (ctx.callbackQuery.data.startsWith("course_")) {
+        await deleteMessage(ctx, ctx.scene.session.tempMsgId);
         courseId = Number.parseInt(ctx.callbackQuery.data.split("_")[1]);
         ctx.scene.session.courseId = courseId;
+      } else {
+        return await ctx.reply("Please choose a valid course");
       }
     } else {
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       return await ctx.scene.leave();
     }
     try {
@@ -145,13 +149,14 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     }
 
     await ctx.answerCbQuery();
-    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-    ctx.scene.session.tempMsgId = null;
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_0"
     ) {
       ctx.wizard.selectStep(0);
+
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.tempMsgId = null;
 
       if (typeof ctx.wizard.step === "function") {
         return ctx.wizard.step(ctx, next);
@@ -165,6 +170,12 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       const [examDefId, schemeId] = ctx.callbackQuery.data.split("_");
       ctx.scene.session.examDefId = Number(examDefId);
       ctx.scene.session.schemeId = Number(schemeId);
+
+      if (!ctx.scene.session.examDefId || !ctx.scene.session.schemeId) {
+        return await ctx.reply("Please choose a valid result");
+      }
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.tempMsgId = null;
     }
 
     if (!ctx.has(callbackQuery("data"))) {
@@ -189,13 +200,13 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
 
   // Wizard Step 3
   async (ctx, next) => {
-    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-    ctx.scene.session.tempMsgId = null;
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_1"
     ) {
       await ctx.answerCbQuery();
+      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+      ctx.scene.session.tempMsgId = null;
       ctx.wizard.selectStep(1);
       if (typeof ctx.wizard.step === "function") {
         return ctx.wizard.step(ctx, next);
@@ -210,6 +221,8 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       return await ctx.reply("Please enter a valid registration number");
     }
     ctx.scene.session.regisNo = regisNo.toUpperCase();
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
 
     const msg = await ctx.replyWithHTML(
       "Please enter your Date of Birth\n\n<b>Format: DD/MM/YYYY</b> \n\n(<i>Example: 01/01/2000</i>)",

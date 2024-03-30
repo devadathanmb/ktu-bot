@@ -49,6 +49,11 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       const chosenTimetableid = Number.parseInt(
         ctx.callbackQuery.data.split("_")[1]
       );
+
+      if (!chosenTimetableid) {
+        return await ctx.reply("Please choose a valid option");
+      }
+
       const chosenTimetable: Timetable = ctx.scene.session.timetables.find(
         (timetable: Timetable) => timetable.id === chosenTimetableid
       )!;

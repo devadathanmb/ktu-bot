@@ -49,6 +49,11 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
       const chosenCalendarId = Number.parseInt(
         ctx.callbackQuery.data.split("_")[1]
       );
+
+      if (!chosenCalendarId) {
+        return await ctx.reply("Please choose a valid option");
+      }
+
       const chosenCalendar: AcademicCalendar = ctx.scene.session.calendars.find(
         (calendar: AcademicCalendar) => calendar.id === chosenCalendarId
       )!;
