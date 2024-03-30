@@ -2,6 +2,15 @@ import { CustomContext } from "types/customContext.type";
 import deleteMessage from "utils/deleteMessage";
 
 async function defaultHandler(ctx: CustomContext) {
+  // Scenes and wizards get expired due to bot restarts or inactivity
+  if (ctx.updateType == "callback_query") {
+    await ctx.answerCbQuery();
+    await ctx.reply(
+      "Session expired..\n\nPlease start corresponding command again."
+    );
+    return;
+  }
+
   // Events like adding, removing memebers from groups are considered as messages
   // For groups, only direct messages are considered
   // Bot permission "can delete messages" should be unset for this to work
