@@ -49,7 +49,7 @@ async function showResults(ctx: CustomContext) {
 
     results.forEach(
       ({ resultName, examDefId, schemeId, publishDate }, index) => {
-        resultMsg += `${index + 1}) ${shortenString(resultName)}\n\n(<i>Published date: ${publishDate}</i>)\n\n`;
+        resultMsg += `${index + 1}) ${shortenString(resultName)}\n\t\t\t\t\t(<i>Published date: ${publishDate}</i>)\n\n`;
         resultButtons.push(
           Markup.button.callback(`${index + 1}`, `${examDefId}_${schemeId}`)
         );
