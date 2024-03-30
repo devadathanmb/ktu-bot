@@ -122,8 +122,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       );
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const publishedResults = await fetchPublishedResults(courseId);
-      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-      ctx.scene.session.waitingMsgId = null;
+
       const resultButtons = publishedResults.map(
         ({ resultName, examDefId, schemeId }) =>
           Markup.button.callback(resultName, `${examDefId}_${schemeId}`)
@@ -135,6 +134,8 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         columns: 1,
       });
       const msg = await ctx.sendMessage("Choose a result:", keyboard);
+      await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
+      ctx.scene.session.waitingMsgId = null;
       ctx.scene.session.tempMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
