@@ -179,6 +179,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       } catch (error) {
         return await ctx.reply("Please enter a valid date of birth");
       }
+      ctx.scene.session.dob = dob;
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       await sendFinalResult(ctx);
       await ctx.scene.leave();
