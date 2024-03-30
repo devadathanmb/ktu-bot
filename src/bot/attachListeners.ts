@@ -16,6 +16,7 @@ function attachListeners() {
   bot.on("inline_query", searchInlineQueryHandler);
   bot.on("chosen_inline_result", inlineQueryResultHandler);
   bot.on("message", defaultHandler);
+  bot.on("callback_query", defaultHandler);
 }
 
 export default attachListeners;
