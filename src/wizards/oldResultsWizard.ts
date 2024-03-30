@@ -129,7 +129,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       return ctx.wizard.next();
     } catch (error) {
-      handleError(ctx, error);
+      await handleError(ctx, error);
     }
   },
   async (ctx: CustomContext) => {
@@ -146,7 +146,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.tempMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
-      handleError(ctx, error);
+      await handleError(ctx, error);
     }
   },
   async (ctx: CustomContext) => {
@@ -162,7 +162,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.tempMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
-      handleError(ctx, error);
+      await handleError(ctx, error);
     }
   },
   async (ctx: CustomContext) => {
@@ -183,7 +183,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       await sendFinalResult(ctx);
       await ctx.scene.leave();
     } catch (error) {
-      handleError(ctx, error);
+      await handleError(ctx, error);
     }
   }
 );
