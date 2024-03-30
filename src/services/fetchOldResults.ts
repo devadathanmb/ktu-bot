@@ -15,6 +15,7 @@ const CACHE_TTL = 24 * 60 * 60; // 24 hours
 
 const resultsCache = new NodeCache({
   stdTTL: CACHE_TTL,
+  useClones: false,
 });
 
 const COURSES_REGEX: Record<string, string> = {
