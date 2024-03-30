@@ -154,7 +154,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       if (!ctx.has(message("text"))) {
         return await ctx.reply("Please enter a proper KTU Registration Number");
       }
-      ctx.scene.session.regisNo = ctx.message.text;
+      ctx.scene.session.regisNo = ctx.message.text.toUpperCase();
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       const msg = await ctx.replyWithHTML(
         "Please enter your Date of Birth\n\n<b>Format: DD/MM/YYYY</b> \n\n(<i>Example: 01/01/2000</i>)"
