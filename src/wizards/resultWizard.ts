@@ -94,29 +94,29 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
 
   // Wizard Step 1
   async (ctx) => {
-    if (ctx.message) {
-      return await ctx.reply(
-        "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup."
-      );
-    }
-    let courseId: number;
-    if (ctx.has(callbackQuery("data"))) {
-      await ctx.answerCbQuery();
-      if (ctx.callbackQuery.data === "back_to_1") {
-        await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-        courseId = ctx.scene.session.courseId;
-      } else if (ctx.callbackQuery.data.startsWith("course_")) {
-        await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-        courseId = Number.parseInt(ctx.callbackQuery.data.split("_")[1]);
-        ctx.scene.session.courseId = courseId;
-      } else {
-        return await ctx.reply("Please choose a valid course");
-      }
-    } else {
-      await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-      return await ctx.scene.leave();
-    }
     try {
+      if (ctx.message) {
+        return await ctx.reply(
+          "Please use the buttons to choose a result.\n\nUse /cancel to cancel result lookup."
+        );
+      }
+      let courseId: number;
+      if (ctx.has(callbackQuery("data"))) {
+        await ctx.answerCbQuery();
+        if (ctx.callbackQuery.data === "back_to_1") {
+          await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+          courseId = ctx.scene.session.courseId;
+        } else if (ctx.callbackQuery.data.startsWith("course_")) {
+          await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+          courseId = Number.parseInt(ctx.callbackQuery.data.split("_")[1]);
+          ctx.scene.session.courseId = courseId;
+        } else {
+          return await ctx.reply("Please choose a valid course");
+        }
+      } else {
+        await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+        return await ctx.scene.leave();
+      }
       const waitingMsg = await ctx.reply(
         "Fetching available results.. Please wait.."
       );
