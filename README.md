@@ -26,15 +26,14 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 ## Features
 
-- **Check Results**: Use the `/result` command to fetch your exam results.
-- **Check old results**: Use the `/olresults` command to check previously published exam results.
-- **Download published KTU notifications**: Use the `/notifications` command to fetch KTU notifications and download them.
-- **Dowbload published academic calendars**: Use the `/calendar` command to fetch published KTU academic calendars and download them.
-- **Download published exam time tables**: Use the `/timetable` command to fetch published KTU exam time tables and download them.
-- **Subscribe to latest KTU notifications**: Use the `/subscribe` command to recieve new notifications as they arrive.
+- **Check Results**: Easily check latest published KTU results.
+- **Check old results**: Check any results ever published in the history of KTU (yeah for real).
+- **Download published KTU notifications**: Browse and download any published KTU notification.
+- **Dowbload published academic calendars**: Browse and download any published KTU academic calendars.
+- **Download published exam time tables**: Browse and download any published KTU exam time tables.
+- **Subscribe to latest KTU notifications**: Get alerted when new notifications arrive.
 - **Filtered notifications**: Only recieve notifications that you care about. No trash.
-- **Help**: Get help using the `/help` command.
-- **Live search notifications**: Live search and find KTU notifications using _inline queries_.
+- **Live search notifications**: Search and download published notifications using the keyword.
 
 ## Commands
 
