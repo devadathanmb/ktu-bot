@@ -27,13 +27,14 @@ Find the bot [here](https://t.me/ktu_results_bot)
 ## Features
 
 - **Check Results**: Use the `/result` command to fetch your exam results.
-- **Download latest KTU notifications**: Use the `/notifications` command to fetch KTU notifications and download them.
+- **Check old results**: Use the `/olresults` command to check previously published exam results.
+- **Download published KTU notifications**: Use the `/notifications` command to fetch KTU notifications and download them.
 - **Dowbload published academic calendars**: Use the `/calendar` command to fetch published KTU academic calendars and download them.
-- **Download exam time tables**: Use the `/timetable` command to fetch published KTU exam time tables and download them.
+- **Download published exam time tables**: Use the `/timetable` command to fetch published KTU exam time tables and download them.
 - **Subscribe to latest KTU notifications**: Use the `/subscribe` command to recieve new notifications as they arrive.
+- **Filtered notifications**: Only recieve notifications that you care about. No trash.
 - **Help**: Get help using the `/help` command.
 - **Live search notifications**: Live search and find KTU notifications using _inline queries_.
-- **Set course filter for notifications** : Use /changefilter command to set course based filter for notifications.
 
 ## Commands
 
@@ -42,6 +43,8 @@ Find the bot [here](https://t.me/ktu_results_bot)
 - `/help`: Show a help message with available commands.
 
 - `/result`: Fetch your exam results.
+
+- `/olresults`: Fetch previously published exam results.
 
 - `/notifications`: Find and download latest KTU notifications.
 
@@ -53,11 +56,11 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 - `/unsubscribe`: Unsubscribe from recieving KTU notifications.
 
-- `/changefilter`: Change currently set notification filter
+- `/changefilter`: Change currently set notification filter.
 
-- `/cancel`: Cancel current process (only works when inside `/notifications` or `/result` wizard)
+- `/cancel`: Cancel ongoing process.
 
-- `/code` : See project source code
+- `/code` : See project source code.
 
 ## Inline Query
 
@@ -69,9 +72,9 @@ eg: @ktu_results_bot calendar : This returns all the results that matches word "
 
 ## Local development setup
 
-- NOTE :
-  1. If you don't want or don't want to work on the `notification` feature and don't want to setup the database, then just comment out the corresponding calls in `app.ts` and skip the **firebase** configuration part below.
-  2. The bot makes use of [BullMQ](https://github.com/taskforcesh/bullmq), a redis based nodejs queue, for the live notifications feature. Thus, it requires you to have a redis db instance running. The docker compose method below already does that for you.
+> [!NOTE]
+>
+> The bot makes use of [BullMQ](https://github.com/taskforcesh/bullmq), a redis based nodejs queue, for the live notifications feature. Thus, it requires you to have a redis db instance running. The docker compose method below already does that for you.
 
 ### Running Locally (Without Docker - Not preferred)
 
@@ -196,7 +199,8 @@ This bot makes use of Telegram bot API's [webhook](https://core.telegram.org/bot
 
 This is because of certain performance benefits that webhook offers with high concurrent load during peak times. For more info see [this](https://grammy.dev/guide/deployment-types#how-to-use-webhooks).
 
-**NOTE : Using webhooks in production is optional but recommended if your bot has heavy concurrent traffic. If you don't want to setup webhooks, just follow the above development setup guide and you are good to go.**
+> [!NOTE]
+> Using webhooks in production is optional but recommended if your bot has heavy concurrent traffic. If you don't want to setup webhooks, just follow the above development setup guide and you are good to go.
 
 ### Pre-requisites
 
@@ -208,7 +212,8 @@ To run the bot using webhooks in production, some pre-requisites are required. T
 - Docker
 - A reverse proxy (like [nginx](https://www.nginx.com/))
 
-**NOTE : The below guide makes use of _nginx_ as the reverse proxy and assumes that you have reverse proxy configured for the webhook endpoint with HTTPS traffic handling**
+> [!NOTE]
+> The below guide makes use of _nginx_ as the reverse proxy and assumes that you have reverse proxy configured for the webhook endpoint with HTTPS traffic handling
 
 ### Steps
 
