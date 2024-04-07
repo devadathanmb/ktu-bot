@@ -80,6 +80,7 @@ async function sendFinalResult(ctx: CustomContext) {
       ],
     },
   });
+  ctx.scene.session.tempMsgId = -1;
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
 }
 
@@ -252,6 +253,9 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
 
   // Wizard Step 4
   async (ctx, _next) => {
+    if (ctx.scene.session.tempMsgId === -1) {
+      return await ctx.reply("Please click the buttons to choose an option.");
+    }
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_2"
@@ -370,6 +374,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
 resultWizard.action("check_another_result_true", async (ctx, _next) => {
   try {
     await ctx.answerCbQuery();
+    ctx.scene.session.tempMsgId = null;
     await deleteMessage(ctx, ctx.msgId!);
     ctx.wizard.selectStep(2);
     return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
