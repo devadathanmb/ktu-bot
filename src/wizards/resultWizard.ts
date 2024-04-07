@@ -1,4 +1,4 @@
-import { Markup, Scenes } from "telegraf";
+import { Composer, Markup, Scenes } from "telegraf";
 import { CustomContext } from "types/customContext.type";
 import { callbackQuery, message } from "telegraf/filters";
 import fetchCourses from "services/fetchCourses";
@@ -64,6 +64,22 @@ async function sendFinalResult(ctx: CustomContext) {
   for (let i = 0; i < resultMessages.length; i++) {
     await ctx.replyWithHTML(resultMessages[i]);
   }
+  await ctx.replyWithHTML("Check another result?", {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "Yes ✅",
+            callback_data: "check_another_result_true",
+          },
+          {
+            text: "No ❌",
+            callback_data: "check_another_result_false",
+          },
+        ],
+      ],
+    },
+  });
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
 }
 
@@ -144,29 +160,25 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
 
   // Wizard Step 2
-  async (ctx, next) => {
+  async (ctx, _next) => {
     if (ctx.message) {
       return await ctx.reply("Please choose a valid option");
     }
-
     await ctx.answerCbQuery();
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_0"
     ) {
       ctx.wizard.selectStep(0);
-
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       ctx.scene.session.tempMsgId = null;
-
-      if (typeof ctx.wizard.step === "function") {
-        return ctx.wizard.step(ctx, next);
-      }
+      return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
     }
 
     if (
       ctx.has(callbackQuery("data")) &&
-      ctx.callbackQuery.data !== "back_to_2"
+      ctx.callbackQuery.data !== "back_to_2" &&
+      ctx.callbackQuery.data !== "check_another_result_true"
     ) {
       const [examDefId, schemeId] = ctx.callbackQuery.data.split("_");
       ctx.scene.session.examDefId = Number(examDefId);
@@ -177,10 +189,6 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       }
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       ctx.scene.session.tempMsgId = null;
-    }
-
-    if (!ctx.has(callbackQuery("data"))) {
-      return await ctx.scene.leave();
     }
 
     const msg = await ctx.reply("Please enter your KTU Registration Number", {
@@ -200,7 +208,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
 
   // Wizard Step 3
-  async (ctx, next) => {
+  async (ctx, _next) => {
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_1"
@@ -209,9 +217,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       ctx.scene.session.tempMsgId = null;
       ctx.wizard.selectStep(1);
-      if (typeof ctx.wizard.step === "function") {
-        return ctx.wizard.step(ctx, next);
-      }
+      return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
     }
 
     if (!ctx.has(message("text"))) {
@@ -245,7 +251,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
   },
 
   // Wizard Step 4
-  async (ctx, next) => {
+  async (ctx, _next) => {
     if (
       ctx.has(callbackQuery("data")) &&
       ctx.callbackQuery.data === "back_to_2"
@@ -255,9 +261,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
 
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       ctx.scene.session.tempMsgId = null;
-      if (typeof ctx.wizard.step === "function") {
-        return ctx.wizard.step(ctx, next);
-      }
+      return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
     }
     if (!ctx.has(message("text"))) {
       return await ctx.reply("Please enter a valid date of birth");
@@ -276,7 +280,6 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     ctx.scene.session.dob = dob;
     try {
       await sendFinalResult(ctx);
-      return await ctx.scene.leave();
     } catch (error) {
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
       ctx.scene.session.waitingMsgId = null;
@@ -363,6 +366,28 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     }
   }
 );
+
+resultWizard.action("check_another_result_true", async (ctx, _next) => {
+  try {
+    await ctx.answerCbQuery();
+    await deleteMessage(ctx, ctx.msgId!);
+    ctx.wizard.selectStep(2);
+    return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+resultWizard.action("check_another_result_false", async (ctx) => {
+  try {
+    await ctx.answerCbQuery();
+    await ctx.reply("Result lookup ended. Use /result to start again.");
+    await deleteMessage(ctx, ctx.msgId!);
+    await ctx.scene.leave();
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 resultWizard.command("cancel", async (ctx) => {
   await handleCancelCommand(
