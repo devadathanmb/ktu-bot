@@ -2,7 +2,7 @@ import { CustomContext } from "types/customContext.type";
 
 async function help(ctx: CustomContext) {
   const helpMessage = `
-➡️ <b><u>Available Commands</u></b>
+<b><u>Available Commands</u></b>
 
 • /start - Start the bot
 
@@ -28,11 +28,11 @@ async function help(ctx: CustomContext) {
  
 • /code - See bot source code 
 
-➡️ <b><u>Inline Query</u></b>:
+<b><u>Inline Query</u></b>:
 
 Use the inline query feature to live search for notifications. 
 
-Simply type @ktu_results_bot followed by a keyword you want to search for.
+Simply type <code>@ktu_results_bot</code> followed by a keyword you want to search for.
 
 Use /search for more info.
 `;
