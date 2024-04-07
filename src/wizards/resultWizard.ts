@@ -232,7 +232,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
     ctx.scene.session.tempMsgId = null;
 
     const msg = await ctx.replyWithHTML(
-      "Please enter your Date of Birth\n\n<b>Format: DD/MM/YYYY</b> \n\n(<i>Example: 01/01/2000</i>)",
+      "Please enter your Date of Birth\n\nFormat: DD/MM/YYYY \n\n(<i>Example: 01/01/2000</i>)",
       {
         reply_markup: {
           inline_keyboard: [
