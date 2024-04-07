@@ -9,7 +9,7 @@ import db from "db/initDb";
 import getRelevancy from "services/getRelevancy";
 import queue from "queues/notiyUserQueue/queue";
 
-const CRON_JOB_INTERVAL = "*/15 * * * *";
+const CRON_JOB_INTERVAL = "*/10 * * * *";
 
 // Type of the notification job in the notification job queue
 interface NotifJobs {
@@ -24,7 +24,7 @@ interface NotifJobs {
 async function notifyUserCron() {
   console.log("Cron job initialized");
 
-  // Schedule a cron job to run every 15 minutes
+  // Schedule a cron job for every CRON_JOB_INTERVAL
   cron.schedule(CRON_JOB_INTERVAL, async () => {
     // Log the start time of the cron job
     const startTime = new Date().toString();
