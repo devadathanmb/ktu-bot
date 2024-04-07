@@ -1,5 +1,5 @@
 import { CustomContext } from "types/customContext.type";
-import { Markup, Scenes } from "telegraf";
+import { Composer, Markup, Scenes } from "telegraf";
 import { fetchAllOldResults, fetchOldResults } from "services/fetchOldResults";
 import { COURSES } from "constants/constants";
 import { InlineKeyboardButton } from "telegraf/types";
@@ -33,6 +33,23 @@ async function sendFinalResult(ctx: CustomContext) {
   for (let i = 0; i < resultMessages.length; i++) {
     await ctx.replyWithHTML(resultMessages[i]);
   }
+  await ctx.replyWithHTML("Check another result?", {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "Yes ✅",
+            callback_data: "check_another_result_true",
+          },
+          {
+            text: "No ❌",
+            callback_data: "check_another_result_false",
+          },
+        ],
+      ],
+    },
+  });
+
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
 }
 
@@ -120,9 +137,11 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       }
       await ctx.answerCbQuery();
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-      const chosenCourse = ctx.callbackQuery.data;
-      ctx.scene.session.courseName = chosenCourse;
-      ctx.scene.session.pageNumber = 0;
+      if (ctx.callbackQuery.data !== "check_another_result_true") {
+        const chosenCourse = ctx.callbackQuery.data;
+        ctx.scene.session.courseName = chosenCourse;
+        ctx.scene.session.pageNumber = 0;
+      }
       const msg = await ctx.reply("Fetching results.. Please wait..");
       ctx.scene.session.waitingMsgId = msg.message_id;
       await showResults(ctx);
@@ -182,7 +201,6 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.dob = dob;
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       await sendFinalResult(ctx);
-      await ctx.scene.leave();
     } catch (error) {
       await handleError(ctx, error);
     }
@@ -192,7 +210,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
 oldResultsWizard.command("cancel", async (ctx) => {
   await handleCancelCommand(
     ctx,
-    "Result look up cancelled.\n\nPlease use /result to start again."
+    "Result look up cancelled.\n\nPlease use /oldresults to start again."
   );
 });
 
@@ -231,5 +249,27 @@ oldResultsWizard.command(
   "page",
   async (ctx) => await handlePageCommand(ctx, deleteMessage, showResults)
 );
+
+oldResultsWizard.action("check_another_result_true", async (ctx, _next) => {
+  try {
+    await ctx.answerCbQuery();
+    await deleteMessage(ctx, ctx.msgId!);
+    ctx.wizard.selectStep(1);
+    return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+oldResultsWizard.action("check_another_result_false", async (ctx) => {
+  try {
+    await ctx.answerCbQuery();
+    await ctx.reply("Result lookup ended. Use /oldresults to start again.");
+    await deleteMessage(ctx, ctx.msgId!);
+    await ctx.scene.leave();
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 export default oldResultsWizard;
