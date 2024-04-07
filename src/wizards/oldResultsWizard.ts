@@ -49,6 +49,7 @@ async function sendFinalResult(ctx: CustomContext) {
       ],
     },
   });
+  ctx.scene.session.tempMsgId = -1;
 
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
 }
@@ -186,6 +187,10 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
   },
   async (ctx: CustomContext) => {
     try {
+      if (ctx.scene.session.tempMsgId === -1) {
+        return await ctx.reply("Please click the buttons to choose an option.");
+      }
+
       if (!ctx.has(message("text"))) {
         return await ctx.reply("Please enter a valid date of birth");
       }
@@ -253,6 +258,7 @@ oldResultsWizard.command(
 oldResultsWizard.action("check_another_result_true", async (ctx, _next) => {
   try {
     await ctx.answerCbQuery();
+    ctx.scene.session.tempMsgId = null;
     await deleteMessage(ctx, ctx.msgId!);
     ctx.wizard.selectStep(1);
     return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
