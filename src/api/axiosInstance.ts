@@ -9,7 +9,7 @@ const agent = new https.Agent({
 
 const axios = setupCache(Axios, {
   methods: ["post"],
-  ttl: 1000 * 60 * 15,
+  ttl: 1000 * 60 * 10,
 });
 
 // KTU servers are known to be slow during high traffic
