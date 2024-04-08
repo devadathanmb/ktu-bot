@@ -4,10 +4,16 @@ import { CustomContext } from "types/customContext.type";
 import InvalidDataError from "errors/InvalidDataError";
 import ServerError from "errors/ServerError";
 import DataNotFoundError from "errors/DataNotFoundError";
+import { TelegramError } from "telegraf";
 
 async function handleError(ctx: CustomContext, error: any) {
-  if (ctx.updateType === "callback_query") {
-    await ctx.answerCbQuery();
+  if (error instanceof TelegramError) {
+    if (error.response.error_code === 403) {
+      if (ctx.scene.current) {
+        return await ctx.scene.leave();
+      }
+      return;
+    }
   }
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   if (error instanceof InvalidDataError) {
