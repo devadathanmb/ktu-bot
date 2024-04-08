@@ -5,6 +5,7 @@ import fetchAttachment from "services/fetchAttachment";
 import { Announcement, Attachment } from "types/types";
 import deleteMessage from "utils/deleteMessage";
 import handleError from "wizards/utils/wizardErrorHandler";
+import handleMyChatMember from "./utils/handleMyChatMember";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 import { InlineKeyboardButton } from "telegraf/types";
@@ -194,37 +195,54 @@ announcementWizard.action("page", async (ctx) => {
 
 // Previous page button action : Decrement page number and show announcements
 announcementWizard.action("prev_page", async (ctx) => {
-  if (ctx.scene.session.pageNumber == 0) {
-    await ctx.answerCbQuery();
-    return await ctx.reply("You are already on the first page.");
+  try {
+    if (ctx.scene.session.pageNumber == 0) {
+      await ctx.answerCbQuery();
+      return await ctx.reply("You are already on the first page.");
+    }
+    ctx.scene.session.pageNumber--;
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
+    await showAnnouncements(ctx);
+    return await ctx.answerCbQuery();
+  } catch (error) {
+    await handleError(ctx, error);
   }
-  ctx.scene.session.pageNumber--;
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  ctx.scene.session.tempMsgId = null;
-  await showAnnouncements(ctx);
-  return await ctx.answerCbQuery();
 });
 
 // Next page button action : Increment page number and show announcements
 announcementWizard.action("next_page", async (ctx) => {
-  ctx.scene.session.pageNumber++;
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  ctx.scene.session.tempMsgId = null;
-  await showAnnouncements(ctx);
-  return await ctx.answerCbQuery();
+  try {
+    ctx.scene.session.pageNumber++;
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
+    await showAnnouncements(ctx);
+    return await ctx.answerCbQuery();
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
 announcementWizard.command("cancel", async (ctx) => {
-  await handleCancelCommand(
-    ctx,
-    "Notifications look up cancelled.\n\nPlease use /notifications to start again."
-  );
+  try {
+    await handleCancelCommand(
+      ctx,
+      "Notifications look up cancelled.\n\nPlease use /notifications to start again."
+    );
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
 // Quick page jump
-announcementWizard.command(
-  "page",
-  async (ctx) => await handlePageCommand(ctx, deleteMessage, showAnnouncements)
-);
+announcementWizard.command("page", async (ctx) => {
+  try {
+    await handlePageCommand(ctx, deleteMessage, showAnnouncements);
+  } catch (error) {
+    await handleError(ctx, error);
+  }
+});
+
+announcementWizard.on("my_chat_member", handleMyChatMember);
 
 export default announcementWizard;

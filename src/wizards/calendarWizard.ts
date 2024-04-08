@@ -8,6 +8,7 @@ import handleError from "wizards/utils/wizardErrorHandler";
 import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 import handleCancelCommand from "wizards/utils/handleCancelCommand";
+import handleMyChatMember from "wizards/utils/handleMyChatMember";
 import { InlineKeyboardButton } from "telegraf/types";
 import shortenString from "@/wizards/utils/shortenString";
 
@@ -165,36 +166,54 @@ academicCalendarWizard.action("page", async (ctx) => {
 
 // Previous page button action : Decrement page number and show academic calendars
 academicCalendarWizard.action("prev_page", async (ctx) => {
-  if (ctx.scene.session.pageNumber == 0) {
-    await ctx.answerCbQuery();
-    return await ctx.reply("You are already on the first page.");
+  try {
+    if (ctx.scene.session.pageNumber == 0) {
+      await ctx.answerCbQuery();
+      return await ctx.reply("You are already on the first page.");
+    }
+    ctx.scene.session.pageNumber--;
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
+    await showAcademicCalendars(ctx);
+    return await ctx.answerCbQuery();
+  } catch (error) {
+    await handleError(ctx, error);
   }
-  ctx.scene.session.pageNumber--;
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  ctx.scene.session.tempMsgId = null;
-  await showAcademicCalendars(ctx);
-  return await ctx.answerCbQuery();
 });
 
 // Next page button action : Increment page number and show academic calendars
 academicCalendarWizard.action("next_page", async (ctx) => {
-  ctx.scene.session.pageNumber++;
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  ctx.scene.session.tempMsgId = null;
-  await showAcademicCalendars(ctx);
-  return await ctx.answerCbQuery();
+  try {
+    ctx.scene.session.pageNumber++;
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
+    await showAcademicCalendars(ctx);
+    return await ctx.answerCbQuery();
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
-academicCalendarWizard.command("cancel", async (ctx) =>
-  handleCancelCommand(
-    ctx,
-    "Academic calendar look up cancelled.\n\nPlease use /calendar to start again."
-  )
-);
+academicCalendarWizard.command("cancel", async (ctx) => {
+  try {
+    await handleCancelCommand(
+      ctx,
+      "Academic calendar look up cancelled.\n\nPlease use /calendar to start again."
+    );
+  } catch (error) {
+    await handleError(ctx, error);
+  }
+});
 
 // Quick page jump
 academicCalendarWizard.command("page", async (ctx) => {
-  await handlePageCommand(ctx, deleteMessage, showAcademicCalendars);
+  try {
+    await handlePageCommand(ctx, deleteMessage, showAcademicCalendars);
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
+
+academicCalendarWizard.on("my_chat_member", handleMyChatMember);
 
 export default academicCalendarWizard;
