@@ -7,6 +7,7 @@ import handleError from "./utils/wizardErrorHandler";
 import { callbackQuery, message } from "telegraf/filters";
 import deleteMessage from "utils/deleteMessage";
 import handleCancelCommand from "./utils/handleCancelCommand";
+import handleMyChatMember from "./utils/handleMyChatMember";
 import shortenString from "./utils/shortenString";
 import formatDob from "utils/formatDob";
 import { fetchResult } from "services/fetchResult";
@@ -213,10 +214,14 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
 );
 
 oldResultsWizard.command("cancel", async (ctx) => {
-  await handleCancelCommand(
-    ctx,
-    "Result look up cancelled.\n\nPlease use /oldresults to start again."
-  );
+  try {
+    await handleCancelCommand(
+      ctx,
+      "Result look up cancelled.\n\nPlease use /oldresults to start again."
+    );
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
 // Page button action : Answer callback query and do nothing
@@ -226,34 +231,43 @@ oldResultsWizard.action("page", async (ctx) => {
 
 // Previous page button action : Decrement page number and show results
 oldResultsWizard.action("prev_page", async (ctx) => {
-  await ctx.answerCbQuery();
-  if (ctx.scene.session.pageNumber === 0) {
-    return await ctx.reply("You are already on the first page.");
+  try {
+    await ctx.answerCbQuery();
+    if (ctx.scene.session.pageNumber === 0) {
+      return await ctx.reply("You are already on the first page.");
+    }
+    ctx.scene.session.pageNumber--;
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
+    const msg = await ctx.reply("Fetching results.. Please wait..");
+    await showResults(ctx);
+    await deleteMessage(ctx, msg.message_id);
+  } catch (error) {
+    await handleError(ctx, error);
   }
-  ctx.scene.session.pageNumber--;
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  ctx.scene.session.tempMsgId = null;
-  const msg = await ctx.reply("Fetching results.. Please wait..");
-  await showResults(ctx);
-  await deleteMessage(ctx, msg.message_id);
 });
 
 // Next page button action : Increment page number and show results
 oldResultsWizard.action("next_page", async (ctx) => {
-  await ctx.answerCbQuery();
-  ctx.scene.session.pageNumber++;
-  await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-  ctx.scene.session.tempMsgId = null;
-  const msg = await ctx.reply("Fetching results.. Please wait..");
-  await showResults(ctx);
-  await deleteMessage(ctx, msg.message_id);
+  try {
+    await ctx.answerCbQuery();
+    ctx.scene.session.pageNumber++;
+    await deleteMessage(ctx, ctx.scene.session.tempMsgId);
+    ctx.scene.session.tempMsgId = null;
+    const msg = await ctx.reply("Fetching results.. Please wait..");
+    await showResults(ctx);
+    await deleteMessage(ctx, msg.message_id);
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
 // Quick page jump
-oldResultsWizard.command(
-  "page",
-  async (ctx) => await handlePageCommand(ctx, deleteMessage, showResults)
-);
+oldResultsWizard.command("page", async (ctx) => {
+  try {
+    await handlePageCommand(ctx, deleteMessage, showResults);
+  } catch (error) {}
+});
 
 oldResultsWizard.action("check_another_result_true", async (ctx, _next) => {
   try {
@@ -263,7 +277,7 @@ oldResultsWizard.action("check_another_result_true", async (ctx, _next) => {
     ctx.wizard.selectStep(1);
     return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
   } catch (error) {
-    console.log(error);
+    await handleError(ctx, error);
   }
 });
 
@@ -274,8 +288,10 @@ oldResultsWizard.action("check_another_result_false", async (ctx) => {
     await deleteMessage(ctx, ctx.msgId!);
     await ctx.scene.leave();
   } catch (error) {
-    console.log(error);
+    await handleError(ctx, error);
   }
 });
+
+oldResultsWizard.on("my_chat_member", handleMyChatMember);
 
 export default oldResultsWizard;
