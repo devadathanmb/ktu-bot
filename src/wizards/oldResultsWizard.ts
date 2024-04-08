@@ -70,7 +70,10 @@ async function showResults(ctx: CustomContext) {
       ({ resultName, examDefId, schemeId, publishDate }, index) => {
         resultMsg += `${index + 1}) ${shortenString(resultName)}\n\t\t\t\t\t(<i>Published date: ${publishDate}</i>)\n\n`;
         resultButtons.push(
-          Markup.button.callback(`${index + 1}`, `${examDefId}_${schemeId}`)
+          Markup.button.callback(
+            `${index + 1}`,
+            `result_${examDefId}_${schemeId}`
+          )
         );
       }
     );
@@ -118,7 +121,9 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
     try {
       let courseButtons: InlineKeyboardButton.CallbackButton[] = [];
       Object.keys(COURSES).forEach((key) => {
-        courseButtons.push(Markup.button.callback(COURSES[key], key));
+        courseButtons.push(
+          Markup.button.callback(COURSES[key], `course_${key}`)
+        );
       });
 
       const keyboard = Markup.inlineKeyboard(courseButtons, { columns: 1 });
@@ -138,9 +143,12 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
         return await ctx.reply("Please choose a course using buttons");
       }
       await ctx.answerCbQuery();
+      if (!ctx.callbackQuery.data.startsWith("course")) {
+        return await ctx.reply("Please choose a valid option");
+      }
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       if (ctx.callbackQuery.data !== "check_another_result_true") {
-        const chosenCourse = ctx.callbackQuery.data;
+        const chosenCourse = ctx.callbackQuery.data.split("_")[1];
         ctx.scene.session.courseName = chosenCourse;
         ctx.scene.session.pageNumber = 0;
       }
@@ -159,8 +167,11 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
         return await ctx.reply("Please choose a result using buttons");
       }
       await ctx.answerCbQuery();
+      if (!ctx.callbackQuery.data.startsWith("result")) {
+        return await ctx.reply("Please choose a valid option");
+      }
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
-      const [examDefId, schemeId] = ctx.callbackQuery.data.split("_");
+      const [examDefId, schemeId] = ctx.callbackQuery.data.split("_").slice(1);
       ctx.scene.session.examDefId = Number(examDefId);
       ctx.scene.session.schemeId = Number(schemeId);
       const msg = await ctx.reply("Please enter your KTU Registration Number");
@@ -178,7 +189,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.regisNo = ctx.message.text.toUpperCase();
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
       const msg = await ctx.replyWithHTML(
-        "Please enter your Date of Birth\n\n<b>Format: DD/MM/YYYY</b> \n\n(<i>Example: 01/01/2000</i>)"
+        "Please enter your Date of Birth\n\nFormat: DD/MM/YYYY \n\n(<i>Example: 01/01/2000</i>)"
       );
       ctx.scene.session.tempMsgId = msg.message_id;
       return ctx.wizard.next();

@@ -49,6 +49,9 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
         return await ctx.scene.leave();
       }
       await ctx.answerCbQuery();
+      if (!ctx.callbackQuery.data.startsWith("calendar")) {
+        return await ctx.reply("Please choose a valid option");
+      }
       const chosenCalendarId = Number.parseInt(
         ctx.callbackQuery.data.split("_")[1]
       );

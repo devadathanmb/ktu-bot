@@ -56,6 +56,9 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
         return await ctx.scene.leave();
       }
       await ctx.answerCbQuery();
+      if (!ctx.callbackQuery.data.startsWith("announcement")) {
+        return await ctx.reply("Please choose a valid option");
+      }
       const chosenAnnouncementId = Number.parseInt(
         ctx.callbackQuery.data.split("_")[1]
       );
