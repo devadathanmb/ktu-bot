@@ -2,11 +2,11 @@
   "name": "ktu-bot",
   "version": "1.0.0",
   "description": "An all in one telegram bot to view results, notifications and updates from KTU portal.",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node dist/app.js",
+    "start": "node dist/index.js",
     "build": "npx tsc && npx tsc-alias",
-    "dev": "npx nodemon -w *.ts -e ts -x ts-node --files -H -T ./src/app.ts"
+    "dev": "npx nodemon -w *.ts -e ts -x ts-node --files -H -T ./src/index.ts"
   },
   "nodemonConfig": {
     "ignore": [
