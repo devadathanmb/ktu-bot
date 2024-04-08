@@ -1,4 +1,4 @@
-import { Markup, Scenes } from "telegraf";
+import { Composer, Markup, Scenes } from "telegraf";
 import { CustomContext } from "types/customContext.type";
 import fetchAcademicCalendars from "services/fetchAcademicCalendars";
 import fetchAttachment from "services/fetchAttachment";
@@ -27,7 +27,9 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
   // Wizard Step 0
   async (ctx: CustomContext) => {
     try {
-      ctx.scene.session.pageNumber = 0;
+      if (ctx.scene.session.pageNumber === undefined) {
+        ctx.scene.session.pageNumber = 0;
+      }
       await showAcademicCalendars(ctx);
       return ctx.wizard.next();
     } catch (error: any) {
@@ -79,7 +81,23 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
       if (!chosenCalendar.attachmentId) {
         await ctx.reply("No attachment found for this academic calendar.");
         await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-        return await ctx.scene.leave();
+        await ctx.replyWithHTML("View another calendar?", {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "Yes ✅",
+                  callback_data: "check_another_calendar_true",
+                },
+                {
+                  text: "No ❌",
+                  callback_data: "check_another_calendar_false",
+                },
+              ],
+            ],
+          },
+        });
+        return;
       }
 
       await ctx.replyWithDocument(
@@ -94,7 +112,22 @@ const academicCalendarWizard = new Scenes.WizardScene<CustomContext>(
       );
 
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-      return await ctx.scene.leave();
+      await ctx.replyWithHTML("View another calendar?", {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Yes ✅",
+                callback_data: "check_another_calendar_true",
+              },
+              {
+                text: "No ❌",
+                callback_data: "check_another_calendar_false",
+              },
+            ],
+          ],
+        },
+      });
     } catch (error) {
       return await handleError(ctx, error);
     }
@@ -209,6 +242,34 @@ academicCalendarWizard.command("cancel", async (ctx) => {
 academicCalendarWizard.command("page", async (ctx) => {
   try {
     await handlePageCommand(ctx, deleteMessage, showAcademicCalendars);
+  } catch (error) {
+    await handleError(ctx, error);
+  }
+});
+
+academicCalendarWizard.action(
+  "check_another_calendar_true",
+  async (ctx, _next) => {
+    try {
+      await ctx.answerCbQuery();
+      ctx.scene.session.tempMsgId = null;
+      await deleteMessage(ctx, ctx.msgId!);
+      ctx.wizard.selectStep(0);
+      return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+    } catch (error) {
+      await handleError(ctx, error);
+    }
+  }
+);
+
+academicCalendarWizard.action("check_another_calendar_false", async (ctx) => {
+  try {
+    await ctx.answerCbQuery();
+    await ctx.reply(
+      "Academic calendar lookup ended. Use /calendar to start again."
+    );
+    await deleteMessage(ctx, ctx.msgId!);
+    await ctx.scene.leave();
   } catch (error) {
     await handleError(ctx, error);
   }
