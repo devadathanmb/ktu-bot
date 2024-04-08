@@ -1,4 +1,4 @@
-import { Markup, Scenes } from "telegraf";
+import { Composer, Markup, Scenes } from "telegraf";
 import { CustomContext } from "types/customContext.type";
 import fetchAnnouncements from "services/fetchAnnouncements";
 import fetchAttachment from "services/fetchAttachment";
@@ -34,7 +34,9 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
   // Wizard Step 0
   async (ctx: CustomContext) => {
     try {
-      ctx.scene.session.pageNumber = 0;
+      if (ctx.scene.session.pageNumber === undefined) {
+        ctx.scene.session.pageNumber = 0;
+      }
       await showAnnouncements(ctx);
       return ctx.wizard.next();
     } catch (error: any) {
@@ -121,8 +123,24 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
         );
       }
 
+      await ctx.replyWithHTML("View another notification?", {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Yes ✅",
+                callback_data: "check_another_announcement_true",
+              },
+              {
+                text: "No ❌",
+                callback_data: "check_another_announcement_false",
+              },
+            ],
+          ],
+        },
+      });
+
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-      return await ctx.scene.leave();
     } catch (error) {
       return await handleError(ctx, error);
     }
@@ -196,7 +214,7 @@ announcementWizard.action("page", async (ctx) => {
 // Previous page button action : Decrement page number and show announcements
 announcementWizard.action("prev_page", async (ctx) => {
   try {
-    if (ctx.scene.session.pageNumber == 0) {
+    if (ctx.scene.session.pageNumber === 0) {
       await ctx.answerCbQuery();
       return await ctx.reply("You are already on the first page.");
     }
@@ -238,6 +256,34 @@ announcementWizard.command("cancel", async (ctx) => {
 announcementWizard.command("page", async (ctx) => {
   try {
     await handlePageCommand(ctx, deleteMessage, showAnnouncements);
+  } catch (error) {
+    await handleError(ctx, error);
+  }
+});
+
+announcementWizard.action(
+  "check_another_announcement_true",
+  async (ctx, _next) => {
+    try {
+      await ctx.answerCbQuery();
+      ctx.scene.session.tempMsgId = null;
+      await deleteMessage(ctx, ctx.msgId!);
+      ctx.wizard.selectStep(0);
+      return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+    } catch (error) {
+      await handleError(ctx, error);
+    }
+  }
+);
+
+announcementWizard.action("check_another_announcement_false", async (ctx) => {
+  try {
+    await ctx.answerCbQuery();
+    await ctx.reply(
+      "Notifications lookup ended. Use /notifcations to start again."
+    );
+    await deleteMessage(ctx, ctx.msgId!);
+    await ctx.scene.leave();
   } catch (error) {
     await handleError(ctx, error);
   }
