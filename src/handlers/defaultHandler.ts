@@ -2,8 +2,12 @@ import { CustomContext } from "types/customContext.type";
 import deleteMessage from "utils/deleteMessage";
 
 async function defaultHandler(ctx: CustomContext) {
+  if (ctx.updateType === "my_chat_member") {
+    return;
+  }
+
   // Scenes and wizards get expired due to bot restarts or inactivity
-  if (ctx.updateType == "callback_query") {
+  if (ctx.updateType === "callback_query") {
     await ctx.answerCbQuery();
     await deleteMessage(ctx, ctx.msgId!);
     await ctx.reply(
