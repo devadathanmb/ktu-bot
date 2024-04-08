@@ -1,4 +1,4 @@
-import { Markup, Scenes } from "telegraf";
+import { Composer, Markup, Scenes } from "telegraf";
 import { CustomContext } from "types/customContext.type";
 import fetchAttachment from "services/fetchAttachment";
 import fetchTimetables from "services/fetchTimetables";
@@ -27,7 +27,9 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
   // Wizard Step 0
   async (ctx: CustomContext) => {
     try {
-      ctx.scene.session.pageNumber = 0;
+      if (ctx.scene.session.pageNumber === undefined) {
+        ctx.scene.session.pageNumber = 0;
+      }
       await showTimetables(ctx);
       return ctx.wizard.next();
     } catch (error: any) {
@@ -37,12 +39,12 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
 
   // Wizard Step 1
   async (ctx) => {
-    if (ctx.message) {
-      return await ctx.reply(
-        "Please use the buttons to choose a time table.\n\nUse /cancel to cancel time table lookup."
-      );
-    }
     try {
+      if (ctx.message) {
+        return await ctx.reply(
+          "Please use the buttons to choose a time table.\n\nUse /cancel to cancel time table lookup."
+        );
+      }
       if (!ctx.has(callbackQuery("data"))) {
         return await ctx.scene.leave();
       }
@@ -68,7 +70,24 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       if (!chosenTimetable.attachmentId) {
         await ctx.reply("No attachment found for this time table.");
         await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-        return await ctx.scene.leave();
+        await ctx.replyWithHTML("View another time table?", {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "Yes ✅",
+                  callback_data: "check_another_timetable_true",
+                },
+                {
+                  text: "No ❌",
+                  callback_data: "check_another_timetable_false",
+                },
+              ],
+            ],
+          },
+        });
+
+        return;
       }
 
       const file = await fetchAttachment(chosenTimetable.encryptId);
@@ -89,7 +108,22 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       );
 
       await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
-      return await ctx.scene.leave();
+      await ctx.replyWithHTML("View another time table?", {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Yes ✅",
+                callback_data: "check_another_timetable_true",
+              },
+              {
+                text: "No ❌",
+                callback_data: "check_another_timetable_false",
+              },
+            ],
+          ],
+        },
+      });
     } catch (error) {
       return await handleError(ctx, error);
     }
@@ -201,6 +235,31 @@ timetableWizard.command("cancel", async (ctx) => {
 timetableWizard.command("page", async (ctx) => {
   try {
     await handlePageCommand(ctx, deleteMessage, showTimetables);
+  } catch (error) {
+    await handleError(ctx, error);
+  }
+});
+
+timetableWizard.action("check_another_timetable_true", async (ctx, _next) => {
+  try {
+    await ctx.answerCbQuery();
+    ctx.scene.session.tempMsgId = null;
+    await deleteMessage(ctx, ctx.msgId!);
+    ctx.wizard.selectStep(0);
+    return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+  } catch (error) {
+    await handleError(ctx, error);
+  }
+});
+
+timetableWizard.action("check_another_timetable_false", async (ctx) => {
+  try {
+    await ctx.answerCbQuery();
+    await ctx.reply(
+      "Academic timetable lookup ended. Use /timetable to start again."
+    );
+    await deleteMessage(ctx, ctx.msgId!);
+    await ctx.scene.leave();
   } catch (error) {
     await handleError(ctx, error);
   }
