@@ -66,7 +66,7 @@ interface Command {
 
 interface JobData {
   chatId: number;
-  file: string | null;
+  fileLink: string | null;
   captionMsg: string;
   fileName: string | null;
 }
