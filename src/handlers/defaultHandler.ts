@@ -8,7 +8,7 @@ async function defaultHandler(ctx: CustomContext) {
 
   // Scenes and wizards get expired due to bot restarts or inactivity
   if (ctx.updateType === "callback_query") {
-    await ctx.answerCbQuery();
+    ctx.answerCbQuery().catch();
     await deleteMessage(ctx, ctx.msgId!);
     await ctx.reply(
       "Session expired..\n\nPlease start corresponding command again."
