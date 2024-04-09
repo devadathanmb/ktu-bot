@@ -2,7 +2,7 @@
 import { CustomContext } from "types/customContext.type";
 import deleteMessage from "utils/deleteMessage";
 import { FILTERS } from "constants/constants";
-import db from "db/initDb";
+import db from "@/firebase/firestore";
 import { callbackQuery } from "telegraf/filters";
 
 async function filterCallbackHandler(ctx: CustomContext) {

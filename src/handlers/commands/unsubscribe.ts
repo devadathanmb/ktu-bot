@@ -1,5 +1,5 @@
 import { CustomContext } from "types/customContext.type";
-import db from "db/initDb";
+import db from "@/firebase/firestore";
 import deleteMessage from "utils/deleteMessage";
 
 async function unsubscribe(ctx: CustomContext) {

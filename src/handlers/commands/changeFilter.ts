@@ -3,7 +3,7 @@ import { CustomContext } from "types/customContext.type";
 import { FILTERS } from "constants/constants";
 import { Markup } from "telegraf";
 import deleteMessage from "utils/deleteMessage";
-import db from "db/initDb";
+import db from "@/firebase/firestore";
 
 async function changeFilter(ctx: CustomContext) {
   const waitingMsg = await ctx.reply("Please wait...");
