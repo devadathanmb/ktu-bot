@@ -5,9 +5,10 @@ import fetchAttachment from "services/fetchAttachment";
 import { Announcement, Attachment, JobData } from "types/types";
 import findFilters from "utils/findFilters";
 import getCaptionMsg from "utils/getCaptionMsg";
-import db from "db/initDb";
+import db from "@/firebase/firestore";
 import getRelevancy from "services/getRelevancy";
 import queue from "queues/notiyUserQueue/queue";
+import uploadFile from "@/services/uploadFile";
 
 const CRON_JOB_INTERVAL = "*/10 * * * *";
 
@@ -139,7 +140,7 @@ async function notifyUserCron() {
                   chatId: chatIds[i],
                   captionMsg: captionMsg,
                   fileName: null,
-                  file: null,
+                  fileLink: null,
                 },
                 opts: {
                   removeOnComplete: true,
@@ -154,13 +155,14 @@ async function notifyUserCron() {
             let jobs: NotifJobs[] = [];
             for (let i = 0; i < attachments.length; i++) {
               const file = await fetchAttachment(attachments[i].encryptId);
+              const fileLink = await uploadFile(file, attachments[i].name);
               const name = `msg-${captionMsg.slice(5)}-attach-${i}`;
               for (let j = 0; j < chatIds.length; j++) {
                 jobs.push({
                   name: name,
                   data: {
                     chatId: chatIds[j],
-                    file: file,
+                    fileLink: fileLink,
                     captionMsg: captionMsg,
                     fileName: attachments[i].name,
                   },

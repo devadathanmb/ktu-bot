@@ -2,7 +2,7 @@ import { TelegramError } from "telegraf";
 import { Queue } from "bullmq";
 import { Worker } from "bullmq";
 import { JobData } from "types/types";
-import db from "db/initDb";
+import db from "@/firebase/firestore";
 import bot from "bot";
 import IORedis from "ioredis";
 
@@ -27,23 +27,18 @@ queue.on("error", (err: any) => {
 const worker = new Worker<JobData, number>(
   "notify-user-queue",
   async (job) => {
-    const { chatId, file, captionMsg, fileName } = job.data;
+    const { chatId, fileLink, captionMsg, fileName } = job.data;
 
     try {
-      if (!file || !fileName) {
+      if (!fileLink || !fileName) {
         await bot.telegram.sendMessage(chatId, captionMsg, {
           parse_mode: "HTML",
         });
       } else {
-        const fileBuffer = Buffer.from(file as string, "base64");
-        await bot.telegram.sendDocument(
-          chatId,
-          {
-            source: fileBuffer,
-            filename: fileName,
-          },
-          { caption: captionMsg, parse_mode: "HTML" }
-        );
+        await bot.telegram.sendDocument(chatId, fileLink, {
+          caption: captionMsg,
+          parse_mode: "HTML",
+        });
       }
       return job.data.chatId;
     } catch (error: any) {
@@ -62,6 +57,8 @@ const worker = new Worker<JobData, number>(
           } catch (error) {
             console.error(error);
           }
+        } else {
+          console.log(error);
         }
       }
       return job.data.chatId;
