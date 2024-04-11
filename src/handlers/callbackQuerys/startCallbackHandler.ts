@@ -27,6 +27,11 @@ async function startCallbackHandler(ctx: CustomContext) {
       case "about":
         try {
           const botUptime = format(uptime());
+          let lastUpdate;
+          if (process.env.LAST_UPDATE) {
+            const date = new Date(process.env.LAST_UPDATE);
+            lastUpdate = format(date.getTime() / 1000) + " ago";
+          }
           const caption = `
 ○ Name : ${ctx.botInfo.first_name}
 
@@ -39,6 +44,8 @@ async function startCallbackHandler(ctx: CustomContext) {
 ○ Language : <a href="https://www.typescriptlang.org/">TypeScript</a>
 
 ○ Runtime : <a href="https://nodejs.org/en">NodeJS ${version}</a>
+
+○ Last Update : ${lastUpdate ? lastUpdate : "N/A"}
 
 ○ Framework : <a href="https://telegraf.js.org">TelegrafJS v4</a>
 
