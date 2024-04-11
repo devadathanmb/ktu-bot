@@ -3,6 +3,7 @@ import { callbackQuery } from "telegraf/filters";
 import help from "handlers/commands/help";
 import { uptime, version } from "node:process";
 import { startMsg } from "handlers/start";
+import { fmt } from "telegraf/format";
 
 function format(seconds: number) {
   function pad(s: number) {
@@ -63,7 +64,7 @@ async function startCallbackHandler(ctx: CustomContext) {
       case "back":
         const name = ctx.from?.first_name;
         const greeting = `Hello ${name ? name + "!" : "there!"}`;
-        const caption = `${greeting} 👋\n` + startMsg;
+        const caption = fmt`${greeting} 👋\n ${startMsg}`;
 
         return await ctx.editMessageCaption(caption, {
           reply_markup: {
