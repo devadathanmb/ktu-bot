@@ -34,7 +34,7 @@ jobs:
         run: docker build -t ktu-bot-testing:latest .
 
       - name: Run the docker container
-        script: |
+        run: |
           docker network create ktu-bot-network || true
           docker run -d -p 6379:6379 --network ktu-bot-network --network-alias redis-queue-db --name redis-queue-db redis
           docker run -d -p 5000:5000 -e TZ=Asia/Kolkata --network ktu-bot-network -e ENV_TYPE="DEVELOPMENT" -e BOT_TOKEN=${{ secrets.TESTING_BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT_TESTING }}" -e HUGGING_FACE_TOKEN="${{ secrets.HUGGING_FACE_TOKEN }}" -e FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET_TESTING }}" --name ktu-bot-testing ktu-bot-testing:latest
