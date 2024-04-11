@@ -1,0 +1,52 @@
+name: KTU Bot Test Deploy
+description: A test deploy before final deployment
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  on-success:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'success'
+    steps:
+      - run: echo 'CI successful. Proceeding with test deploy..'
+
+  on-failure:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - run: echo 'CI failed. Skipping test deploy..'
+
+  test_deploy:
+    name: Test deployment of bot
+    if: github.ref == 'refs/heads/prod'
+    runs-on: ubuntu-latest
+    needs: on-success
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build the docker container
+        run: docker build -t ktu-bot-testing:latest .
+
+      - name: Run the docker container
+        script: |
+          docker network create ktu-bot-network || true
+          docker run -d -p 6379:6379 --network ktu-bot-network --network-alias redis-queue-db --name redis-queue-db redis
+          docker run -d -p 5000:5000 -e TZ=Asia/Kolkata --network ktu-bot-network -e ENV_TYPE="DEVELOPMENT" -e BOT_TOKEN=${{ secrets.TESTING_BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT_TESTING }}" -e HUGGING_FACE_TOKEN="${{ secrets.HUGGING_FACE_TOKEN }}" -e FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET_TESTING }}" --name ktu-bot-testing ktu-bot-testing:latest
+
+      - name: Wait for container to initialize
+        run: sleep 5
+
+      - name: Check container status
+        run: |
+          if docker inspect -f '{{.State.Status}}' ktu-bot-testing | grep -q "running"; then
+            echo "Container is running"
+          else
+            echo "Container has failed"
+            exit 1
+          fi
