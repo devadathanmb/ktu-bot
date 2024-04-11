@@ -1,5 +1,4 @@
 name: KTU Bot Test Deploy
-description: A test deploy before final deployment
 
 on:
   workflow_run:
