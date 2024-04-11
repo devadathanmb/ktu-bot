@@ -6,7 +6,9 @@ import bot from "@/bot";
 const launchBot = async () => {
   // Launch in long polling mode if in development
   if (process.env.ENV_TYPE === "DEVELOPMENT") {
-    bot.launch();
+    bot.launch({
+      dropPendingUpdates: true,
+    });
     if (bot)
       bot.telegram.getMe().then((res) => {
         console.log(
