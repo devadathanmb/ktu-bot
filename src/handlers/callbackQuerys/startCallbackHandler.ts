@@ -16,6 +16,11 @@ function format(seconds: number) {
   return pad(hours) + ":" + pad(minutes) + ":" + pad(secs);
 }
 
+function getCommitLink(commitHash: string) {
+  const link = `<a href="https://github.com/devadathanmb/ktu-bot/commit/${commitHash}">${commitHash.slice(0, 7)}</a>`;
+  return link;
+}
+
 async function startCallbackHandler(ctx: CustomContext) {
   await ctx.answerCbQuery();
   if (ctx.has(callbackQuery("data"))) {
@@ -40,7 +45,7 @@ async function startCallbackHandler(ctx: CustomContext) {
 
 ○ Runtime : <a href="https://nodejs.org/en">NodeJS ${version}</a>
 
-○ Latest commit  : ${process.env.LATEST_COMMIT ? process.env.LATEST_COMMIT.slice(0, 6) : "N/A"}
+○ Deployed commit  : ${process.env.LATEST_COMMIT ? getCommitLink(process.env.LATEST_COMMIT) : "N/A"}
 
 ○ Framework : <a href="https://telegraf.js.org">TelegrafJS v4</a>
 
