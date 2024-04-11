@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'failure'
     steps:
-      - run: echo 'CI failed. Skipping test deploy..'
+      - run: echo 'CI failed. Skipping test deploy..' && exit 1
 
   test_deploy:
     name: Test deployment of bot

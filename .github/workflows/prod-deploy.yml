@@ -9,9 +9,9 @@ on:
 jobs:
   on-failure:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'success'
+    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'failure'
     steps:
-      - run: echo "Prod deployment failed"
+      - run: echo "Test deployment failed.. Skipping prod deploy.." && exit 1
 
   on-success:
     runs-on: ubuntu-latest
