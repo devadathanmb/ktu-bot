@@ -64,8 +64,8 @@ async function startCallbackHandler(ctx: CustomContext) {
         const name = ctx.from?.first_name;
         const greeting = `Hello ${name ? name + "!" : "there!"}`;
         const caption = `${greeting} 👋\n` + startMsg;
+
         return await ctx.editMessageCaption(caption, {
-          parse_mode: "HTML",
           reply_markup: {
             inline_keyboard: [
               [
