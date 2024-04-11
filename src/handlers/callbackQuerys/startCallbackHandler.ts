@@ -40,7 +40,7 @@ async function startCallbackHandler(ctx: CustomContext) {
 
 ○ Runtime : <a href="https://nodejs.org/en">NodeJS ${version}</a>
 
-○ Latest commit  : ${process.env.LATEST_COMMIT ? process.env.LATEST_COMMIT : "N/A"}
+○ Latest commit  : ${process.env.LATEST_COMMIT ? process.env.LATEST_COMMIT.slice(0, 6) : "N/A"}
 
 ○ Framework : <a href="https://telegraf.js.org">TelegrafJS v4</a>
 
