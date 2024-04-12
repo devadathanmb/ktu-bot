@@ -7,6 +7,7 @@ import academicCalendarWizard from "wizards/calendarWizard";
 import announcementWizard from "wizards/announcementWizard";
 import timetableWizard from "wizards/timeTableWizard";
 import { CustomContext } from "types/customContext.type";
+import throttler from "@/middlewares/throttler";
 
 // Attach all middlewares to the bot
 function attachMiddlewares() {
@@ -21,6 +22,7 @@ function attachMiddlewares() {
 
   // Register middlewares
   bot.use(loggingMiddleware);
+  bot.use(throttler);
   bot.use(session());
   bot.use(stage.middleware());
 }
