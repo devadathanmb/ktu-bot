@@ -40,7 +40,8 @@ Check status <a href="https://stats.uptimerobot.com/Drq58GdQoC">here</a>
     await deleteMessage(ctx, waitingMsgId);
     await ctx.replyWithHTML(replyMarkup);
   } catch (error) {
-    await deleteMessage(ctx, waitingMsgId);
+    await deleteMessage(ctx, waitingMsgId!);
+    await ctx.reply("Failed to get server status");
   }
 }
 
