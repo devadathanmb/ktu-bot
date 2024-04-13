@@ -72,7 +72,6 @@ async function getApiStatus() {
       }
 
       apiStatus.log = apiLog;
-      console.log(apiStatus);
       return apiStatus;
     }
     return apiStatus;
@@ -80,7 +79,5 @@ async function getApiStatus() {
     throw error;
   }
 }
-
-getApiStatus();
 
 export default getApiStatus;
