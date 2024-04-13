@@ -45,6 +45,8 @@ async function startCallbackHandler(ctx: CustomContext) {
 
 ○ Runtime : <a href="https://nodejs.org/en">NodeJS ${version}</a>
 
+○ KTU API status : <a href="https://stats.uptimerobot.com/Drq58GdQoC">check status</a>
+
 ○ Deployed commit  : ${process.env.LATEST_COMMIT ? getCommitLink(process.env.LATEST_COMMIT) : "N/A"}
 
 ○ Framework : <a href="https://telegraf.js.org">TelegrafJS v4</a>
