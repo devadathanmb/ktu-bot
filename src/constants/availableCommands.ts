@@ -20,6 +20,11 @@ const availableCommands: Command[] = [
     description: "🦘 Quick jump to a page",
   },
   {
+    command: "serverstatus",
+    description: "📊 Check KTU server status",
+  },
+
+  {
     command: "search",
     description: "🧐 See how to search for KTU notifications",
   },
