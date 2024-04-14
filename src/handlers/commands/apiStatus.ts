@@ -18,9 +18,10 @@ async function apiStatus(ctx: CustomContext) {
     }
 
     let replyMarkup = `
-<u>Status</u>
+<u>KTU API Server Status</u>
 
 <b>• Server Status</b> : ${statusMarkup}
+<b>• Avg response time</b> : ${status.responseTime} ms
 `;
     if (status.log) {
       let logMarkup = `
@@ -31,7 +32,7 @@ async function apiStatus(ctx: CustomContext) {
 <b>• Since</b> : ${status.log.duration} hrs
 <b>• Reason</b> : ${status.log.reason}
 
-Check status <a href="https://stats.uptimerobot.com/Drq58GdQoC">here</a>
+Check detailed status <a href="https://stats.uptimerobot.com/Drq58GdQoC">here</a>
 `;
 
       replyMarkup += logMarkup;
