@@ -10,6 +10,7 @@ interface Log {
 interface ApiStatus {
   status: string;
   log: Log | null;
+  responseTime: number;
 }
 
 async function getApiStatus() {
@@ -23,6 +24,7 @@ async function getApiStatus() {
     formData.append("format", "json");
     formData.append("logs", "1");
     formData.append("logs_limit", "1");
+    formData.append("response_times", "1");
 
     const response = await axios.post(URL, formData, {
       headers,
@@ -34,6 +36,7 @@ async function getApiStatus() {
     let apiStatus: ApiStatus = {
       status: "",
       log: null,
+      responseTime: response.data.monitors[0].average_response_time,
     };
     const status: number = response.data.monitors[0].status;
 
