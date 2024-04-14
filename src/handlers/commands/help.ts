@@ -6,6 +6,8 @@ async function help(ctx: CustomContext) {
 
 • /start - Start the bot
 
+• /serverstatus - Check KTU API server status
+
 • /help - Show help message
  
 • /result - Exam results lookup 
