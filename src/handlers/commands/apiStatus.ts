@@ -29,7 +29,7 @@ async function apiStatus(ctx: CustomContext) {
 
 <b>• Status</b> : ${status.log.type.toUpperCase()}
 <b>• Reported At</b> : ${status.log.timestamp}
-<b>• Since</b> : ${status.log.duration} hrs
+<b>• Duration</b> : ${status.log.duration} hrs
 <b>• Reason</b> : ${status.log.reason}
 
 Check detailed status <a href="https://stats.uptimerobot.com/Drq58GdQoC">here</a>
