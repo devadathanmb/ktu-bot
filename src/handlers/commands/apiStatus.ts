@@ -31,15 +31,24 @@ async function apiStatus(ctx: CustomContext) {
 <b>• Reported At</b> : ${status.log.timestamp}
 <b>• Duration</b> : ${status.log.duration} hrs
 <b>• Reason</b> : ${status.log.reason}
-
-Check detailed status <a href="https://stats.uptimerobot.com/Drq58GdQoC">here</a>
 `;
 
       replyMarkup += logMarkup;
     }
 
     await deleteMessage(ctx, waitingMsgId);
-    await ctx.replyWithHTML(replyMarkup);
+    await ctx.replyWithHTML(replyMarkup, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "ℹ️  Check detailed status",
+              url: "https://stats.uptimerobot.com/Drq58GdQoC",
+            },
+          ],
+        ],
+      },
+    });
   } catch (error) {
     await deleteMessage(ctx, waitingMsgId!);
     await ctx.reply("Failed to get server status");
