@@ -65,7 +65,12 @@ async function getApiStatus() {
         apiLog.type = "unknown";
       }
 
-      apiLog.timestamp = new Date(log.datetime * 1000).toLocaleString();
+      const date = new Date(log.datetime * 1000);
+      const localDate = new Intl.DateTimeFormat("en-IN", {
+        dateStyle: "full",
+        timeStyle: "long",
+      }).format(date);
+      apiLog.timestamp = localDate;
       apiLog.duration = Math.round(log.duration / (60 * 60)); // get in hours
 
       if (log.reason) {
