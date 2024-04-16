@@ -50,7 +50,7 @@ const timetableWizard = new Scenes.WizardScene<CustomContext>(
       }
 
       await ctx.answerCbQuery();
-      if (!ctx.callbackQuery.data.startsWith("calendar")) {
+      if (!ctx.callbackQuery.data.startsWith("timetable")) {
         return await ctx.reply("Please choose a valid option");
       }
       const chosenTimetableid = Number.parseInt(
