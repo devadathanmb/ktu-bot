@@ -143,7 +143,10 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
         return await ctx.reply("Please choose a course using buttons");
       }
       await ctx.answerCbQuery();
-      if (!ctx.callbackQuery.data.startsWith("course")) {
+      if (
+        ctx.callbackQuery.data !== "check_another_result_true" &&
+        !ctx.callbackQuery.data.startsWith("course")
+      ) {
         return await ctx.reply("Please choose a valid option");
       }
       await deleteMessage(ctx, ctx.scene.session.tempMsgId);
