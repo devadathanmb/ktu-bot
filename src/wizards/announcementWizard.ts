@@ -211,7 +211,11 @@ async function showAnnouncements(ctx: CustomContext) {
 
 // Page button action : Answer callback query and do nothing
 announcementWizard.action("page", async (ctx) => {
-  return await ctx.answerCbQuery();
+  try {
+    return await ctx.answerCbQuery();
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
 // Previous page button action : Decrement page number and show announcements

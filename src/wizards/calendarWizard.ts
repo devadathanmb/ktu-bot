@@ -197,7 +197,11 @@ async function showAcademicCalendars(ctx: CustomContext) {
 
 // Page number button action : Do nothing
 academicCalendarWizard.action("page", async (ctx) => {
-  await ctx.answerCbQuery();
+  try {
+    await ctx.answerCbQuery();
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
 // Previous page button action : Decrement page number and show academic calendars

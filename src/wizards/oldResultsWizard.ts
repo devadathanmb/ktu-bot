@@ -134,7 +134,7 @@ const oldResultsWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.tempMsgId = msg.message_id;
       return ctx.wizard.next();
     } catch (error) {
-      handleError(ctx, error);
+      await handleError(ctx, error);
     }
   },
   async (ctx: CustomContext) => {
@@ -280,7 +280,9 @@ oldResultsWizard.action("next_page", async (ctx) => {
 oldResultsWizard.command("page", async (ctx) => {
   try {
     await handlePageCommand(ctx, deleteMessage, showResults);
-  } catch (error) {}
+  } catch (error) {
+    await handleError(ctx, error);
+  }
 });
 
 oldResultsWizard.action("check_another_result_true", async (ctx, _next) => {
