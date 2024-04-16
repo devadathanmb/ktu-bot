@@ -13,7 +13,7 @@ Thanks for using this bot!`;
 async function start(ctx: CustomContext) {
   const name = ctx.from?.first_name;
   const greeting = `Hello ${name ? name + "!" : "there!"}`;
-  const botImgLink = "https://i.imgur.com/kiAUtfR.jpeg";
+  const botImgLink = "https://i.imgur.com/obaTlOd.jpeg";
   const caption = fmt`${greeting} 👋\n ${startMsg}`;
 
   await ctx.replyWithPhoto(botImgLink, {
