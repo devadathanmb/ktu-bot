@@ -1,9 +1,19 @@
-# KTU Bot
+<h1 align="center">KTU Bot</h1>
+
+<p align="center">
+  <img align="center" width="200" src="https://i.imgur.com/obaTlOd.jpeg">
+</p>
+
+<br/>
+<div align="center">
 
 ![Made with telegrafjs](https://img.shields.io/badge/Made%20With-Telegraf.JS-%23E74625?style=flat&link=https%3A%2F%2Ftelegraf.js.org%2F)
 ![CI](https://github.com/devadathanmb/ktu-bot/actions/workflows/ci.yml/badge.svg)
 ![Test Deploy](https://github.com/devadathanmb/ktu-bot/actions/workflows/test-deploy.yml/badge.svg)
 ![Production Deploy](https://github.com/devadathanmb/ktu-bot/actions/workflows/prod-deploy.yml/badge.svg)
+
+</div>
+<br/>
 
 Welcome to the KTU Bot! This Telegram bot helps students check their exam results, find latest KTU notifications, academic calendars, exam time tables and alert users when new notifications arrive.
 
