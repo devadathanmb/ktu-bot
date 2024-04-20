@@ -1,7 +1,14 @@
 // Throttler middleware to avoid abuse by spam
 import { telegrafThrottler, ThrottlerOptions } from "telegraf-throttler";
 
-let opts: ThrottlerOptions = {};
+let opts: ThrottlerOptions = {
+  out: {
+    minTime: 25,
+    reservoir: 30,
+    reservoirRefreshAmount: 30,
+    reservoirRefreshInterval: 1000,
+  },
+};
 
 /*
   In PRODUCTION, that is in webhook mode, each update from chat, that is per user update is sent one by one.
