@@ -39,6 +39,7 @@ async function notifyUserCron() {
         await notifsDataRef.set({
           announcements,
         });
+        return;
       } else {
         data = doc.data()!.announcements;
         await notifsDataRef.set(
