@@ -4,9 +4,15 @@ import ServerError from "errors/ServerError";
 
 async function fetchAttachment(encryptId: string): Promise<any> {
   try {
-    const response = await axios.post(ATTACHMENT_URL, {
-      encryptId: encryptId,
-    });
+    const response = await axios.post(
+      ATTACHMENT_URL,
+      {
+        encryptId: encryptId,
+      },
+      {
+        timeout: 15 * 1000,
+      }
+    );
     return response.data;
   } catch (error: any) {
     throw new ServerError();
