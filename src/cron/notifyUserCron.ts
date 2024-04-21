@@ -1,6 +1,5 @@
 import * as cron from "node-cron";
 import fetchAnnouncements from "services/fetchAnnouncements";
-import { readFile, writeFile } from "node:fs/promises";
 import fetchAttachment from "services/fetchAttachment";
 import { Announcement, Attachment, JobData } from "types/types";
 import findFilters from "utils/findFilters";
@@ -31,22 +30,28 @@ async function notifyUserCron() {
     const startTime = new Date().toString();
     console.log(`🔴 Cron job started at ${startTime}`);
 
-    // Read the json file to get the previous announcements
-    // If the file does not exist, fetch the announcements and write to the file
     let data;
     try {
-      data = await readFile("data.json", "utf8");
-      if (!data) {
-        const announcements = JSON.stringify(await fetchAnnouncements(0, 10));
-        await writeFile("data.json", announcements, "utf8");
-        return;
+      const notifsDataRef = db.collection("notifsData").doc("notifications");
+      const doc = await notifsDataRef.get();
+      const announcements = JSON.stringify(await fetchAnnouncements(0, 10));
+      if (!doc.exists) {
+        await notifsDataRef.set({
+          announcements,
+        });
+      } else {
+        data = doc.data()!.announcements;
+        await notifsDataRef.set(
+          {
+            announcements,
+          },
+          {
+            merge: true,
+          }
+        );
       }
     } catch (error: any) {
-      if (error.code === "ENOENT") {
-        const announcements = JSON.stringify(await fetchAnnouncements(0, 10));
-        await writeFile("data.json", announcements, "utf8");
-        return;
-      }
+      console.error(error);
     }
 
     if (!data) {
@@ -71,9 +76,6 @@ async function notifyUserCron() {
           (announcement: Announcement) =>
             !previousAnnouncementIds.has(announcement.id)
         );
-
-        // Replace the old data.json with the new announcements
-        await writeFile("data.json", JSON.stringify(announcements), "utf8");
 
         // Get all the chatIds
         const usersRef = db.collection("subscribedUsers");
