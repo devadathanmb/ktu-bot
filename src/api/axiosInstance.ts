@@ -15,8 +15,8 @@ const axios = setupCache(Axios, {
 // KTU servers are known to be slow during high traffic
 // By default, axios has no timeout, which means it can take forever to get a response
 // This causes Telegraf to timeout as well as Telegram servers to re-try the request leading to duplication which again may fail due to timeout
-// Hence it is best to assume that we will not get a response after 15 seconds and cancel the request
-axios.defaults.timeout = 1000 * 15;
+// Hence it is best to assume that we will not get a response after 10 seconds and cancel the request
+axios.defaults.timeout = 1000 * 10;
 
 axios.interceptors.request.use((config) => {
   config.httpsAgent = agent;
