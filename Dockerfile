@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:18-slim
 WORKDIR /bot
 COPY package.json /bot
 COPY package-lock.json /bot
