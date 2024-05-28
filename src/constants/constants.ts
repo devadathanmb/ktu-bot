@@ -16,7 +16,7 @@ const FILTERS_REGEX: Record<string, Array<string>> = {
   "\\bb\\.? ?tech": ["btech"],
   "\\bm\\.? ?tech": ["mtech"],
   "\\bmca\\b": ["mca"],
-  "\\bphd\\b": ["phd"],
+  "\\bp.? ?hd\\b": ["phd"],
   "\\bb\\.? ?des": ["bdes"],
   "\\bmba\\b": ["mba"],
   "\\bb\\. ?arch": ["barch"],
