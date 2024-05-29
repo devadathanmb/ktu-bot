@@ -10,6 +10,7 @@ import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 import { InlineKeyboardButton } from "telegraf/types";
 import shortenString from "wizards/utils/shortenString";
+import { escape } from "html-escaper";
 
 /*
   - Announcement lookup is also desinged as a WizardScene.
@@ -101,11 +102,11 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
 
       const captionMsg = `
 
-<b>Subject:</b> ${chosenAnnouncement.subject}
+<b>Subject:</b> ${escape(chosenAnnouncement.subject)}
 
 <b>Date:</b> ${chosenAnnouncement.date}
 
-<b>Message:</b> ${chosenAnnouncement.message}
+<b>Message:</b> ${escape(chosenAnnouncement.message)}
 
 `;
       if (attachments.length == 0) {
@@ -287,7 +288,7 @@ announcementWizard.action("check_another_announcement_false", async (ctx) => {
   try {
     await ctx.answerCbQuery();
     await ctx.reply(
-      "Notifications lookup ended. Use /notifcations to start again."
+      "Notifications lookup ended. Use /notifications to start again."
     );
     await deleteMessage(ctx, ctx.msgId!);
     await ctx.scene.leave();

@@ -4,6 +4,7 @@ import fetchAnnouncements from "services/fetchAnnouncements";
 import fetchAttachment from "services/fetchAttachment";
 import { NarrowedContext, TelegramError } from "telegraf";
 import ServerError from "errors/ServerError";
+import { escape } from "html-escaper";
 import bot from "@/bot";
 
 async function searchInlineQueryHandler(
@@ -20,9 +21,9 @@ async function searchInlineQueryHandler(
       description: announcement.subject,
       input_message_content: {
         message_text: `<b>Subject</b> : ${
-          announcement.subject ? announcement.subject : "N/A"
+          announcement.subject ? escape(announcement.subject) : "N/A"
         }\n\n<b>Date</b> : ${announcement.date ? announcement.date : "N/A"}\n
-<b>Message</b> : ${announcement.message ? announcement.message : "N/A"}`,
+<b>Message</b> : ${announcement.message ? escape(announcement.message) : "N/A"}`,
         parse_mode: "HTML",
       },
     }));
