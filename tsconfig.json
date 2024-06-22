@@ -14,5 +14,5 @@
     "require": ["tsconfig-paths/register"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "src/wizards/oldResultsWizard.ts"]
 }
