@@ -7,18 +7,16 @@ import ServerError from "errors/ServerError";
 async function fetchResult(
   dob: string,
   regisNo: string,
-  examDefId: number,
-  schemeId: number
+  token: string
 ): Promise<{ summary: ResultSummary; resultDetails: ResultDetails[] }> {
   try {
     const payload = {
       registerNo: regisNo,
       dateOfBirth: dob,
-      examDefId: examDefId,
-      schemeId: schemeId,
+      token: token,
     };
 
-    if (!examDefId || !schemeId) {
+    if (!token) {
       throw new InvalidDataError(
         "Invalid course or result choosen. Please try again."
       );
@@ -31,6 +29,13 @@ async function fetchResult(
     }
 
     const response = await axios.post(RESULT_URL, payload);
+
+    console.log(response);
+    if (!response.data || !response.data.resultDetails) {
+      throw new InvalidDataError(
+        "Invalid DOB or register number. Please try again."
+      );
+    }
 
     const resultDetails: ResultDetails[] = response.data.resultDetails.map(
       ({ courseName, grade, credits }: ResultDetails) => ({

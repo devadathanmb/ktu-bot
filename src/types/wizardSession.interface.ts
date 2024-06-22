@@ -7,8 +7,7 @@ export interface WizardSessionData extends Scenes.WizardSessionData {
   semester: string;
   dob: string;
   regisNo: string;
-  examDefId: number;
-  schemeId: number;
+  index: number;
   waitingMsgId: number | null;
 
   // Temporary message id to track send messages in wizards

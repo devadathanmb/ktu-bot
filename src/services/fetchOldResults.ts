@@ -64,8 +64,7 @@ async function fetchAllOldResults(): Promise<PublishedResultData[]> {
     if (!filteredResponseData) {
       const data = responseData.map((result) => ({
         resultName: result.resultName,
-        examDefId: result.examDefId,
-        schemeId: result.schemeId,
+        token: result.token,
         publishDate: result.publishDate,
       }));
       resultsCache.set("filteredResults", data);

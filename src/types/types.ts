@@ -17,9 +17,9 @@ interface ResultSummary {
 
 interface PublishedResultData {
   resultName: string;
-  examDefId: number;
-  schemeId: number;
+  token: string;
   publishDate: string;
+  index: number;
 }
 
 interface Course {

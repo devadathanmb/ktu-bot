@@ -20,11 +20,11 @@ async function fetchPublishedResults(
       );
     }
 
-    responseData = responseData.map((result) => ({
+    responseData = responseData.map((result, index) => ({
       resultName: result.resultName,
-      examDefId: result.examDefId,
-      schemeId: result.schemeId,
+      token: result.token,
       publishDate: result.publishDate,
+      index: index + 1,
     }));
 
     return responseData;

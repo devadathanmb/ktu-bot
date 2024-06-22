@@ -52,11 +52,16 @@ async function sendFinalResult(ctx: CustomContext) {
     "Fetching result.. Please wait..\n\n<i>(This may take some time)</i>"
   );
   ctx.scene.session.waitingMsgId = waitingMsg.message_id;
+  const results = await fetchPublishedResults(ctx.scene.session.courseId);
+  const targetResult = results.find(
+    (result) => result.index === ctx.scene.session.index
+  );
+  const token = targetResult!.token;
+
   const { summary, resultDetails } = await fetchResult(
     ctx.scene.session.dob,
     ctx.scene.session.regisNo,
-    ctx.scene.session.examDefId,
-    ctx.scene.session.schemeId
+    token
   );
 
   const sgpa = calculateSgpa(resultDetails);
@@ -149,9 +154,8 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
       ctx.scene.session.waitingMsgId = waitingMsg.message_id;
       const publishedResults = await fetchPublishedResults(courseId);
 
-      const resultButtons = publishedResults.map(
-        ({ resultName, examDefId, schemeId }) =>
-          Markup.button.callback(resultName, `result_${examDefId}_${schemeId}`)
+      const resultButtons = publishedResults.map(({ resultName, index }) =>
+        Markup.button.callback(resultName, `result_${index}`)
       );
 
       const goBackButton = Markup.button.callback("🔙 Back", "back_to_0");
@@ -196,13 +200,10 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         ctx.has(callbackQuery("data")) &&
         ctx.callbackQuery.data.startsWith("result_")
       ) {
-        const [examDefId, schemeId] = ctx.callbackQuery.data
-          .split("_")
-          .slice(1);
-        ctx.scene.session.examDefId = Number(examDefId);
-        ctx.scene.session.schemeId = Number(schemeId);
+        const [index] = ctx.callbackQuery.data.split("_").slice(1);
+        ctx.scene.session.index = Number(index);
 
-        if (!ctx.scene.session.examDefId || !ctx.scene.session.schemeId) {
+        if (!ctx.scene.session.index) {
           return await ctx.reply("Please choose a valid result");
         }
         await deleteMessage(ctx, ctx.scene.session.tempMsgId);
