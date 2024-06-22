@@ -10,7 +10,6 @@ import { callbackQuery } from "telegraf/filters";
 import handlePageCommand from "wizards/utils/handlePageCommand";
 import { InlineKeyboardButton } from "telegraf/types";
 import shortenString from "wizards/utils/shortenString";
-import { escape } from "html-escaper";
 
 /*
   - Announcement lookup is also desinged as a WizardScene.
@@ -102,11 +101,11 @@ const announcementWizard = new Scenes.WizardScene<CustomContext>(
 
       const captionMsg = `
 
-<b>Subject:</b> ${escape(chosenAnnouncement.subject)}
+<b>Subject:</b> ${chosenAnnouncement.subject}
 
 <b>Date:</b> ${chosenAnnouncement.date}
 
-<b>Message:</b> ${escape(chosenAnnouncement.message)}
+<b>Message:</b> ${chosenAnnouncement.message}
 
 `;
       if (attachments.length == 0) {

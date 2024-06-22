@@ -3,6 +3,7 @@ import { ACADEMIC_CALENDAR_URL } from "constants/constants";
 import { AcademicCalendar } from "types/types";
 import ServerError from "errors/ServerError";
 import formatDate from "utils/formatDate";
+import { stripHtml } from "string-strip-html";
 
 async function fetchAcademicCalendars(
   pageNumber: number,
@@ -17,7 +18,7 @@ async function fetchAcademicCalendars(
 
     const relevantData = response.data.content.map((obj: any) => ({
       id: obj.id,
-      title: obj.academicCalendarTitle,
+      title: stripHtml(obj.academicCalendarTitle).result,
       date: formatDate(obj.modifiedDate.split("T")[0]),
       attachmentName: obj.attachmentName,
       attachmentId: obj.attachmentId,

@@ -3,6 +3,7 @@ import { TIMETABLE_URL } from "constants/constants";
 import { Timetable } from "types/types";
 import ServerError from "errors/ServerError";
 import formatDate from "utils/formatDate";
+import { stripHtml } from "string-strip-html";
 
 async function fetchTimetables(
   pageNumber: number,
@@ -17,7 +18,7 @@ async function fetchTimetables(
 
     const relevantData = response.data.content.map((obj: any) => ({
       id: obj.id,
-      title: obj.timeTableTitle,
+      title: stripHtml(obj.timeTableTitle).result,
       encryptId: obj.encryptId,
       attachmentId: obj.attachmentId,
       date: formatDate(obj.modifiedDate.split("T")[0]),

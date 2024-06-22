@@ -2,6 +2,7 @@ import { axios } from "api/axiosInstance";
 import { ANOUNCEMENTS_URL } from "constants/constants";
 import { Announcement } from "types/types";
 import ServerError from "errors/ServerError";
+import { stripHtml } from "string-strip-html";
 import formatDate from "utils/formatDate";
 
 async function fetchAnnouncements(
@@ -23,8 +24,8 @@ async function fetchAnnouncements(
 
     const relevantData = response.data.content.map((obj: any) => ({
       id: obj.id,
-      subject: obj.subject,
-      message: obj.message,
+      subject: stripHtml(obj.subject).result,
+      message: stripHtml(obj.message).result,
       date: formatDate(obj.announcementDate.split(" ")[0]),
       attachments: obj.attachmentList.map((attachment: any) => ({
         name: attachment.attachmentName,
