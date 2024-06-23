@@ -17,20 +17,20 @@
   "license": "GPL 3.0",
   "devDependencies": {
     "@types/html-escaper": "^3.0.2",
-    "@types/node": "^20.11.25",
+    "@types/node": "^20.14.8",
     "@types/node-cron": "^3.0.11",
-    "nodemon": "^3.1.0",
+    "nodemon": "^3.1.4",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.8",
+    "tsc-alias": "^1.8.10",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.4.2"
+    "typescript": "^5.5.2"
   },
   "dependencies": {
-    "axios": "^1.6.7",
-    "axios-cache-interceptor": "^1.5.1",
-    "bullmq": "^5.4.2",
+    "axios": "^1.7.2",
+    "axios-cache-interceptor": "^1.5.3",
+    "bullmq": "^5.8.2",
     "dotenv": "^16.4.5",
-    "firebase-admin": "^12.0.0",
+    "firebase-admin": "^12.2.0",
     "node-cache": "^5.1.2",
     "node-cron": "^3.0.3",
     "string-strip-html": "^8.5.0",
