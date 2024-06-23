@@ -1,5 +1,6 @@
 import Axios from "axios";
 import { setupCache } from "axios-cache-interceptor";
+import { ORIGIN_URL } from "@/constants/constants";
 import { BASE_URL } from "@/constants/constants";
 import * as https from "https";
 
@@ -22,8 +23,8 @@ axios.defaults.timeout = 1000 * 10;
 axios.interceptors.request.use((config) => {
   config.httpsAgent = agent;
   if (config.url?.includes(BASE_URL)) {
-    config.headers["Origin"] = process.env.ORIGIN_URL;
-    config.headers["Referer"] = process.env.ORIGIN_URL;
+    config.headers["Origin"] = ORIGIN_URL;
+    config.headers["Referer"] = ORIGIN_URL;
     config.headers["User-Agent"] =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
   }

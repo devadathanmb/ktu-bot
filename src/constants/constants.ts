@@ -1,3 +1,4 @@
+const ORIGIN_URL = "https://ktu.edu.in/";
 const BASE_URL = "https://api.ktu.edu.in";
 const COURSES_URL = "https://api.ktu.edu.in/ktu-web-service/anon/masterData";
 const PUBLISHED_RESULTS_URL =
@@ -91,4 +92,5 @@ export {
   FILTERS,
   COURSES,
   BASE_URL,
+  ORIGIN_URL,
 };
