@@ -1,19 +1,22 @@
 version: "3.8"
 services:
   ktu-bot:
-    build: .
-    restart: always
-    depends_on:
-      redis-queue-db:
-        condition: service_healthy
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     volumes:
+      - ./src/:/bot/src
       - type: bind
         source: .env
         target: /bot/.env
+    depends_on:
+      redis-queue-db:
+        condition: service_healthy
 
   redis-queue-db:
     image: redis
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

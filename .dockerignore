@@ -2,3 +2,4 @@ node_modules/
 .git/
 env.example
 assets/
+.env
