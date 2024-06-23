@@ -18,7 +18,7 @@ async function fetchAcademicCalendars(
 
     const relevantData = response.data.content.map((obj: any) => ({
       id: obj.id,
-      title: stripHtml(obj.academicCalendarTitle).result,
+      title: stripHtml(obj.academicCalendarTitle || "").result,
       date: formatDate(obj.modifiedDate.split("T")[0]),
       attachmentName: obj.attachmentName,
       attachmentId: obj.attachmentId,
@@ -27,6 +27,7 @@ async function fetchAcademicCalendars(
 
     return relevantData;
   } catch (error: any) {
+    console.log(error);
     throw new ServerError();
   }
 }

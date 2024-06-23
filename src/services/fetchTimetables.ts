@@ -18,7 +18,7 @@ async function fetchTimetables(
 
     const relevantData = response.data.content.map((obj: any) => ({
       id: obj.id,
-      title: stripHtml(obj.timeTableTitle).result,
+      title: stripHtml(obj.timeTableTitle || "").result,
       encryptId: obj.encryptId,
       attachmentId: obj.attachmentId,
       date: formatDate(obj.modifiedDate.split("T")[0]),
