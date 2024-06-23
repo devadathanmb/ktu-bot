@@ -199,10 +199,13 @@ eg: @ktu_results_bot calendar : This returns all the results that matches word "
 10. Run the application using Docker Compose:
 
     ```bash
-    docker-compose up
+    docker-compose -f docker-compose.dev.yml up
     ```
 
 The bot should now be running and accessible on Telegram.
+
+> [!NOTE]
+> The bot will automatically pickup changes in `./src` and restart the bot.
 
 ## Production setup
 
