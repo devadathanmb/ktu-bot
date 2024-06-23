@@ -84,7 +84,7 @@ eg: @ktu_results_bot calendar : This returns all the results that matches word "
 
 > [!NOTE]
 >
-> The bot makes use of [BullMQ](https://github.com/taskforcesh/bullmq), a redis based nodejs queue, for the live notifications feature. Thus, it requires you to have a redis db instance running.
+> The bot makes use of [BullMQ](https://github.com/taskforcesh/bullmq), a redis based NodeJS queue, for the live notifications feature. Thus, it requires you to have a redis instance running.
 > The docker compose method below already does that for you.
 
 ### Running Locally (Without Docker - Not preferred)
@@ -252,7 +252,7 @@ If you encounter any issues, have feature suggestions, or want to contribute to 
 
 ## Bugs and Feedback
 
-If you find any bugs or have feedback, please [open an issue](https://github.com/devadathanmb/ktu-results-bot/issues) on GitHub.
+If you find any bugs or have feedback, please [open an issue](https://github.com/devadathanmb/ktu-bot/issues) on GitHub.
 
 ## License
 
