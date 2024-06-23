@@ -30,7 +30,6 @@ async function fetchResult(
 
     const response = await axios.post(RESULT_URL, payload);
 
-    console.log(response);
     if (!response.data || !response.data.resultDetails) {
       throw new InvalidDataError(
         "Invalid DOB or register number. Please try again."
