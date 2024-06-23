@@ -43,10 +43,7 @@ async function fetchResult(
         credits,
       })
     );
-
-    const firstName = response.data.firstName;
-    const lastName = response.data.surName;
-    const middleName = response.data.middleName;
+    const fullName = response.data.fullName;
     const branch = response.data.branchName;
     const semester = response.data.semesterName;
     const registrerNo = response.data.registerNo;
@@ -54,9 +51,7 @@ async function fetchResult(
     const resultName = response.data.resultName;
 
     const summary: ResultSummary = {
-      firstName,
-      lastName,
-      middleName,
+      fullName,
       branch,
       semester,
       registrerNo,

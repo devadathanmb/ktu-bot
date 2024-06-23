@@ -5,9 +5,7 @@ interface ResultDetails {
 }
 
 interface ResultSummary {
-  firstName: string;
-  lastName: string | null;
-  middleName: string | null;
+  fullName: string;
   branch: string;
   semester: string;
   registrerNo: string;
