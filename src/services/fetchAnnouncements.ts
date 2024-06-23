@@ -24,8 +24,8 @@ async function fetchAnnouncements(
 
     const relevantData = response.data.content.map((obj: any) => ({
       id: obj.id,
-      subject: obj.subject ? stripHtml(obj.subject).result : obj.subject,
-      message: obj.message ? stripHtml(obj.message).result : obj.message,
+      subject: stripHtml(obj.subject || "").result,
+      message: stripHtml(obj.message || "").result,
       date: formatDate(obj.announcementDate.split(" ")[0]),
       attachments: obj.attachmentList.map((attachment: any) => ({
         name: attachment.attachmentName,
