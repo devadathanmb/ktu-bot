@@ -144,8 +144,8 @@ async function showTimetables(ctx: CustomContext) {
     let timetableMsg = "<b>Exam time tables</b>:\n\n";
     let timetableButtons: InlineKeyboardButton.CallbackButton[] = [];
 
-    timetables.forEach(({ id, title }, index) => {
-      timetableMsg += `${index + 1}) ${shortenString(title)}\n\n`;
+    timetables.forEach(({ id, title, date }, index) => {
+      timetableMsg += `${index + 1}) ${shortenString(title)}\n<i>Published date : ${date || "N/A"}</i>\n\n`;
       timetableButtons.push(
         Markup.button.callback(`${index + 1}`, `timetable_${id}`)
       );

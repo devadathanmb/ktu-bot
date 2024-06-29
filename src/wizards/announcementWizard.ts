@@ -164,8 +164,8 @@ async function showAnnouncements(ctx: CustomContext) {
     let announcementMsg = "<b>Announcements</b>:\n\n";
     let announcementButtons: InlineKeyboardButton.CallbackButton[] = [];
 
-    announcements.forEach(({ id, subject }, index) => {
-      announcementMsg += `${index + 1}) ${shortenString(subject)}\n\n`;
+    announcements.forEach(({ id, subject, date }, index) => {
+      announcementMsg += `${index + 1}) ${shortenString(subject)}\n<i>Published date : ${date || "N/A"}</i>\n\n`;
       announcementButtons.push(
         Markup.button.callback(`${index + 1}`, `announcement_${id}`)
       );

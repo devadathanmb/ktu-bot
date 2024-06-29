@@ -150,8 +150,8 @@ async function showAcademicCalendars(ctx: CustomContext) {
     let calendarMsg = "<b>Academic calendars</b>:\n\n";
     let calendarButtons: InlineKeyboardButton.CallbackButton[] = [];
 
-    calendars.forEach(({ id, title }, index) => {
-      calendarMsg += `${index + 1}) ${shortenString(title)}\n\n`;
+    calendars.forEach(({ id, title, date }, index) => {
+      calendarMsg += `${index + 1}) ${shortenString(title)}\n<i>Published date : ${date || "N/A"}</i>\n\n`;
       calendarButtons.push(
         Markup.button.callback(`${index + 1}`, `calendar_${id}`)
       );
