@@ -36,7 +36,7 @@ async function fetchAnnouncements(
 
     return relevantData;
   } catch (error: any) {
-    logger.error(`Error in fetchAnnouncements: ${error}`);
+    logger.error(`[SERVICE] Error in fetchAnnouncements: ${error}`);
     throw new ServerError();
   }
 }

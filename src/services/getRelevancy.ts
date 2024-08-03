@@ -37,7 +37,7 @@ async function getRelevancy(inputText: string): Promise<boolean> {
     }
     return false;
   } catch (error: any) {
-    logger.error(`Error in getRelevancy: ${error}`);
+    logger.error(`[SERVICE] Error in getRelevancy: ${error}`);
     // In any case this fails, it is always best to assume the notification is relevant
     return true;
   }

@@ -11,7 +11,7 @@ import {
 } from "handlers/searchInlineQueryHandler";
 
 function attachListeners() {
-  logger.info("Attaching listeners");
+  logger.info("[TELEGRAF] Attaching listeners"]);
   bot.start(start);
   bot.action(/filter_*/, filterCallbackHandler);
   bot.action(/start_callback_*/, startCallbackHandler);

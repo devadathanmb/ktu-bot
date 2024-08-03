@@ -59,7 +59,7 @@ async function filterCallbackHandler(ctx: CustomContext) {
       await deleteMessage(ctx, waitingMsg.message_id);
     }
   } catch (err) {
-    logger.error(`Error in filterCallbackHandler: ${err}`);
+    logger.error(`[FILTER] Error in filterCallbackHandler: ${err}`);
   }
 }
 

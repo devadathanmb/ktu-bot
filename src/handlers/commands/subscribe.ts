@@ -46,7 +46,7 @@ Choose a filter from the options below:
     }
   } catch (err) {
     logger.error(
-      `Error in subscribing user with chatId: ${chatId}. Error: ${err}`
+      `[SUBSCRIBE] Error in subscribing user with chatId: ${chatId}. Error: ${err}`
     );
   }
 }

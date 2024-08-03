@@ -29,7 +29,7 @@ async function getXToken(bypassData: BypassData): Promise<XToken | null> {
     }
     return xToken;
   } catch (error) {
-    logger.error(`Error in fetching X-Token: ${error}`);
+    logger.error(`[BYPASS_CAPTCHA] Error in fetching X-Token: ${error}`);
     throw error;
   }
 }

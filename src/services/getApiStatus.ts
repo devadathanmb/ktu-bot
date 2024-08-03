@@ -85,7 +85,7 @@ async function getApiStatus() {
     }
     return apiStatus;
   } catch (error) {
-    logger.error(`Error in getApiStatus: ${error}`);
+    logger.error(`[SERVICE] Error in getApiStatus: ${error}`);
     throw error;
   }
 }

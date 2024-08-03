@@ -4,7 +4,7 @@ import logger from "@/utils/logger";
 
 // Set the available commands for the bot
 async function setCommands() {
-  logger.info("Setting commands");
+  logger.info("[TELEGRAF] Setting commands");
   await bot.telegram.setMyCommands(availableCommands);
 }
 

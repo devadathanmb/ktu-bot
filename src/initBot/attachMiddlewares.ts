@@ -12,7 +12,7 @@ import logger from "@/utils/logger";
 
 // Attach all middlewares to the bot
 function attachMiddlewares() {
-  logger.info("Attaching middlewares");
+  logger.info("[TELEGRAF] Attaching middlewares");
   // Create wizard
   const stage = new Scenes.Stage<CustomContext>([
     resultWizard,

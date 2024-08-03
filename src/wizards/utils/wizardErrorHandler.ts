@@ -26,7 +26,7 @@ async function handleError(ctx: CustomContext, error: any) {
   } else if (error instanceof DataNotFoundError) {
     await ctx.reply(error.message);
   } else {
-    logger.error(`Wizard error: ${error}`);
+    logger.error(`[WIZARD] Wizard error: ${error}`);
   }
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   return await ctx.scene.leave();

@@ -28,7 +28,7 @@ async function fetchAcademicCalendars(
 
     return relevantData;
   } catch (error: any) {
-    logger.error(`Error in fetchAcademicCalendars: ${error}`);
+    logger.error(`[SERVICE] Error in fetchAcademicCalendars: ${error}`);
     throw new ServerError();
   }
 }

@@ -39,7 +39,7 @@ Choose a filter from the options below:
       await deleteMessage(ctx, waitingMsg.message_id);
     }
   } catch (err) {
-    logger.error(`Error in changeFilter: ${err}`);
+    logger.error(`[FILTER] Error in changeFilter: ${err}`);
   }
 }
 

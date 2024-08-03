@@ -16,7 +16,7 @@ async function fetchAttachment(encryptId: string): Promise<any> {
     );
     return response.data;
   } catch (error: any) {
-    logger.error(`Error in fetchAttachment: ${error}`);
+    logger.error(`[SERVICE] Error in fetchAttachment: ${error}`);
     throw new ServerError();
   }
 }

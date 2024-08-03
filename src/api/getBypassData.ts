@@ -22,7 +22,9 @@ async function getBypassData(): Promise<BypassData | null> {
     );
     return response.data;
   } catch (error) {
-    logger.error(`Error while fetching captcha bypass data: ${error}`);
+    logger.error(
+      `[BYPASS_CAPTCHA] Error while fetching captcha bypass data: ${error}`
+    );
     return null;
   }
 }

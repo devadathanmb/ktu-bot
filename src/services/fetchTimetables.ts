@@ -28,7 +28,7 @@ async function fetchTimetables(
 
     return relevantData;
   } catch (error: any) {
-    logger.error(`Error in fetchTimetables: ${error}`);
+    logger.error(`[SERVICE] Error in fetchTimetables: ${error}`);
     throw new ServerError();
   }
 }

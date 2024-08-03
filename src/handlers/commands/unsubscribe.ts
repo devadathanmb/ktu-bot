@@ -27,7 +27,7 @@ async function unsubscribe(ctx: CustomContext) {
     }
   } catch (error) {
     logger.error(
-      `Error in unsubscribing user with chatId: ${chatId}. Error: ${error}`
+      `[UNSUBSCRIBE] Error in unsubscribing user with chatId: ${chatId}. Error: ${error}`
     );
   }
 }

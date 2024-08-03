@@ -16,7 +16,7 @@ const bot = new Telegraf<CustomContext>(process.env.BOT_TOKEN!, opts);
 // The top level error handler
 // this will catch any errors that may happen
 bot.catch((error) => {
-  logger.error(`Telegraf error: ${error}`);
+  logger.error(`[TELEGRAF] Telegraf error: ${error}`);
 });
 
 export default bot;

@@ -5,7 +5,7 @@ import logger from "@/utils/logger";
 // Logging middleware
 // For testing purposes
 const loggingMiddleware: Middleware<CustomContext> = async (ctx, next) => {
-  logger.info(`Update received : ${JSON.stringify(ctx.update)}`);
+  logger.info(`[LOGGER] Update received : ${JSON.stringify(ctx.update)}`);
   return next();
 };
 export default loggingMiddleware;

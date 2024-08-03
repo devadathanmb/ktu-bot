@@ -40,7 +40,9 @@ async function searchInlineQueryHandler(
     await ctx.answerInlineQuery(results);
   } catch (error) {
     if (error instanceof TelegramError) {
-      logger;
+      logger.error(
+        `[INLINE_QUERY_HANDLER] Error in searchInlineQueryHandler : ${error}`
+      );
     } else if (error instanceof ServerError) {
       const errorResult: InlineQueryResult[] = [
         {
@@ -96,7 +98,9 @@ async function inlineQueryResultHandler(
     if (error instanceof ServerError) {
       await bot.telegram.sendMessage(chosenInlineResult.from.id, error.message);
     } else {
-      logger.error(`Error in inlineQueryResultHandler: ${error}`);
+      logger.error(
+        `[INLINE_QUERY_HANDLER] Error in inlineQueryResultHandler: ${error}`
+      );
     }
   }
 }

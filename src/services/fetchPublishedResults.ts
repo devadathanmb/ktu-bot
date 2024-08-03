@@ -30,7 +30,7 @@ async function fetchPublishedResults(
 
     return responseData;
   } catch (error: any) {
-    logger.error(`Error in fetchPublishedResults: ${error}`);
+    logger.error(`[SERVICE] Error in fetchPublishedResults: ${error}`);
     if (error instanceof DataNotFoundError) throw error;
     throw new ServerError();
   }

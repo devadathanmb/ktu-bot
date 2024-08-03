@@ -62,7 +62,7 @@ async function fetchResult(
 
     return { summary, resultDetails };
   } catch (error: any) {
-    logger.error(`Error in fetchResult: ${error}`);
+    logger.error(`[SERVICE] Error in fetchResult: ${error}`);
     if (error instanceof InvalidDataError) {
       throw new InvalidDataError(error.message);
     }

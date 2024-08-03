@@ -27,7 +27,7 @@ async function uploadFile(fileBase64: string, fileName: string) {
 
     return url;
   } catch (error) {
-    logger.error(`Error in uploadService: ${error}`);
+    logger.error(`[SERVICE] Error in uploadService: ${error}`);
     throw error;
   }
 }

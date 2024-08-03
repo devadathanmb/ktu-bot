@@ -20,7 +20,7 @@ queue.on("error", (err: any) => {
     (err.hasOwnProperty("code") && err.code === "ECONNREFUSED") ||
     err.code === "ENOTFOUND"
   ) {
-    logger.error("Error connecting to the queue");
+    logger.error("[BULLMQ] Error connecting to the queue");
     process.exit(1);
   }
 });
@@ -56,10 +56,10 @@ const worker = new Worker<JobData, number>(
             const usersRef = db.collection("subscribedUsers");
             await usersRef.doc(chatId.toString()).delete();
           } catch (error) {
-            logger.error(error);
+            logger.error(`[BULLMQ] DB error: ${error}`);
           }
         } else {
-          logger.error(error);
+          logger.error(`[BULLMQ] Worker error: ${error}`);
         }
       }
       return job.data.chatId;
@@ -69,15 +69,15 @@ const worker = new Worker<JobData, number>(
 );
 
 worker.on("completed", async (_job, result) => {
-  logger.info(`Message sent successfully for chatId: ${result}`);
+  logger.info(`[BULLMQ] Message sent successfully for chatId: ${result}`);
 });
 
 worker.on("failed", async (_job, err) => {
-  logger.error(`Job failed with error: ${err}`);
+  logger.error(`[BULLMQ] Job failed with error: ${err}`);
 });
 
 worker.on("error", (err) => {
-  logger.error(`Worker error: ${err}`);
+  logger.error(`[BULLMQ] Worker error: ${err}`);
 });
 
 export default queue;

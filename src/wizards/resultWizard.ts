@@ -415,7 +415,7 @@ resultWizard.action("check_another_result_true", async (ctx, _next) => {
     ctx.wizard.selectStep(2);
     return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
   } catch (error) {
-    logger.error(`Error in check_another_result_true: ${error}`);
+    logger.error(`[WIZARD] Error in check_another_result_true: ${error}`);
   }
 });
 
@@ -426,7 +426,7 @@ resultWizard.action("check_another_result_false", async (ctx) => {
     await deleteMessage(ctx, ctx.msgId!);
     await ctx.scene.leave();
   } catch (error) {
-    logger.error(`Error in check_another_result_false: ${error}`);
+    logger.error(`[WIZARD] Error in check_another_result_false: ${error}`);
   }
 });
 

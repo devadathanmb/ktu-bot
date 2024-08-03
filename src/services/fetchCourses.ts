@@ -22,7 +22,7 @@ async function fetchCourses(): Promise<Course[]> {
     );
     return relevantData;
   } catch (error: any) {
-    logger.error(`Error in fetchCourses: ${error}`);
+    logger.error(`[SERVICE] Error in fetchCourses: ${error}`);
     throw new ServerError();
   }
 }
