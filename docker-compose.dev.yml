@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   ktu-bot:
     restart: unless-stopped
@@ -13,6 +14,8 @@ services:
     depends_on:
       redis-queue-db:
         condition: service_healthy
+    networks:
+      - ktu-bot-network
 
   redis-queue-db:
     image: redis
@@ -22,3 +25,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - ktu-bot-network
+
+networks:
+  ktu-bot-network:
+    external: true
