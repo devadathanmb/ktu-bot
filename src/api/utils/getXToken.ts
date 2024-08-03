@@ -19,6 +19,7 @@ class InvalidXTokenError extends Error {
 
 async function getXToken(bypassData: BypassData): Promise<XToken | null> {
   try {
+    logger.debug("Fetching X-Token");
     const response = await axios.post(X_TOKEN_URL, bypassData, {
       cache: false,
     });

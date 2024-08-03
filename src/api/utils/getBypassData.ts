@@ -13,6 +13,7 @@ interface BypassData {
 
 async function getBypassData(): Promise<BypassData | null> {
   try {
+    logger.debug("Fetching captcha bypass data");
     const response = await axios.get(BYPASS_DATA_URL, {
       cache: false,
     });
