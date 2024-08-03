@@ -31,7 +31,6 @@
     "bullmq": "^5.8.2",
     "dotenv": "^16.4.5",
     "firebase-admin": "^12.2.0",
-    "node-cache": "^5.1.2",
     "node-cron": "^3.0.3",
     "string-strip-html": "^8.5.0",
     "telegraf": "^4.16.3",
