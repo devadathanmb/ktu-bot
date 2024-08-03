@@ -12,6 +12,7 @@ import deleteMessage from "utils/deleteMessage";
 import handleError from "wizards/utils/wizardErrorHandler";
 import handleCancelCommand from "wizards/utils/handleCancelCommand";
 import ServerError from "errors/ServerError";
+import logger from "utils/logger";
 import handleMyChatMember from "./utils/handleMyChatMember";
 
 /*
@@ -414,7 +415,7 @@ resultWizard.action("check_another_result_true", async (ctx, _next) => {
     ctx.wizard.selectStep(2);
     return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
   } catch (error) {
-    console.log(error);
+    logger.error(`Error in check_another_result_true: ${error}`);
   }
 });
 
@@ -425,7 +426,7 @@ resultWizard.action("check_another_result_false", async (ctx) => {
     await deleteMessage(ctx, ctx.msgId!);
     await ctx.scene.leave();
   } catch (error) {
-    console.log(error);
+    logger.error(`Error in check_another_result_false: ${error}`);
   }
 });
 

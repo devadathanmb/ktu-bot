@@ -1,6 +1,7 @@
 import { Telegraf } from "telegraf";
 import { CustomContext } from "types/customContext.type";
 import "dotenv/config";
+import logger from "./utils/logger";
 
 const opts = {
   // During result publish times, KTU servers will be slow to respond, this makes the API requests to be slower
@@ -15,7 +16,7 @@ const bot = new Telegraf<CustomContext>(process.env.BOT_TOKEN!, opts);
 // The top level error handler
 // this will catch any errors that may happen
 bot.catch((error) => {
-  console.error("TELEGRAF ERROR", error);
+  logger.error(`Telegraf error: ${error}`);
 });
 
 export default bot;

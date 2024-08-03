@@ -1,6 +1,7 @@
 import { axios } from "api/axiosInstance";
 import { ATTACHMENT_URL } from "constants/constants";
 import ServerError from "errors/ServerError";
+import logger from "@/utils/logger";
 
 async function fetchAttachment(encryptId: string): Promise<any> {
   try {
@@ -15,6 +16,7 @@ async function fetchAttachment(encryptId: string): Promise<any> {
     );
     return response.data;
   } catch (error: any) {
+    logger.error(`Error in fetchAttachment: ${error}`);
     throw new ServerError();
   }
 }

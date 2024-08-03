@@ -8,9 +8,11 @@ import timetableWizard from "wizards/timeTableWizard";
 import { CustomContext } from "types/customContext.type";
 import throttler from "@/middlewares/throttler";
 import warningMiddleWare from "@/middlewares/warning";
+import logger from "@/utils/logger";
 
 // Attach all middlewares to the bot
 function attachMiddlewares() {
+  logger.info("Attaching middlewares");
   // Create wizard
   const stage = new Scenes.Stage<CustomContext>([
     resultWizard,

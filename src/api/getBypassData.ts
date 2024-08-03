@@ -1,4 +1,5 @@
 import axios from "axios";
+import logger from "@/utils/logger";
 
 const BYPASS_DATA_URL = "http://captcha-bypass:3000/bypass_captcha";
 
@@ -21,7 +22,7 @@ async function getBypassData(): Promise<BypassData | null> {
     );
     return response.data;
   } catch (error) {
-    console.error(error);
+    logger.error(`Error while fetching captcha bypass data: ${error}`);
     return null;
   }
 }

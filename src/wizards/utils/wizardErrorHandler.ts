@@ -5,6 +5,7 @@ import InvalidDataError from "errors/InvalidDataError";
 import ServerError from "errors/ServerError";
 import DataNotFoundError from "errors/DataNotFoundError";
 import { TelegramError } from "telegraf";
+import logger from "utils/logger";
 
 async function handleError(ctx: CustomContext, error: any) {
   if (error instanceof TelegramError) {
@@ -25,7 +26,7 @@ async function handleError(ctx: CustomContext, error: any) {
   } else if (error instanceof DataNotFoundError) {
     await ctx.reply(error.message);
   } else {
-    console.error(error);
+    logger.error(`Wizard error: ${error}`);
   }
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   return await ctx.scene.leave();

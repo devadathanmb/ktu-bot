@@ -2,6 +2,7 @@ import { axios } from "api/axiosInstance";
 import { COURSES_URL } from "constants/constants";
 import { Course } from "types/types";
 import ServerError from "errors/ServerError";
+import logger from "@/utils/logger";
 
 async function fetchCourses(): Promise<Course[]> {
   try {
@@ -21,6 +22,7 @@ async function fetchCourses(): Promise<Course[]> {
     );
     return relevantData;
   } catch (error: any) {
+    logger.error(`Error in fetchCourses: ${error}`);
     throw new ServerError();
   }
 }

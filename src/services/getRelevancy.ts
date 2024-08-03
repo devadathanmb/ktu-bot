@@ -1,4 +1,5 @@
 import { axios } from "api/axiosInstance";
+import logger from "@/utils/logger";
 
 // eg : [[{"label":"LABEL_1","score":0.9968029260635376},{"label":"LABEL_0","score":0.0031970764975994825}]]
 interface Relevancy {
@@ -36,7 +37,7 @@ async function getRelevancy(inputText: string): Promise<boolean> {
     }
     return false;
   } catch (error: any) {
-    console.log(error);
+    logger.error(`Error in getRelevancy: ${error}`);
     // In any case this fails, it is always best to assume the notification is relevant
     return true;
   }

@@ -3,6 +3,7 @@ import { PUBLISHED_RESULTS_URL } from "constants/constants";
 import { PublishedResultData } from "types/types";
 import ServerError from "errors/ServerError";
 import DataNotFoundError from "errors/DataNotFoundError";
+import logger from "@/utils/logger";
 
 async function fetchPublishedResults(
   courseId: number
@@ -29,6 +30,7 @@ async function fetchPublishedResults(
 
     return responseData;
   } catch (error: any) {
+    logger.error(`Error in fetchPublishedResults: ${error}`);
     if (error instanceof DataNotFoundError) throw error;
     throw new ServerError();
   }

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { BypassData } from "./getBypassData";
+import logger from "@/utils/logger";
 
 const X_TOKEN_URL = "http://captcha-bypass:3000/get_token";
 
@@ -28,7 +29,7 @@ async function getXToken(bypassData: BypassData): Promise<XToken | null> {
     }
     return xToken;
   } catch (error) {
-    console.error(error);
+    logger.error(`Error in fetching X-Token: ${error}`);
     throw error;
   }
 }

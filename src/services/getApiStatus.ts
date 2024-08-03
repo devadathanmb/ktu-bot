@@ -1,4 +1,5 @@
 import { axios } from "@/api/axiosInstance";
+import logger from "@/utils/logger";
 
 interface Log {
   type: string;
@@ -84,6 +85,7 @@ async function getApiStatus() {
     }
     return apiStatus;
   } catch (error) {
+    logger.error(`Error in getApiStatus: ${error}`);
     throw error;
   }
 }

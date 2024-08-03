@@ -5,6 +5,7 @@ import { JobData } from "types/types";
 import db from "@/firebase/firestore";
 import bot from "bot";
 import IORedis from "ioredis";
+import logger from "@/utils/logger";
 
 const connection = new IORedis({
   host: "redis-queue-db",
@@ -19,7 +20,7 @@ queue.on("error", (err: any) => {
     (err.hasOwnProperty("code") && err.code === "ECONNREFUSED") ||
     err.code === "ENOTFOUND"
   ) {
-    console.error("Redis server is not running");
+    logger.error("Error connecting to the queue");
     process.exit(1);
   }
 });
@@ -55,10 +56,10 @@ const worker = new Worker<JobData, number>(
             const usersRef = db.collection("subscribedUsers");
             await usersRef.doc(chatId.toString()).delete();
           } catch (error) {
-            console.error(error);
+            logger.error(error);
           }
         } else {
-          console.log(error);
+          logger.error(error);
         }
       }
       return job.data.chatId;
@@ -68,15 +69,15 @@ const worker = new Worker<JobData, number>(
 );
 
 worker.on("completed", async (_job, result) => {
-  console.log(`✅ Message sent to ${result}`);
+  logger.info(`Message sent successfully for chatId: ${result}`);
 });
 
 worker.on("failed", async (_job, err) => {
-  console.error(err);
+  logger.error(`Job failed with error: ${err}`);
 });
 
 worker.on("error", (err) => {
-  console.error(err);
+  logger.error(`Worker error: ${err}`);
 });
 
 export default queue;

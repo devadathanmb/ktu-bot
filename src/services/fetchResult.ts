@@ -3,6 +3,7 @@ import { RESULT_URL } from "constants/constants";
 import InvalidDataError from "errors/InvalidDataError";
 import { ResultDetails, ResultSummary } from "types/types";
 import ServerError from "errors/ServerError";
+import logger from "@/utils/logger";
 
 async function fetchResult(
   dob: string,
@@ -61,6 +62,7 @@ async function fetchResult(
 
     return { summary, resultDetails };
   } catch (error: any) {
+    logger.error(`Error in fetchResult: ${error}`);
     if (error instanceof InvalidDataError) {
       throw new InvalidDataError(error.message);
     }

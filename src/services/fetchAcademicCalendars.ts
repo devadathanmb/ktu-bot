@@ -4,6 +4,7 @@ import { AcademicCalendar } from "types/types";
 import ServerError from "errors/ServerError";
 import formatDate from "utils/formatDate";
 import { stripHtml } from "string-strip-html";
+import logger from "@/utils/logger";
 
 async function fetchAcademicCalendars(
   pageNumber: number,
@@ -27,7 +28,7 @@ async function fetchAcademicCalendars(
 
     return relevantData;
   } catch (error: any) {
-    console.log(error);
+    logger.error(`Error in fetchAcademicCalendars: ${error}`);
     throw new ServerError();
   }
 }

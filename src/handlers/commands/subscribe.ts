@@ -3,6 +3,7 @@ import { FILTERS } from "constants/constants";
 import { Markup } from "telegraf";
 import deleteMessage from "utils/deleteMessage";
 import db from "@/firebase/firestore";
+import logger from "@/utils/logger";
 
 async function subscribe(ctx: CustomContext) {
   const waitingMsg = await ctx.reply("Please wait...");
@@ -44,7 +45,9 @@ Choose a filter from the options below:
       await deleteMessage(ctx, waitingMsg.message_id);
     }
   } catch (err) {
-    console.log(err);
+    logger.error(
+      `Error in subscribing user with chatId: ${chatId}. Error: ${err}`
+    );
   }
 }
 

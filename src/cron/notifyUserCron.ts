@@ -8,6 +8,7 @@ import db from "@/firebase/firestore";
 import getRelevancy from "services/getRelevancy";
 import queue from "queues/notiyUserQueue/queue";
 import uploadFile from "@/services/uploadFile";
+import logger from "@/utils/logger";
 
 const CRON_JOB_INTERVAL = "*/10 * * * *";
 
@@ -22,13 +23,12 @@ interface NotifJobs {
 }
 
 async function notifyUserCron() {
-  console.log("Cron job initialized");
+  logger.info("Cron job initialized");
 
   // Schedule a cron job for every CRON_JOB_INTERVAL
   cron.schedule(CRON_JOB_INTERVAL, async () => {
     // Log the start time of the cron job
-    const startTime = new Date().toString();
-    console.log(`🔴 Cron job started at ${startTime}`);
+    logger.info(`Cron job started`);
 
     let data;
     try {
@@ -52,7 +52,7 @@ async function notifyUserCron() {
         );
       }
     } catch (error: any) {
-      console.error(error);
+      logger.error(`Error in notifyUserCron: ${error}`);
     }
 
     if (!data) {
@@ -94,8 +94,8 @@ async function notifyUserCron() {
           // If not relevant send to users with ALL filter only
           if (filters.length === 1 && filters[0] === "general") {
             const relevancy = await getRelevancy(announcement.subject);
-            console.log(
-              `➡️  Announcement : ${announcement.subject} Relevancy : ${relevancy}`
+            logger.info(
+              `Announcement : ${announcement.subject} Relevancy : ${relevancy}`
             );
             if (relevancy) {
               snapshot = await usersRef.get();
@@ -181,7 +181,7 @@ async function notifyUserCron() {
         }
       }
     } catch (error) {
-      console.error(error);
+      logger.error(`Error in notifyUserCron: ${error}`);
     }
   });
 }
