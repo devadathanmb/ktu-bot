@@ -2,7 +2,9 @@ import createBot from "@/createBot";
 import notifyUserCron from "cron/notifyUserCron";
 import queue from "queues/notiyUserQueue/queue";
 import bot from "@/bot";
-import logger from "./utils/logger";
+import Logger from "./utils/logger";
+
+const logger = new Logger("TELEGRAF");
 
 const launchBot = async () => {
   // Launch in long polling mode if in development
@@ -13,7 +15,7 @@ const launchBot = async () => {
     if (bot)
       bot.telegram.getMe().then((res) => {
         logger.info(
-          `[TELEGRAF] Bot started in polling mode. Available at https://t.me/${res.username}`
+          `Bot started in polling mode. Available at https://t.me/${res.username}`
         );
         notifyUserCron();
       });
@@ -31,7 +33,7 @@ const launchBot = async () => {
     if (bot)
       bot.telegram.getMe().then((res) => {
         logger.info(
-          `[TELEGRAF] Bot started in webhook mode. Available at https://t.me/${res.username}`
+          `Bot started in webhook mode. Available at https://t.me/${res.username}`
         );
         notifyUserCron();
       });
@@ -40,13 +42,13 @@ const launchBot = async () => {
 
 // Graceful stop
 process.once("SIGINT", async () => {
-  logger.warn("[TELEGRAF] SIGINT received. Stopping bot.");
+  logger.warn("SIGINT received. Stopping bot.");
   bot.stop("SIGINT");
   await queue.obliterate({ force: true });
 });
 
 process.once("SIGTERM", async () => {
-  logger.warn("[TELEGRAF] SIGTERM received. Stopping bot.");
+  logger.warn("SIGTERM received. Stopping bot.");
   bot.stop("SIGTERM");
   await queue.obliterate({ force: true });
 });

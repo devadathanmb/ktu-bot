@@ -2,6 +2,9 @@ import attachMiddlewares from "initBot/attachMiddlewares";
 import setCommands from "initBot/setCommands";
 import attachCommands from "initBot/attachCommands";
 import attachListeners from "initBot/attachListeners";
+import Logger from "utils/logger";
+
+const logger = new Logger("TELEGRAF");
 
 function checkEnv() {
   if (
@@ -25,13 +28,18 @@ function checkEnv() {
   }
 }
 
+logger.debug("Checking envs");
 checkEnv();
 
 // Attach all commands, middlewares and listeners to the bot
 function createBot() {
+  logger.info("Setting commands");
   setCommands();
+  logger.info("Attaching middlewares");
   attachMiddlewares();
+  logger.info("Attaching command handlers");
   attachCommands();
+  logger.info("Attaching action listeners");
   attachListeners();
 }
 

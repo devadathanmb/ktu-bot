@@ -4,7 +4,9 @@ import { Announcement } from "types/types";
 import ServerError from "errors/ServerError";
 import { stripHtml } from "string-strip-html";
 import formatDate from "utils/formatDate";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("FETCH_SERVICE");
 
 async function fetchAnnouncements(
   pageNumber: number,
@@ -36,7 +38,7 @@ async function fetchAnnouncements(
 
     return relevantData;
   } catch (error: any) {
-    logger.error(`[SERVICE] Error in fetchAnnouncements: ${error}`);
+    logger.error(`Error in fetchAnnouncements: ${error}`);
     throw new ServerError();
   }
 }

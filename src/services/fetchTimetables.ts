@@ -4,7 +4,9 @@ import { Timetable } from "types/types";
 import ServerError from "errors/ServerError";
 import formatDate from "utils/formatDate";
 import { stripHtml } from "string-strip-html";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("FETCH_SERVICE");
 
 async function fetchTimetables(
   pageNumber: number,
@@ -28,7 +30,7 @@ async function fetchTimetables(
 
     return relevantData;
   } catch (error: any) {
-    logger.error(`[SERVICE] Error in fetchTimetables: ${error}`);
+    logger.error(`Error in fetchTimetables: ${error}`);
     throw new ServerError();
   }
 }

@@ -4,7 +4,9 @@ import { FILTERS } from "constants/constants";
 import { Markup } from "telegraf";
 import deleteMessage from "utils/deleteMessage";
 import db from "@/firebase/firestore";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("FILTER");
 
 async function changeFilter(ctx: CustomContext) {
   const waitingMsg = await ctx.reply("Please wait...");
@@ -39,7 +41,7 @@ Choose a filter from the options below:
       await deleteMessage(ctx, waitingMsg.message_id);
     }
   } catch (err) {
-    logger.error(`[FILTER] Error in changeFilter: ${err}`);
+    logger.error(`Error in changeFilter: ${err}`);
   }
 }
 

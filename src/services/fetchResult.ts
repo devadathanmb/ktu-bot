@@ -3,7 +3,9 @@ import { RESULT_URL } from "constants/constants";
 import InvalidDataError from "errors/InvalidDataError";
 import { ResultDetails, ResultSummary } from "types/types";
 import ServerError from "errors/ServerError";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("FETCH_SERVICE");
 
 async function fetchResult(
   dob: string,
@@ -62,7 +64,7 @@ async function fetchResult(
 
     return { summary, resultDetails };
   } catch (error: any) {
-    logger.error(`[SERVICE] Error in fetchResult: ${error}`);
+    logger.error(`Error in fetchResult: ${error}`);
     if (error instanceof InvalidDataError) {
       throw new InvalidDataError(error.message);
     }

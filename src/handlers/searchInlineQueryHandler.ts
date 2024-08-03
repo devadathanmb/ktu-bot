@@ -5,7 +5,9 @@ import fetchAttachment from "services/fetchAttachment";
 import { NarrowedContext, TelegramError } from "telegraf";
 import ServerError from "errors/ServerError";
 import bot from "@/bot";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("INLINE_QUERY_HANDLER");
 
 async function searchInlineQueryHandler(
   ctx: NarrowedContext<CustomContext, Update.InlineQueryUpdate>
@@ -40,9 +42,7 @@ async function searchInlineQueryHandler(
     await ctx.answerInlineQuery(results);
   } catch (error) {
     if (error instanceof TelegramError) {
-      logger.error(
-        `[INLINE_QUERY_HANDLER] Error in searchInlineQueryHandler : ${error}`
-      );
+      logger.error(`Error in searchInlineQueryHandler : ${error}`);
     } else if (error instanceof ServerError) {
       const errorResult: InlineQueryResult[] = [
         {
@@ -98,9 +98,7 @@ async function inlineQueryResultHandler(
     if (error instanceof ServerError) {
       await bot.telegram.sendMessage(chosenInlineResult.from.id, error.message);
     } else {
-      logger.error(
-        `[INLINE_QUERY_HANDLER] Error in inlineQueryResultHandler: ${error}`
-      );
+      logger.error(`Error in inlineQueryResultHandler: ${error}`);
     }
   }
 }

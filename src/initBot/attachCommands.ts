@@ -13,11 +13,9 @@ import timetable from "handlers/commands/timetable";
 import page from "handlers/commands/page";
 import oldResults from "handlers/commands/oldResults";
 import apiStatus from "handlers/commands/apiStatus";
-import logger from "@/utils/logger";
 
 // Attach all command handlers/commands to the bot
 function attachCommands() {
-  logger.info("[TELEGRAF] Attaching commands");
   bot.command("help", help);
   bot.command("search", search);
   bot.command("result", result);

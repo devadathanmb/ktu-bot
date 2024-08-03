@@ -5,7 +5,9 @@ import { JobData } from "types/types";
 import db from "@/firebase/firestore";
 import bot from "bot";
 import IORedis from "ioredis";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("BULLMQ");
 
 const connection = new IORedis({
   host: "redis-queue-db",
@@ -20,7 +22,7 @@ queue.on("error", (err: any) => {
     (err.hasOwnProperty("code") && err.code === "ECONNREFUSED") ||
     err.code === "ENOTFOUND"
   ) {
-    logger.error("[BULLMQ] Error connecting to the queue");
+    logger.error("Error connecting to the queue");
     process.exit(1);
   }
 });
@@ -56,10 +58,10 @@ const worker = new Worker<JobData, number>(
             const usersRef = db.collection("subscribedUsers");
             await usersRef.doc(chatId.toString()).delete();
           } catch (error) {
-            logger.error(`[BULLMQ] DB error: ${error}`);
+            logger.error(`DB error: ${error}`);
           }
         } else {
-          logger.error(`[BULLMQ] Worker error: ${error}`);
+          logger.error(`Worker error: ${error}`);
         }
       }
       return job.data.chatId;
@@ -69,15 +71,15 @@ const worker = new Worker<JobData, number>(
 );
 
 worker.on("completed", async (_job, result) => {
-  logger.info(`[BULLMQ] Message sent successfully for chatId: ${result}`);
+  logger.info(`Message sent successfully for chatId: ${result}`);
 });
 
 worker.on("failed", async (_job, err) => {
-  logger.error(`[BULLMQ] Job failed with error: ${err}`);
+  logger.error(`Job failed with error: ${err}`);
 });
 
 worker.on("error", (err) => {
-  logger.error(`[BULLMQ] Worker error: ${err}`);
+  logger.error(`Worker error: ${err}`);
 });
 
 export default queue;

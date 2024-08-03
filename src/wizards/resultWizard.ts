@@ -12,8 +12,10 @@ import deleteMessage from "utils/deleteMessage";
 import handleError from "wizards/utils/wizardErrorHandler";
 import handleCancelCommand from "wizards/utils/handleCancelCommand";
 import ServerError from "errors/ServerError";
-import logger from "utils/logger";
+import Logger from "utils/logger";
 import handleMyChatMember from "./utils/handleMyChatMember";
+
+const logger = new Logger("RESULT_WIZARD");
 
 /*
   - Result lookup is designed as a WizardScene. This is similar to how an installation wizards works.
@@ -415,7 +417,7 @@ resultWizard.action("check_another_result_true", async (ctx, _next) => {
     ctx.wizard.selectStep(2);
     return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
   } catch (error) {
-    logger.error(`[WIZARD] Error in check_another_result_true: ${error}`);
+    logger.error(`Error in check_another_result_true: ${error}`);
   }
 });
 
@@ -426,7 +428,7 @@ resultWizard.action("check_another_result_false", async (ctx) => {
     await deleteMessage(ctx, ctx.msgId!);
     await ctx.scene.leave();
   } catch (error) {
-    logger.error(`[WIZARD] Error in check_another_result_false: ${error}`);
+    logger.error(`Error in check_another_result_false: ${error}`);
   }
 });
 

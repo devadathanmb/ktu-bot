@@ -1,6 +1,8 @@
-import axios from "axios";
+import { axios } from "../axiosInstance";
 import { BypassData } from "./getBypassData";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("BYPASS_CAPTCHA");
 
 const X_TOKEN_URL = "http://captcha-bypass:3000/get_token";
 
@@ -18,9 +20,6 @@ class InvalidXTokenError extends Error {
 async function getXToken(bypassData: BypassData): Promise<XToken | null> {
   try {
     const response = await axios.post(X_TOKEN_URL, bypassData, {
-      // Axios cache interceptor takes over axios instance
-      // So we need to disable cache here
-      //@ts-ignore
       cache: false,
     });
     const xToken: XToken = response.data;
@@ -29,7 +28,7 @@ async function getXToken(bypassData: BypassData): Promise<XToken | null> {
     }
     return xToken;
   } catch (error) {
-    logger.error(`[BYPASS_CAPTCHA] Error in fetching X-Token: ${error}`);
+    logger.error(`Error in fetching X-Token: ${error}`);
     throw error;
   }
 }

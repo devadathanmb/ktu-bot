@@ -1,7 +1,9 @@
 import { CustomContext } from "types/customContext.type";
 import db from "@/firebase/firestore";
 import deleteMessage from "utils/deleteMessage";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("UNSUBSCRIBE");
 
 async function unsubscribe(ctx: CustomContext) {
   const chatId = ctx.chat!.id;
@@ -27,7 +29,7 @@ async function unsubscribe(ctx: CustomContext) {
     }
   } catch (error) {
     logger.error(
-      `[UNSUBSCRIBE] Error in unsubscribing user with chatId: ${chatId}. Error: ${error}`
+      `Error in unsubscribing user with chatId: ${chatId}. Error: ${error}`
     );
   }
 }

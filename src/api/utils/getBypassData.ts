@@ -1,5 +1,7 @@
-import axios from "axios";
-import logger from "@/utils/logger";
+import { axios } from "../axiosInstance";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("BYPASS_CAPTCHA");
 
 const BYPASS_DATA_URL = "http://captcha-bypass:3000/bypass_captcha";
 
@@ -11,20 +13,12 @@ interface BypassData {
 
 async function getBypassData(): Promise<BypassData | null> {
   try {
-    const response = await axios.get(
-      BYPASS_DATA_URL,
-      // Axios cache interceptor takes over axios instance
-      // So we need to disable cache here
-      {
-        //@ts-ignore
-        cache: false,
-      }
-    );
+    const response = await axios.get(BYPASS_DATA_URL, {
+      cache: false,
+    });
     return response.data;
   } catch (error) {
-    logger.error(
-      `[BYPASS_CAPTCHA] Error while fetching captcha bypass data: ${error}`
-    );
+    logger.error(`Error while fetching captcha bypass data: ${error}`);
     return null;
   }
 }

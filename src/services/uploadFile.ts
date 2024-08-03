@@ -1,6 +1,8 @@
 import { storage } from "firebase-admin";
 import { writeFile, unlink } from "node:fs/promises";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("FETCH_SERVICE");
 
 const bucket = storage().bucket();
 
@@ -27,7 +29,7 @@ async function uploadFile(fileBase64: string, fileName: string) {
 
     return url;
   } catch (error) {
-    logger.error(`[SERVICE] Error in uploadService: ${error}`);
+    logger.error(`Error in uploadService: ${error}`);
     throw error;
   }
 }

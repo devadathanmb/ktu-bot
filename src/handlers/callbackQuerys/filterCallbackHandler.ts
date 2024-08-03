@@ -4,7 +4,9 @@ import deleteMessage from "utils/deleteMessage";
 import { FILTERS } from "constants/constants";
 import db from "@/firebase/firestore";
 import { callbackQuery } from "telegraf/filters";
-import logger from "@/utils/logger";
+import Logger from "@/utils/logger";
+
+const logger = new Logger("FILTER");
 
 async function filterCallbackHandler(ctx: CustomContext) {
   await ctx.answerCbQuery();
@@ -59,7 +61,7 @@ async function filterCallbackHandler(ctx: CustomContext) {
       await deleteMessage(ctx, waitingMsg.message_id);
     }
   } catch (err) {
-    logger.error(`[FILTER] Error in filterCallbackHandler: ${err}`);
+    logger.error(`Error in filterCallbackHandler: ${err}`);
   }
 }
 
