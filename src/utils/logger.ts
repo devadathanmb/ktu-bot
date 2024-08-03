@@ -6,7 +6,7 @@ const logDirectory = "/var/log/ktu-bot";
 const winston = createLogger({
   level: process.env.LOG_LEVEL || "debug",
   format: format.combine(
-    format.timestamp(),
+    format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), // Set the timestamp format
     format.printf(({ timestamp, level, message }) => {
       return `${timestamp} [${level}]: ${message}`;
     })
