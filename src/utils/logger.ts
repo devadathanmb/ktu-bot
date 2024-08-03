@@ -4,7 +4,7 @@ import * as path from "path";
 const logDirectory = "/var/log/ktu-bot";
 
 const winston = createLogger({
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.LOG_LEVEL || "debug",
   format: format.combine(
     format.timestamp(),
     format.printf(({ timestamp, level, message }) => {
