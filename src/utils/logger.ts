@@ -7,8 +7,8 @@ const winston = createLogger({
   level: process.env.LOG_LEVEL || 'debug',
   format: format.combine(
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    format.printf(({ timestamp, level, message }) => {
-      return `${timestamp} [${level}]: ${message}`;
+    format.printf(({ timestamp, level, message, service }) => {
+      return `${timestamp} [${level}] [${service}] : ${message}`;
     })
   ),
   transports: [
@@ -16,8 +16,8 @@ const winston = createLogger({
       format: format.combine(
         format.colorize(),
         format.timestamp(),
-        format.printf(({ timestamp, level, message }) => {
-          return `${timestamp} [${level}]: ${message}`;
+        format.printf(({ timestamp, level, message, service }) => {
+          return `${timestamp} [${level}] [${service}] : ${message}`;
         })
       ),
     }),
@@ -26,8 +26,8 @@ const winston = createLogger({
       filename: path.join(logDirectory, 'info.log'),
       format: format.combine(
         format.timestamp(),
-        format.printf(({ timestamp, level, message }) => {
-          return `${timestamp} [${level}]: ${message}`;
+        format.printf(({ timestamp, level, message, service }) => {
+          return `${timestamp} [${level}] [${service}] : ${message}`;
         })
       ),
     }),
@@ -36,8 +36,8 @@ const winston = createLogger({
       filename: path.join(logDirectory, 'error.log'),
       format: format.combine(
         format.timestamp(),
-        format.printf(({ timestamp, level, message }) => {
-          return `${timestamp} [${level}]: ${message}`;
+        format.printf(({ timestamp, level, message, service }) => {
+          return `${timestamp} [${level}] [${service}] : ${message}`;
         })
       ),
     }),
@@ -53,38 +53,45 @@ class Logger {
   }
 
   public static getLogger(service: string): Logger {
+    if (!service) {
+      service = "LOGGER";
+    }
     if (!this.instances.has(service)) {
       this.instances.set(service, new Logger(service));
     }
     return this.instances.get(service)!;
   }
 
+  private log(level: string, message: string) {
+    winston.log(level, message, { service: this.service });
+  }
+
   debug(message: string) {
-    winston.debug(`[${this.service}] ${message}`);
+    this.log('debug', `${message}`);
   }
 
   warn(message: string) {
-    winston.warn(`[${this.service}] ${message}`);
+    this.log('warn', `${message}`);
   }
 
   error(message: string) {
-    winston.error(`[${this.service}] ${message}`);
+    this.log('error', `${message}`);
   }
 
   info(message: string) {
-    winston.info(`[${this.service}] ${message}`);
+    this.log('info', `${message}`);
   }
 
   warning(message: string) {
-    winston.warn(`[${this.service}] ${message}`);
+    this.log('warn', `${message}`);
   }
 
   notice(message: string) {
-    winston.info(`[${this.service}] ${message}`);
+    this.log('info', `${message}`);
   }
 
   crit(message: string) {
-    winston.crit(`[${this.service}] ${message}`);
+    this.log('error', `${message}`);
   }
 }
 
