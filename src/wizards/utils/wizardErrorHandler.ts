@@ -21,8 +21,21 @@ async function handleError(ctx: CustomContext, error: any) {
   await deleteMessage(ctx, ctx.scene.session.waitingMsgId);
   if (error instanceof InvalidDataError) {
     await ctx.reply(error.message);
-    await ctx.reply("Please use /result to start again.");
-    return ctx.scene.leave();
+    ctx.wizard.selectStep(2);
+    const msg = await ctx.reply("Please enter your KTU Registration Number", {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "🔙 Back",
+              callback_data: "back_to_1",
+            },
+          ],
+        ],
+      },
+    });
+    ctx.scene.session.tempMsgId = msg.message_id;
+    return ctx.wizard.next();
   } else if (error instanceof ServerError) {
     await ctx.reply(error.message);
   } else if (error instanceof DataNotFoundError) {
