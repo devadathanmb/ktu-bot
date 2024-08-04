@@ -6,7 +6,7 @@ import formatDate from "utils/formatDate";
 import { stripHtml } from "string-strip-html";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 async function fetchAcademicCalendars(
   pageNumber: number,

@@ -6,12 +6,13 @@ import { stripHtml } from "string-strip-html";
 import formatDate from "utils/formatDate";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 async function fetchAnnouncements(
   pageNumber: number,
   dataSize: number,
-  searchText = ""
+  searchText = "",
+  disableCache = false
 ): Promise<Announcement[]> {
   try {
     const payload = {
@@ -19,10 +20,18 @@ async function fetchAnnouncements(
       size: dataSize,
       searchText,
     };
+
+    let cache: boolean | any = {
+      ttl: 1000 * 60 * 5,
+    };
+
+    if(disableCache){
+      cache = false;
+    }
+
+    logger.debug("Fetching announcement");
     const response = await axios.post(ANOUNCEMENTS_URL, payload, {
-      cache: {
-        ttl: 1000 * 60 * 5,
-      },
+      cache: cache
     });
 
     const relevantData = response.data.content.map((obj: any) => ({

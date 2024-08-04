@@ -5,7 +5,7 @@ import { axios } from "../axiosInstance";
 import { BypassData, getBypassData } from "../utils/getBypassData";
 import { getXToken } from "../utils/getXToken";
 
-const logger = new Logger("INTERCEPTOR");
+const logger = Logger.getLogger("INTERCEPTOR");
 let bypassData: BypassData | null = null;
 
 const recaptchaInterceptor = async (config: InternalCacheRequestConfig) => {

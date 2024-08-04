@@ -6,7 +6,7 @@ import db from "@/firebase/firestore";
 import { callbackQuery } from "telegraf/filters";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FILTER");
+const logger = Logger.getLogger("FILTER");
 
 async function filterCallbackHandler(ctx: CustomContext) {
   await ctx.answerCbQuery();

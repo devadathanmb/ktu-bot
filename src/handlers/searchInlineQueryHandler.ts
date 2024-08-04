@@ -7,7 +7,7 @@ import ServerError from "errors/ServerError";
 import bot from "@/bot";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("INLINE_QUERY_HANDLER");
+const logger = Logger.getLogger("INLINE_QUERY_HANDLER");
 
 async function searchInlineQueryHandler(
   ctx: NarrowedContext<CustomContext, Update.InlineQueryUpdate>

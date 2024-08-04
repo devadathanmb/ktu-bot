@@ -1,7 +1,7 @@
 import { axios } from "@/api/axiosInstance";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 interface Log {
   type: string;

@@ -10,7 +10,7 @@ import queue from "queues/notiyUserQueue/queue";
 import uploadFile from "@/services/uploadFile";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("CRON");
+const logger = Logger.getLogger("CRON");
 
 const CRON_JOB_INTERVAL = "*/10 * * * *";
 
@@ -29,8 +29,7 @@ async function notifyUserCron() {
 
   // Schedule a cron job for every CRON_JOB_INTERVAL
   cron.schedule(CRON_JOB_INTERVAL, async () => {
-    // Log the start time of the cron job
-    logger.info(`Cron job started`);
+    logger.info(`Cron job running`);
 
     let data;
     try {
@@ -58,11 +57,12 @@ async function notifyUserCron() {
     }
 
     if (!data) {
+      logger.debug("No new announcements. Skipping.")
       return;
     }
 
     try {
-      const announcements: Announcement[] = await fetchAnnouncements(0, 10);
+      const announcements: Announcement[] = await fetchAnnouncements(0, 10, "", true);
       const previousAnnouncements: Announcement[] = JSON.parse(data);
       let diff: Announcement[] = [];
 

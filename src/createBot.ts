@@ -4,7 +4,7 @@ import attachCommands from "initBot/attachCommands";
 import attachListeners from "initBot/attachListeners";
 import Logger from "utils/logger";
 
-const logger = new Logger("TELEGRAF");
+const logger = Logger.getLogger("TELEGRAF");
 
 function checkEnv() {
   if (

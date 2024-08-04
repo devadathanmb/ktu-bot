@@ -7,7 +7,7 @@ import bot from "bot";
 import IORedis from "ioredis";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("BULLMQ");
+const logger = Logger.getLogger("BULLMQ");
 
 const connection = new IORedis({
   host: "redis-queue-db",
@@ -48,6 +48,7 @@ const worker = new Worker<JobData, number>(
       if (error instanceof TelegramError) {
         if (error.code === 429) {
           const retryAfter = error.parameters?.retry_after!;
+          logger.debug(`Telegram rate limit hit. Pausing broadcast for ${retryAfter}s`);
           await new Promise((resolve) =>
             setTimeout(resolve, retryAfter * 1000 + 2000)
           );

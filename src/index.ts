@@ -4,7 +4,7 @@ import queue from "queues/notiyUserQueue/queue";
 import bot from "@/bot";
 import Logger from "./utils/logger";
 
-const logger = new Logger("TELEGRAF");
+const logger = Logger.getLogger("TELEGRAF");
 
 const launchBot = async () => {
   // Launch in long polling mode if in development

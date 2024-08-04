@@ -5,7 +5,7 @@ import ServerError from "errors/ServerError";
 import DataNotFoundError from "errors/DataNotFoundError";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 async function fetchPublishedResults(
   courseId: number

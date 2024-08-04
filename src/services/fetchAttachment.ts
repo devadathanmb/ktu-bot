@@ -3,7 +3,7 @@ import { ATTACHMENT_URL } from "constants/constants";
 import ServerError from "errors/ServerError";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 async function fetchAttachment(encryptId: string): Promise<any> {
   try {

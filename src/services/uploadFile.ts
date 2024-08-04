@@ -2,7 +2,7 @@ import { storage } from "firebase-admin";
 import { writeFile, unlink } from "node:fs/promises";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 const bucket = storage().bucket();
 

@@ -3,7 +3,7 @@ import { CustomContext } from "types/customContext.type";
 import "dotenv/config";
 import Logger from "./utils/logger";
 
-const logger = new Logger("TELEGRAF");
+const logger = Logger.getLogger("TELEGRAF");
 
 const opts = {
   // During result publish times, KTU servers will be slow to respond, this makes the API requests to be slower

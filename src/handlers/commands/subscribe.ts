@@ -5,7 +5,7 @@ import deleteMessage from "utils/deleteMessage";
 import db from "@/firebase/firestore";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("SUBSCRIBE");
+const logger = Logger.getLogger("SUBSCRIBE");
 
 async function subscribe(ctx: CustomContext) {
   const waitingMsg = await ctx.reply("Please wait...");

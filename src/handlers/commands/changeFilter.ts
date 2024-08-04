@@ -6,7 +6,7 @@ import deleteMessage from "utils/deleteMessage";
 import db from "@/firebase/firestore";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FILTER");
+const logger = Logger.getLogger("FILTER");
 
 async function changeFilter(ctx: CustomContext) {
   const waitingMsg = await ctx.reply("Please wait...");

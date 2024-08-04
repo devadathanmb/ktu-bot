@@ -15,7 +15,7 @@ import ServerError from "errors/ServerError";
 import Logger from "utils/logger";
 import handleMyChatMember from "./utils/handleMyChatMember";
 
-const logger = new Logger("RESULT_WIZARD");
+const logger = Logger.getLogger("RESULT_WIZARD");
 
 /*
   - Result lookup is designed as a WizardScene. This is similar to how an installation wizards works.

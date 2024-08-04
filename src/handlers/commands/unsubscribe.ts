@@ -3,7 +3,7 @@ import db from "@/firebase/firestore";
 import deleteMessage from "utils/deleteMessage";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("UNSUBSCRIBE");
+const logger = Logger.getLogger("UNSUBSCRIBE");
 
 async function unsubscribe(ctx: CustomContext) {
   const chatId = ctx.chat!.id;

@@ -4,7 +4,7 @@ import { Course } from "types/types";
 import ServerError from "errors/ServerError";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 async function fetchCourses(): Promise<Course[]> {
   try {

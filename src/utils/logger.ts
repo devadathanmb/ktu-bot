@@ -1,12 +1,12 @@
-import { createLogger, format, transports } from "winston";
-import * as path from "path";
+import { createLogger, format, transports } from 'winston';
+import * as path from 'path';
 
-const logDirectory = "/var/log/ktu-bot";
+const logDirectory = '/var/log/ktu-bot';
 
 const winston = createLogger({
-  level: process.env.LOG_LEVEL || "debug",
+  level: process.env.LOG_LEVEL || 'debug',
   format: format.combine(
-    format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), // Set the timestamp format
+    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     format.printf(({ timestamp, level, message }) => {
       return `${timestamp} [${level}]: ${message}`;
     })
@@ -22,8 +22,8 @@ const winston = createLogger({
       ),
     }),
     new transports.File({
-      level: "info",
-      filename: path.join(logDirectory, "info.log"),
+      level: 'info',
+      filename: path.join(logDirectory, 'info.log'),
       format: format.combine(
         format.timestamp(),
         format.printf(({ timestamp, level, message }) => {
@@ -32,8 +32,8 @@ const winston = createLogger({
       ),
     }),
     new transports.File({
-      level: "error",
-      filename: path.join(logDirectory, "error.log"),
+      level: 'error',
+      filename: path.join(logDirectory, 'error.log'),
       format: format.combine(
         format.timestamp(),
         format.printf(({ timestamp, level, message }) => {
@@ -45,9 +45,18 @@ const winston = createLogger({
 });
 
 class Logger {
-  service: string = "";
-  constructor(service: string) {
+  private static instances: Map<string, Logger> = new Map();
+  private service: string;
+
+  private constructor(service: string) {
     this.service = service;
+  }
+
+  public static getLogger(service: string): Logger {
+    if (!this.instances.has(service)) {
+      this.instances.set(service, new Logger(service));
+    }
+    return this.instances.get(service)!;
   }
 
   debug(message: string) {

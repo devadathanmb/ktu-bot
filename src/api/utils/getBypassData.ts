@@ -1,7 +1,7 @@
 import { axios } from "../axiosInstance";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("BYPASS_CAPTCHA");
+const logger = Logger.getLogger("BYPASS_CAPTCHA");
 
 const BYPASS_DATA_URL = "http://captcha-bypass:3000/bypass_captcha";
 

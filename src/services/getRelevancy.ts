@@ -1,7 +1,7 @@
 import { axios } from "api/axiosInstance";
 import Logger from "@/utils/logger";
 
-const logger = new Logger("FETCH_SERVICE");
+const logger = Logger.getLogger("FETCH_SERVICE");
 
 // eg : [[{"label":"LABEL_1","score":0.9968029260635376},{"label":"LABEL_0","score":0.0031970764975994825}]]
 interface Relevancy {

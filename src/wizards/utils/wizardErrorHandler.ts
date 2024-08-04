@@ -7,7 +7,7 @@ import DataNotFoundError from "errors/DataNotFoundError";
 import { TelegramError } from "telegraf";
 import Logger from "utils/logger";
 
-const logger = new Logger("WIZARD ERROR");
+const logger = Logger.getLogger("WIZARD_ERROR_HANDLER");
 
 async function handleError(ctx: CustomContext, error: any) {
   if (error instanceof TelegramError) {
