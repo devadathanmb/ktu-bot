@@ -10,13 +10,6 @@ interface XToken {
   x_token: string;
 }
 
-class InvalidXTokenError extends Error {
-  constructor(message: string = "Invalid X-Token") {
-    super(message);
-    this.name = "InvalidXTokenError";
-  }
-}
-
 async function getXToken(bypassData: BypassData): Promise<XToken | null> {
   try {
     logger.debug("Fetching X-Token");
