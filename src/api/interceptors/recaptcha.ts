@@ -14,7 +14,8 @@ const recaptchaInterceptor = async (config: InternalCacheRequestConfig) => {
     const key = axios.generateKey(config);
     const cached = await axios.storage.get(key);
 
-    if (cached.data) {
+    // If data is already cached and cache not overridden
+    if (cached.data && config.cache) {
       logger.debug(
         `${config.url} Request already cached, skipping recaptcha bypass`
       );
