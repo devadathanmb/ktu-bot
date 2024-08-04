@@ -29,7 +29,6 @@ async function fetchAnnouncements(
       cache = false;
     }
 
-    logger.debug("Fetching announcement");
     const response = await axios.post(ANOUNCEMENTS_URL, payload, {
       cache: cache
     });
