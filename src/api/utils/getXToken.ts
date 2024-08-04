@@ -24,9 +24,6 @@ async function getXToken(bypassData: BypassData): Promise<XToken | null> {
       cache: false,
     });
     const xToken: XToken = response.data;
-    if (!xToken.x_token) {
-      throw new InvalidXTokenError();
-    }
     return xToken;
   } catch (error) {
     logger.error(`Error in fetching X-Token: ${error}`);
