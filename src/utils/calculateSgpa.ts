@@ -14,6 +14,7 @@ function calculateSgpa(resultDetails: ResultDetails[]) {
     F: 0,
     FE: 0,
     I: 0,
+    "PASS": 0
   };
 
   let totalCredits = 0;
