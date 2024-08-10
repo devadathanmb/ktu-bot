@@ -60,7 +60,6 @@ jobs:
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }}
             docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }} ktu-bot:latest
-            docker logs ktu-bot >> ~/bot.log || true
             docker stop ktu-bot || true
             docker stop redis-queue-db || true
             docker rm ktu-bot || true
