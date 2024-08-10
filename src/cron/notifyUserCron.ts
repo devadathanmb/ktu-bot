@@ -93,6 +93,7 @@ async function notifyUserCron() {
       for (const announcement of diff) {
         // Find the filters based on subject
         const filters = findFilters(announcement.subject);
+        logger.debug(`Announcement : ${announcement.subject} matched filters [${filters.toString()}]`);
 
         let snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>;
 
@@ -101,8 +102,9 @@ async function notifyUserCron() {
         // If it is relevant, send to all users
         // If not relevant send to users with ALL filter only
         if (filters.length === 1 && filters[0] === "general") {
+          logger.debug(`Announcement : ${announcement.subject}, no filters matched. Finding relevancy.`);
           const relevancy = await getRelevancy(announcement.subject);
-          logger.info(
+          logger.debug(
             `Announcement : ${announcement.subject} Relevancy : ${relevancy}`
           );
           if (relevancy) {
@@ -124,6 +126,7 @@ async function notifyUserCron() {
 
         // If there are no chatIds for this filter, then skip this announcement
         if (chatIds.length === 0) {
+          logger.debug("No chatIds for this filter. Skipping announcement.");
           continue;
         }
 
