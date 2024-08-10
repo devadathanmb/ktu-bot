@@ -22,8 +22,7 @@ const winston = createLogger({
       ),
     }),
     new transports.File({
-      level: 'info',
-      filename: path.join(logDirectory, 'info.log'),
+      filename: path.join(logDirectory, 'bot.log'),
       format: format.combine(
         format.timestamp(),
         format.printf(({ timestamp, level, message, service }) => {
