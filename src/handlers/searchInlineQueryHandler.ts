@@ -58,7 +58,7 @@ async function searchInlineQueryHandler(
       try {
         await ctx.answerInlineQuery(errorResult);
       } catch (error) {
-        console.log(error)
+        logger.error(`${error}`)
       }
     }
   }

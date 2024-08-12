@@ -196,7 +196,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         ctx.wizard.selectStep(0);
         await deleteMessage(ctx, ctx.scene.session.tempMsgId);
         ctx.scene.session.tempMsgId = null;
-        return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+        return await Composer.unwrap(ctx.wizard.step!)(ctx, _next);
       }
 
       if (
@@ -243,7 +243,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
         await deleteMessage(ctx, ctx.scene.session.tempMsgId);
         ctx.scene.session.tempMsgId = null;
         ctx.wizard.selectStep(1);
-        return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+        return await Composer.unwrap(ctx.wizard.step!)(ctx, _next);
       }
 
       if (!ctx.has(message("text"))) {
@@ -294,7 +294,7 @@ const resultWizard = new Scenes.WizardScene<CustomContext>(
 
         await deleteMessage(ctx, ctx.scene.session.tempMsgId);
         ctx.scene.session.tempMsgId = null;
-        return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+        return await Composer.unwrap(ctx.wizard.step!)(ctx, _next);
       }
       if (!ctx.has(message("text"))) {
         return await ctx.reply("Please enter a valid date of birth");
@@ -415,7 +415,7 @@ resultWizard.action("check_another_result_true", async (ctx, _next) => {
     ctx.scene.session.tempMsgId = null;
     await deleteMessage(ctx, ctx.msgId!);
     ctx.wizard.selectStep(2);
-    return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+    return await Composer.unwrap(ctx.wizard.step!)(ctx, _next);
   } catch (error) {
     logger.error(`Error in check_another_result_true: ${error}`);
   }

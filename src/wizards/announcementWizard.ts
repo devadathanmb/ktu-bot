@@ -276,7 +276,7 @@ announcementWizard.action(
       ctx.scene.session.tempMsgId = null;
       await deleteMessage(ctx, ctx.msgId!);
       ctx.wizard.selectStep(0);
-      return Composer.unwrap(ctx.wizard.step!)(ctx, _next);
+      return await Composer.unwrap(ctx.wizard.step!)(ctx, _next);
     } catch (error) {
       await handleError(ctx, error);
     }
