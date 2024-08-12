@@ -55,7 +55,11 @@ async function searchInlineQueryHandler(
           },
         },
       ];
-      await ctx.answerInlineQuery(errorResult);
+      try {
+        await ctx.answerInlineQuery(errorResult);
+      } catch (error) {
+        console.log(error)
+      }
     }
   }
 }
