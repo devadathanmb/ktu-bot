@@ -15,7 +15,9 @@ async function getBypassData(): Promise<BypassData | null> {
   try {
     logger.debug("Fetching captcha bypass data");
     const response = await axios.get(BYPASS_DATA_URL, {
-      cache: false,
+      cache: {
+        ttl: 10 * 60 * 1000,
+      }
     });
     return response.data;
   } catch (error) {
