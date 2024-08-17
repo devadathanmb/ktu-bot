@@ -6,35 +6,44 @@ import Logger from "utils/logger";
 
 const logger = Logger.getLogger("TELEGRAF");
 
-function checkEnv() {
-  if (
-    !(
-      process.env.BOT_TOKEN &&
-      process.env.ENV_TYPE &&
-      process.env.HUGGING_FACE_TOKEN &&
-      process.env.FIREBASE_SERVICE_ACCOUNT &&
-      process.env.FIREBASE_STORAGE_BUCKET
-    )
-  ) {
-    throw new Error("Missing environment variables.");
+const commonEnvs = [
+  'BOT_TOKEN',
+  'ENV_TYPE',
+  'HUGGING_FACE_TOKEN',
+  'FIREBASE_SERVICE_ACCOUNT',
+  'FIREBASE_STORAGE_BUCKET'
+];
+
+const prodEnvs = [
+  'WEBHOOK_PORT',
+  'WEBHOOK_DOMAIN'
+];
+
+function checkEnvs() {
+  for (const envKey in commonEnvs) {
+    if (!process.env['envKey']) {
+      logger.error(`Environment variable : ${envKey} not found.`)
+      throw new Error(`Missing environment variable ${envKey}`);
+    }
   }
 
-  if (
-    process.env.ENV_TYPE === "PRODUCTION" &&
-    !process.env.WEBHOOK_PORT &&
-    !process.env.WEBHOOK_DOMAIN
-  ) {
-    throw new Error("Missing environment variables.");
+  if (process.env.ENV_TYPE === "PRODUCTION") {
+    for (const envKey in prodEnvs) {
+      if (!process.env['envKey']) {
+        logger.error(`Environment variable : ${envKey} not found.`)
+        throw new Error(`Missing environment variable ${envKey}`);
+      }
+    }
   }
 }
 
 logger.debug("Checking envs");
-checkEnv();
+checkEnvs();
 
 // Attach all commands, middlewares and listeners to the bot
-function createBot() {
+async function createBot() {
   logger.info("Setting commands");
-  setCommands();
+  await setCommands();
   logger.info("Attaching middlewares");
   attachMiddlewares();
   logger.info("Attaching command handlers");
