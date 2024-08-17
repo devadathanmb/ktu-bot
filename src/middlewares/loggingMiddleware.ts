@@ -8,6 +8,6 @@ const logger = Logger.getLogger("TELEGRAF");
 // For testing purposes
 const loggingMiddleware: Middleware<CustomContext> = async (ctx, next) => {
   logger.info(`Update received : ${JSON.stringify(ctx.update)}`);
-  return next();
+  return await next();
 };
 export default loggingMiddleware;
