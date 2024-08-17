@@ -14,6 +14,9 @@ async function fetchAttachment(encryptId: string): Promise<any> {
       },
       {
         timeout: 15 * 1000,
+        cache: {
+          ttl: 1000 * 60 * 60 * 2,
+        },
       }
     );
     return response.data;

@@ -12,7 +12,7 @@ async function fetchCourses(): Promise<Course[]> {
       cache: {
         // This route is not expected to change frequently
         // So we can cache it for a long time
-        ttl: 1000 * 60 * 30,
+        ttl: 1000 * 60 * 60 * 2,
       },
     });
 

@@ -5,7 +5,7 @@ import recaptchaInterceptor from "./interceptors/recaptcha";
 
 const axios = setupCache(Axios, {
   methods: ["post"],
-  ttl: 1000 * 60 * 10,
+  ttl: 1000 * 60 * 20,
 });
 
 axios.defaults.timeout = 1000 * 10;
