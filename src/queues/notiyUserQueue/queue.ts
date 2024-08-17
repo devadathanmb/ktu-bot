@@ -3,7 +3,7 @@ import { Queue } from "bullmq";
 import { Worker } from "bullmq";
 import { JobData } from "types/types";
 import db from "@/firebase/firestore";
-import bot from "bot";
+import bot from "@/bot/bot";
 import IORedis from "ioredis";
 import Logger from "@/utils/logger";
 
@@ -48,7 +48,9 @@ const worker = new Worker<JobData, number>(
       if (error instanceof TelegramError) {
         if (error.code === 429) {
           const retryAfter = error.parameters?.retry_after!;
-          logger.debug(`Telegram rate limit hit. Pausing broadcast for ${retryAfter}s`);
+          logger.debug(
+            `Telegram rate limit hit. Pausing broadcast for ${retryAfter}s`
+          );
           await new Promise((resolve) =>
             setTimeout(resolve, retryAfter * 1000 + 2000)
           );

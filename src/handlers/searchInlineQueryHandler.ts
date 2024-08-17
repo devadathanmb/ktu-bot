@@ -4,7 +4,7 @@ import fetchAnnouncements from "services/fetchAnnouncements";
 import fetchAttachment from "services/fetchAttachment";
 import { NarrowedContext, TelegramError } from "telegraf";
 import ServerError from "errors/ServerError";
-import bot from "@/bot";
+import bot from "@/bot/bot";
 import Logger from "@/utils/logger";
 
 const logger = Logger.getLogger("INLINE_QUERY_HANDLER");
@@ -58,7 +58,7 @@ async function searchInlineQueryHandler(
       try {
         await ctx.answerInlineQuery(errorResult);
       } catch (error) {
-        logger.error(`${error}`)
+        logger.error(`${error}`);
       }
     }
   }

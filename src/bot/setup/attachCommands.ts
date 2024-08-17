@@ -1,4 +1,4 @@
-import bot from "@/bot";
+import bot from "@/bot/bot";
 import help from "handlers/commands/help";
 import cancel from "handlers/commands/cancel";
 import result from "handlers/commands/result";

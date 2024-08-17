@@ -1,4 +1,4 @@
-import bot from "@/bot";
+import bot from "@/bot/bot";
 import start from "handlers/start";
 import defaultHandler from "handlers/defaultHandler";
 import filterCallbackHandler from "handlers/callbackQuerys/filterCallbackHandler";

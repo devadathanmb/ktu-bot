@@ -1,7 +1,7 @@
 import initBot from "@/bot/initBot";
 import notifyUserCron from "cron/notifyUserCron";
 import queue from "queues/notiyUserQueue/queue";
-import bot from "@/bot";
+import bot from "@/bot/bot";
 import Logger from "./utils/logger";
 
 const logger = Logger.getLogger("TELEGRAF");

@@ -1,4 +1,4 @@
-import bot from "@/bot";
+import bot from "@/bot/bot";
 import loggingMiddleware from "middlewares/loggingMiddleware";
 import { Scenes, session } from "telegraf";
 import resultWizard from "wizards/resultWizard";

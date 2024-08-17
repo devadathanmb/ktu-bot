@@ -1,4 +1,4 @@
-import bot from "@/bot";
+import bot from "@/bot/bot";
 import availableCommands from "constants/availableCommands";
 
 // Set the available commands for the bot
