@@ -1,23 +1,20 @@
-import attachMiddlewares from "bot/setup/attachMiddlewares";
-import setCommands from "bot/setup/setCommands";
-import attachCommands from "bot/setup/attachCommands";
-import attachListeners from "bot/setup/attachListeners";
+import attachMiddlewares from "./setup/attachMiddlewares";
+import setCommands from "./setup/setCommands";
+import attachCommands from "./setup/attachCommands";
+import attachListeners from "./setup/attachListeners";
 import Logger from "utils/logger";
 
 const logger = Logger.getLogger("TELEGRAF");
 
 const commonEnvs = [
-  'BOT_TOKEN',
-  'ENV_TYPE',
-  'HUGGING_FACE_TOKEN',
-  'FIREBASE_SERVICE_ACCOUNT',
-  'FIREBASE_STORAGE_BUCKET'
+  "BOT_TOKEN",
+  "ENV_TYPE",
+  "HUGGING_FACE_TOKEN",
+  "FIREBASE_SERVICE_ACCOUNT",
+  "FIREBASE_STORAGE_BUCKET",
 ];
 
-const prodEnvs = [
-  'WEBHOOK_PORT',
-  'WEBHOOK_DOMAIN'
-];
+const prodEnvs = ["WEBHOOK_PORT", "WEBHOOK_DOMAIN"];
 
 function checkEnvs() {
   for (const envKey of commonEnvs) {
@@ -40,7 +37,7 @@ function checkEnvs() {
 }
 
 // Attach all commands, middlewares and listeners to the bot
-async function createBot() {
+async function initBot() {
   logger.debug("Checking envs..");
   checkEnvs();
   logger.info("Setting commands");
@@ -53,4 +50,4 @@ async function createBot() {
   attachListeners();
 }
 
-export default createBot;
+export default initBot;

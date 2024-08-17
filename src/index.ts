@@ -1,4 +1,4 @@
-import createBot from "@/createBot";
+import initBot from "@/bot/initBot";
 import notifyUserCron from "cron/notifyUserCron";
 import queue from "queues/notiyUserQueue/queue";
 import bot from "@/bot";
@@ -9,34 +9,42 @@ const logger = Logger.getLogger("TELEGRAF");
 const launchBot = async () => {
   // Launch in long polling mode if in development
   if (process.env.ENV_TYPE === "DEVELOPMENT") {
-    bot.launch({
-      dropPendingUpdates: true,
-    });
-    if (bot)
-      bot.telegram.getMe().then((res) => {
-        logger.info(
-          `Bot started in polling mode. Available at https://t.me/${res.username}`
-        );
-        notifyUserCron();
-      });
+    bot.launch(
+      {
+        dropPendingUpdates: true,
+      },
+      () => {
+        if (bot)
+          bot.telegram.getMe().then((res) => {
+            logger.info(
+              `Bot started in polling mode. Available at https://t.me/${res.username}`
+            );
+            notifyUserCron();
+          });
+      }
+    );
   }
   // Launch in webhook mode if in production
   else {
-    bot.launch({
-      webhook: {
-        domain: process.env.WEBHOOK_DOMAIN!,
-        port: Number(process.env.WEBHOOK_PORT),
-        maxConnections: 100,
+    bot.launch(
+      {
+        webhook: {
+          domain: process.env.WEBHOOK_DOMAIN!,
+          port: Number(process.env.WEBHOOK_PORT),
+          maxConnections: 100,
+        },
+        dropPendingUpdates: true,
       },
-      dropPendingUpdates: true,
-    });
-    if (bot)
-      bot.telegram.getMe().then((res) => {
-        logger.info(
-          `Bot started in webhook mode. Available at https://t.me/${res.username}`
-        );
-        notifyUserCron();
-      });
+      () => {
+        if (bot)
+          bot.telegram.getMe().then((res) => {
+            logger.info(
+              `Bot started in webhook mode. Available at https://t.me/${res.username}`
+            );
+            notifyUserCron();
+          });
+      }
+    );
   }
 };
 
@@ -54,7 +62,7 @@ process.once("SIGTERM", async () => {
 });
 
 // Create the bot by initializing all handlers
-createBot();
+initBot();
 
 //Launch the bot
 launchBot();
