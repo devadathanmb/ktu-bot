@@ -7,7 +7,6 @@ import announcementWizard from "wizards/announcementWizard";
 import timetableWizard from "wizards/timeTableWizard";
 import { CustomContext } from "types/customContext.type";
 import throttler from "@/middlewares/throttler";
-import warningMiddleWare from "@/middlewares/warning";
 
 // Attach all middlewares to the bot
 function attachMiddlewares() {
@@ -21,7 +20,6 @@ function attachMiddlewares() {
 
   // Register middlewares
   bot.use(loggingMiddleware);
-  bot.use(warningMiddleWare);
   bot.use(throttler);
   bot.use(session());
   bot.use(stage.middleware());
