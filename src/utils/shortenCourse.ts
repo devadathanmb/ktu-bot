@@ -5,7 +5,7 @@ function shortenCourse(subject: string): string {
     .split(" ")
     .forEach((word) => {
       if (word) {
-        shortenedName = shortenedName.concat(word[0]);
+        shortenedName = shortenedName.concat(word[0].toUpperCase());
       }
     });
   return shortenedName;
