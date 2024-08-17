@@ -1,7 +1,7 @@
 import { InternalCacheRequestConfig } from "axios-cache-interceptor";
 import { BASE_URL } from "@/constants/constants";
 import Logger from "@/utils/logger";
-import { axios } from "../axiosInstance";
+import { axios } from "../axios";
 import { BypassData, getBypassData } from "../utils/getBypassData";
 import { getXToken } from "../utils/getXToken";
 

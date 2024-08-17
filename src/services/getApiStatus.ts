@@ -1,4 +1,4 @@
-import { axios } from "@/api/axiosInstance";
+import { axios } from "@/api/axios";
 import Logger from "@/utils/logger";
 
 const logger = Logger.getLogger("FETCH_SERVICE");

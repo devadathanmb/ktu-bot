@@ -1,4 +1,4 @@
-import { axios } from "../axiosInstance";
+import { axios } from "../axios";
 import { BypassData } from "./getBypassData";
 import Logger from "@/utils/logger";
 

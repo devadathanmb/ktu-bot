@@ -1,4 +1,4 @@
-import { axios } from "api/axiosInstance";
+import { axios } from "api/axios";
 import { ANOUNCEMENTS_URL } from "constants/constants";
 import { Announcement } from "types/types";
 import ServerError from "errors/ServerError";
@@ -25,12 +25,12 @@ async function fetchAnnouncements(
       ttl: 1000 * 60 * 5,
     };
 
-    if(disableCache){
+    if (disableCache) {
       cache = false;
     }
 
     const response = await axios.post(ANOUNCEMENTS_URL, payload, {
-      cache: cache
+      cache: cache,
     });
 
     const relevantData = response.data.content.map((obj: any) => ({

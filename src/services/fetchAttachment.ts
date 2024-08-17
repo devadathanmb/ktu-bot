@@ -1,4 +1,4 @@
-import { axios } from "api/axiosInstance";
+import { axios } from "api/axios";
 import { ATTACHMENT_URL } from "constants/constants";
 import ServerError from "errors/ServerError";
 import Logger from "@/utils/logger";

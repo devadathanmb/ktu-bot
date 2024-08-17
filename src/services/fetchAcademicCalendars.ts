@@ -1,4 +1,4 @@
-import { axios } from "api/axiosInstance";
+import { axios } from "api/axios";
 import { ACADEMIC_CALENDAR_URL } from "constants/constants";
 import { AcademicCalendar } from "types/types";
 import ServerError from "errors/ServerError";

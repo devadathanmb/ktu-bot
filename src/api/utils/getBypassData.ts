@@ -1,4 +1,4 @@
-import { axios } from "../axiosInstance";
+import { axios } from "../axios";
 import Logger from "@/utils/logger";
 
 const logger = Logger.getLogger("BYPASS_CAPTCHA");
@@ -17,7 +17,7 @@ async function getBypassData(): Promise<BypassData | null> {
     const response = await axios.get(BYPASS_DATA_URL, {
       cache: {
         ttl: 10 * 60 * 1000,
-      }
+      },
     });
     return response.data;
   } catch (error) {
