@@ -20,28 +20,29 @@ const prodEnvs = [
 ];
 
 function checkEnvs() {
-  for (const envKey in commonEnvs) {
-    if (!process.env['envKey']) {
-      logger.error(`Environment variable : ${envKey} not found.`)
+  for (const envKey of commonEnvs) {
+    logger.debug(`Checking env : ${envKey}`);
+    if (!process.env[envKey]) {
+      logger.error(`Environment variable : ${envKey} not found.`);
       throw new Error(`Missing environment variable ${envKey}`);
     }
   }
 
   if (process.env.ENV_TYPE === "PRODUCTION") {
-    for (const envKey in prodEnvs) {
-      if (!process.env['envKey']) {
-        logger.error(`Environment variable : ${envKey} not found.`)
+    for (const envKey of prodEnvs) {
+      logger.debug(`Checking production env : ${envKey}`);
+      if (!process.env[envKey]) {
+        logger.error(`Environment variable : ${envKey} not found.`);
         throw new Error(`Missing environment variable ${envKey}`);
       }
     }
   }
 }
 
-logger.debug("Checking envs");
-checkEnvs();
-
 // Attach all commands, middlewares and listeners to the bot
 async function createBot() {
+  logger.debug("Checking envs..");
+  checkEnvs();
   logger.info("Setting commands");
   await setCommands();
   logger.info("Attaching middlewares");
