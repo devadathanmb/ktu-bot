@@ -1,7 +1,7 @@
-import attachMiddlewares from "initBot/attachMiddlewares";
-import setCommands from "initBot/setCommands";
-import attachCommands from "initBot/attachCommands";
-import attachListeners from "initBot/attachListeners";
+import attachMiddlewares from "bot/setup/attachMiddlewares";
+import setCommands from "bot/setup/setCommands";
+import attachCommands from "bot/setup/attachCommands";
+import attachListeners from "bot/setup/attachListeners";
 import Logger from "utils/logger";
 
 const logger = Logger.getLogger("TELEGRAF");
