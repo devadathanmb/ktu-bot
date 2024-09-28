@@ -5,26 +5,14 @@ on:
     workflows: ["CI"]
     types:
       - completed
+  push:
+    branches:
+      - "prod"
 
 jobs:
-  on-success:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'success'
-    steps:
-      - run: echo 'CI successful. Proceeding with test deploy..'
-
-  on-failure:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'failure'
-    steps:
-      - run: echo 'CI failed. Skipping test deploy..' && exit 1
-
   test_deploy:
-    name: Test deployment of bot
-    if: github.ref == 'refs/heads/prod'
     runs-on: ubuntu-latest
-    needs: on-success
-
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,7 +24,15 @@ jobs:
         run: |
           docker network create ktu-bot-network || true
           docker run -d -p 6379:6379 --network ktu-bot-network --network-alias redis-queue-db --name redis-queue-db redis
-          docker run -d -p 5000:5000 -e TZ=Asia/Kolkata --network ktu-bot-network -e ENV_TYPE="DEVELOPMENT" -e BOT_TOKEN=${{ secrets.TESTING_BOT_TOKEN }} -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT_TESTING }}" -e HUGGING_FACE_TOKEN="${{ secrets.HUGGING_FACE_TOKEN }}" -e FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET_TESTING }}" --name ktu-bot-testing ktu-bot-testing:latest
+          docker run -d -p 5000:5000 \
+            -e TZ=Asia/Kolkata \
+            --network ktu-bot-network \
+            -e ENV_TYPE="DEVELOPMENT" \
+            -e BOT_TOKEN=${{ secrets.TESTING_BOT_TOKEN }} \
+            -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT_TESTING }}" \
+            -e HUGGING_FACE_TOKEN="${{ secrets.HUGGING_FACE_TOKEN }}" \
+            -e FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET_TESTING }}" \
+            --name ktu-bot-testing ktu-bot-testing:latest
 
       - name: Wait for container to initialize
         run: sleep 5

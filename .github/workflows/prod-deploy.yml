@@ -5,85 +5,37 @@ on:
     workflows: ["KTU Bot Test Deploy"]
     types:
       - completed
+  push:
+    branches:
+      - "prod"
 
 jobs:
-  on-failure:
+  deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'failure'
-    steps:
-      - run: echo "Test deployment failed.. Skipping prod deploy.." && exit 1
-
-  on-success:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod' && github.event.workflow_run.conclusion == 'success'
-    steps:
-      - run: echo "Test deployment successful.. Deploying prod..."
-
-  build-and-push:
-    name: Build and push docker image
-    runs-on: ubuntu-latest
-    needs: on-success
-
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to docker hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }}
-
-  deploy:
-    name: Deploy docker container to VPS
-    runs-on: ubuntu-latest
-    needs: build-and-push
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }}
-            docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }} ktu-bot:latest
-            docker stop ktu-bot || true
-            docker stop redis-queue-db || true
-            docker rm ktu-bot || true
-            docker rm redis-queue-db || true
-            docker network rm ktu-bot-network || true
-            docker network create ktu-bot-network || true
-            docker run -d --restart always -p 6379:6379 --network ktu-bot-network --network-alias redis-queue-db --name redis-queue-db redis
-            docker run -d \
-              --restart always \
-              -p 5000:5000 \
-              -e TZ=Asia/Kolkata \
-              --network ktu-bot-network \
-              -e ENV_TYPE=${{ secrets.ENV_TYPE }} \
-              -e ADMIN_ID=${{ secrets.ADMIN_ID }} \
-              -e WEBHOOK_DOMAIN=${{ secrets.WEBHOOK_DOMAIN }} \
-              -e WEBHOOK_PORT=${{ secrets.WEBHOOK_PORT }} \
-              -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
-              -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" \
-              -e NODE_ENV=production \
-              -e HUGGING_FACE_TOKEN="${{ secrets.HUGGING_FACE_TOKEN }}" \
-              -e FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}" \
-              -e LATEST_COMMIT=${{ github.sha }} \
-              -e UPTIME_ROBOT_API_KEY=${{ secrets.UPTIME_ROBOT_API_KEY }} \
-              -e ORIGIN_URL=${{ secrets.ORIGIN_URL }} \
-              --name ktu-bot \
-              -v /var/log/ktu-bot:/var/log/ktu-bot \
-              ktu-bot:latest
+      - name: Pull and Deploy
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }}
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ktu-bot:${{ github.sha }} ktu-bot:latest
+          docker stop ktu-bot || true
+          docker rm ktu-bot || true
+          docker run -d --restart always \
+            -p 5000:5000 \
+            -e TZ=Asia/Kolkata \
+            -e ENV_TYPE=${{ secrets.ENV_TYPE }} \
+            -e ADMIN_ID=${{ secrets.ADMIN_ID }} \
+            -e BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+            -e FIREBASE_SERVICE_ACCOUNT="${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" \
+            -e HUGGING_FACE_TOKEN="${{ secrets.HUGGING_FACE_TOKEN }}" \
+            -e FIREBASE_STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}" \
+            --name ktu-bot ktu-bot:latest
