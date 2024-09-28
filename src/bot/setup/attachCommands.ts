@@ -11,7 +11,6 @@ import subscribe from "handlers/commands/subscribe";
 import unsubscribe from "handlers/commands/unsubscribe";
 import timetable from "handlers/commands/timetable";
 import page from "handlers/commands/page";
-import oldResults from "handlers/commands/oldResults";
 import apiStatus from "handlers/commands/apiStatus";
 
 // Attach all command handlers/commands to the bot
@@ -29,7 +28,6 @@ function attachCommands() {
   bot.command("changefilter", changeFilter);
   bot.command("page", page);
   bot.command("pageinfo", page);
-  bot.command("oldresults", oldResults);
   bot.command("serverstatus", apiStatus);
 }
 
