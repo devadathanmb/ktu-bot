@@ -15,6 +15,12 @@
 </div>
 <br/>
 
+
+> [!NOTE]
+>
+> This project is currently in autopilot mode and will not receive any major updates. It may become broken at any point in time, as I personally don't have much time to work on it. The functionality of this bot heavily depends on KTU APIs, and any significant changes to those APIs could break the bot. If you're interested in maintaining this project, feel free to fork it or contact me for assistance.
+
+
 Welcome to the KTU Bot! This Telegram bot helps students check their exam results, find latest KTU notifications, academic calendars, exam time tables and alert users when new notifications arrive.
 
 Find the bot [here](https://t.me/ktu_results_bot)
@@ -38,7 +44,7 @@ Find the bot [here](https://t.me/ktu_results_bot)
 ## Features
 
 - **Check Results**: Easily check latest published KTU results.
-- **Check old results**: Check any results ever published in the history of KTU (yeah for real).
+- **Check old results**: Check any results ever published in the history of KTU (yeah for real) (REMOVED).
 - **Download published KTU notifications**: Browse and download any published KTU notification.
 - **Dowbload published academic calendars**: Browse and download any published KTU academic calendars.
 - **Download published exam time tables**: Browse and download any published KTU exam time tables.
@@ -54,7 +60,7 @@ Find the bot [here](https://t.me/ktu_results_bot)
 
 - `/result`: Fetch your exam results.
 
-- `/olresults`: Fetch previously published exam results.
+- `/oldresults`: Fetch previously published exam results (Removed).
 
 - `/notifications`: Find and download latest KTU notifications.
 
