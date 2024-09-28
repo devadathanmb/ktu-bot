@@ -1,5 +1,5 @@
 import { InternalCacheRequestConfig } from "axios-cache-interceptor";
-import { BASE_URL } from "@/constants/constants";
+import { COURSES_URL, PUBLISHED_RESULTS_URL, RESULT_URL } from "@/constants/constants";
 import Logger from "@/utils/logger";
 import { axios } from "../axios";
 import { BypassData, getBypassData } from "../utils/getBypassData";
@@ -7,8 +7,10 @@ import { getXToken } from "../utils/getXToken";
 
 const logger = Logger.getLogger("INTERCEPTOR");
 
+const PROTECTED_URLS = [COURSES_URL, RESULT_URL, PUBLISHED_RESULTS_URL];
+
 const recaptchaInterceptor = async (config: InternalCacheRequestConfig) => {
-  if (config.url?.includes(BASE_URL)) {
+  if (PROTECTED_URLS.some(url => config.url?.includes(url))) {
     // Check if request is already cached, if so don't generate a new key
     const key = axios.generateKey(config);
     const cached = await axios.storage.get(key);
