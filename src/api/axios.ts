@@ -12,6 +12,6 @@ axios.defaults.timeout = 1000 * 10;
 
 // Inteceptors
 axios.interceptors.request.use(commonInterceptor);
-axios.interceptors.request.use(recaptchaInterceptor);
+// axios.interceptors.request.use(recaptchaInterceptor);
 
 export { axios };
