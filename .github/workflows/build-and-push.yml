@@ -25,7 +25,10 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # Step 4: Build the Docker image for multiple platforms (amd64 and arm64)
-    - name: Build Docker image for amd64 and arm64
+    # Step 4: Build Docker image for arm64 only
+    - name: Build Docker image for arm64
       run: |
-        docker buildx build --platform linux/amd64,linux/arm64 -t devadathanmb/ktu-bot:latest --push .
+        # Ensure the builder supports multi-architecture
+        docker buildx create --use
+        # Build and push image only for arm64
+        docker buildx build --platform linux/arm64 -t devadathanmb/ktu-bot:latest --push .
