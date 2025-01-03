@@ -30,4 +30,4 @@ services:
 
 networks:
   ktu-bot-network:
-    external: true
+    driver: bridge
