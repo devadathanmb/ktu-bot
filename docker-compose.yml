@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   ktu-bot:
-    build: .
+    image: devadathanmb/ktu-bot:latest   # Pull the latest image from Docker Hub
     restart: always
     depends_on:
       redis-queue-db:
