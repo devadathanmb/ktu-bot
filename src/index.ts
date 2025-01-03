@@ -30,7 +30,7 @@ const launchBot = async () => {
       {
         webhook: {
           domain: process.env.WEBHOOK_DOMAIN!,
-          port: Number(process.env.WEBHOOK_PORT),
+          port: 5000,
           maxConnections: 100,
         },
         dropPendingUpdates: true,

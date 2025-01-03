@@ -6,6 +6,8 @@ services:
     depends_on:
       redis-queue-db:
         condition: service_healthy
+    ports:
+      - "5000:5000"
     volumes:
       - type: bind
         source: .env
