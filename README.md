@@ -15,7 +15,10 @@
 
 > [!NOTE]
 >
-> This project is currently in autopilot mode and will not receive any major updates. It may become broken at any point in time, as I personally don't have much time to work on it. The functionality of this bot heavily depends on KTU APIs, and any significant changes to those APIs could break the bot. If you're interested in maintaining this project, feel free to fork it or contact me for assistance.
+> This project is in "autopilot" mode. Due to limited time and resources, I am unable to maintain the bot actively, and significant updates may not be possible. The bot's functionality depends on KTU's public APIs, so any changes to those APIs could potentially break the bot. However, if you are interested in maintaining the bot, feel free to fork the repository or reach out for assistance.
+
+> [!IMPORTANT]
+> This bot does **not store or log any personal user data**, except for basic logs used solely for debugging and improving functionality. It is fully open source and licensed under **GPL 3.0**, ensuring transparency in its operations. The bot will always remain free of **spam, promotional content, or unsolicited advertisements**. Its purpose is to provide students with **easy access to KTU resources**, keeping the focus on delivering valuable content without unnecessary distractions or privacy concerns.
 
 
 Welcome to the KTU Bot! This Telegram bot helps students check their exam results, find latest KTU notifications, academic calendars, exam time tables and alert users when new notifications arrive.
