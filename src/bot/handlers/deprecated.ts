@@ -1,6 +1,6 @@
 import { CommandContext } from "grammy";
 import { BotContext } from "../../types/bot.types.js";
-import { DEPRECATED_COMMAND_TO_DESC_MAP } from "../../constants/bot.js";
+import { DEPRECATED_COMMAND_TO_REASON_MAP } from "../../constants/bot.js";
 import { combineFormattedDouble } from "../../utils/combineFormatted.js";
 import { fmt } from "@grammyjs/parse-mode";
 import { formatCommand } from "../../utils/getFormattedCommand.js";
@@ -13,7 +13,7 @@ export const deprecatedCommandHandler = async (
   const command = ctx.message!.text!.split(" ")[0]!.slice(1)!;
 
   // Find the prepared response
-  const deprecationMsg = DEPRECATED_COMMAND_TO_DESC_MAP[command] || [
+  const deprecationMsg = DEPRECATED_COMMAND_TO_REASON_MAP[command] || [
     fmt`Sorry, this feature has been deprecated.`,
     fmt`Please refer to ${formatCommand(helpCommand)} for available commands.`,
   ];

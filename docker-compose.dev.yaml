@@ -10,6 +10,7 @@ services:
       - ./dev/redis.env
       - ./dev/api.env
       - ./dev/llm.env
+      - ./dev/logging.env
     volumes:
       - .:/app
       - /app/node_modules
@@ -71,6 +72,7 @@ services:
       - ./dev/llm.env
       - ./dev/announcements-notify-worker.env
       - ./dev/broadcasts-worker.env
+      - ./dev/logging.env
     ports:
       - "3001:3001"
     volumes:
@@ -108,6 +110,7 @@ services:
       - ./dev/api.env
       - ./dev/broadcasts-worker.env
       - ./dev/llm.env
+      - ./dev/logging.env
     ports:
       - "3002:3002"
     volumes:
@@ -145,6 +148,7 @@ services:
       - ./dev/data-sync-worker.env
       - ./dev/llm.env
       - ./dev/redis.env
+      - ./dev/logging.env
     ports:
       - "3003:3003"
     volumes:
@@ -183,6 +187,7 @@ services:
       - ./dev/broadcasts-worker.env
       - ./dev/announcements-notify-worker.env
       - ./dev/data-sync-worker.env
+      - ./dev/logging.env
     ports:
       - "3010:3010"
     volumes:

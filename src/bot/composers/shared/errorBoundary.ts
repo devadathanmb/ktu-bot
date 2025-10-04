@@ -4,6 +4,7 @@ import { deleteMessageSafely } from "../../../utils/safeDelete.js";
 import { replyMessageSafely } from "../../../utils/safeReply.js";
 import { KTUAPIError } from "../../../errors/BotErrors.js";
 import { emoji } from "@grammyjs/emoji";
+import logger from "../../../utils/logger.js";
 
 /**
  * Session keys that contain message IDs for loading/status messages
@@ -60,18 +61,17 @@ export function createComposerErrorBoundary(
         fallbackErrorMessage ||
         `${emoji("slightly_frowning_face")} Sorry, something went wrong on my end. Please try again.`;
 
-      // // Log the general error
-      // logger.error(
-      //   {
-      //     error: error.error,
-      //     errorType: error.error?.constructor?.name,
-      //     chatId: ctx.chat?.id,
-      //     userId: ctx.from?.id,
-      //     username: ctx.from?.username,
-      //     loadingMessageKeys,
-      //   },
-      //   `Composer error boundary triggered`
-      // );
+      // Log the general error
+      logger.error(
+        {
+          error: error.error,
+          chatId: ctx.chat?.id,
+          userId: ctx.from?.id,
+          username: ctx.from?.username,
+          update: ctx.update,
+        },
+        `Composer error boundary triggered`
+      );
     }
 
     // Clean up any loading messages stored in session

@@ -67,7 +67,7 @@ const protectedComposer = composer.errorBoundary(createCalendarErrorBoundary());
 // Command: /calendar - Start academic calendar lookup
 const calendarLookupCommand = new Command<BotContext>(
   "calendar",
-  "📅 Find published academic calendars from KTU",
+  `${emoji("calendar")} Find published academic calendars from KTU`,
   async (ctx: BotContext) => {
     // Initialize session data
     if (ctx.session.calendarPage === null) {
