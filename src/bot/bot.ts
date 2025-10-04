@@ -44,6 +44,7 @@ export function createBot(): Bot<BotContext> {
     bot.use(sequentialize(getSessionKey));
 
   // Other middlewares
+  bot.use(logging);
   bot.use(
     session({
       initial: initSession,
@@ -53,7 +54,6 @@ export function createBot(): Bot<BotContext> {
       }),
     })
   );
-  bot.use(logging);
   bot.use(trackChatId);
   bot.use(hydrate());
   bot.use(emojiParser());

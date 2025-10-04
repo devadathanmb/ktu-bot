@@ -1,5 +1,8 @@
 import { Worker, Job } from "bullmq";
-import { queueRedisConnectionOptions, workerRedisConnectionOptions } from "../shared/redis.js";
+import {
+  queueRedisConnectionOptions,
+  workerRedisConnectionOptions,
+} from "../shared/redis.js";
 import { closeDB, initDB } from "../../db/connection.js";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { RedisClient } from "bullmq";
