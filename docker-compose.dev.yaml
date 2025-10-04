@@ -1,0 +1,250 @@
+services:
+  ktu-bot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ktu-bot-app
+    env_file:
+      - ./dev/bot.env
+      - ./dev/db.env
+      - ./dev/redis.env
+      - ./dev/api.env
+      - ./dev/llm.env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      ktu-bot-postgres:
+        condition: service_healthy
+        restart: true
+      ktu-bot-redis:
+        condition: service_healthy
+        restart: true
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    networks:
+      - ktu-bot-network
+    command: ["pnpm", "dev:watch"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  ktu-bot-db-migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ktu-bot-db-migrations
+    env_file:
+      - ./dev/db.env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      ktu-bot-postgres:
+        condition: service_healthy
+    networks:
+      - ktu-bot-network
+    command:
+      [
+        "sh",
+        "-c",
+        "echo 'Running DB migrations!\n\n' && pnpm db:migrate && echo '\n\nDB Migrations applied successfully!'",
+      ]
+    restart: "no"
+
+  announcements-notify-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: announcements-notify-worker
+    env_file:
+      - ./dev/bot.env
+      - ./dev/db.env
+      - ./dev/redis.env
+      - ./dev/api.env
+      - ./dev/llm.env
+      - ./dev/announcements-notify-worker.env
+      - ./dev/broadcasts-worker.env
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      ktu-bot-postgres:
+        condition: service_healthy
+        restart: true
+      ktu-bot-redis:
+        condition: service_healthy
+        restart: true
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    networks:
+      - ktu-bot-network
+    command: ["pnpm", "workers:announcements-notify-worker-dev"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  broadcasts-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: broadcasts-worker
+    env_file:
+      - ./dev/bot.env
+      - ./dev/db.env
+      - ./dev/redis.env
+      - ./dev/api.env
+      - ./dev/broadcasts-worker.env
+      - ./dev/llm.env
+    ports:
+      - "3002:3002"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      ktu-bot-postgres:
+        condition: service_healthy
+        restart: true
+      ktu-bot-redis:
+        condition: service_healthy
+        restart: true
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    networks:
+      - ktu-bot-network
+    command: ["pnpm", "workers:broadcasts-worker-dev"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  data-sync-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: data-sync-worker
+    env_file:
+      - ./dev/bot.env
+      - ./dev/db.env
+      - ./dev/api.env
+      - ./dev/data-sync-worker.env
+      - ./dev/llm.env
+      - ./dev/redis.env
+    ports:
+      - "3003:3003"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      ktu-bot-postgres:
+        condition: service_healthy
+        restart: true
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    networks:
+      - ktu-bot-network
+    command: ["pnpm", "workers:data-sync-worker-dev"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3003/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  bull-board-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: bull-board-service
+    env_file:
+      - ./dev/redis.env
+      - ./dev/bot.env
+      - ./dev/llm.env
+      - ./dev/api.env
+      - ./dev/db.env
+      - ./dev/bull-board-service.env
+      - ./dev/logging.env
+      - ./dev/broadcasts-worker.env
+      - ./dev/announcements-notify-worker.env
+      - ./dev/data-sync-worker.env
+    ports:
+      - "3010:3010"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      ktu-bot-redis:
+        condition: service_healthy
+        restart: true
+    networks:
+      - ktu-bot-network
+    command: ["pnpm", "services:bull-board-dev"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3010/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  ktu-bot-postgres:
+    image: postgres:17-alpine
+    container_name: ktu-bot-postgres-dev
+    env_file:
+      - ./dev/db.env
+    volumes:
+      - ktu_bot_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ktu-bot-network
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U $${DATABASE_USER} -d $${DATABASE_NAME}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    restart: unless-stopped
+
+  ktu-bot-redis:
+    image: redis:7-alpine
+    container_name: ktu-bot-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - ktu-bot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - ktu_bot_redis_data:/data
+
+volumes:
+  ktu_bot_postgres_data:
+  ktu_bot_redis_data:
+
+networks:
+  ktu-bot-network:
+    driver: bridge

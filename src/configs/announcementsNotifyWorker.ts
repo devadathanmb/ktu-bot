@@ -1,0 +1,32 @@
+import { z } from "zod";
+
+// Cron job regex
+const cronRegex =
+  /^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$/;
+
+const announcementsNotifyWorkerConfigSchema = z
+  .object({
+    HEALTHCHECK_PORT: z.coerce.number().positive(),
+    DATA_LOOKUP_LIMIT: z.coerce.number().positive(),
+    CRON_SCHEDULE: z
+      .string()
+      .regex(cronRegex, {
+        message: "Invalid cron expression",
+      })
+      .default("*/5 * * * *"), // Every 5 minutes
+  })
+  .transform(config => ({
+    ...config,
+    HEALTH_CHECK: {
+      MAX_FAILED_JOBS: 50,
+      MAX_BACKLOG_JOBS: 100,
+    },
+  }));
+
+export const AnnouncementsNotifyWorkerConfig =
+  announcementsNotifyWorkerConfigSchema.parse({
+    HEALTHCHECK_PORT: process.env.ANNOUNCEMENTS_NOTIFY_WORKER_HEALTHCHECK_PORT,
+    CRON_SCHEDULE: process.env.ANNOUNCEMENTS_NOTIFY_WORKER_CRON_SCHEDULE,
+    DATA_LOOKUP_LIMIT:
+      process.env.ANNOUNCEMENTS_NOTIFY_WORKER_DATA_LOOKUP_LIMIT || 20,
+  });

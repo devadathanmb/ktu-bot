@@ -1,0 +1,36 @@
+import { BotContext } from "../../../../types/bot.types.js";
+import { Command } from "@grammyjs/commands";
+import { fmt, b } from "@grammyjs/parse-mode";
+import { combineFormattedDouble } from "../../../../utils/combineFormatted.js";
+import { BotConfig } from "../../../../configs/bot.js";
+import { emoji } from "@grammyjs/emoji";
+import { helpCommand } from "./help.js";
+import { formatCommand } from "../../../../utils/getFormattedCommand.js";
+
+export const startCommand = new Command<BotContext>(
+  "start",
+  `${emoji("high_voltage")} Start the bot and explore features`,
+  async ctx => {
+    // Prepare and send the welcome message
+    const userName = ctx.from?.first_name || ctx.from?.username;
+    const greeting = userName ? `Hello ${userName}!` : "Hello there!";
+    const welcomeHeader = fmt`${greeting} ${emoji("waving_hand")}`;
+    const welcomeMessage = fmt`${b}Welcome to KTU Bot!${b}`;
+    const description = fmt`I can help you with announcements, academic calendar, exam timetables, notifications and more!`;
+    const callToAction = fmt`Type ${b}${formatCommand(helpCommand)}${b} for more info.`;
+    const thanks = fmt`Thank you for using KTU Bot! ${emoji("folded_hands")}`;
+
+    const fullMessage = combineFormattedDouble([
+      welcomeHeader,
+      welcomeMessage,
+      description,
+      callToAction,
+      thanks,
+    ]);
+
+    await ctx.replyWithPhoto(BotConfig.BOT_IMAGE_URL, {
+      caption: fullMessage.text,
+      caption_entities: fullMessage.caption_entities,
+    });
+  }
+);

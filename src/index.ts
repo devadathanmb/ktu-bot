@@ -1,68 +1,62 @@
-import initBot from "@/bot/initBot";
-import notifyUserCron from "cron/notifyUserCron";
-import queue from "queues/notiyUserQueue/queue";
-import bot from "@/bot/bot";
-import Logger from "./utils/logger";
+import logger from "./utils/logger.js";
+import { botCommands } from "./bot/commands/index.js";
+import { initDB, closeDB } from "./db/connection.js";
+import { createBot } from "./bot/bot.js";
+import { run, RunnerHandle } from "@grammyjs/runner";
+import { BotConfig } from "./configs/bot.js";
+import { setupHealthCheckServer } from "./utils/healthCheck.js";
 
-const logger = Logger.getLogger("TELEGRAF");
+async function startBotInLongPolling() {
+  try {
+    // Initialize the DB connection before starting the bot
+    await initDB();
 
-const launchBot = async () => {
-  // Launch in long polling mode if in development
-  if (process.env.ENV_TYPE === "DEVELOPMENT") {
-    bot.launch(
-      {
-        dropPendingUpdates: true,
-      },
-      () => {
-        if (bot)
-          bot.telegram.getMe().then((res) => {
-            logger.info(
-              `Bot started in polling mode. Available at https://t.me/${res.username}`
-            );
-            notifyUserCron();
-          });
-      }
+    // Create bot instance
+    const bot = createBot();
+
+    // Set bot commands
+    await botCommands.setCommands(bot);
+
+    // Delete webhook since this is long polling
+    await bot.api.deleteWebhook({ drop_pending_updates: false });
+
+    // Create runner
+    const runner = run(bot);
+
+    // Start health check server
+    setupHealthCheckServer(
+      "bot",
+      BotConfig.BOT_HEALTH_CHECK_PORT,
+      async () =>
+        runner.isRunning() &&
+        (await bot.api
+          .getMe()
+          .then(() => true)
+          .catch(() => false))
     );
+
+    logger.info("🚀 KTU Bot started successfully");
+
+    // Graceful shutdown handling
+    process.on("SIGINT", () => onShutdown(runner, "SIGINT"));
+    process.on("SIGTERM", () => onShutdown(runner, "SIGTERM"));
+  } catch (error) {
+    logger.error(error, "Failed to start bot");
+    await onShutdown();
   }
-  // Launch in webhook mode if in production
-  else {
-    bot.launch(
-      {
-        webhook: {
-          domain: process.env.WEBHOOK_DOMAIN!,
-          port: 5000,
-          maxConnections: 100,
-        },
-        dropPendingUpdates: true,
-      },
-      () => {
-        if (bot)
-          bot.telegram.getMe().then((res) => {
-            logger.info(
-              `Bot started in webhook mode. Available at https://t.me/${res.username}`
-            );
-            notifyUserCron();
-          });
-      }
-    );
+}
+
+// Graceful shutdown function
+async function onShutdown(runner?: RunnerHandle, signal?: string) {
+  if (signal) {
+    logger.info(`Received ${signal}, shutting down gracefully`);
   }
-};
+  if (runner) {
+    await runner.stop();
+  }
+  await closeDB();
+  process.exit(signal ? 0 : 1);
+}
 
-// Graceful stop
-process.once("SIGINT", async () => {
-  logger.warn("SIGINT received. Stopping bot.");
-  bot.stop("SIGINT");
-  await queue.obliterate({ force: true });
-});
-
-process.once("SIGTERM", async () => {
-  logger.warn("SIGTERM received. Stopping bot.");
-  bot.stop("SIGTERM");
-  await queue.obliterate({ force: true });
-});
-
-// Create the bot by initializing all handlers
-initBot();
-
-//Launch the bot
-launchBot();
+// Start the bot application
+await startBotInLongPolling();

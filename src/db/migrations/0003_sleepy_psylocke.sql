@@ -1,0 +1,1 @@
+ALTER TABLE "announcement_subscriptions" ALTER COLUMN "filters" SET DEFAULT '{"ALL"}';

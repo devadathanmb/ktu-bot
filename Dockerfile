@@ -1,40 +1,31 @@
-# FROM node:18-slim
-# WORKDIR /bot
-# COPY package.json /bot
-# COPY package-lock.json /bot
-# RUN npm ci
-# COPY . /bot
-# RUN npm run build
-# CMD ["npm", "run", "start"]
-#
+# Production Dockerfile for KTU Bot
+FROM node:20-alpine
 
-# Stage 1: Build Stage
-FROM node:18-slim AS builder
+# Setup pnpm environment as per pnpm Docker docs
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+# Install curl for healthchecks
+RUN apk add --no-cache curl
 
 # Set working directory
-WORKDIR /bot
+WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package.json package-lock.json ./
-RUN npm ci
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 
-# Copy the rest of the code (after installing dependencies to leverage cache)
-COPY . ./
+# Install all dependencies (tsx needs dev deps)
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# Run build
-RUN npm run build
+# Copy source code
+COPY . .
 
-# Stage 2: Production Stage
-FROM node:18-slim
+# Build TypeScript to JavaScript
+RUN pnpm build
 
-# Set working directory
-WORKDIR /bot
+# Expose port
+EXPOSE 3000
 
-# Copy only the necessary files from the build stage
-COPY --from=builder /bot /bot
-
-# Install only runtime dependencies (remove dev dependencies)
-RUN npm prune --production
-
-# Set the command to start the app
-CMD ["npm", "run", "start"]
+# Run with tsx directly
+CMD ["pnpm", "start"]

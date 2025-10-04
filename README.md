@@ -1,268 +1,220 @@
-<h1 align="center">KTU Bot</h1>
+<h1 align="center"> KTU Bot ⚡ </h1>
 
 <p align="center">
-  <img align="center" width="200" src="https://i.imgur.com/obaTlOd.jpeg">
+   <img align="center" width="180" src="assets/bot-profile-pic.jpg" alt="KTU Bot" />
 </p>
 
-<br/>
-<div align="center">
+<p align="center">
+<strong>A battle-tested, fully open source & libre Telegram bot that served 30,000+ users/month at its peak</strong><br/>
+Fast lookups • Full-text search • Smart announcement subscriptions • Real-time notifications<br/>
+Everything the official website should've been, but isn't.
+</p>
 
-![Made with telegrafjs](https://img.shields.io/badge/Made%20With-Telegraf.JS-%23E74625?style=flat&link=https%3A%2F%2Ftelegraf.js.org%2F)
+<p align="center"><em>No ads. No tracking. 100% libre and will always remain so.</em></p>
 
-</div>
-<br/>
-
-
-> [!NOTE]
->
-> This project is in "autopilot" mode. Due to limited time and resources, I am unable to maintain the bot actively, and significant updates may not be possible. The bot's functionality depends on KTU's public APIs, so any changes to those APIs could potentially break the bot. However, if you are interested in maintaining the bot, feel free to fork the repository or reach out for assistance.
+---
 
 > [!IMPORTANT]
-> This bot does **not store or log any personal user data**, except for basic logs used solely for debugging and improving functionality. It is fully open source and licensed under **GPL 3.0**, ensuring transparency in its operations. The bot will always remain free of **spam, promotional content, or unsolicited advertisements**. Its purpose is to provide students with **easy access to KTU resources**, keeping the focus on delivering valuable content without unnecessary distractions or privacy concerns.
-
-
-Welcome to the KTU Bot! This Telegram bot helps students check their exam results, find latest KTU notifications, academic calendars, exam time tables and alert users when new notifications arrive.
-
-Find the bot [here](https://t.me/ktu_results_bot)
-
-## Table of Contents
-
-- [KTU Bot](#ktu-bot)
-  - [Features](#features)
-  - [Commands](#commands)
-  - [Inline Query](#inline-query)
-  - [Local development setup](#local-development-setup)
-    - [Running Locally (Without Docker - Not preferred)](#running-locally-without-docker---not-preferred)
-    - [Running with Docker Compose (Preferred)](#running-with-docker-compose-preferred)
-  - [Production setup](#production-setup)
-    - [Pre-requisites](#pre-requisites)
-    - [Steps](#steps)
-  - [Contributing](#contributing)
-  - [Bugs and Feedback](#bugs-and-feedback)
-  - [License](#license)
-
-## Features
-
-- **Check Results**: Easily check latest published KTU results.
-- **Check old results**: Check any results ever published in the history of KTU (yeah for real) (REMOVED).
-- **Download published KTU notifications**: Browse and download any published KTU notification.
-- **Dowbload published academic calendars**: Browse and download any published KTU academic calendars.
-- **Download published exam time tables**: Browse and download any published KTU exam time tables.
-- **Subscribe to latest KTU notifications**: Get alerted when new notifications arrive.
-- **Filtered notifications**: Only recieve notifications that you care about. No trash.
-- **Live search notifications**: Search and download published notifications using the keyword.
-
-## Commands
-
-- `/start`: Start the bot and get a welcome message.
-
-- `/help`: Show a help message with available commands.
-
-- `/result`: Fetch your exam results.
-
-- `/oldresults`: Fetch previously published exam results (Removed).
-
-- `/notifications`: Find and download latest KTU notifications.
-
-- `/calendar`: Find and download published KTU academic calendars.
-
-- `/timetable`: Find and download published KTU exam time tables.
-
-- `/subscribe`: Subscribe to recieve latest KTU notifications as they arrive.
-
-- `/unsubscribe`: Unsubscribe from recieving KTU notifications.
-
-- `/changefilter`: Change currently set notification filter.
-
-- `/cancel`: Cancel ongoing process.
-
-- `/code` : See project source code.
-
-## Inline Query
-
-Use inline query to live search the notification you want to. No more pain of scrolling through the webpage for the notification.
-
-```
-eg: @ktu_results_bot calendar : This returns all the results that matches word "calendar" like Academic calendars etc.
-```
-
-## Local development setup
-
-> [!NOTE]
+> This bot just got a **major rewrite**. This branch (`grammy-rewrite`) contains the new architecture built on [GrammY](https://grammy.dev/). The legacy implementation lives in the `prod` branch.
 >
-> The bot makes use of [BullMQ](https://github.com/taskforcesh/bullmq), a redis based NodeJS queue, for the live notifications feature. Thus, it requires you to have a redis instance running.
-> The docker compose method below already does that for you.
-
-### Running Locally (Without Docker - Not preferred)
-
-1. Install Node.js and npm on your machine.
-2. Clone the repository:
-
-   ```bash
-   git clone https://github.com/devadathanmb/ktu-bot.git
-   ```
-
-3. Navigate to the project directory:
-
-   ```bash
-   cd ktu-bot
-   ```
-
-4. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-5. Set up your Telegram bot token:
-
-   - Create a new bot on Telegram using the [BotFather](https://core.telegram.org/bots#botfather).
-   - Copy the bot token.
-   - Create a `.env` file in the project root and add:
-
-     ```env
-     BOT_TOKEN="your-telegram-bot-token"
-     ```
-
-     See [env.example]("./env.example") file for example
-
-6. Create a Firebase project and setup a Firestore database in [Firebase console](https://console.firebase.google.com/u/0/)
-
-7. Download the `serviceAccountKey.json` file, `minify` it and `base64` encode it using
-
-   ```bash
-   jq -r tostring serviceAccountKey.json  | base64
-   ```
-
-8. Copy the `base64` encoded `serviceAccountKey.json` string to `.env`
-
-   ```
-   FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
-   ```
-
-9. Set the `ENV_TYPE` variable to `DEVELOPMENT` in `.env`
-
-   ```
-   ENV_TYPE="DEVELOPMENT"
-   ```
-
-10. Build the bot:
-
-    ```bash
-    npm run build
-    ```
-
-11. Start the bot:
-
-    ```bash
-    npm run start
-    ```
-
-### Running with Docker Compose (Preferred)
-
-1. Install Docker and Docker Compose on your machine.
-
-2. Clone the repository:
-
-   ```bash
-   git clone https://github.com/devadathanmb/ktu-bot.git
-   ```
-
-3. Navigate to the project directory:
-
-   ```bash
-   cd ktu-bot
-   ```
-
-4. Create a `.env` file in the project root and add:
-
-   ```env
-   BOT_TOKEN="your-telegram-bot-token"
-   ```
-
-5. Create a Firebase project and setup a Firestore database in [Firebase console](https://console.firebase.google.com/u/0/)
-
-6. Download the `serviceAccountKey.json` file, `minify` it and `base64` encode it using
-
-   ```bash
-   jq -r tostring serviceAccountKey.json  | base64
-   ```
-
-7. Copy the `base64` encoded `serviceAccountKey.json` string to `.env`
-
-   ```
-   FIREBASE_SERVICE_ACCOUNT="base64 encoded string"
-   ```
-
-8. Set the `ENV_TYPE` variable to `DEVELOPMENT` in `.env`
-
-   ```
-   ENV_TYPE="DEVELOPMENT"
-   ```
-
-9. Make sure to add all necessary environment variables to `.env` mentioned in [env.example](./env.example)
-
-10. Run the application using Docker Compose:
-
-    ```bash
-    docker-compose -f docker-compose.dev.yml up
-    ```
-
-The bot should now be running and accessible on Telegram.
+> **Read the story:** [Why I rewrote this entire thing](./docs/rewrite.md)
 
 > [!NOTE]
-> The bot will automatically pickup changes in `./src` and restart the bot.
+> This project is currently in **autopilot/maintenance mode**. Core functionality depends on unofficial KTU endpoints that can change without notice. If you want to help maintain, extend, or fork it — you're more than welcome. ❤️
 
-## Production setup
+---
 
-This bot makes use of Telegram bot API's [webhook](https://core.telegram.org/bots/webhooks) mechanism in production.
+## What Is This? 🤔
 
-This is because of certain performance benefits that webhook offers with high concurrent load during peak times. For more info see [this](https://grammy.dev/guide/deployment-types#how-to-use-webhooks).
+KTU Bot is a Telegram bot that helps students do everything they could (and should) do on the official KTU website — check announcements, timetables, academic calendars, results, and more. The official site is notoriously clunky and frequently crashes when you actually need it, so this bot **taps into their public APIs** to deliver a reliable experience the website can't.
+
+What started as a quick 50-line script to check my own results eventually became a lifeline for tens of thousands of students. It turned into the default go-to during results season, sparked a wave of similar tools, and carved out its own identity.
+
+### What You Can Do
+
+- 🔍 **Full-text search** across announcements, academic calendars, and exam timetables — find what you need right from the chat
+- 📂 **Browse historical data** — announcements, exam timetables, academic calendars, all in one place
+- ⚡ **Smart subscriptions** — get only the announcements that matter to you using filters (course, type), delivered the moment they arrive
+- 📊 **Results lookup** _(currently broken, not the bot's fault — [read why](./docs/rewrite.md#results-not-working-))_
+
+> [!TIP]
+> Check out the [Commonly Asked Questions](./docs/rewrite.md#commonly-asked-questions-) for answers to common questions like "Why isn't results working?" and "Will the bot keep working?"
+
+## Architecture Overview 🏗️
+
+The bot follows a microservices architecture where each component handles a specific responsibility. If one service fails, others keep running.
+
+| Component                       | Type                | What It Does                                                                                  |
+| ------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| **Bot**                         | GrammY Telegram bot | Handles all user interactions — commands, searches, conversations                             |
+| **Announcements Notify Worker** | Background worker   | Monitors for new announcements using BullMQ scheduled jobs and sends filtered alerts to users |
+| **Broadcasts Worker**           | Background worker   | Handles queued broadcast message delivery                                                     |
+| **Data Sync Worker**            | Background worker   | Periodically syncs KTU data to local DB via BullMQ scheduled jobs to power full-text search   |
+| **Bull Board Service**          | Monitoring service  | Web dashboard for real-time queue monitoring and job management                               |
+| **PostgreSQL**                  | Database            | Stores all data with Drizzle ORM for type-safe queries                                        |
+| **Redis**                       | Cache & Queue       | Powers BullMQ job queues and session storage                                                  |
+
+> [!TIP]
+> **Want to understand how it all works?** Check out [How It Works](./docs/working.md) for the complete architecture breakdown with diagrams.
+
+## Quick Start 🚀
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) + [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js](https://nodejs.org/) (if running locally) — this project uses `pnpm`
+- A Telegram bot token from [@BotFather](https://t.me/botfather)
+
+> Trust me. Docker is the easiest way to run anything within seconds 🙃
+
+### 1. Clone the Repo
+
+```bash
+git clone https://github.com/devadathanmb/ktu-bot.git
+cd ktu-bot
+```
+
+### 2. Configure Environment
+
+Development environment files live in the `dev/` directory. Each service/module has its own `.env` file.
+
+**Minimum required:**
+
+- `dev/bot.env` — Set `BOT_TOKEN` and `BOT_FILE_UPLOAD_CHANNEL_ID`
+- Most files come prefilled with sensible defaults
+
+**Optional (for extra features):**
+
+- `dev/api.env` — For UptimeRobot monitoring, file uploads, etc.
+- `dev/llm.env` — For AI-powered announcement filtering
 
 > [!NOTE]
-> Using webhooks in production is optional but recommended if your bot has heavy concurrent traffic. If you don't want to setup webhooks, just follow the above development setup guide and you are good to go.
+> Most environment variables needed for the development setup come pre-configured in each `.env` file.
+>
+> However, some configurations depend on external services and are left as placeholder values. Fill those in with actual credentials if you plan to use those features.
 
-### Pre-requisites
+> [!WARNING]
+> If you don't configure certain `.env` variables, those features simply won't work or the [zod validations](https://zod.dev/) may get triggered. Review each file to see what's needed.
 
-To run the bot using webhooks in production, some pre-requisites are required. They are mentioned below:
+### 3. Run Everything
 
-- A VPS
-- A domain
-- SSL certificate for the domain (you can use [let's encrypt](https://letsencrypt.org/) for that)
-- Docker
-- A reverse proxy (like [nginx](https://www.nginx.com/))
+```bash
+docker compose -f docker-compose.dev.yaml down -v --remove-orphans && \
+docker compose -f docker-compose.dev.yaml up --build
+```
 
-> [!NOTE]
-> The below guide makes use of _nginx_ as the reverse proxy and assumes that you have reverse proxy configured for the webhook endpoint with HTTPS traffic handling
+This starts all services with hot-reload enabled. Code changes trigger automatic restarts.
 
-### Steps
+### 4. Run Only the Bot
 
-1. Set up an nginx reverse proxy for the webhook endpoint. See [this](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for more information. Checkout basic example in [webhook.conf](./webhook.conf)
+If you don't need the workers:
 
-2. Clone the repository using
+```bash
+docker compose -f docker-compose.dev.yaml up ktu-bot-app --build
+```
 
-   ```bash
-   git clone https://github.com/devadathanmb/ktu-bot.git && cd ktu-bot/
-   ```
+> [!TIP]
+> Database migrations are generated and run automatically via the `ktu-bot-db-migrations` service.
+>
+> Once everything is up, talk to your bot in Telegram!
 
-3. Set `ENV_TYPE=PRODUCTION` in `.env` file. See [env.example](./env.example)
+### 5. Run Individual Workers
 
-4. Make sure to add all necessary environment variables to `.env` mentioned in [env.example](./env.example)
+Need just the notification worker? No problem:
 
-5. Build and run the docker using `docker compose up -d`
+```bash
+# Announcements notify worker
+docker compose -f docker-compose.dev.yaml up announcements-notify-worker --build
 
-6. Start the nginx server (eg : `sudo systemctl restart nginx`)
+# Data sync worker
+docker compose -f docker-compose.dev.yaml up data-sync-worker --build
 
-That's it. Your bot should be running now in webhook mode.
+# Broadcasts worker
+docker compose -f docker-compose.dev.yaml up broadcasts-worker --build
+```
 
-## Contributing
+> [!TIP]
+> Each service exposes a health check endpoint (e.g., `http://localhost:3000/health`)
+>
+> There's also a dedicated `bull-board-service` running on port `3010` that provides a Bull Board UI for monitoring background workers and queues. Access it at `http://localhost:3010`
 
-If you encounter any issues, have feature suggestions, or want to contribute to the project, please feel free to fork and make a PR.
+## Production Deployment 🏭
 
-## Bugs and Feedback
+Production uses a single `.env` file approach for simplicity.
 
-If you find any bugs or have feedback, please [open an issue](https://github.com/devadathanmb/ktu-bot/issues) on GitHub.
+### 1. Configure Environment
 
-## License
+```bash
+cp env.prod.example .env
+# Edit .env and fill in all required values
 
-This project is licensed under the GPL 3.0 License - see the [LICENSE.md](./LICENSE.md) file for details.
+# Most values come pre-configured — just update anything specific to your deployment.
+```
+
+### 2. Start Services
+
+```bash
+docker compose down -v --remove-orphans && \
+docker compose up -d --build
+```
+
+### 3. Verify Health
+
+```bash
+curl -f http://localhost:3000/health
+```
+
+### Notes
+
+- All services communicate over an internal Docker network
+- Database migrations run automatically on startup
+- Make sure all required API keys/tokens are provided
+- If some keys are missing, update the code to handle their absence gracefully
+
+## Tech Stack 🛠️
+
+- **Language:** [TypeScript](https://www.typescriptlang.org/) — Because type-safe code is always better?
+- **Bot Framework:** [GrammY](https://grammy.dev/) — Modern, type-safe Telegram bot framework
+- **Database:** [PostgreSQL](https://www.postgresql.org/) — Powerful relational DB with god knows how many features
+- **ORM:** [Drizzle](https://orm.drizzle.team/) — Type-safe SQL queries and migrations
+- **Job Queue:** [BullMQ](https://docs.bullmq.io/) — Reliable background job processing
+- **HTTP Client:** [got](https://github.com/sindresorhus/got) — Modern fetch wrapper
+
+## Contributing 🤝
+
+Contributions are welcome! Whether it's bug fixes, new features, documentation improvements, or ideas — all are appreciated.
+
+> [!TIP]
+> **Need help getting started?** Check out [How It Works](./docs/working.md) to understand the architecture.
+
+> [!TIP]
+> **New to Telegram Bot ecosystem?** Check out this [awesome getting started guide](https://grammy.dev/guide/getting-started) from GrammY.
+
+## Bugs & Feedback 🐛
+
+Found a bug? Have an idea? Want to discuss something?
+
+**Open an issue:** https://github.com/devadathanmb/ktu-bot/issues
+
+When reporting bugs, please try to include:
+
+- What you were trying to do?
+- What happened instead?
+- Steps to reproduce (if reproducible)
+
+---
+
+## Documentation 📚
+
+- **[How It Works](./docs/working.md)** — Complete architecture breakdown with diagrams
+- **[The Rewrite Story](./docs/rewrite.md)** — Why I rewrote this and some commonly asked questions
+
+## License 🛡️
+
+**GPL-3.0** — See [LICENSE](./LICENSE) for details.
+
+This means you can use, modify, and distribute this code freely, but you must:
+
+- Keep it open source
+- Share your changes under the same license
+- Give credit where it's due

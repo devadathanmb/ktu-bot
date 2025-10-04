@@ -1,24 +1,93 @@
-import { Telegraf } from "telegraf";
-import { CustomContext } from "types/customContext.type";
-import "dotenv/config";
-import Logger from "../utils/logger";
+import {
+  Bot,
+  Context,
+  Enhance,
+  enhanceStorage,
+  MemorySessionStorage,
+  session,
+} from "grammy";
+import { BotConfig } from "../configs/bot.js";
+import { botCommands } from "./commands/index.js";
+import { BotContext, SessionData } from "../types/bot.types.js";
+import { commandNotFound, commands } from "@grammyjs/commands";
+import { emojiParser } from "@grammyjs/emoji";
+import { hydrate } from "@grammyjs/hydrate";
+import { announcementSubscriptions } from "./composers/announcementSubscriptions/composer.js";
+import { initSession } from "./middlewares/initSession.js";
+import logging from "./middlewares/logging.js";
+import { globalErrorHandler } from "./handlers/globalError.js";
+import { unknownCommandHandler } from "./handlers/unknownCommand.js";
+import { unhandled } from "./composers/unhandled/composer.js";
+import { announcementsLookup } from "./composers/lookups/announcements/composer.js";
+import { timetableLookup } from "./composers/lookups/timetable/composer.js";
+import { calendarLookup } from "./composers/lookups/calendar/composer.js";
+import { inlineQuery } from "./composers/inlineQuery/composer.js";
+import { inlineResultMessage } from "./composers/inlineResultMessage/composer.js";
+import { sequentialize } from "@grammyjs/runner";
+import { chatMemeberHandler } from "./handlers/chatMemeber.js";
+import { DEPRECATED_COMMANDS_LIST } from "../constants/bot.js";
+import { deprecatedCommandHandler } from "./handlers/deprecated.js";
+import trackChatId from "./middlewares/trackChatId.js";
 
-const logger = Logger.getLogger("TELEGRAF");
+// Sesion key generator function
+function getSessionKey(ctx: Omit<Context, "session">) {
+  return ctx.chat?.id.toString();
+}
 
-const opts = {
-  // During result publish times, KTU servers will be slow to respond, this makes the API requests to be slower
-  // Axios timeout is set to 25 seconds, but telegraf will timeout before that
-  // This creates request duplication. Hence we need to increase the telegraf timeout
-  handlerTimeout: 1000 * 30,
-};
+export function createBot(): Bot<BotContext> {
+  // Create the bot instance
+  const bot = new Bot<BotContext>(BotConfig.BOT_TOKEN);
 
-// Create a new bot instance
-const bot = new Telegraf<CustomContext>(process.env.BOT_TOKEN!, opts);
+  // Set up middlewares
+  // Use sequentialize middleware only for long polling to avoid race conditions
+  if (BotConfig.IS_LONG_POLLING_DEPLOYMENT)
+    bot.use(sequentialize(getSessionKey));
 
-// The top level error handler
-// this will catch any errors that may happen
-bot.catch((error) => {
-  logger.error(`Telegraf error: ${error}`);
-});
+  // Other middlewares
+  bot.use(
+    session({
+      initial: initSession,
+      storage: enhanceStorage({
+        storage: new MemorySessionStorage<Enhance<SessionData>>(),
+        millisecondsToLive: BotConfig.BOT_SESSION_DATA_TTL,
+      }),
+    })
+  );
+  bot.use(logging);
+  bot.use(trackChatId);
+  bot.use(hydrate());
+  bot.use(emojiParser());
+  bot.use(commands());
 
-export default bot;
+  // Handle inline queries first, before other composers with chat requirements
+  bot.use(inlineQuery);
+
+  // Handle my_chat_member updates
+  bot.on("my_chat_member", chatMemeberHandler);
+
+  // Deprecated features
+  bot.command(DEPRECATED_COMMANDS_LIST, deprecatedCommandHandler);
+
+  // Composer middlewares that require chat context
+  bot.use(announcementSubscriptions);
+  bot.use(announcementsLookup);
+  bot.use(timetableLookup);
+  bot.use(calendarLookup);
+
+  // Command group middleware
+  bot.use(botCommands);
+
+  // Handle unknown commands
+  bot.filter(commandNotFound(botCommands)).use(unknownCommandHandler);
+
+  // Handle inline result messages before unhandled
+  bot.use(inlineResultMessage);
+
+  // Unhandled stuff — Should remain at the end
+  bot.use(unhandled);
+
+  // Global bot error handler
+  bot.catch(globalErrorHandler);
+
+  return bot;
+}

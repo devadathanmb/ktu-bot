@@ -1,41 +1,92 @@
 {
   "name": "ktu-bot",
   "version": "1.0.0",
-  "description": "An all in one telegram bot to view results, notifications and updates from KTU portal.",
-  "main": "index.js",
+  "description": "KTU Bot - Rewritten with Grammy and many more!",
+  "type": "module",
+  "main": "src/index.ts",
   "scripts": {
+    "build": "tsc",
     "start": "node dist/index.js",
-    "build": "npx tsc && npx tsc-alias",
-    "dev": "npx nodemon -w *.ts -e ts -x ts-node --files -H -T ./src/index.ts"
+    "start:dev": "tsx src/index.ts",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "dev:watch": "tsx --watch src/index.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "db:generate": "NODE_OPTIONS='--import tsx' drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "workers:announcements-notify-worker-dev": "tsx --watch ./src/workers/announcements/notify/startup.ts",
+    "workers:announcements-notify-worker": "node dist/workers/announcements/notify/startup.js",
+    "workers:broadcasts-worker-dev": "tsx --watch src/workers/broadcasts/startup.ts",
+    "workers:broadcasts-worker": "node dist/workers/broadcasts/startup.js",
+    "workers:data-sync-worker-dev": "tsx --watch src/workers/data-sync/startup.ts",
+    "workers:data-sync-worker": "node dist/workers/data-sync/startup.js",
+    "services:bull-board-dev": "tsx --watch src/services/bull-board/server.ts",
+    "services:bull-board": "node dist/services/bull-board/server.js",
+    "prepare": "husky"
   },
-  "nodemonConfig": {
-    "ignore": [
-      "data.json"
+  "keywords": [
+    "telegram",
+    "bot",
+    "ktu",
+    "grammy",
+    "typescript",
+    "telegram bot",
+    "ktu bot"
+  ],
+  "author": "Devadathan M B <devadathanmb@gmail.com>",
+  "license": "GPL-3.0-only",
+  "packageManager": "pnpm@10.18.0",
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
     ]
   },
-  "author": "Devadathan M B",
-  "license": "GPL 3.0",
   "devDependencies": {
-    "@types/html-escaper": "^3.0.2",
-    "@types/node": "^20.14.8",
+    "@eslint/js": "^9.35.0",
+    "@types/node": "^24.3.3",
     "@types/node-cron": "^3.0.11",
-    "@types/winston": "^2.4.4",
-    "nodemon": "^3.1.4",
-    "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.10",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.5.2"
+    "@types/pg": "^8.15.5",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "drizzle-kit": "^0.31.4",
+    "eslint": "^9.35.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.3",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.43.0"
   },
   "dependencies": {
-    "axios": "^1.7.2",
-    "axios-cache-interceptor": "^1.5.3",
-    "bullmq": "^5.8.2",
-    "dotenv": "^16.4.5",
-    "firebase-admin": "^12.2.0",
-    "node-cron": "^3.0.3",
-    "string-strip-html": "^8.5.0",
-    "telegraf": "^4.16.3",
-    "telegraf-throttler": "^0.6.0",
-    "winston": "^3.13.1"
+    "@bull-board/api": "^6.13.0",
+    "@bull-board/hono": "^6.13.0",
+    "@grammyjs/auto-retry": "^2.0.2",
+    "@grammyjs/commands": "^1.2.0",
+    "@grammyjs/emoji": "^1.2.0",
+    "@grammyjs/hydrate": "^1.6.0",
+    "@grammyjs/parse-mode": "^2.2.0",
+    "@grammyjs/runner": "^2.0.3",
+    "@grammyjs/transformer-throttler": "^1.2.1",
+    "@hono/node-server": "^1.19.4",
+    "bullmq": "^5.58.7",
+    "drizzle-orm": "^0.44.5",
+    "form-data": "^4.0.4",
+    "got": "^14.4.8",
+    "grammy": "^1.38.2",
+    "hono": "^4.9.8",
+    "pg": "^8.16.3",
+    "pino": "^9.9.5",
+    "pino-pretty": "^13.1.1",
+    "string-strip-html": "^13.4.13",
+    "zod": "^4.1.11"
   }
 }

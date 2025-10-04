@@ -1,7 +1,28 @@
-FROM node:18-slim
-WORKDIR /bot
-COPY package.json /bot
-COPY package-lock.json /bot
-RUN npm install
-COPY . /bot
-CMD ["npm", "run", "dev"]
+# Development Dockerfile for KTU Bot
+FROM node:20-alpine
+
+# Setup pnpm environment as per pnpm Docker docs
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+# Install curl for healthchecks
+RUN apk add --no-cache curl
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Use dev:watch for hot reloading (no build step needed)
+CMD ["pnpm", "dev:watch"]

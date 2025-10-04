@@ -1,0 +1,3 @@
+CREATE TYPE "public"."announcement_filter" AS ENUM('BTECH', 'MTECH', 'MCA', 'PHD', 'BDES', 'MBA', 'BARCH', 'MARCH', 'BVOC', 'MPLAN', 'HMCT', 'MHM', 'ALL', 'RELEVANT');--> statement-breakpoint
+ALTER TABLE "announcement_subscriptions" ALTER COLUMN "filters" SET DEFAULT '{"ALL"}'::"public"."announcement_filter"[];--> statement-breakpoint
+ALTER TABLE "announcement_subscriptions" ALTER COLUMN "filters" SET DATA TYPE "public"."announcement_filter"[] USING "filters"::"public"."announcement_filter"[];

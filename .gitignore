@@ -1,7 +1,44 @@
-.env
-node_modules/
 dist/
-serviceAccountKey.json
-testing/
+dev-start.sh
+
+# Dependencies
+/node_modules
+
+# Certs
+/certs
+
+# Build output
+/dist
+/build
+/coverage
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 *.log
-data.json
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+
+# Misc
+*.swp
+*.swo

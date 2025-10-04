@@ -1,0 +1,202 @@
+services:
+  ktu-bot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ktu-bot-app
+    env_file:
+      - .env
+    networks:
+      - ktu-bot-network
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: "0.75"
+        reservations:
+          memory: 384M
+          cpus: "0.35"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ktu-bot-db-migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ktu-bot-db-migrations
+    env_file:
+      - .env
+    command:
+      [
+        "sh",
+        "-c",
+        "echo 'Running DB migrations!\n\n' && pnpm db:migrate && echo '\n\nDB Migrations applied successfully!'",
+      ]
+    restart: "no"
+
+  announcements-notify-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: announcements-notify-worker
+    env_file:
+      - .env
+    ports:
+      - "3001:3001"
+    networks:
+      - ktu-bot-network
+    depends_on:
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    command: ["pnpm", "workers:announcements-notify-worker"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: "0.35"
+        reservations:
+          memory: 192M
+          cpus: "0.15"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  broadcasts-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: broadcasts-worker
+    depends_on:
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    ports:
+      - "3002:3002"
+    networks:
+      - ktu-bot-network
+    command: ["pnpm", "workers:broadcasts-worker"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: "0.35"
+        reservations:
+          memory: 192M
+          cpus: "0.15"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  data-sync-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-sync-worker
+    env_file:
+      - .env
+    networks:
+      - ktu-bot-network
+    depends_on:
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    ports:
+      - "3003:3003"
+    command: ["pnpm", "workers:data-sync-worker"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+        reservations:
+          memory: 128M
+          cpus: "0.1"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3003/health || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  bull-board-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bull-board-service
+    env_file:
+      - .env
+    networks:
+      - ktu-bot-network
+    depends_on:
+      announcements-notify-worker:
+        condition: service_healthy
+      broadcasts-worker:
+        condition: service_healthy
+      data-sync-worker:
+        condition: service_healthy
+    ports:
+      - "3010:3010"
+    command: ["pnpm", "services:bull-board"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.15"
+        reservations:
+          memory: 64M
+          cpus: "0.05"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3010/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  ktu-bot-network:
+    driver: bridge

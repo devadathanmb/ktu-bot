@@ -1,0 +1,67 @@
+import { Queue } from "bullmq";
+import { redisConnection } from "../../shared/redis.js";
+import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
+import logger from "../../../utils/logger.js";
+
+export const ANNOUNCEMENTS_NOTIFY_QUEUE = "ANNOUNCEMENTS_NOTIFY_QUEUE";
+
+export interface NotifyJobData {
+  scheduledAt: number;
+}
+
+// Queue for announcement notification jobs with automatic retry
+export const announcementsNotifyQueue = new Queue<NotifyJobData>(
+  ANNOUNCEMENTS_NOTIFY_QUEUE,
+  {
+    connection: redisConnection,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 60 * 1000,
+      },
+      removeOnComplete: {
+        count: 100,
+        age: 24 * 60 * 60,
+      },
+      removeOnFail: {
+        count: 50,
+      },
+    },
+  }
+);
+
+// Manually schedule a single notification check (for testing/admin use)
+export async function scheduleAnnouncementNotifyJob() {
+  await announcementsNotifyQueue.add(
+    "announcements-notify:manual",
+    {
+      scheduledAt: Date.now(),
+    },
+    {
+      jobId: `announcement-notify-${Date.now()}`,
+    }
+  );
+
+  logger.debug("Scheduled announcement notification job");
+}
+
+// Set up recurring notification checks
+// This is called once on worker startup - BullMQ handles the recurring schedule
+export async function setupRecurringSchedule() {
+  await announcementsNotifyQueue.add(
+    "announcements-notify:recurring",
+    {
+      scheduledAt: Date.now(),
+    },
+    {
+      repeat: {
+        pattern: AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE,
+      },
+    }
+  );
+
+  logger.info(
+    `Set up recurring announcement notifications with schedule: ${AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE}`
+  );
+}
