@@ -20,7 +20,7 @@ Everything the official website should've been, but isn't.
 > **Read the story:** [Why I rewrote this entire thing](./docs/rewrite.md)
 
 > [!NOTE]
-> This project is currently in **autopilot/maintenance mode**. Core functionality depends on unofficial KTU endpoints that can change without notice. If you want to help maintain, extend, or fork it — you're more than welcome. ❤️
+> This project is currently in **autopilot/maintenance mode**. Core functionality depends on public KTU endpoints that can change without notice. If you want to help maintain, extend, or fork it — you're more than welcome. ❤️
 
 ---
 
@@ -145,9 +145,8 @@ Production uses a single `.env` file approach for simplicity.
 ### 1. Configure Environment
 
 ```bash
-cp env.prod.example .env
+cp .env.prod.example .env
 # Edit .env and fill in all required values
-
 # Most values come pre-configured — just update anything specific to your deployment.
 ```
 
