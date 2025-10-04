@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import { redisConnection } from "../../shared/redis.js";
+import { queueRedisConnectionOptions } from "../../shared/redis.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
 import logger from "../../../utils/logger.js";
 
@@ -13,7 +13,7 @@ export interface NotifyJobData {
 export const announcementsNotifyQueue = new Queue<NotifyJobData>(
   ANNOUNCEMENTS_NOTIFY_QUEUE,
   {
-    connection: redisConnection,
+    connection: queueRedisConnectionOptions,
     defaultJobOptions: {
       attempts: 3,
       backoff: {

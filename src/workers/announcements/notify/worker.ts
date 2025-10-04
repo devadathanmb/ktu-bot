@@ -1,5 +1,5 @@
 import { Worker, Job } from "bullmq";
-import { redisConnection } from "../../shared/redis.js";
+import { workerRedisConnectionOptions } from "../../shared/redis.js";
 import { fetchAnnouncements, LLMService } from "../../../api/services/index.js";
 import { AnnouncementsBufferRepository } from "../../../db/repositories/AnnouncementsBufferRepository.js";
 import { AnnouncementSubscriptionRepository } from "../../../db/repositories/AnnouncementSubscriptionRepository.js";
@@ -64,7 +64,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier {
       ANNOUNCEMENTS_NOTIFY_QUEUE,
       this.processJobWrapper.bind(this),
       {
-        connection: redisConnection,
+        connection: workerRedisConnectionOptions,
         concurrency: 1,
       }
     );

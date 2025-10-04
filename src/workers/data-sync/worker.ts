@@ -1,5 +1,5 @@
 import { Worker, Job } from "bullmq";
-import { redisConnection } from "../shared/redis.js";
+import { workerRedisConnectionOptions } from "../shared/redis.js";
 import { closeDB, initDB } from "../../db/connection.js";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { RedisClient } from "bullmq";
@@ -71,7 +71,7 @@ export class DataSyncWorker {
       DATA_SYNC_QUEUE,
       this.processJobWrapper.bind(this),
       {
-        connection: redisConnection,
+        connection: workerRedisConnectionOptions,
         concurrency: 3, // Can process up to 3 jobs simultaneously
         limiter: {
           max: 10,

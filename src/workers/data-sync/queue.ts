@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import { redisConnection } from "../shared/redis.js";
+import { queueRedisConnectionOptions } from "../shared/redis.js";
 import { DataSyncWorkerConfig } from "../../configs/dataSyncWorker.js";
 import logger from "../../utils/logger.js";
 
@@ -17,7 +17,7 @@ export interface SyncJobData {
 
 // Queue for data synchronization jobs with automatic retry
 export const dataSyncQueue = new Queue<SyncJobData>(DATA_SYNC_QUEUE, {
-  connection: redisConnection,
+  connection: queueRedisConnectionOptions,
   defaultJobOptions: {
     attempts: 3,
     backoff: {

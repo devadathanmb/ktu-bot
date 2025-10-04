@@ -1,5 +1,5 @@
 import { Worker, Job } from "bullmq";
-import { redisConnection } from "../shared/redis.js";
+import { queueRedisConnectionOptions, workerRedisConnectionOptions } from "../shared/redis.js";
 import { closeDB, initDB } from "../../db/connection.js";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { RedisClient } from "bullmq";
@@ -19,7 +19,7 @@ import { BroadcastsWorkerConfig } from "../../configs/broadcastsWorker.js";
 export const BROADCASTS_QUEUE = "BROADCASTS_QUEUE";
 
 export const broadcastsQueue = new Queue<BroadcastJob>(BROADCASTS_QUEUE, {
-  connection: redisConnection,
+  connection: queueRedisConnectionOptions,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -71,7 +71,7 @@ export class BroadcastsWorker {
       return;
     }
 
-    // Initialize Redis
+    // Initialize Redis - get the queue's already-connected client
     this.redisClient = await broadcastsQueue.client;
     await this.redisClient.ping();
     logger.info("Redis connection established");
@@ -89,7 +89,7 @@ export class BroadcastsWorker {
       BROADCASTS_QUEUE,
       this.processJobWrapper.bind(this),
       {
-        connection: redisConnection,
+        connection: workerRedisConnectionOptions,
         concurrency: 1,
       }
     );
