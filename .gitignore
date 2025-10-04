@@ -22,8 +22,12 @@ yarn-error.log*
 pnpm-debug.log*
 *.log
 
+# Git leaks stuff
+gitleaks-report.json
+
 # Env files
 .env
+.env.dev.*
 .env.local
 .env.*.local
 
