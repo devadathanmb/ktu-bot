@@ -88,6 +88,16 @@ Development environment files live in the `dev/` directory. Each service/module 
 - `dev/api.env` — For UptimeRobot monitoring, file uploads, etc.
 - `dev/llm.env` — For AI-powered announcement filtering
 
+> [!IMPORTANT]
+> **For sensitive local secrets:**
+>
+> ```bash
+> cp .env.dev.secrets.example .env.dev.secrets
+> # Add your personal API keys, tokens, or credentials here
+> ```
+>
+> This file is mounted **last** in Docker Compose, so values here override anything in `dev/*.env` files.
+
 > [!NOTE]
 > Most environment variables needed for the development setup come pre-configured in each `.env` file.
 >
