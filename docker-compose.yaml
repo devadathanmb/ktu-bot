@@ -6,8 +6,8 @@ services:
     container_name: ktu-bot-app
     env_file:
       - .env
-    networks:
-      - ktu-bot-network
+    # networks:
+    #   - ktu-bot-network
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -68,8 +68,8 @@ services:
       - .env
     ports:
       - "3001:3001"
-    networks:
-      - ktu-bot-network
+    # networks:
+    #   - ktu-bot-network
     depends_on:
       ktu-bot-db-migrations:
         condition: service_completed_successfully
@@ -117,8 +117,8 @@ services:
       - .env
     ports:
       - "3002:3002"
-    networks:
-      - ktu-bot-network
+    # networks:
+    #   - ktu-bot-network
     command: ["pnpm", "workers:broadcasts-worker"]
     restart: unless-stopped
     deploy:
@@ -158,8 +158,8 @@ services:
     container_name: data-sync-worker
     env_file:
       - .env
-    networks:
-      - ktu-bot-network
+    # networks:
+    #   - ktu-bot-network
     depends_on:
       ktu-bot-db-migrations:
         condition: service_completed_successfully
@@ -204,8 +204,8 @@ services:
     container_name: bull-board-service
     env_file:
       - .env
-    networks:
-      - ktu-bot-network
+    # networks:
+    #   - ktu-bot-network
     depends_on:
       announcements-notify-worker:
         condition: service_healthy
@@ -246,7 +246,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-networks:
-  ktu-bot-network:
-    driver: bridge
+# networks:
+#   ktu-bot-network:
+#     driver: bridge
