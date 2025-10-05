@@ -7,7 +7,7 @@ import { NextFunction } from "grammy";
 async function ensureChatId(ctx: BotContext, next: NextFunction) {
   const chatId = ctx.chatId;
   if (!chatId) throw new ChatIdNotFoundError();
-  return next();
+  await next();
 }
 
 export default ensureChatId;

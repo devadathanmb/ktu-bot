@@ -86,6 +86,10 @@ export function createComposerErrorBoundary(
 
     // Send the actual error message to the user
     await replyMessageSafely(ctx, userErrorMessage);
+    await deleteMessageSafely(
+      ctx,
+      ctx.update?.callback_query?.message?.message_id
+    );
 
     // Don't call next() - we want to stop error propagation here
     // The error has been handled at the composer level

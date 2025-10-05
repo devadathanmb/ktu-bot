@@ -8,9 +8,10 @@ import logger from "../../utils/logger.js";
 // If not, the errors are propagated to the global error handler
 // This is essential to see what's going wrong in the bot and handle unexpected errors gracefully
 export const globalErrorHandler = async (error: BotError) => {
+  const ctx = error.ctx;
   logger.error(error, "Global error handler caught an error");
   await replyMessageSafely(
-    error.ctx,
+    ctx,
     `${emoji("warning")} Oops! Something went wrong on my end. Please try again later.`
   );
 };
