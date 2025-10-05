@@ -30,7 +30,7 @@ export const chatMemeberHandler = async (
       logger.info(`User ${chatId} has unblocked the bot.`);
 
       // 1. Update DB to mark the user as unblocked
-      const chat = await chatRepo.getBychatId(chatId);
+      const chat = await chatRepo.getById(chatId);
       if (chat && chat.kickedAt) {
         await chatRepo.markActive(chatId);
       }

@@ -6,6 +6,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { AnnouncementFilter } from "../../constants/courses.js";
+import { chats } from "./chats.js";
 
 // Create an enum type in PostgreSQL for announcement filters
 const ANNOUNCEMENT_FILTER_VALUES = Object.values(AnnouncementFilter) as [
@@ -19,7 +20,10 @@ export const announcementFilterEnum = pgEnum(
 
 export const announcementSubscriptions = pgTable("announcement_subscriptions", {
   id: serial("id").primaryKey(),
-  chatId: bigint("chat_id", { mode: "number" }).notNull().unique(),
+  chatId: bigint("chat_id", { mode: "number" })
+    .notNull()
+    .unique()
+    .references(() => chats.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

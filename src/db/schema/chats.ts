@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, bigint } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, bigint } from "drizzle-orm/pg-core";
 
 // This table is only used for analytics and broadcast purposes if required
 // This can be useful when users needs to be alerted about important updates or so on
@@ -6,8 +6,7 @@ import { pgTable, serial, timestamp, bigint } from "drizzle-orm/pg-core";
 // This resource is named "chats" to align with telegram terminology
 // A "chat" can be a private chat with a user, a group, or a channel
 export const chats = pgTable("chats", {
-  id: serial("id").primaryKey(),
-  chatId: bigint("chat_id", { mode: "number" }).notNull().unique(),
+  id: bigint("id", { mode: "number" }).primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

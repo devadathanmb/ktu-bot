@@ -15,16 +15,16 @@ export class ChatRepository {
   }
 
   async createIfNotExists(chatId: number) {
-    let chat = await this.getBychatId(chatId);
+    let chat = await this.getById(chatId);
     if (!chat) {
       logger.info(`Chat ID ${chatId} not found in DB, creating new record`);
-      [chat] = await this.create({ chatId });
+      [chat] = await this.create({ id: chatId });
     }
     return chat;
   }
 
   async markActive(chatId: number) {
-    let chat = await this.getBychatId(chatId);
+    let chat = await this.getById(chatId);
     if (chat && chat.kickedAt) {
       [chat] = await this.update(chat.id, {
         kickedAt: null,
@@ -35,7 +35,7 @@ export class ChatRepository {
   }
 
   async markKicked(chatId: number) {
-    let chat = await this.getBychatId(chatId);
+    let chat = await this.getById(chatId);
     if (chat) {
       const nowTimestamp = new Date();
       [chat] = await this.update(chat.id, {
@@ -46,11 +46,11 @@ export class ChatRepository {
     return chat;
   }
 
-  async getBychatId(chatId: number) {
+  async getById(chatId: number) {
     const [chat] = await this.db
       .select()
       .from(chats)
-      .where(eq(chats.chatId, chatId))
+      .where(eq(chats.id, chatId))
       .limit(1);
     return chat;
   }
@@ -73,12 +73,8 @@ export class ChatRepository {
     return this.db.delete(chats).where(eq(chats.id, id)).returning();
   }
 
-  async getById(id: number) {
-    return this.db.select().from(chats).where(eq(chats.id, id)).limit(1);
-  }
-
   async exists(chatId: number) {
-    const count = await this.db.$count(chats, eq(chats.chatId, chatId));
+    const count = await this.db.$count(chats, eq(chats.id, chatId));
     return count > 0;
   }
 }
