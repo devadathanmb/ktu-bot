@@ -11,7 +11,7 @@ services:
       - ./dev/api.env
       - ./dev/llm.env
       - ./dev/logging.env
-      - .env.dev.secrets
+      - .env.dev
     volumes:
       - .:/app
       - /app/node_modules
@@ -44,7 +44,7 @@ services:
     container_name: ktu-bot-db-migrations
     env_file:
       - ./dev/db.env
-      - .env.dev.secrets
+      - .env.dev
     volumes:
       - .:/app
       - /app/node_modules
@@ -75,7 +75,7 @@ services:
       - ./dev/announcements-notify-worker.env
       - ./dev/broadcasts-worker.env
       - ./dev/logging.env
-      - .env.dev.secrets
+      - .env.dev
     ports:
       - "3001:3001"
     volumes:
@@ -114,7 +114,7 @@ services:
       - ./dev/broadcasts-worker.env
       - ./dev/llm.env
       - ./dev/logging.env
-      - .env.dev.secrets
+      - .env.dev
     ports:
       - "3002:3002"
     volumes:
@@ -153,7 +153,7 @@ services:
       - ./dev/llm.env
       - ./dev/redis.env
       - ./dev/logging.env
-      - .env.dev.secrets
+      - .env.dev
     ports:
       - "3003:3003"
     volumes:
@@ -193,7 +193,7 @@ services:
       - ./dev/announcements-notify-worker.env
       - ./dev/data-sync-worker.env
       - ./dev/logging.env
-      - .env.dev.secrets
+      - .env.dev
     ports:
       - "3010:3010"
     volumes:
@@ -219,7 +219,7 @@ services:
     container_name: ktu-bot-postgres-dev
     env_file:
       - ./dev/db.env
-      - .env.dev.secrets
+      - .env.dev
     volumes:
       - ktu_bot_postgres_data:/var/lib/postgresql/data
     ports:
@@ -240,7 +240,7 @@ services:
     container_name: ktu-bot-redis-dev
     env_file:
       - ./dev/redis.env
-      - .env.dev.secrets
+      - .env.dev
     ports:
       - "6379:6379"
     networks:

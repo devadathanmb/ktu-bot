@@ -92,7 +92,7 @@ Development environment files live in the `dev/` directory. Each service/module 
 > **For sensitive local secrets:**
 >
 > ```bash
-> cp .env.dev.secrets.example .env.dev.secrets
+> cp .env.dev.example .env.dev
 > # Add your personal API keys, tokens, or credentials here
 > ```
 >
