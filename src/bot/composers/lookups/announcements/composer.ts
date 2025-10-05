@@ -13,9 +13,9 @@ import { ChatNotFoundError } from "../../../../errors/index.js";
 import {
   combineFormattedDouble,
   combineFormattedSingle,
-} from "../../../../utils/combineFormatted.js";
+} from "../../../../utils/formatting.js";
 import { createAnnouncementsErrorBoundary } from "../../shared/errorBoundary.js";
-import { deleteMessageSafely } from "../../../../utils/safeDelete.js";
+import { deleteMessageSafely } from "../../../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import { fetchAnnouncements } from "../../../../api/services/index.js";
 

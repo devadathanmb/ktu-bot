@@ -1,7 +1,7 @@
 import { BotError, NextFunction } from "grammy";
 import { BotContext, SessionData } from "../../../types/bot.types.js";
-import { deleteMessageSafely } from "../../../utils/safeDelete.js";
-import { replyMessageSafely } from "../../../utils/safeReply.js";
+import { deleteMessageSafely } from "../../../utils/bot.js";
+import { replyMessageSafely } from "../../../utils/bot.js";
 import { KTUAPIError } from "../../../errors/BotErrors.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";

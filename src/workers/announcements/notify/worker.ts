@@ -17,7 +17,7 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import {
   combineFormattedDouble,
   combineFormattedSingle,
-} from "../../../utils/combineFormatted.js";
+} from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { BroadcastJob } from "../../shared/types.js";
 import { AnnouncementFilter } from "../../../constants/courses.js";
@@ -168,7 +168,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier {
     // Extract course filters from announcement text
     const filters = findCourseFiltersFromText(
       announcement.message || announcement.subject
-    )!;
+    );
 
     // Check relevancy for general-only announcements using LLM
     if (filters.size === 1 && filters.has(AnnouncementFilter.ALL)) {

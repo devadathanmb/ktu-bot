@@ -2,7 +2,7 @@ import { InlineKeyboard } from "grammy";
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
 import { emoji } from "@grammyjs/emoji";
 import { fmt, FormattedString } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../utils/combineFormatted.js";
+import { combineFormattedDouble } from "../../../utils/formatting.js";
 
 // Helper function to generate keyboard with multi-select functionality
 function generateFilterKeyboard(selectedFilters: string[]): InlineKeyboard {

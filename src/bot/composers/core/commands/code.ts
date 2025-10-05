@@ -1,7 +1,7 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { fmt } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../../utils/combineFormatted.js";
+import { combineFormattedDouble } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { InlineKeyboard } from "grammy";
 

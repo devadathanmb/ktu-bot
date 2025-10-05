@@ -10,7 +10,7 @@ import type { FormattedString } from "@grammyjs/parse-mode";
 import {
   combineFormattedDouble,
   combineFormattedSingle,
-} from "../../../utils/combineFormatted.js";
+} from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 import type { InlineQueryResult } from "grammy/types";
@@ -461,7 +461,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     }
 
     // Send initial message that we'll update for each attachment
-    let statusMessage = await ctx.api.sendMessage(
+    const statusMessage = await ctx.api.sendMessage(
       userId,
       `${emoji("hourglass_not_done")} Fetching ${attachments.length} attachment${attachments.length > 1 ? "s" : ""} from ${resourceName}...`
     );

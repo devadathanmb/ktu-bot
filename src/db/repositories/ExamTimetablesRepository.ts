@@ -3,7 +3,7 @@ import { db } from "../connection.js";
 import { examTimetables } from "../schema/examTimetables.js";
 import type { TransactionType } from "../transactions.js";
 import type { ExamTimeTable } from "../../types/service.types.js";
-import { formatDateToReadableString } from "../../utils/formatDate.js";
+import { formatDateToReadableString } from "../../utils/formatting.js";
 
 // Type for database instance (either db or transaction)
 type DatabaseInstance = typeof db | TransactionType;

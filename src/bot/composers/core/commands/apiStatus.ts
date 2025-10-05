@@ -1,11 +1,11 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { getApiStatus } from "../../../../api/services/index.js";
-import { editMessageSafely } from "../../../../utils/safeEdit.js";
+import { editMessageSafely } from "../../../../utils/bot.js";
 import { InlineKeyboard } from "grammy";
 import { UPTIME_ROBOT_API } from "../../../../constants/api.js";
 import { fmt, b } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../../utils/combineFormatted.js";
+import { combineFormattedDouble } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 
 export const ktuAPIStatusCommand = new Command<BotContext>(
@@ -48,7 +48,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
         reply_markup: keyboard,
         link_preview_options: { is_disabled: true },
       });
-    } catch (error) {
+    } catch {
       const errorDescription = fmt`${emoji("frowning_face")} Failed to fetch API status. Please try again later.`;
       const errorMessage = combineFormattedDouble([errorDescription]);
 

@@ -1,10 +1,10 @@
 import { InlineKeyboard } from "grammy";
-import { shortenString } from "../../../utils/shortenString.js";
 import { fmt, b, i, FormattedString } from "@grammyjs/parse-mode";
 import {
+  shortenString,
   combineFormattedDouble,
   combineFormattedSingle,
-} from "../../../utils/combineFormatted.js";
+} from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 
 export interface PaginatedItem {

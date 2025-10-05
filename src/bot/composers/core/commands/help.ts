@@ -1,7 +1,7 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { fmt, b } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../../utils/combineFormatted.js";
+import { combineFormattedDouble } from "../../../../utils/formatting.js";
 import { announcementsCommands } from "../../lookups/announcements/composer.js";
 import { calendarCommands } from "../../lookups/academic-calendar/composer.js";
 import { timetableCommands } from "../../lookups/exam-timetable/composer.js";

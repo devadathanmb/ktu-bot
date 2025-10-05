@@ -1,11 +1,13 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { fmt, b } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../../utils/combineFormatted.js";
+import {
+  combineFormattedDouble,
+  formatCommand,
+} from "../../../../utils/formatting.js";
 import { BotConfig } from "../../../../configs/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import { helpCommand } from "./help.js";
-import { formatCommand } from "../../../../utils/getFormattedCommand.js";
 
 export const startCommand = new Command<BotContext>(
   "start",

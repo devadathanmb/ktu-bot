@@ -2,8 +2,8 @@ import { Context } from "grammy";
 import { CommandsFlavor } from "@grammyjs/commands";
 import { EmojiFlavor } from "@grammyjs/emoji";
 import { helpCommand } from "../composers/core/composer.js";
-import { formatCommand } from "../../utils/getFormattedCommand.js";
-import { deleteMessageSafely } from "../../utils/safeDelete.js";
+import { formatCommand } from "../../utils/formatting.js";
+import { deleteMessageSafely } from "../../utils/bot.js";
 import { getRandomSticker } from "../../constants/stickers.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../configs/bot.js";
@@ -29,7 +29,7 @@ export const unknownCommandHandler = async (ctx: UnknownCommandContext) => {
 
   // Set timeout to delete the sticker safely after 5 seconds
   setTimeout(() => {
-    deleteMessageSafely(ctx, stickerMsg.message_id);
+    void deleteMessageSafely(ctx, stickerMsg.message_id);
   }, BotConfig.UNKNOWN_COMMAND_STICKER_DELETION_TIMEOUT);
 
   // Check if we have a command suggestion from the commandNotFound filter

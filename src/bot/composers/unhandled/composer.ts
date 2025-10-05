@@ -1,9 +1,9 @@
 import { getRandomSticker } from "../../../constants/stickers.js";
 import { BotContext } from "../../../types/bot.types.js";
-import { deleteMessageSafely } from "../../../utils/safeDelete.js";
+import { deleteMessageSafely } from "../../../utils/bot.js";
 import { Composer } from "grammy";
 import { helpCommand } from "../core/composer.js";
-import { formatCommand } from "../../../utils/getFormattedCommand.js";
+import { formatCommand } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../../configs/bot.js";
 
@@ -29,7 +29,7 @@ composer.on("message", async ctx => {
 
   // Delete the sticker safely after 5 seconds
   setTimeout(() => {
-    deleteMessageSafely(ctx, stickerMsg.message_id);
+    void deleteMessageSafely(ctx, stickerMsg.message_id);
   }, BotConfig.UNKNOWN_COMMAND_STICKER_DELETION_TIMEOUT);
 });
 

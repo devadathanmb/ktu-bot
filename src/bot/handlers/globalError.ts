@@ -1,5 +1,5 @@
 import { BotError } from "grammy";
-import { replyMessageSafely } from "../../utils/safeReply.js";
+import { replyMessageSafely } from "../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../utils/logger.js";
 

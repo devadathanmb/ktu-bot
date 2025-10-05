@@ -3,11 +3,13 @@ import { AnnouncementSubscriptionRepository } from "../../db/repositories/Announ
 import { ChatRepository } from "../../db/repositories/ChatRepository.js";
 import { Filter } from "grammy";
 import { BotContext } from "../../types/bot.types.js";
-import { combineFormattedDouble } from "../../utils/combineFormatted.js";
+import {
+  combineFormattedDouble,
+  formatCommand,
+} from "../../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../utils/logger.js";
-import { formatCommand } from "../../utils/getFormattedCommand.js";
 import { helpCommand } from "../composers/core/composer.js";
 
 export const chatMemeberHandler = async (

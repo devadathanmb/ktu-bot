@@ -4,7 +4,7 @@ import {
   announcementsUnsubscribeCommand,
 } from "../bot/composers/announcementSubscriptions/composer.js";
 import { announcementsLookupCommand } from "../bot/composers/lookups/announcements/composer.js";
-import { formatCommand } from "../utils/getFormattedCommand.js";
+import { formatCommand } from "../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { fmt, FormattedString } from "@grammyjs/parse-mode";
 import { BotContext } from "../types/bot.types.js";
@@ -18,7 +18,7 @@ const resultDeprecationReason: FormattedString[] = [
   fmt`For more details, refer to ${FormattedString.link("Why is results not working?", "https://github.com/devadathanmb/ktu-bot/blob/grammy-rewrite/docs/rewrite.md#results-not-working-")}`,
 ];
 
-const generateMigrationMessage = (newCommand: Command<BotContext>) => {
+const generateMigrationReason = (newCommand: Command<BotContext>) => {
   return [
     fmt`${emoji("delivery_truck")} This command has been migrated.`,
     fmt`${emoji("right_arrow")} Use ${formatCommand(newCommand)} instead`,
@@ -30,12 +30,12 @@ const DEPRECATED_COMMAND_TO_REASON_MAP: Record<string, FormattedString[]> = {
   result: resultDeprecationReason,
   oldresults: resultDeprecationReason,
   oldresult: resultDeprecationReason,
-  subscribe: generateMigrationMessage(announcementsSubscribeCommand),
-  unsubscribe: generateMigrationMessage(announcementsUnsubscribeCommand),
-  changefilter: generateMigrationMessage(announcementsChangeFilterCommand),
-  notifications: generateMigrationMessage(announcementsLookupCommand),
-  calendar: generateMigrationMessage(calendarLookupCommand),
-  timetables: generateMigrationMessage(timetableLookupCommand),
+  subscribe: generateMigrationReason(announcementsSubscribeCommand),
+  unsubscribe: generateMigrationReason(announcementsUnsubscribeCommand),
+  changefilter: generateMigrationReason(announcementsChangeFilterCommand),
+  notifications: generateMigrationReason(announcementsLookupCommand),
+  calendar: generateMigrationReason(calendarLookupCommand),
+  timetable: generateMigrationReason(timetableLookupCommand),
 } as const;
 
 const DEPRECATED_COMMANDS_LIST = Object.keys(DEPRECATED_COMMAND_TO_REASON_MAP);

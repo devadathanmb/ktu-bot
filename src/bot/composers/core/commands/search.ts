@@ -5,7 +5,7 @@ import {
   combineFormatted,
   combineFormattedDouble,
   combineFormattedSingle,
-} from "../../../../utils/combineFormatted.js";
+} from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { INLINE_SEARCH_HELP_KEYBOARD } from "../../inlineQuery/keyboards.js";
 

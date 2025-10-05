@@ -2,7 +2,7 @@ import { stripHtml } from "string-strip-html";
 import { z } from "zod";
 import client from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
-import { formatDateToReadableString } from "../../../utils/formatDate.js";
+import { formatDateToReadableString } from "../../../utils/formatting.js";
 import { withServiceWrapper } from "../../utils/serviceWrapper.js";
 import type { Announcement } from "../../../types/service.types.js";
 
@@ -41,8 +41,7 @@ async function _fetchAnnouncements({
   pageNumber,
   dataSize,
   searchText = "",
-  // @ts-ignore
-  cache = false,
+  cache: _cache = false,
 }: FetchAnnouncementsParams): Promise<Announcement[]> {
   const payload = {
     number: pageNumber,

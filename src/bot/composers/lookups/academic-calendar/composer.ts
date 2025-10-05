@@ -12,11 +12,13 @@ import {
 } from "../helpers.js";
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
 import { ChatNotFoundError } from "../../../../errors/index.js";
-import { combineFormattedDouble } from "../../../../utils/combineFormatted.js";
+import {
+  combineFormattedDouble,
+  formatCommand,
+} from "../../../../utils/formatting.js";
 import { createCalendarErrorBoundary } from "../../shared/errorBoundary.js";
-import { deleteMessageSafely } from "../../../../utils/safeDelete.js";
+import { deleteMessageSafely } from "../../../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
-import { formatCommand } from "../../../../utils/getFormattedCommand.js";
 
 // Common messages used throughout the composer
 const MESSAGES: Record<string, FormattedString[]> = {

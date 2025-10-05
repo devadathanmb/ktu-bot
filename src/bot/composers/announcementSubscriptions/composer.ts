@@ -8,7 +8,7 @@ import { Composer } from "grammy";
 import { generateFilterKeyboard, generateMessageText } from "./helpers.js";
 import { fmt, b, FormattedString } from "@grammyjs/parse-mode";
 import ensureChatId from "../../middlewares/ensureChatId.js";
-import { combineFormattedDouble } from "../../../utils/combineFormatted.js";
+import { combineFormattedDouble } from "../../../utils/formatting.js";
 import { createAnnouncementSubscriptionErrorBoundary } from "../shared/errorBoundary.js";
 import { emoji } from "@grammyjs/emoji";
 
@@ -49,12 +49,12 @@ const announcementsSubscribeCommand = new Command<BotContext>(
   "🔔 Subscribe to announcements",
   async ctx => {
     await withTransaction(async tx => {
-      const chatId = ctx.chatId!;
+      const chatId = ctx.chatId;
       const announcementSubscriptionRepo =
         new AnnouncementSubscriptionRepository(tx);
 
       // Check if user is already subscribed
-      let announcementSubscription =
+      const announcementSubscription =
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (announcementSubscription) {
         const formattedMsg = combineFormattedDouble(
@@ -169,7 +169,7 @@ protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
     // Create success message
     const selectedFilterNames = ctx.session.selectedFilters.map(
       (filter: string) =>
-        ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]!
+        ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]
     );
     const successMessage = combineFormattedDouble([
       fmt`${emoji("check_mark_button")} Successfully subscribed to announcements!`,
@@ -192,7 +192,7 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
   `${emoji("prohibited")} Unsubscribe from announcements`,
   async ctx => {
     await withTransaction(async tx => {
-      const chatId = ctx.chatId!;
+      const chatId = ctx.chatId;
       const announcementSubscriptionRepo =
         new AnnouncementSubscriptionRepository(tx);
 
@@ -226,7 +226,7 @@ const announcementsShowFilterCommand = new Command<BotContext>(
   "announcements_show_status",
   `${emoji("clipboard")} Show current announcement subscription status`,
   async ctx => {
-    const chatId = ctx.chatId!;
+    const chatId = ctx.chatId;
     const announcementSubscriptionRepo =
       new AnnouncementSubscriptionRepository();
     const announcementSubscription =
@@ -281,7 +281,7 @@ const announcementsChangeFilterCommand = new Command<BotContext>(
   `${emoji("toolbox")} Change announcement filters`,
   async ctx => {
     await withTransaction(async tx => {
-      const chatId = ctx.chatId!;
+      const chatId = ctx.chatId;
       const announcementSubscriptionRepo =
         new AnnouncementSubscriptionRepository(tx);
 
