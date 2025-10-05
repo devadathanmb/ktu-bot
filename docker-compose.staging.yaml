@@ -23,7 +23,17 @@ services:
           memory: 384M
           cpus: "0.35"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3000/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -74,7 +84,17 @@ services:
           memory: 192M
           cpus: "0.15"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3001/health",
+        ]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -110,7 +130,17 @@ services:
           memory: 192M
           cpus: "0.15"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3002/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3002/health",
+        ]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -146,7 +176,17 @@ services:
           memory: 128M
           cpus: "0.1"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3003/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3003/health",
+        ]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -186,7 +226,17 @@ services:
           memory: 64M
           cpus: "0.05"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3010/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3010/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

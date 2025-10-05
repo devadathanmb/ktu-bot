@@ -31,7 +31,17 @@ services:
     command: ["pnpm", "dev:watch"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3000/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -95,7 +105,17 @@ services:
     command: ["pnpm", "workers:announcements-notify-worker-dev"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3001/health",
+        ]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -134,7 +154,17 @@ services:
     command: ["pnpm", "workers:broadcasts-worker-dev"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3002/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3002/health",
+        ]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -170,7 +200,17 @@ services:
     command: ["pnpm", "workers:data-sync-worker-dev"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3003/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3003/health",
+        ]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -208,7 +248,17 @@ services:
     command: ["pnpm", "services:bull-board-dev"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3010/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3010/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -228,7 +278,14 @@ services:
       - ktu-bot-network
     healthcheck:
       test:
-        ["CMD-SHELL", "pg_isready -U $${DATABASE_USER} -d $${DATABASE_NAME}"]
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "$${DATABASE_USER}",
+          "-d",
+          "$${DATABASE_NAME}",
+        ]
       interval: 10s
       retries: 5
       start_period: 30s
