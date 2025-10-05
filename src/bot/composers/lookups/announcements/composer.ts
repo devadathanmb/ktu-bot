@@ -90,7 +90,7 @@ const announcementsLookupCommand = new Command<BotContext>(
 
     // Edit the loading message with the actual content
     await ctx.api.editMessageText(
-      ctx.chat!.id,
+      ctx.chat.id,
       loadingMessage.message_id,
       messageText.text,
       {
@@ -372,4 +372,4 @@ announcementsCommands.add(announcementsLookupCommand);
 protectedComposer.use(announcementsCommands);
 
 export const announcementsLookup = composer;
-export { announcementsCommands };
+export { announcementsCommands, announcementsLookupCommand };

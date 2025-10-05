@@ -16,6 +16,7 @@ import { combineFormattedDouble } from "../../../../utils/combineFormatted.js";
 import { createCalendarErrorBoundary } from "../../shared/errorBoundary.js";
 import { deleteMessageSafely } from "../../../../utils/safeDelete.js";
 import { emoji } from "@grammyjs/emoji";
+import { formatCommand } from "../../../../utils/getFormattedCommand.js";
 
 // Common messages used throughout the composer
 const MESSAGES: Record<string, FormattedString[]> = {
@@ -64,9 +65,9 @@ const composer = new Composer<BotContext>();
 composer.use(ensureChatId);
 const protectedComposer = composer.errorBoundary(createCalendarErrorBoundary());
 
-// Command: /calendar - Start academic calendar lookup
+// Command: /calendars - Start academic calendar lookup
 const calendarLookupCommand = new Command<BotContext>(
-  "calendar",
+  "calendars",
   `${emoji("calendar")} Find published academic calendars from KTU`,
   async (ctx: BotContext) => {
     // Initialize session data
@@ -76,7 +77,7 @@ const calendarLookupCommand = new Command<BotContext>(
 
     // Send a loading message
     const formattedMsg = combineFormattedDouble(
-      MESSAGES["FETCHING_CALENDARS"]!!
+      MESSAGES["FETCHING_CALENDARS"]!
     );
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
@@ -120,7 +121,7 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
   // Grab the calendar ID from the callback data
   const callbackParts = callbackData.split("_");
   if (callbackParts.length < 3 || !callbackParts[2]) {
-    const formattedMsg = combineFormattedDouble(MESSAGES["INVALID_CALLBACK"]!!);
+    const formattedMsg = combineFormattedDouble(MESSAGES["INVALID_CALLBACK"]!);
     await ctx.editMessageText(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -136,7 +137,7 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
   )!;
 
   // Prepare the calendar details message
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_DETAILS"]!!);
+  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_DETAILS"]!);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -243,7 +244,7 @@ protectedComposer.callbackQuery("calendar_view_another_false", async ctx => {
   // Anwer callback and edit message
   await ctx.answerCallbackQuery();
   await ctx.editMessageText(
-    "Academic calendar lookup ended. Use /calendar to start again."
+    `Academic calendar lookup ended. Use ${formatCommand(calendarLookupCommand)} to start again.`
   );
 
   // Clear session data
@@ -353,4 +354,4 @@ calendarCommands.add(calendarLookupCommand);
 protectedComposer.use(calendarCommands);
 
 export const calendarLookup = composer;
-export { calendarCommands };
+export { calendarCommands, calendarLookupCommand };

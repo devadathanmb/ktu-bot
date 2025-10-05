@@ -67,8 +67,8 @@ const protectedComposer = composer.errorBoundary(
 );
 
 const timetableLookupCommand = new Command<BotContext>(
-  "timetable",
-  "📚 Find published exam timetables from KTU",
+  "timetables",
+  `${emoji("books")} Find published exam timetables from KTU`,
   async (ctx: BotContext) => {
     // Initialize session data
     if (ctx.session.timetablePage === null) {
@@ -387,4 +387,4 @@ timetableCommands.add(timetableLookupCommand);
 protectedComposer.use(timetableCommands);
 
 export const timetableLookup = composer;
-export { timetableCommands };
+export { timetableCommands, timetableLookupCommand };
