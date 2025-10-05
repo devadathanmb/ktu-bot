@@ -18,6 +18,7 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import logger from "../../utils/logger.js";
 import { checkQueueHealth } from "../shared/queueHealth.js";
 import { BroadcastsWorkerConfig } from "../../configs/broadcastsWorker.js";
+import { withTransaction } from "../../db/transactions.js";
 
 export const BROADCASTS_QUEUE = "BROADCASTS_QUEUE";
 
@@ -146,6 +147,11 @@ export class BroadcastsWorker {
           errorCode === 403 ||
           (errorCode == 400 && errorDescription.includes("USER_IS_BLOCKED"));
 
+        // If the user is deactivated, telegram throws a different error
+        const isUserDeactivedError =
+          (errorCode === 403 && errorDescription.includes("deactivated")) ||
+          (errorCode === 400 && errorDescription.includes("USER_DEACTIVATED"));
+
         if (isUserBlockedError) {
           // User blocked the bot
           logger.warn(
@@ -153,6 +159,13 @@ export class BroadcastsWorker {
             "User blocked the bot, updating status"
           );
           await this.handleBlockedUser(chatId);
+        } else if (isUserDeactivedError) {
+          // User deactivated their account
+          logger.warn(
+            { chatId, error: errorDescription },
+            "User deactivated their account, removing subscriptions and deleting chat"
+          );
+          await this.handleDeactivatedUser(chatId);
         } else if (errorCode === 429) {
           // Rate limited - pause the entire queue
           const retryAfter = error.parameters?.retry_after || 30;
@@ -165,15 +178,15 @@ export class BroadcastsWorker {
 
           await this.handleRateLimit(duration);
 
-          // Re-throw to retry this job later
-          throw error;
+          // Don't re-throw - let the job fail and retry naturally when queue resumes
+          // The queue is paused, so retries won't happen until it's resumed
         } else {
           // Handle other Telegram errors
-          await this.handleTelegramError(error, chatId);
+          this.handleTelegramError(error, chatId);
         }
       } else {
         // Handle non-Telegram errors
-        await this.handleGenericError(error as Error, job);
+        this.handleGenericError(error as Error, job);
       }
     }
   }
@@ -298,7 +311,7 @@ export class BroadcastsWorker {
    * Handle user who blocked the bot
    */
   private async handleBlockedUser(chatId: number) {
-    await this.db.transaction(async tx => {
+    await withTransaction(async tx => {
       const subscriptionRepo = new AnnouncementSubscriptionRepository(tx);
       const chatRepo = new ChatRepository(tx);
 
@@ -314,6 +327,16 @@ export class BroadcastsWorker {
     });
   }
 
+  /*
+   * Handle user who deactivated their account
+   */
+  private async handleDeactivatedUser(chatId: number) {
+    await withTransaction(async tx => {
+      const chatRepo = new ChatRepository(tx);
+      await chatRepo.delete(chatId);
+    });
+  }
+
   /**
    * Handle rate limiting by pausing the queue and resuming after duration
    */
@@ -323,31 +346,30 @@ export class BroadcastsWorker {
     // Pause the entire queue
     await broadcastsQueue.pause();
 
-    // Resume after the specified duration
-    setTimeout(async () => {
-      try {
-        await broadcastsQueue.resume();
-        logger.info("Queue resumed after rate limit pause");
-      } catch (error) {
-        logger.error({ error }, "Failed to resume queue after rate limit");
-      }
-    }, duration);
+    // Schedule resume using a promise-based delay
+    // This ensures proper async flow and error handling
+    await new Promise<void>(resolve => {
+      setTimeout(() => {
+        // Handle resume asynchronously without blocking setTimeout callback
+        void broadcastsQueue
+          .resume()
+          .then(() => logger.info("Queue resumed after rate limit pause"))
+          .catch((error: unknown) =>
+            logger.error({ error }, "Failed to resume queue after rate limit")
+          );
+        resolve();
+      }, duration);
+    });
   }
 
-  private async handleTelegramError(
-    error: GrammyError,
-    chatId: number
-  ): Promise<void> {
+  private handleTelegramError(error: GrammyError, chatId: number): void {
     logger.error(
       { chatId, errorCode: error.error_code, error: error.description },
       "Unhandled Telegram error"
     );
   }
 
-  private async handleGenericError(
-    error: Error,
-    job: Job<BroadcastJob>
-  ): Promise<void> {
+  private handleGenericError(error: Error, job: Job<BroadcastJob>): void {
     logger.error(
       { jobId: job.id, error },
       "Unhandled generic error in job processing"

@@ -2,7 +2,11 @@ import { BotContext } from "../../types/bot.types.js";
 import { NextFunction } from "grammy";
 import logger from "../../utils/logger.js";
 
-function getMediaType(message: any): string | undefined {
+function getMediaType(
+  message: Record<string, unknown> | undefined
+): string | undefined {
+  if (!message) return undefined;
+
   const mediaTypes = [
     "photo",
     "video",
@@ -24,7 +28,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   const updateType =
     Object.keys(ctx.update).find(key => key !== "update_id") || "unknown";
 
-  const logData: Record<string, any> = {
+  const logData: Record<string, unknown> = {
     update_id: ctx.update.update_id,
     type: updateType,
     user_id: ctx.from?.id,
@@ -51,7 +55,9 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
       message_date: ctx.message.date,
       has_entities: ctx.message.entities && ctx.message.entities.length > 0,
       entity_types: ctx.message.entities?.map(e => e.type),
-      media_type: getMediaType(ctx.message),
+      media_type: getMediaType(
+        ctx.message as unknown as Record<string, unknown>
+      ),
       is_forwarded: !!ctx.message.forward_origin,
       is_reply: !!ctx.message.reply_to_message,
       reply_to_message_id: ctx.message.reply_to_message?.message_id,

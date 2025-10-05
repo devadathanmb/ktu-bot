@@ -49,11 +49,12 @@ async function _getAnnouncementRelevancy(inputText: string): Promise<boolean> {
 export async function getAnnouncementRelevancy(text: string): Promise<boolean> {
   try {
     return await _getAnnouncementRelevancy(text);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
     logger.debug(error);
-    const errorMessage = error?.message || "Unknown error occurred";
-    const statusCode = error?.response?.statusCode;
-    const responseBody = error?.response?.body;
+    const errorMessage = (error as any)?.message || "Unknown error occurred";
+    const statusCode = (error as any)?.response?.statusCode;
+    const responseBody = (error as any)?.response?.body;
 
     logger.error(
       {

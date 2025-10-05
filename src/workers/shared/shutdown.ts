@@ -10,11 +10,11 @@ export function setupGracefulShutdown(handler: ShutdownHandler) {
     try {
       await handler.stop();
       process.exit(0);
-    } catch (error) {
+    } catch {
       process.exit(1);
     }
   };
 
-  process.on("SIGTERM", () => onShutdown("SIGTERM"));
-  process.on("SIGINT", () => onShutdown("SIGINT"));
+  process.on("SIGTERM", () => void onShutdown("SIGTERM"));
+  process.on("SIGINT", () => void onShutdown("SIGINT"));
 }

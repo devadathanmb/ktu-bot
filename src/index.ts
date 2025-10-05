@@ -38,8 +38,8 @@ async function startBotInLongPolling() {
     logger.info("🚀 KTU Bot started successfully");
 
     // Graceful shutdown handling
-    process.on("SIGINT", () => onShutdown(runner, "SIGINT"));
-    process.on("SIGTERM", () => onShutdown(runner, "SIGTERM"));
+    process.on("SIGINT", () => void onShutdown(runner, "SIGINT"));
+    process.on("SIGTERM", () => void onShutdown(runner, "SIGTERM"));
   } catch (error) {
     logger.error(error, "Failed to start bot");
     await onShutdown();

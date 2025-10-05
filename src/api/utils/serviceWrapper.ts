@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { KTUAPIError } from "../../errors/BotErrors.js";
 import logger from "../../utils/logger.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function withServiceWrapper<TArgs extends any[], TReturn>(
   serviceName: string,
   serviceFunction: (...args: TArgs) => Promise<TReturn>
@@ -11,16 +12,23 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
     try {
       return await serviceFunction(...args);
     } catch (error: unknown) {
+      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
       logger.error(error);
+
+      const errorStatusCode = (error as any)?.response?.statusCode;
+      const errorUrl =
+        (error as any)?.response?.requestUrl?.toString() ||
+        (error as any)?.options?.url?.toString();
+      const errorBody = (error as any)?.response?.body;
+      const errorCode = (error as any)?.code;
+
       logger.error(
         {
           service: serviceName,
-          statusCode: (error as any)?.response?.statusCode,
-          url:
-            (error as any)?.response?.requestUrl?.toString() ||
-            (error as any)?.options?.url?.toString(),
-          responseBody: (error as any)?.response?.body,
-          code: (error as any)?.code,
+          statusCode: errorStatusCode,
+          url: errorUrl,
+          responseBody: errorBody,
+          code: errorCode,
         },
         `Error in ${serviceName}`
       );

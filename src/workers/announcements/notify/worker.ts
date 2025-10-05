@@ -31,7 +31,10 @@ import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
 import { checkQueueHealth } from "../../shared/queueHealth.js";
 
-export class AnnouncementsNotifyWorker extends BaseNotifier {
+export class AnnouncementsNotifyWorker extends BaseNotifier<
+  NotifyJobData,
+  Announcement
+> {
   private worker: Worker | null = null;
   private db!: NodePgDatabase<typeof schema>;
   private redisClient!: RedisClient;
@@ -57,7 +60,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier {
     logger.info("Database connection established");
 
     // Initialize bot
-    await this.initBot();
+    this.initBot();
 
     // Start BullMQ worker to process notification jobs
     this.worker = new Worker<NotifyJobData>(

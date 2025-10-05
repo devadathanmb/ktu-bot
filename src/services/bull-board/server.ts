@@ -7,7 +7,7 @@ import { queueAdapters } from "../../workers/shared/queueRegistry.js";
 import { BullBoardServiceConfig } from "../../configs/bullBoardService.js";
 import logger from "../../utils/logger.js";
 
-async function startBullBoard() {
+function startBullBoard() {
   try {
     const app = new Hono();
 
@@ -60,4 +60,4 @@ async function startBullBoard() {
   }
 }
 
-startBullBoard();
+void startBullBoard();

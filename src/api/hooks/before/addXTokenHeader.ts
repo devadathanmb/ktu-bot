@@ -25,8 +25,8 @@ export const addXTokenHeader: BeforeRequestHook = async options => {
           "X-Token": "",
         };
       }
-    } catch (error: any) {
-      logger.error("Error fetching X-Token: ", error);
+    } catch (error: unknown) {
+      logger.error(error, "Error fetching X-Token");
     }
   }
 };

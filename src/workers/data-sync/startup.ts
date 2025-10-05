@@ -27,4 +27,4 @@ async function startWorker() {
   }
 }
 
-startWorker();
+void startWorker();

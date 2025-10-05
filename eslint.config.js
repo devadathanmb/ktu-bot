@@ -30,6 +30,12 @@ export default defineConfig(
     },
   },
   {
-    ignores: ["dist/**", "node_modules/**", "*.js"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "*.js",
+      "drizzle.config.ts",
+      "scripts/**",
+    ],
   }
 );

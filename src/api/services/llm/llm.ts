@@ -78,13 +78,14 @@ export class LLMService {
 
       // Validate response
       return GroqCompletionResponseSchema.parse(response.body);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
       // Log the response body for better debugging
-      if (error.response?.body) {
+      if ((error as any).response?.body) {
         logger.error(
           {
-            statusCode: error.response.statusCode,
-            errorBody: error.response.body,
+            statusCode: (error as any).response.statusCode,
+            errorBody: (error as any).response.body,
             requestBody: validatedRequestPayload,
           },
           "Groq API request failed"
@@ -121,6 +122,7 @@ export class LLMService {
       const response = await this.makeGroqRequest(request);
 
       // Parse and validate JSON response
+
       const parsedJson = JSON.parse(response.choices[0]!.message.content);
       const validatedResult =
         AnnouncementRelevanceResultSchema.parse(parsedJson);

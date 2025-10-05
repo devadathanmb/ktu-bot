@@ -18,10 +18,14 @@ import logger from "../../../utils/logger.js";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { Job } from "bullmq";
 
-export abstract class BaseNotifier {
+// Generic type for notifier with separate job data and message data types
+export abstract class BaseNotifier<
+  TJobData = Record<string, unknown>,
+  TMessageData = Record<string, unknown>,
+> {
   protected bot!: Bot<BotContext>;
 
-  protected async initBot() {
+  protected initBot() {
     const bot = createBot();
 
     // Add throttling and auto-retry middleware
@@ -43,18 +47,20 @@ export abstract class BaseNotifier {
    * Prepare formatted message from data
    * Child classes must implement this method
    */
-  protected abstract prepareFormattedMessage(data: any): FormattedString;
+  protected abstract prepareFormattedMessage(
+    data: TMessageData
+  ): FormattedString;
 
   /**
    * Process notification job
    * Child classes must implement this method
    */
-  protected abstract processJob(job: Job<any>): Promise<void>;
+  protected abstract processJob(job: Job<TJobData>): Promise<void>;
 
   /**
    * Wrapper for processing jobs with error handling
    */
-  protected async processJobWrapper(job: Job<any>) {
+  protected async processJobWrapper(job: Job<TJobData>) {
     try {
       await this.processJob(job);
     } catch (error) {
