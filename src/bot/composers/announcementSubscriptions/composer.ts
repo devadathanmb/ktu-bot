@@ -1,13 +1,12 @@
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
 import { withTransaction } from "../../../db/index.js";
 import { AnnouncementSubscriptionRepository } from "../../../db/repositories/AnnouncementSubscriptionRepository.js";
-import { ChatNotFoundError } from "../../../errors/index.js";
+import { SessionNotFoundError } from "../../../errors/index.js";
 import { BotContext } from "../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer } from "grammy";
 import { generateFilterKeyboard, generateMessageText } from "./helpers.js";
 import { fmt, b, FormattedString } from "@grammyjs/parse-mode";
-import ensureChatId from "../../middlewares/ensureChatId.js";
 import { combineFormattedDouble } from "../../../utils/formatting.js";
 import { createAnnouncementSubscriptionErrorBoundary } from "../shared/errorBoundary.js";
 import { emoji } from "@grammyjs/emoji";
@@ -33,9 +32,6 @@ const MESSAGES: Record<string, Array<FormattedString>> = {
 
 // Create the subscriptions composer
 export const announcementSubscriptions = new Composer<BotContext>();
-
-// Add chatId validation middleware to all handlers in this composer
-announcementSubscriptions.use(ensureChatId);
 
 // Create protected composer with error boundary
 const protectedComposer = new Composer<BotContext>();
@@ -87,7 +83,7 @@ protectedComposer.callbackQuery(/^announcement_filter_select_/, async ctx => {
 
   // If previous message ID is not set, throw error
   const prevMessageId = ctx.session.announcementSubscriptionMessageId;
-  if (!prevMessageId) throw new ChatNotFoundError();
+  if (!prevMessageId) throw new SessionNotFoundError();
 
   const chatId = ctx.chatId!;
   const filter = ctx.callbackQuery.data.replace(
@@ -132,7 +128,7 @@ protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
 
     const chatId = ctx.chatId!;
     const prevMessageId = ctx.session.announcementSubscriptionMessageId;
-    if (!prevMessageId) throw new ChatNotFoundError();
+    if (!prevMessageId) throw new SessionNotFoundError();
 
     // Check if filters are selected
     if (ctx.session.selectedFilters.length === 0) {

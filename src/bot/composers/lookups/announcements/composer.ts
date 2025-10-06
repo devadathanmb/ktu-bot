@@ -8,10 +8,11 @@ import {
   generatePaginatedMessageText,
 } from "../helpers.js";
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
-import { ChatNotFoundError } from "../../../../errors/index.js";
+import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
   combineFormattedDouble,
   combineFormattedSingle,
+  formatCommand,
 } from "../../../../utils/formatting.js";
 import { createAnnouncementsErrorBoundary } from "../../shared/errorBoundary.js";
 import { deleteMessageSafely } from "../../../../utils/bot.js";
@@ -117,7 +118,7 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
   const announcementId = parseInt(callbackParts[2]);
 
   if (!announcementId || ctx.session.announcementsAnnouncements.length === 0)
-    throw new ChatNotFoundError();
+    throw new SessionNotFoundError();
 
   const selectedAnnouncement = ctx.session.announcementsAnnouncements.find(
     announcement => announcement.id === announcementId
@@ -260,7 +261,7 @@ protectedComposer.callbackQuery(
     await ctx.answerCallbackQuery();
 
     await ctx.editMessageText(
-      "Announcements lookup ended. Use /announcements to start again."
+      `Announcements lookup ended. Use {${formatCommand(announcementsLookupCommand)}} to start again.`
     );
 
     // Clear session data

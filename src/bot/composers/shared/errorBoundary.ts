@@ -2,7 +2,10 @@ import { BotError, NextFunction } from "grammy";
 import { BotContext, SessionData } from "../../../types/bot.types.js";
 import { deleteMessageSafely } from "../../../utils/bot.js";
 import { replyMessageSafely } from "../../../utils/bot.js";
-import { KTUAPIError } from "../../../errors/BotErrors.js";
+import {
+  KTUAPIError,
+  SessionNotFoundError,
+} from "../../../errors/BotErrors.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 
@@ -52,7 +55,10 @@ export function createComposerErrorBoundary(
     // Extract the actual error message from KTUAPIError or use fallback
     let userErrorMessage: string;
 
-    if (error.error instanceof KTUAPIError) {
+    if (
+      error.error instanceof KTUAPIError ||
+      error.error instanceof SessionNotFoundError
+    ) {
       // Use the specific user message from the API error
       userErrorMessage = error.error.userMessage;
     } else {
@@ -69,6 +75,7 @@ export function createComposerErrorBoundary(
           userId: ctx.from?.id,
           username: ctx.from?.username,
           update: ctx.update,
+          session: ctx.session,
         },
         `Composer error boundary triggered`
       );

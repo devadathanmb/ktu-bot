@@ -19,7 +19,7 @@ const botConfigSchema = z
     BOT_SESSION_DATA_TTL: z
       .number()
       .positive()
-      .default(1 * 60 * 1000), // 1 minute
+      .default(30 * 60 * 1000), // 30 minutes
   })
   .transform(config => ({
     ...config,

@@ -9,10 +9,11 @@ import {
   PaginatedItem,
 } from "../helpers.js";
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
-import { ChatNotFoundError } from "../../../../errors/index.js";
+import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
   combineFormattedDouble,
   combineFormattedSingle,
+  formatCommand,
 } from "../../../../utils/formatting.js";
 import { createTimetableErrorBoundary } from "../../shared/errorBoundary.js";
 import { deleteMessageSafely } from "../../../../utils/bot.js";
@@ -140,7 +141,7 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
   const timetableId = parseInt(callbackParts[2]);
 
   if (!timetableId || ctx.session.timetableTimetables.length === 0)
-    throw new ChatNotFoundError();
+    throw new SessionNotFoundError();
 
   const selectedTimetable = ctx.session.timetableTimetables.find(
     timetable => timetable.id === timetableId
@@ -276,7 +277,7 @@ protectedComposer.callbackQuery("timetable_view_another_false", async ctx => {
   await ctx.answerCallbackQuery();
 
   await ctx.editMessageText(
-    "Timetable lookup ended. Use /timetable to start again."
+    `Timetable lookup ended. Use ${formatCommand(timetableLookupCommand)} to start again.`
   );
 
   // Clear session data

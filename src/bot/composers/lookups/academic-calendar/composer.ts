@@ -10,7 +10,7 @@ import {
   PaginatedItem,
 } from "../helpers.js";
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
-import { ChatNotFoundError } from "../../../../errors/index.js";
+import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
   combineFormattedDouble,
   formatCommand,
@@ -129,7 +129,7 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
   }
   const calendarId = parseInt(callbackParts[2]);
   if (!calendarId || ctx.session.calendarCalendars.length === 0)
-    throw new ChatNotFoundError();
+    throw new SessionNotFoundError();
 
   // Find the selected calendar from session data
   const selectedCalendar = ctx.session.calendarCalendars.find(

@@ -2,6 +2,10 @@
  * Custom error classes for the bot application
  */
 
+import { emoji } from "@grammyjs/emoji";
+import { combineFormattedDouble } from "../utils/formatting.js";
+import { fmt } from "@grammyjs/parse-mode";
+
 export class BotError extends Error {
   public readonly userMessage: string;
 
@@ -16,21 +20,15 @@ export class BotError extends Error {
   }
 }
 
-export class ChatIdNotFoundError extends BotError {
+export class SessionNotFoundError extends BotError {
   constructor(
-    message = "Chat ID not found",
-    userMessage = "Chat information not available."
+    message = "Session data not found for the chat",
+    userMessage = combineFormattedDouble([
+      fmt`Oops.. Session expired ${emoji("alarm_clock")}`,
+      fmt`Please try the corresponding command again.`,
+    ])
   ) {
-    super(message, userMessage);
-  }
-}
-
-export class ChatNotFoundError extends BotError {
-  constructor(
-    message = "Chat not found",
-    userMessage = "Chat not found. Please try again."
-  ) {
-    super(message, userMessage);
+    super(message, userMessage.text);
   }
 }
 
