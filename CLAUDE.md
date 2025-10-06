@@ -123,29 +123,69 @@ Bot features are organized as **composers** (not traditional handlers):
 
 ### Worker Architecture (BullMQ)
 
-Workers use BullMQ for job processing and scheduling:
+Workers extend **BaseWorker** abstract class for consistent lifecycle management:
 
-**Queue Pattern:**
+**Base Worker Pattern** ([src/workers/base/BaseWorker.ts](src/workers/base/BaseWorker.ts)):
 
-- Each worker has a dedicated queue with retry configuration
-- Queues: `DATA_SYNC_QUEUE`, `ANNOUNCEMENTS_NOTIFY_QUEUE`, `BROADCASTS_QUEUE`
-- Queue registry in [src/workers/shared/queueRegistry.ts](src/workers/shared/queueRegistry.ts)
+```typescript
+export class MyWorker extends BaseWorker<JobData> {
+  constructor() {
+    super("worker-name", QUEUE_NAME, queueInstance, {
+      concurrency: 1,
+      limiter: { max: 10, duration: 1000 },
+    });
+  }
 
-**Scheduling:**
+  protected override initializeWorkerSpecific(): Promise<void> {
+    // Setup bot, services, etc.
+    this.bot = createBot();
+    return Promise.resolve();
+  }
 
-- BullMQ repeatable jobs replace node-cron for periodic tasks
-- Configure via `repeatJobOptions` in queue configuration
+  protected override async processJob(job: Job<JobData>): Promise<void> {
+    // Core business logic
+  }
 
-**Retry Strategy:**
+  async getStatus() {
+    /* Health check */
+  }
+}
+```
 
-- Exponential backoff with configurable attempts (default: 3)
-- Configured per-queue in worker configs
+**Worker Responsibilities:**
+
+- Constructor accepts: `workerName`, `queueName`, `queue`, optional `config`
+- Implement `processJob()` - core business logic
+- Implement `getStatus()` - health check endpoint
+- Optionally override `initializeWorkerSpecific()` - setup bot, services
+- Optionally override `onStartupComplete()` - schedule initial/recurring jobs
+
+**BaseWorker Handles:**
+
+- Redis and database initialization
+- BullMQ worker creation with concurrency/rate limiting
+- Job processing with error handling wrapper
+- Event handlers (completed, failed)
+- Graceful shutdown
+
+**Queue Configuration:**
+
+- `DATA_SYNC_QUEUE` - Syncs KTU data (concurrency: 3, rate limited)
+- `ANNOUNCEMENTS_NOTIFY_QUEUE` - New announcement notifications (concurrency: 1)
+- `BROADCASTS_QUEUE` - Message delivery (concurrency: 1)
 
 **Worker Implementations:**
 
 - [src/workers/announcements/notify/](src/workers/announcements/notify/) - Monitors for new announcements, filters by course, creates broadcast jobs
-- [src/workers/broadcasts/](src/workers/broadcasts/) - Generic message delivery worker with rate limiting (concurrency: 1)
+- [src/workers/broadcasts/](src/workers/broadcasts/) - Generic message delivery with rate limiting and error handling
 - [src/workers/data-sync/](src/workers/data-sync/) - Syncs KTU data to local DB for full-text search
+
+**Shared Utilities:**
+
+- [src/workers/shared/utils/attachmentProcessor.ts](src/workers/shared/utils/attachmentProcessor.ts) - File upload/processing
+- [src/workers/shared/redis.ts](src/workers/shared/redis.ts) - Redis connection configs
+- [src/workers/shared/queueHealth.ts](src/workers/shared/queueHealth.ts) - Queue health checks
+- [src/workers/shared/shutdown.ts](src/workers/shared/shutdown.ts) - Graceful shutdown handler
 
 **Health Checks:**
 

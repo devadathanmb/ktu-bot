@@ -1,9 +1,4 @@
-import { Worker, Job } from "bullmq";
-import { workerRedisConnectionOptions } from "../shared/redis.js";
-import { closeDB, initDB } from "../../db/connection.js";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { RedisClient } from "bullmq";
-import * as schema from "../../db/schema/index.js";
+import { Job } from "bullmq";
 import {
   ResourceSyncer,
   AnnouncementsSyncer,
@@ -20,30 +15,19 @@ import {
 import logger from "../../utils/logger.js";
 import { checkQueueHealth } from "../shared/queueHealth.js";
 import { DataSyncWorkerConfig } from "../../configs/dataSyncWorker.js";
+import { BaseWorker } from "../base/BaseWorker.js";
 
-export class DataSyncWorker {
-  private worker: Worker | null = null;
-  private db!: NodePgDatabase<typeof schema>;
-  private redisClient!: RedisClient;
+export class DataSyncWorker extends BaseWorker<SyncJobData> {
   private syncers!: Map<string, ResourceSyncer>;
 
-  constructor() {}
+  constructor() {
+    super("data-sync-worker", DATA_SYNC_QUEUE, dataSyncQueue, {
+      concurrency: 3,
+      limiter: { max: 10, duration: 1000 },
+    });
+  }
 
-  async start() {
-    if (this.worker) {
-      logger.warn("Worker already running");
-      return;
-    }
-
-    // Initialize Redis
-    this.redisClient = await dataSyncQueue.client;
-    await this.redisClient.ping();
-    logger.info("Redis connection established");
-
-    // Initialize database
-    this.db = await initDB();
-    logger.info("Database connection established");
-
+  protected override initializeWorkerSpecific(): Promise<void> {
     // Initialize syncers for each data type
     this.syncers = new Map<string, ResourceSyncer>([
       ["data-sync:announcements", new AnnouncementsSyncer(this.db)],
@@ -59,6 +43,10 @@ export class DataSyncWorker {
         .join(", ")}`
     );
 
+    return Promise.resolve();
+  }
+
+  protected override async onStartupComplete(): Promise<void> {
     // Perform initial sync if database is empty
     const needsInitialSync = await this.checkNeedsInitialSync();
     if (needsInitialSync) {
@@ -66,53 +54,11 @@ export class DataSyncWorker {
       await this.scheduleInitialSyncJobs();
     }
 
-    // Start BullMQ worker to process sync jobs
-    this.worker = new Worker<SyncJobData>(
-      DATA_SYNC_QUEUE,
-      this.processJobWrapper.bind(this),
-      {
-        connection: workerRedisConnectionOptions,
-        concurrency: 3, // Can process up to 3 jobs simultaneously
-        limiter: {
-          max: 10,
-          duration: 1000,
-        },
-      }
-    );
-
-    this.worker.on("completed", this.onJobCompleted.bind(this));
-    this.worker.on("failed", this.onJobFailed.bind(this));
-
     // Set up recurring jobs (called once - BullMQ handles the schedule)
     await setupRecurringSchedule();
-
-    logger.info("Data sync worker started");
   }
 
-  async stop() {
-    if (this.worker) {
-      await this.worker.close();
-      this.worker = null;
-    }
-
-    await dataSyncQueue.close();
-    await closeDB();
-    logger.info("Data sync worker stopped");
-  }
-
-  private async processJobWrapper(job: Job<SyncJobData>) {
-    try {
-      await this.processJob(job);
-    } catch (error) {
-      logger.error(
-        { jobId: job.id, syncType: job.data.syncType, error },
-        "Sync job failed in wrapper"
-      );
-      throw error;
-    }
-  }
-
-  private async processJob(job: Job<SyncJobData>) {
+  protected async processJob(job: Job<SyncJobData>): Promise<void> {
     const { syncType } = job.data;
     const syncer = this.syncers.get(syncType);
 
@@ -132,20 +78,6 @@ export class DataSyncWorker {
       await syncer.performPeriodicSync();
       logger.info(`[${syncer.name}] Completed periodic sync via job ${job.id}`);
     }
-  }
-
-  private onJobCompleted(job: Job<SyncJobData>) {
-    logger.info(
-      { jobId: job.id, syncType: job.data.syncType },
-      "Sync job completed"
-    );
-  }
-
-  private onJobFailed(job: Job<SyncJobData> | undefined, error: Error) {
-    logger.error(
-      { jobId: job?.id, syncType: job?.data.syncType, error },
-      "Sync job failed"
-    );
   }
 
   private async checkNeedsInitialSync(): Promise<boolean> {
@@ -190,7 +122,7 @@ export class DataSyncWorker {
   }
 
   async getStatus() {
-    const isRunning = this.worker !== null;
+    const isRunning = this.isRunning();
     const queueHealth = await checkQueueHealth(dataSyncQueue, {
       maxFailedJobs: DataSyncWorkerConfig.HEALTHCHECK.MAX_FAILED_JOBS,
       maxBacklogJobs: DataSyncWorkerConfig.HEALTHCHECK.MAX_BACKLOG_JOBS,

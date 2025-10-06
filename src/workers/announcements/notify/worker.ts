@@ -1,17 +1,12 @@
-import { Worker, Job } from "bullmq";
-import { workerRedisConnectionOptions } from "../../shared/redis.js";
+import { Job } from "bullmq";
 import { fetchAnnouncements, LLMService } from "../../../api/services/index.js";
 import { AnnouncementsBufferRepository } from "../../../db/repositories/AnnouncementsBufferRepository.js";
 import { AnnouncementSubscriptionRepository } from "../../../db/repositories/AnnouncementSubscriptionRepository.js";
-import { closeDB, initDB } from "../../../db/connection.js";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { RedisClient } from "bullmq";
-import * as schema from "../../../db/schema/index.js";
 import { Announcement } from "../../../types/service.types.js";
 import findCourseFiltersFromText from "../../../utils/findCourseFiltersFromText.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
-import { BaseNotifier } from "../../base/notify/BaseNotifier.js";
-import { addBroadcastJobs, broadcastsQueue } from "../../broadcasts/worker.js";
+import { BaseWorker } from "../../base/BaseWorker.js";
+import { addBroadcastJobs } from "../../broadcasts/worker.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
@@ -27,83 +22,45 @@ import {
 import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
 import { checkQueueHealth } from "../../shared/queueHealth.js";
+import { createBot } from "../../../bot/bot.js";
+import { apiThrottler } from "@grammyjs/transformer-throttler";
+import { autoRetry } from "@grammyjs/auto-retry";
+import { processAttachments } from "../../shared/utils/attachmentProcessor.js";
 
-export class AnnouncementsNotifyWorker extends BaseNotifier<
-  NotifyJobData,
-  Announcement
-> {
-  private worker: Worker | null = null;
-  private db!: NodePgDatabase<typeof schema>;
-  private redisClient!: RedisClient;
+export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
   private fetchedAnnouncements: Announcement[] = [];
 
   constructor() {
-    super();
+    super(
+      "announcements-notify-worker",
+      ANNOUNCEMENTS_NOTIFY_QUEUE,
+      announcementsNotifyQueue,
+      { concurrency: 1 }
+    );
   }
 
-  async start() {
-    if (this.worker) {
-      logger.warn("Worker already running");
-      return;
-    }
+  protected override initializeWorkerSpecific(): Promise<void> {
+    // Initialize bot with throttler and auto-retry for file uploads
+    const bot = createBot();
+    bot.api.config.use(apiThrottler());
+    bot.api.config.use(autoRetry({ maxRetryAttempts: 5 }));
+    this.bot = bot;
+    logger.info("Bot instance created with throttler and auto-retry");
+    return Promise.resolve();
+  }
 
-    // Initialize Redis
-    this.redisClient = await broadcastsQueue.client;
-    await this.redisClient.ping();
-    logger.info("Redis connection established");
-
-    // Initialize database
-    this.db = await initDB();
-    logger.info("Database connection established");
-
-    // Initialize bot
-    this.initBot();
-
-    // Start BullMQ worker to process notification jobs
-    this.worker = new Worker<NotifyJobData>(
-      ANNOUNCEMENTS_NOTIFY_QUEUE,
-      this.processJobWrapper.bind(this),
-      {
-        connection: workerRedisConnectionOptions,
-        concurrency: 1,
-      }
-    );
-
-    this.worker.on("completed", this.onJobCompleted.bind(this));
-    this.worker.on("failed", this.onJobFailed.bind(this));
-
+  protected override async onStartupComplete(): Promise<void> {
     // Trigger initial notification check on startup
     await this.scheduleInitialNotificationCheck();
 
     // Set up recurring jobs (called once - BullMQ handles the schedule)
     await setupRecurringSchedule();
-
-    logger.info("Announcements notify worker started");
   }
 
-  async stop() {
-    if (this.worker) {
-      await this.worker.close();
-      this.worker = null;
-    }
-
-    await announcementsNotifyQueue.close();
-    await closeDB();
-    logger.info("Worker stopped");
-  }
-
-  protected async processJob(job: Job<NotifyJobData>) {
+  protected async processJob(job: Job<NotifyJobData>): Promise<void> {
     logger.info(`Processing announcement notification job ${job.id}`);
     await this.processNewAnnouncements();
     logger.info(`Completed announcement notification job ${job.id}`);
-  }
-
-  private onJobCompleted(job: Job<NotifyJobData>) {
-    logger.info({ jobId: job.id }, "Notification job completed");
-  }
-
-  private onJobFailed(job: Job<NotifyJobData> | undefined, error: Error) {
-    logger.error({ jobId: job?.id, error }, "Notification job failed");
   }
 
   private async scheduleInitialNotificationCheck(): Promise<void> {
@@ -267,7 +224,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier<
 
       const formattedText = this.prepareFormattedMessage(announcement);
       const processedAttachments = announcement.attachments
-        ? await this.processAttachments(announcement.attachments)
+        ? await processAttachments(this.bot!, announcement.attachments)
         : [];
 
       for (const chatId of chatIds) {
@@ -295,7 +252,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier<
   }
 
   async getStatus() {
-    const isRunning = this.worker !== null;
+    const isRunning = this.isRunning();
     const queueHealth = await checkQueueHealth(announcementsNotifyQueue, {
       maxFailedJobs:
         AnnouncementsNotifyWorkerConfig.HEALTH_CHECK.MAX_FAILED_JOBS,

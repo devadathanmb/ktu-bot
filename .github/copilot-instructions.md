@@ -46,19 +46,59 @@ Bot features are organized as **composers** (not traditional handlers):
 
 ### Worker Architecture
 
-Workers use **BullMQ** for job processing and scheduling:
+Workers extend **BaseWorker** class and use **BullMQ** for job processing:
 
-- **Queue Pattern**: Each worker has a dedicated queue with retry configuration
-- **Scheduling**: BullMQ repeatable jobs replace node-cron for periodic tasks
-- **Retry Strategy**: Exponential backoff with configurable attempts (default: 3)
-- **Concurrency**: Configurable parallel job processing
-- **Health Checks**: Monitor queue state (waiting, active, failed jobs)
+**Base Worker Pattern** (`src/workers/base/BaseWorker.ts`):
 
-Worker queues:
+- All workers extend `BaseWorker<TJobData>` abstract class
+- Constructor accepts: `workerName`, `queueName`, `queue`, optional `config` (concurrency, limiter)
+- Handles common lifecycle: Redis init, DB init, worker creation, event handlers, shutdown
+- Workers implement: `processJob()` and `getStatus()`
+- Optional hooks: `initializeWorkerSpecific()` (e.g., bot setup), `onStartupComplete()` (e.g., schedule jobs)
 
-- `DATA_SYNC_QUEUE` - Periodic data synchronization (announcements, calendars, timetables)
-- `ANNOUNCEMENTS_NOTIFY_QUEUE` - New announcement notifications
-- `BROADCASTS_QUEUE` - Message broadcasting to users
+**Worker Implementation Pattern**:
+
+```typescript
+export class MyWorker extends BaseWorker<JobData> {
+  constructor() {
+    super("worker-name", QUEUE_NAME, queueInstance, {
+      concurrency: 1,
+      limiter: { max: 10, duration: 1000 },
+    });
+  }
+
+  protected override initializeWorkerSpecific(): Promise<void> {
+    // Setup bot, services, etc.
+    this.bot = createBot();
+    return Promise.resolve();
+  }
+
+  protected override async processJob(job: Job<JobData>): Promise<void> {
+    // Core business logic
+  }
+
+  async getStatus() {
+    /* Health check */
+  }
+}
+```
+
+**Queue Configuration**:
+
+- `DATA_SYNC_QUEUE` - Periodic data synchronization (concurrency: 3, rate limited)
+- `ANNOUNCEMENTS_NOTIFY_QUEUE` - New announcement notifications (concurrency: 1)
+- `BROADCASTS_QUEUE` - Message broadcasting to users (concurrency: 1)
+
+**Shared Utilities**:
+
+- `src/workers/shared/utils/attachmentProcessor.ts` - File upload/processing utilities
+- `src/workers/shared/redis.ts` - Redis connection configs for queues/workers
+- `src/workers/shared/queueHealth.ts` - Queue health check utility
+- `src/workers/shared/shutdown.ts` - Graceful shutdown handler
+
+### Database Repositories
+
+Follow **Repository pattern** with Drizzle ORM:
 
 - Repository classes in `src/db/repositories/`
 - Schema definitions in `src/db/schema/`
@@ -83,18 +123,32 @@ pnpm db:studio    # Open Drizzle Studio
 
 ### Worker Development
 
-Workers are **BullMQ-based services** with separate startup files:
+Workers extend **BaseWorker** abstract class:
 
-- `src/workers/announcements/notify/startup.ts` - Announcement notification worker
-- `src/workers/broadcasts/startup.ts` - Broadcast delivery worker
-- `src/workers/data-sync/startup.ts` - Data synchronization worker
+**Structure**:
 
-Each worker:
+- `src/workers/base/BaseWorker.ts` - Abstract base class with common lifecycle
+- `src/workers/announcements/notify/` - Announcement notification worker
+- `src/workers/broadcasts/` - Broadcast delivery worker
+- `src/workers/data-sync/` - Data synchronization worker
 
-- Uses BullMQ for job scheduling and processing
-- Implements automatic retry with exponential backoff
-- Provides queue health monitoring
-- Supports graceful shutdown
+**Worker Responsibilities**:
+
+- Extend `BaseWorker<TJobData>` and pass config to constructor
+- Implement `processJob(job)` - core business logic
+- Implement `getStatus()` - health check endpoint
+- Optionally override `initializeWorkerSpecific()` - setup bot, services
+- Optionally override `onStartupComplete()` - schedule initial/recurring jobs
+
+**BaseWorker handles**:
+
+- Redis and database initialization
+- BullMQ worker creation with concurrency/rate limiting
+- Job processing with error handling wrapper
+- Event handlers (completed, failed)
+- Graceful shutdown
+
+**Startup files**: Each worker has a startup file that creates worker instance, sets up health check, and registers graceful shutdown
 
 ## Critical Integration Points
 

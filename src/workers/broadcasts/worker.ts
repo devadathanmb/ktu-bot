@@ -1,24 +1,16 @@
-import { Worker, Job } from "bullmq";
-import {
-  queueRedisConnectionOptions,
-  workerRedisConnectionOptions,
-} from "../shared/redis.js";
-import { closeDB, initDB } from "../../db/connection.js";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { RedisClient } from "bullmq";
-import * as schema from "../../db/schema/index.js";
-import { createBot } from "../../bot/bot.js";
+import { Job, Queue } from "bullmq";
+import { queueRedisConnectionOptions } from "../shared/redis.js";
 import { AnnouncementSubscriptionRepository } from "../../db/repositories/AnnouncementSubscriptionRepository.js";
 import { ChatRepository } from "../../db/repositories/ChatRepository.js";
-import { Bot, GrammyError, InputMediaBuilder } from "grammy";
-import { BotContext } from "../../types/bot.types.js";
+import { GrammyError, InputMediaBuilder } from "grammy";
 import { BroadcastJob, ProcessedAttachment } from "../shared/types.js";
-import { Queue } from "bullmq";
 import { FormattedString } from "@grammyjs/parse-mode";
 import logger from "../../utils/logger.js";
 import { checkQueueHealth } from "../shared/queueHealth.js";
 import { BroadcastsWorkerConfig } from "../../configs/broadcastsWorker.js";
 import { withTransaction } from "../../db/transactions.js";
+import { BaseWorker } from "../base/BaseWorker.js";
+import { createBot } from "../../bot/bot.js";
 
 export const BROADCASTS_QUEUE = "BROADCASTS_QUEUE";
 
@@ -59,82 +51,23 @@ export async function addBroadcastJob(jobData: BroadcastJob) {
   return job;
 }
 
-export class BroadcastsWorker {
-  private worker: Worker | null = null;
-  private bot!: Bot<BotContext>;
-  private db!: NodePgDatabase<typeof schema>;
-  private redisClient!: RedisClient;
-
+export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   constructor() {
-    // Properties initialized in start()
+    super("broadcasts-worker", BROADCASTS_QUEUE, broadcastsQueue, {
+      concurrency: 1,
+    });
   }
 
-  async start() {
-    if (this.worker) {
-      logger.warn("Worker is already running");
-      return;
-    }
-
-    // Initialize Redis - get the queue's already-connected client
-    this.redisClient = await broadcastsQueue.client;
-    await this.redisClient.ping();
-    logger.info("Redis connection established");
-
-    // Initialize database
-    this.db = await initDB();
-    logger.info("Database initialized");
-
-    // Initialize bot
+  protected override initializeWorkerSpecific(): Promise<void> {
+    // Initialize bot without special middlewares
     this.bot = createBot();
     logger.info("Bot instance created");
-
-    // Start worker
-    this.worker = new Worker<BroadcastJob>(
-      BROADCASTS_QUEUE,
-      this.processJobWrapper.bind(this),
-      {
-        connection: workerRedisConnectionOptions,
-        concurrency: 1,
-      }
-    );
-
-    this.worker.on("completed", this.onJobCompleted.bind(this));
-    this.worker.on("failed", this.onJobFailed.bind(this));
-
-    logger.info("Worker started");
+    return Promise.resolve();
   }
 
-  async stop() {
-    if (this.worker) {
-      await this.worker.close();
-      this.worker = null;
-    }
-
-    await broadcastsQueue.close();
-    await closeDB();
-    logger.info("Worker stopped");
-  }
-
-  private onJobCompleted(job: Job<BroadcastJob>) {
-    logger.info(
-      { jobId: job.id, chatId: job.data.chatId },
-      "Broadcast job completed"
-    );
-  }
-
-  private onJobFailed(job: Job<BroadcastJob> | undefined, err: Error) {
-    logger.error(
-      { jobId: job?.id, chatId: job?.data.chatId, error: err },
-      "Broadcast job failed"
-    );
-  }
-
-  /**
-   * Wrapper method that handles common error scenarios
-   */
-  private async processJobWrapper(job: Job<BroadcastJob>) {
+  protected override async processJob(job: Job<BroadcastJob>): Promise<void> {
     try {
-      await this.processJob(job);
+      await this.processBroadcastJob(job);
     } catch (error) {
       if (error instanceof GrammyError) {
         const chatId = job.data.chatId;
@@ -191,7 +124,7 @@ export class BroadcastsWorker {
     }
   }
 
-  private async processJob(job: Job<BroadcastJob>) {
+  private async processBroadcastJob(job: Job<BroadcastJob>): Promise<void> {
     // Get job data from the job
     const { formattedText, attachments, chatId } = job.data;
 
@@ -240,7 +173,7 @@ export class BroadcastsWorker {
    * Send a formatted text message
    */
   private async sendMessage(chatId: number, formattedText: FormattedString) {
-    return await this.bot.api.sendMessage(chatId, formattedText.rawText, {
+    return await this.bot!.api.sendMessage(chatId, formattedText.rawText, {
       entities: formattedText.rawEntities,
       link_preview_options: { is_disabled: true },
     });
@@ -274,7 +207,7 @@ export class BroadcastsWorker {
       );
     });
 
-    return await this.bot.api.sendMediaGroup(chatId, documents);
+    return await this.bot!.api.sendMediaGroup(chatId, documents);
   }
 
   /**
@@ -304,7 +237,7 @@ export class BroadcastsWorker {
       );
     });
 
-    return await this.bot.api.sendMediaGroup(chatId, documents, params);
+    return await this.bot!.api.sendMediaGroup(chatId, documents, params);
   }
 
   /**
@@ -377,7 +310,7 @@ export class BroadcastsWorker {
   }
 
   async getStatus() {
-    const isRunning = this.worker !== null;
+    const isRunning = this.isRunning();
 
     if (!isRunning) {
       return { isRunning: false, redisConnected: false, queueHealth: false };
