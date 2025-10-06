@@ -52,7 +52,7 @@ The bot follows a microservices architecture where each component handles a spec
 | **Data Sync Worker**            | Background worker   | Periodically syncs KTU data to local DB via BullMQ scheduled jobs to power full-text search   |
 | **Bull Board Service**          | Monitoring service  | Web dashboard for real-time queue monitoring and job management                               |
 | **PostgreSQL**                  | Database            | Stores all data with Drizzle ORM for type-safe queries                                        |
-| **Redis**                       | Cache & Queue       | Powers BullMQ job queues and session storage                                                  |
+| **Redis**                       | Queue               | Powers BullMQ jobs                                                                            |
 
 > [!TIP]
 > **Want to understand how it all works?** Check out [How It Works](./docs/working.md) for the complete architecture breakdown with diagrams.
@@ -88,6 +88,11 @@ Development environment files live in the `dev/` directory. Each service/module 
 - `dev/api.env` — For UptimeRobot monitoring, file uploads, etc.
 - `dev/llm.env` — For AI-powered announcement filtering
 
+> [!NOTE]
+> Most environment variables needed for the development setup come pre-configured in each `.env` file.
+>
+> However, some configurations depend on external services and are left as placeholder values. Fill those in with actual credentials if you plan to use those features.
+
 > [!IMPORTANT]
 > **For sensitive local secrets:**
 >
@@ -97,11 +102,6 @@ Development environment files live in the `dev/` directory. Each service/module 
 > ```
 >
 > This file is mounted **last** in Docker Compose, so values here override anything in `dev/*.env` files.
-
-> [!NOTE]
-> Most environment variables needed for the development setup come pre-configured in each `.env` file.
->
-> However, some configurations depend on external services and are left as placeholder values. Fill those in with actual credentials if you plan to use those features.
 
 > [!WARNING]
 > If you don't configure certain `.env` variables, those features simply won't work or the [zod validations](https://zod.dev/) may get triggered. Review each file to see what's needed.
@@ -220,7 +220,7 @@ When reporting bugs, please try to include:
 
 ## License 🛡️
 
-**GPL-3.0** — See [LICENSE](./LICENSE) for details.
+**GPL-3.0** — See [LICENSE](./LICENSE.md) for details.
 
 This means you can use, modify, and distribute this code freely, but you must:
 
