@@ -9,8 +9,8 @@ import { fmt } from "@grammyjs/parse-mode";
 export class BotError extends Error {
   public readonly userMessage: string;
 
-  constructor(message: string, userMessage?: string) {
-    super(message);
+  constructor(message: string, userMessage?: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = this.constructor.name;
     this.userMessage = userMessage || message;
 
@@ -45,9 +45,10 @@ export class KTUAPIError extends BotError {
     message: string,
     userMessage: string,
     statusCode?: number,
-    url?: string
+    url?: string,
+    cause?: Error
   ) {
-    super(message, userMessage);
+    super(message, userMessage, cause ? { cause } : undefined);
     this.serviceName = serviceName;
     if (statusCode !== undefined) {
       this.statusCode = statusCode;

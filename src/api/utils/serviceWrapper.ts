@@ -48,7 +48,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
               `KTU API rate limited`,
               `KTU API is busy. Please try again after sometime.`,
               statusCode,
-              url
+              url,
+              error
             );
           case 403:
             throw new KTUAPIError(
@@ -56,7 +57,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
               `KTU API access denied`,
               `Access denied to KTU API. Please try again later.`,
               statusCode,
-              url
+              url,
+              error
             );
           case 500:
             throw new KTUAPIError(
@@ -64,7 +66,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
               `KTU API internal server error`,
               `KTU API is currently unavailable. Please try again later.`,
               statusCode,
-              url
+              url,
+              error
             );
           case 404:
             throw new KTUAPIError(
@@ -72,7 +75,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
               `Data not found on KTU API`,
               `Requested data not found. Please try again.`,
               statusCode,
-              url
+              url,
+              error
             );
           default:
             throw new KTUAPIError(
@@ -80,7 +84,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
               `KTU API error`,
               `KTU API is currently having issues. Please try again later.`,
               statusCode,
-              url
+              url,
+              error
             );
         }
       }
@@ -94,7 +99,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
           `Network error: ${error.message}`,
           `Unable to connect to KTU API. Please try again later.`,
           undefined,
-          url
+          url,
+          error
         );
       }
 
@@ -114,7 +120,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
           `API response validation failed: ${error.message}`,
           `The API returned data in an unexpected format. Please try again later.`,
           undefined,
-          undefined
+          undefined,
+          error
         );
       }
 
