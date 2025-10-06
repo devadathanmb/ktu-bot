@@ -1,7 +1,6 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer, InlineKeyboard } from "grammy";
-import ensureChatId from "../../../middlewares/ensureChatId.js";
 import { createGrammyInputFileFromAttachment } from "../../../../utils/fileUtils.js";
 import { Announcement } from "../../../../types/service.types.js";
 import {
@@ -48,7 +47,6 @@ function generateAnnouncementsText(
 
 // Create a composer for announcements lookup
 const composer = new Composer<BotContext>();
-composer.use(ensureChatId);
 
 // Create protected composer with error boundary for loading message cleanup
 const protectedComposer = composer.errorBoundary(

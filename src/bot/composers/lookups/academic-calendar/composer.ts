@@ -1,7 +1,6 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer, InlineKeyboard } from "grammy";
-import ensureChatId from "../../../middlewares/ensureChatId.js";
 import { fetchAcademicCalendars } from "../../../../api/services/index.js";
 import { createGrammyInputFileFromAttachment } from "../../../../utils/fileUtils.js";
 import { AcademicCalendar } from "../../../../types/service.types.js";
@@ -64,7 +63,6 @@ function generateCalendarsText(calendars: AcademicCalendar[]): FormattedString {
 
 // Create the composer with error boundary
 const composer = new Composer<BotContext>();
-composer.use(ensureChatId);
 const protectedComposer = composer.errorBoundary(createCalendarErrorBoundary());
 
 // Command: /calendars - Start academic calendar lookup
