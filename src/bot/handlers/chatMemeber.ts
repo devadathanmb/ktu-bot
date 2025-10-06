@@ -3,10 +3,7 @@ import { AnnouncementSubscriptionRepository } from "../../db/repositories/Announ
 import { ChatRepository } from "../../db/repositories/ChatRepository.js";
 import { Filter } from "grammy";
 import { BotContext } from "../../types/bot.types.js";
-import {
-  combineFormattedDouble,
-  formatCommand,
-} from "../../utils/formatting.js";
+import { joinWithNewlines, formatCommand } from "../../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../utils/logger.js";
@@ -40,7 +37,7 @@ export const chatMemeberHandler = async (
         fmt`You can easily resubscribe using ${formatCommand(helpCommand)}. Thank you for giving me another chance! ${emoji("raising_hands")}`,
       ];
 
-      const formattedReply = combineFormattedDouble(messages);
+      const formattedReply = joinWithNewlines(messages, 2);
       await ctx.reply(formattedReply.text, {
         entities: formattedReply.entities,
       });

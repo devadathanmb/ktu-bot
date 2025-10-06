@@ -1,10 +1,6 @@
 import { InlineKeyboard } from "grammy";
 import { fmt, b, i, FormattedString } from "@grammyjs/parse-mode";
-import {
-  shortenString,
-  combineFormattedDouble,
-  combineFormattedSingle,
-} from "../../../utils/formatting.js";
+import { shortenString, joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 
 export interface PaginatedItem {
@@ -59,19 +55,19 @@ export function generatePaginatedMessageText(
     const publishedDate = item.formattedPublishedDate;
     const indexPart = fmt`${index + 1}) ${shortSubject}`;
     const datePart = fmt`${i}Published date:${i} ${publishedDate}`;
-    return combineFormattedSingle([indexPart, datePart]);
+    return joinWithNewlines([indexPart, datePart]);
   });
 
   // Join all items with double newlines
-  const itemsList = combineFormattedDouble(formattedItems);
+  const itemsList = joinWithNewlines(formattedItems, 2);
 
   const titlePart = fmt`${b}${title}:${b}`;
   const instructionsPart1 = fmt`${emoji("backhand_index_pointing_down")} ${b}Choose a ${itemType} using the buttons below${b}`;
   const instructionsPart2 = fmt`${emoji("left_right_arrow")} ${b}Use the navigation buttons to browse pages${b}`;
-  const instructions = combineFormattedDouble([
-    instructionsPart1,
-    instructionsPart2,
-  ]);
+  const instructions = joinWithNewlines(
+    [instructionsPart1, instructionsPart2],
+    2
+  );
 
-  return combineFormattedDouble([titlePart, itemsList, instructions]);
+  return joinWithNewlines([titlePart, itemsList, instructions], 2);
 }

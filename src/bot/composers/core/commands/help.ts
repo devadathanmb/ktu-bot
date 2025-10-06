@@ -1,7 +1,7 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { fmt, b } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { announcementsCommands } from "../../lookups/announcements/composer.js";
 import { calendarCommands } from "../../lookups/academic-calendar/composer.js";
 import { timetableCommands } from "../../lookups/exam-timetable/composer.js";
@@ -30,13 +30,16 @@ ${allNotificationCommands.map(cmd => `• /${cmd.name} - ${cmd.description}`).jo
     const inlineInfo = fmt`${emoji("light_bulb")} ${b}Pro Tip${b}
 Type ${b}@ktu_results_bot${b} followed by keywords in any chat to search any announcements, exam timetables or academic calendars instantly without opening the bot!`;
 
-    const fullHelpMessage = combineFormattedDouble([
-      helpTitle,
-      coreCommands,
-      lookupCommands,
-      subscriptionCommands,
-      inlineInfo,
-    ]);
+    const fullHelpMessage = joinWithNewlines(
+      [
+        helpTitle,
+        coreCommands,
+        lookupCommands,
+        subscriptionCommands,
+        inlineInfo,
+      ],
+      2
+    );
 
     await ctx.reply(fullHelpMessage.text, {
       entities: fullHelpMessage.entities,

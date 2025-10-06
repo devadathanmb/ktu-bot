@@ -3,7 +3,7 @@
  */
 
 import { emoji } from "@grammyjs/emoji";
-import { combineFormattedDouble } from "../utils/formatting.js";
+import { joinWithNewlines } from "../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
 
 export class BotError extends Error {
@@ -23,10 +23,13 @@ export class BotError extends Error {
 export class SessionNotFoundError extends BotError {
   constructor(
     message = "Session data not found for the chat",
-    userMessage = combineFormattedDouble([
-      fmt`Oops.. Session expired ${emoji("alarm_clock")}`,
-      fmt`Please try the corresponding command again.`,
-    ])
+    userMessage = joinWithNewlines(
+      [
+        fmt`Oops.. Session expired ${emoji("alarm_clock")}`,
+        fmt`Please try the corresponding command again.`,
+      ],
+      2
+    )
   ) {
     super(message, userMessage.text);
   }

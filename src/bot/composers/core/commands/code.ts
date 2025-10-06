@@ -1,7 +1,7 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { fmt } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { InlineKeyboard } from "grammy";
 
@@ -14,12 +14,10 @@ export const codeCommand = new Command<BotContext>(
     const starRequest = fmt`${emoji("star")} Liked the bot? Consider giving it a star!`;
     const issues = fmt`${emoji("bug")} Found a bug or have a feature request? Open an issue on GitHub!`;
 
-    const message = combineFormattedDouble([
-      license,
-      repository,
-      starRequest,
-      issues,
-    ]);
+    const message = joinWithNewlines(
+      [license, repository, starRequest, issues],
+      2
+    );
 
     const keyboard = new InlineKeyboard()
       .url(

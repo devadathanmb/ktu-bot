@@ -7,10 +7,7 @@ import { ExamTimetablesRepository } from "../../../db/repositories/ExamTimetable
 import { createGrammyInputFileFromAttachment } from "../../../utils/fileUtils.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import type { FormattedString } from "@grammyjs/parse-mode";
-import {
-  combineFormattedDouble,
-  combineFormattedSingle,
-} from "../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 import type { InlineQueryResult } from "grammy/types";
@@ -118,7 +115,7 @@ async function searchAnnouncements(
     const parts: FormattedString[] = [];
     if (announcement.subject) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("open_book")} Subject:${b}`,
           fmt`${announcement.subject}`,
         ])
@@ -126,7 +123,7 @@ async function searchAnnouncements(
     }
     if (announcement.message) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("memo")} Message:${b}`,
           fmt`${announcement.message}`,
         ])
@@ -134,13 +131,13 @@ async function searchAnnouncements(
     }
     if (announcement.formattedPublishedDate) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`,
         ])
       );
     }
 
-    const formattedMessage = combineFormattedDouble(parts);
+    const formattedMessage = joinWithNewlines(parts, 2);
 
     return InlineQueryResultBuilder.article(
       `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.ANNOUNCEMENTS]}_${announcement.id}`,
@@ -178,7 +175,7 @@ async function searchCalendars(
     const parts: FormattedString[] = [];
     if (calendar.title) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("calendar")} Title:${b}`,
           fmt`${calendar.title}`,
         ])
@@ -186,20 +183,20 @@ async function searchCalendars(
     }
     if (calendar.formattedPublishedDate) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("calendar")} Date:${b} ${calendar.formattedPublishedDate}`,
         ])
       );
     }
     if (calendar.attachmentName) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("paperclip")} Attachment:${b} ${calendar.attachmentName}`,
         ])
       );
     }
 
-    const formattedMessage = combineFormattedDouble(parts);
+    const formattedMessage = joinWithNewlines(parts, 2);
 
     return InlineQueryResultBuilder.article(
       `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.CALENDARS]}_${calendar.id}`,
@@ -237,7 +234,7 @@ async function searchTimetables(
     const parts: FormattedString[] = [];
     if (timetable.title) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("clipboard")} Title:${b}`,
           fmt`${timetable.title}`,
         ])
@@ -245,20 +242,20 @@ async function searchTimetables(
     }
     if (timetable.formattedPublishedDate) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("calendar")} Date:${b} ${timetable.formattedPublishedDate}`,
         ])
       );
     }
     if (timetable.fileName) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("paperclip")} File:${b} ${timetable.fileName}`,
         ])
       );
     }
 
-    const formattedMessage = combineFormattedDouble(parts);
+    const formattedMessage = joinWithNewlines(parts, 2);
 
     return InlineQueryResultBuilder.article(
       `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.TIMETABLES]}_${timetable.id}`,

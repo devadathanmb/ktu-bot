@@ -2,8 +2,8 @@ import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { fmt, b } from "@grammyjs/parse-mode";
 import {
-  combineFormattedDouble,
   formatCommand,
+  joinWithNewlines,
 } from "../../../../utils/formatting.js";
 import { BotConfig } from "../../../../configs/bot.js";
 import { emoji } from "@grammyjs/emoji";
@@ -22,13 +22,10 @@ export const startCommand = new Command<BotContext>(
     const callToAction = fmt`Type ${b}${formatCommand(helpCommand)}${b} for more info.`;
     const thanks = fmt`Thank you for using KTU Bot! ${emoji("folded_hands")}`;
 
-    const fullMessage = combineFormattedDouble([
-      welcomeHeader,
-      welcomeMessage,
-      description,
-      callToAction,
-      thanks,
-    ]);
+    const fullMessage = joinWithNewlines(
+      [welcomeHeader, welcomeMessage, description, callToAction, thanks],
+      2
+    );
 
     await ctx.replyWithPhoto(BotConfig.BOT_IMAGE_URL, {
       caption: fullMessage.text,

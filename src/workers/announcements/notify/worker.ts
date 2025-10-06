@@ -14,10 +14,7 @@ import { BaseNotifier } from "../../base/notify/BaseNotifier.js";
 import { addBroadcastJobs, broadcastsQueue } from "../../broadcasts/worker.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { FormattedString } from "@grammyjs/parse-mode";
-import {
-  combineFormattedDouble,
-  combineFormattedSingle,
-} from "../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { BroadcastJob } from "../../shared/types.js";
 import { AnnouncementFilter } from "../../../constants/courses.js";
@@ -217,7 +214,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier<
     // Add subject if present
     if (announcement.subject) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("open_book")} Subject:${b}`,
           fmt`${announcement.subject}`,
         ])
@@ -227,7 +224,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier<
     // Add message if present
     if (announcement.message) {
       parts.push(
-        combineFormattedSingle([
+        joinWithNewlines([
           fmt`${b}${emoji("memo")} Message:${b}`,
           fmt`${announcement.message}`,
         ])
@@ -242,7 +239,7 @@ export class AnnouncementsNotifyWorker extends BaseNotifier<
     }
 
     // Use the utility function to combine formatted strings properly
-    return combineFormattedDouble(parts);
+    return joinWithNewlines(parts, 2);
   }
 
   private async processNewAnnouncements() {

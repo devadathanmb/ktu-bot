@@ -13,7 +13,7 @@ import { BotContext } from "../types/bot.types.js";
  */
 
 /**
- * Combines multiple FormattedString objects with a specified separator.
+ * Joins multiple FormattedString objects with a specified number of newlines.
  *
  * This utility is designed to replace manual string concatenation with newlines
  * in fmt template literals, providing cleaner and more maintainable code.
@@ -22,40 +22,46 @@ import { BotContext } from "../types/bot.types.js";
  * - Maintains proper entity offsets when combining formatted strings
  * - Avoids ugly manual newline concatenation in templates
  * - Provides consistent formatting across the codebase
+ * - Flexible newline count control for different spacing needs
  *
  * **How it works:**
  * Uses Grammy's `fmt` function with array syntax to properly combine FormattedString
  * objects while preserving text formatting entities (bold, italic, links, etc.).
+ * The separator is constructed as repeated newlines based on the count parameter.
  *
- * @param parts Array of FormattedString objects to combine
- * @param separator String to use between parts (default: '\n\n' for double newlines)
+ * @param parts Array of FormattedString objects to join
+ * @param count Number of newlines to use between parts (default: 1 for single newline)
  * @returns Combined FormattedString with proper entity offsets
  *
  * @example
  * ```typescript
  * import { fmt, b, i } from "@grammyjs/parse-mode";
- * import { combineFormatted } from "@/utils/formatting";
+ * import { joinWithNewlines } from "@/utils/formatting";
  *
  * const title = fmt`${b}Title${b}`;
  * const content = fmt`Some ${i}italic${i} content`;
  * const footer = fmt`Footer text`;
  *
- * // Instead of:
- * const ugly = fmt`${title.text}\n\n${content.text}\n\n${footer.text}`;
+ * // Single newline (default):
+ * const singleSpaced = joinWithNewlines([title, content, footer]);
+ * // or explicitly: joinWithNewlines([title, content, footer], 1);
  *
- * // Use this:
- * const clean = combineFormatted([title, content, footer]);
+ * // Double newlines for more spacing:
+ * const doubleSpaced = joinWithNewlines([title, content, footer], 2);
  *
- * // Custom separator:
- * const withDashes = combineFormatted([title, content], " - ");
+ * // Triple newlines for extra spacing:
+ * const tripleSpaced = joinWithNewlines([title, content, footer], 3);
  * ```
  */
-export function combineFormatted(
+export function joinWithNewlines(
   parts: FormattedString[],
-  separator: string = "\n\n"
+  count: number = 1
 ): FormattedString {
   if (parts.length === 0) return fmt``;
   if (parts.length === 1) return parts[0]!;
+
+  // Construct separator with the specified number of newlines
+  const separator = "\n".repeat(count);
 
   // Create template strings array and values array for fmt function
   const templateStrings: string[] = [];
@@ -85,60 +91,6 @@ export function combineFormatted(
   // Use fmt function with array syntax to properly combine FormattedString objects
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return fmt(templatesArray, ...values);
-}
-
-/**
- * Shorthand for combining FormattedString objects with single newlines.
- *
- * Equivalent to calling `combineFormatted(parts, "\n")`.
- *
- * @param parts Array of FormattedString objects to combine
- * @returns Combined FormattedString with single newlines between parts
- *
- * @example
- * ```typescript
- * import { fmt, b } from "@grammyjs/parse-mode";
- * import { combineFormattedSingle } from "@/utils/formatting";
- *
- * const line1 = fmt`${b}First line${b}`;
- * const line2 = fmt`Second line`;
- *
- * const result = combineFormattedSingle([line1, line2]);
- * // Result: "First line\nSecond line" (with bold formatting preserved)
- * ```
- */
-export function combineFormattedSingle(
-  parts: FormattedString[]
-): FormattedString {
-  return combineFormatted(parts, "\n");
-}
-
-/**
- * Shorthand for combining FormattedString objects with double newlines (default).
- *
- * Equivalent to calling `combineFormatted(parts, "\n\n")` or just `combineFormatted(parts)`.
- * This is the most commonly used variant for creating well-spaced message sections.
- *
- * @param parts Array of FormattedString objects to combine
- * @returns Combined FormattedString with double newlines between parts
- *
- * @example
- * ```typescript
- * import { fmt, b, i } from "@grammyjs/parse-mode";
- * import { combineFormattedDouble } from "@/utils/formatting";
- *
- * const header = fmt`${b}Welcome Message${b}`;
- * const body = fmt`This is the ${i}main content${i} of the message.`;
- * const footer = fmt`${b}Note:${b} This is a footer note.`;
- *
- * const message = combineFormattedDouble([header, body, footer]);
- * // Result: Well-spaced message with proper formatting preserved
- * ```
- */
-export function combineFormattedDouble(
-  parts: FormattedString[]
-): FormattedString {
-  return combineFormatted(parts, "\n\n");
 }
 
 /**

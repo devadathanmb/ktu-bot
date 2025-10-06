@@ -7,7 +7,7 @@ import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer } from "grammy";
 import { generateFilterKeyboard, generateMessageText } from "./helpers.js";
 import { fmt, b, FormattedString } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../utils/formatting.js";
 import { createAnnouncementSubscriptionErrorBoundary } from "../shared/errorBoundary.js";
 import { emoji } from "@grammyjs/emoji";
 
@@ -53,9 +53,7 @@ const announcementsSubscribeCommand = new Command<BotContext>(
       const announcementSubscription =
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (announcementSubscription) {
-        const formattedMsg = combineFormattedDouble(
-          MESSAGES.ALREADY_SUBSCRIBED!
-        );
+        const formattedMsg = joinWithNewlines(MESSAGES.ALREADY_SUBSCRIBED!, 2);
         await ctx.reply(formattedMsg.text, {
           entities: formattedMsg.entities,
         });
@@ -167,10 +165,13 @@ protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
       (filter: string) =>
         ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]
     );
-    const successMessage = combineFormattedDouble([
-      fmt`${emoji("check_mark_button")} Successfully subscribed to announcements!`,
-      fmt`${b}Your selected filters:${b} ${selectedFilterNames.join(", ")}`,
-    ]);
+    const successMessage = joinWithNewlines(
+      [
+        fmt`${emoji("check_mark_button")} Successfully subscribed to announcements!`,
+        fmt`${b}Your selected filters:${b} ${selectedFilterNames.join(", ")}`,
+      ],
+      2
+    );
 
     await ctx.api.editMessageText(chatId, prevMessageId, successMessage.text, {
       entities: successMessage.entities,
@@ -196,7 +197,7 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
       const announcementSubscription =
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (!announcementSubscription) {
-        const formattedMsg = combineFormattedDouble(
+        const formattedMsg = joinWithNewlines(
           MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!
         );
         await ctx.reply(formattedMsg.text, {
@@ -206,9 +207,7 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
       }
 
       // Unsubscribe the user
-      const formattedMsg = combineFormattedDouble(
-        MESSAGES.UNSUBSCRIBE_SUCCESS!
-      );
+      const formattedMsg = joinWithNewlines(MESSAGES.UNSUBSCRIBE_SUCCESS!);
       await announcementSubscriptionRepo.delete(chatId);
       await ctx.reply(formattedMsg.text, {
         entities: formattedMsg.entities,
@@ -229,8 +228,9 @@ const announcementsShowFilterCommand = new Command<BotContext>(
       await announcementSubscriptionRepo.getBychatId(chatId);
 
     if (!announcementSubscription) {
-      const formattedMsg = combineFormattedDouble(
-        MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!
+      const formattedMsg = joinWithNewlines(
+        MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!,
+        2
       );
       await ctx.reply(formattedMsg.text, {
         entities: formattedMsg.entities,
@@ -250,20 +250,26 @@ const announcementsShowFilterCommand = new Command<BotContext>(
     const filtersList = filterNames
       .map((name: string) => `   • ${name}`)
       .join("\n");
-    const statusMessage = combineFormattedDouble([
-      fmt`${emoji("check_mark_button")} ${b}Announcement Subscription Status${b}`,
-      fmt`${emoji("clipboard")} ${b}Active Filters:${b} ${announcementSubscription.filters.length}`,
-      fmt`${emoji("bullseye")} ${b}You are subscribed to:${b}\n${filtersList}`,
-    ]);
-    const suggestionsMessage = combineFormattedDouble([
-      fmt`${emoji("light_bulb")} Use /announcements_change_filter to modify your filters`,
-      fmt`${emoji("cross_mark")} Use /announcements_unsubscribe to unsubscribe`,
-    ]);
+    const statusMessage = joinWithNewlines(
+      [
+        fmt`${emoji("check_mark_button")} ${b}Announcement Subscription Status${b}`,
+        fmt`${emoji("clipboard")} ${b}Active Filters:${b} ${announcementSubscription.filters.length}`,
+        fmt`${emoji("bullseye")} ${b}You are subscribed to:${b}\n${filtersList}`,
+      ],
+      2
+    );
+    const suggestionsMessage = joinWithNewlines(
+      [
+        fmt`${emoji("light_bulb")} Use /announcements_change_filter to modify your filters`,
+        fmt`${emoji("cross_mark")} Use /announcements_unsubscribe to unsubscribe`,
+      ],
+      2
+    );
 
-    const combinedMessage = combineFormattedDouble([
-      statusMessage,
-      suggestionsMessage,
-    ]);
+    const combinedMessage = joinWithNewlines(
+      [statusMessage, suggestionsMessage],
+      2
+    );
 
     await ctx.reply(combinedMessage.text, {
       entities: combinedMessage.entities,
@@ -285,7 +291,7 @@ const announcementsChangeFilterCommand = new Command<BotContext>(
       const existingSubscription =
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (!existingSubscription) {
-        const formattedMsg = combineFormattedDouble(
+        const formattedMsg = joinWithNewlines(
           MESSAGES.NOT_SUBSCRIBED_CHANGE_FILTER!
         );
         await ctx.reply(formattedMsg.text, {

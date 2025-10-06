@@ -1,10 +1,7 @@
 import { CommandContext } from "grammy";
 import { BotContext } from "../../types/bot.types.js";
 import { DEPRECATED_COMMAND_TO_REASON_MAP } from "../../constants/bot.js";
-import {
-  combineFormattedDouble,
-  formatCommand,
-} from "../../utils/formatting.js";
+import { formatCommand, joinWithNewlines } from "../../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
 import { helpCommand } from "../composers/core/composer.js";
 
@@ -21,7 +18,7 @@ export const deprecatedCommandHandler = async (
   ];
 
   // Format and send the message
-  const formattedReply = combineFormattedDouble(deprecationMsg);
+  const formattedReply = joinWithNewlines(deprecationMsg, 2);
   return await ctx.reply(formattedReply.text, {
     entities: formattedReply.entities,
     link_preview_options: { is_disabled: true },

@@ -10,8 +10,7 @@ import {
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
 import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
-  combineFormattedDouble,
-  combineFormattedSingle,
+  joinWithNewlines,
   formatCommand,
 } from "../../../../utils/formatting.js";
 import { createAnnouncementsErrorBoundary } from "../../shared/errorBoundary.js";
@@ -65,9 +64,7 @@ const announcementsLookupCommand = new Command<BotContext>(
     }
 
     // Send a loading message
-    const formattedMsg = combineFormattedDouble(
-      MESSAGES.FETCHING_ANNOUNCEMENTS!
-    );
+    const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -124,9 +121,7 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
     announcement => announcement.id === announcementId
   )!;
 
-  const formattedFetchingMsg = combineFormattedDouble(
-    MESSAGES.FETCHING_DETAILS!
-  );
+  const formattedFetchingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS!, 2);
   await ctx.editMessageText(formattedFetchingMsg.text, {
     entities: formattedFetchingMsg.entities,
   });
@@ -135,7 +130,7 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
   const parts: FormattedString[] = [];
   if (selectedAnnouncement.subject) {
     parts.push(
-      combineFormattedSingle([
+      joinWithNewlines([
         fmt`${b}${emoji("open_book")} Subject:${b}`,
         fmt`${selectedAnnouncement.subject}`,
       ])
@@ -143,7 +138,7 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
   }
   if (selectedAnnouncement.message) {
     parts.push(
-      combineFormattedSingle([
+      joinWithNewlines([
         fmt`${b}${emoji("memo")} Message:${b}`,
         fmt`${selectedAnnouncement.message}`,
       ])
@@ -151,7 +146,7 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
   }
   if (selectedAnnouncement.formattedPublishedDate) {
     parts.push(
-      combineFormattedSingle([
+      joinWithNewlines([
         fmt`${b}${emoji("calendar")} Date:${b} ${selectedAnnouncement.formattedPublishedDate}`,
       ])
     );
@@ -160,7 +155,7 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
   const attachments = selectedAnnouncement.attachments || [];
 
   // Prepare message parts and combine
-  const captionMsg: FormattedString = combineFormattedDouble(parts);
+  const captionMsg: FormattedString = joinWithNewlines(parts, 2);
   if (attachments.length === 0) {
     // Create "View Another" keyboard
     const keyboard = new InlineKeyboard()
@@ -182,9 +177,12 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
 
     // Send each attachment as a document
     for (const attachment of attachments) {
-      const formattedMsg = combineFormattedDouble([
-        fmt`${emoji("hourglass_not_done")} Fetching attachment: ${attachment.name}`,
-      ]);
+      const formattedMsg = joinWithNewlines(
+        [
+          fmt`${emoji("hourglass_not_done")} Fetching attachment: ${attachment.name}`,
+        ],
+        2
+      );
       const loadingMessage = await ctx.reply(formattedMsg.text, {
         entities: formattedMsg.entities,
       });
@@ -230,7 +228,7 @@ protectedComposer.callbackQuery("announcement_view_another_true", async ctx => {
   // Store the message ID for error boundary cleanup
   ctx.session.announcementsMessageId = ctx.callbackQuery.message!.message_id;
 
-  const formattedMsg = combineFormattedDouble(MESSAGES.FETCHING_ANNOUNCEMENTS!);
+  const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -261,7 +259,7 @@ protectedComposer.callbackQuery(
     await ctx.answerCallbackQuery();
 
     await ctx.editMessageText(
-      `Announcements lookup ended. Use {${formatCommand(announcementsLookupCommand)}} to start again.`
+      `Announcements lookup ended. Use ${formatCommand(announcementsLookupCommand)} to start again.`
     );
 
     // Clear session data
@@ -292,7 +290,7 @@ protectedComposer.callbackQuery("announcement_prev_page", async ctx => {
   // Store the message ID for error boundary cleanup
   ctx.session.announcementsMessageId = ctx.callbackQuery.message!.message_id;
 
-  const formattedMsg = combineFormattedDouble(MESSAGES.FETCHING_ANNOUNCEMENTS!);
+  const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -328,7 +326,7 @@ protectedComposer.callbackQuery("announcement_next_page", async ctx => {
   // Store the message ID for error boundary cleanup
   ctx.session.announcementsMessageId = ctx.callbackQuery.message!.message_id;
 
-  const formattedMsg = combineFormattedDouble(MESSAGES.FETCHING_ANNOUNCEMENTS!);
+  const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });

@@ -5,7 +5,7 @@ import { editMessageSafely } from "../../../../utils/bot.js";
 import { InlineKeyboard } from "grammy";
 import { UPTIME_ROBOT_API } from "../../../../constants/api.js";
 import { fmt, b } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 
 export const ktuAPIStatusCommand = new Command<BotContext>(
@@ -36,7 +36,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
       const title = fmt`${emoji("globe_with_meridians")} ${b}KTU API Server Status${b}`;
       const status = fmt`${statusEmoji} ${b}Status:${b} ${statusText}`;
       const responseTime = fmt`${emoji("high_voltage")} ${b}Response Time:${b} ${apiStatus.responseTime}ms`;
-      const message = combineFormattedDouble([title, status, responseTime]);
+      const message = joinWithNewlines([title, status, responseTime], 2);
 
       const keyboard = new InlineKeyboard().url(
         `${emoji("bar_chart")} View Monitor Page`,
@@ -50,7 +50,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
       });
     } catch {
       const errorDescription = fmt`${emoji("frowning_face")} Failed to fetch API status. Please try again later.`;
-      const errorMessage = combineFormattedDouble([errorDescription]);
+      const errorMessage = joinWithNewlines([errorDescription], 2);
 
       await editMessageSafely(
         ctx,

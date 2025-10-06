@@ -12,8 +12,8 @@ import {
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
 import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
-  combineFormattedDouble,
   formatCommand,
+  joinWithNewlines,
 } from "../../../../utils/formatting.js";
 import { createCalendarErrorBoundary } from "../../shared/errorBoundary.js";
 import { deleteMessageSafely } from "../../../../utils/bot.js";
@@ -76,9 +76,7 @@ const calendarLookupCommand = new Command<BotContext>(
     }
 
     // Send a loading message
-    const formattedMsg = combineFormattedDouble(
-      MESSAGES["FETCHING_CALENDARS"]!
-    );
+    const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_CALENDARS"]!, 2);
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -121,7 +119,7 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
   // Grab the calendar ID from the callback data
   const callbackParts = callbackData.split("_");
   if (callbackParts.length < 3 || !callbackParts[2]) {
-    const formattedMsg = combineFormattedDouble(MESSAGES["INVALID_CALLBACK"]!);
+    const formattedMsg = joinWithNewlines(MESSAGES["INVALID_CALLBACK"]!, 2);
     await ctx.editMessageText(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -137,21 +135,24 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
   )!;
 
   // Prepare the calendar details message
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_DETAILS"]!);
+  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_DETAILS"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
-  const captionMsg = combineFormattedDouble([
+  const captionMsg = joinWithNewlines([
     fmt`${emoji("glowing_star")} ${b}Title:${b} ${selectedCalendar.title}`,
     fmt`${emoji("calendar")} ${b}Date:${b} ${selectedCalendar.formattedPublishedDate}`,
   ]);
 
   // Check if calendar has attachment
   if (!selectedCalendar.attachmentId) {
-    const noAttachmentMsg = combineFormattedDouble([
-      captionMsg,
-      fmt`${emoji("woman_shrugging")} No attachment found for this academic calendar.`,
-    ]);
+    const noAttachmentMsg = joinWithNewlines(
+      [
+        captionMsg,
+        fmt`${emoji("woman_shrugging")} No attachment found for this academic calendar.`,
+      ],
+      2
+    );
 
     // Create "View Another" keyboard
     const keyboard = new InlineKeyboard()
@@ -171,8 +172,9 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
   });
 
   // Show loading message for attachment fetching
-  const formattedMsgAttachment = combineFormattedDouble(
-    MESSAGES["FETCHING_ATTACHMENT"]!
+  const formattedMsgAttachment = joinWithNewlines(
+    MESSAGES["FETCHING_ATTACHMENT"]!,
+    2
   );
   const loadingMessage = await ctx.reply(formattedMsgAttachment.text, {
     entities: formattedMsgAttachment.entities,
@@ -217,7 +219,7 @@ protectedComposer.callbackQuery("calendar_view_another_true", async ctx => {
   ctx.session.calendarPage = 0;
 
   // Start fetching and displaying calendars again
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_CALENDARS"]!);
+  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_CALENDARS"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -275,7 +277,7 @@ protectedComposer.callbackQuery("calendar_prev_page", async ctx => {
   ctx.session.calendarPage--;
 
   // Fetch and display previous page
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_CALENDARS"]!);
+  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_CALENDARS"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -312,7 +314,7 @@ protectedComposer.callbackQuery("calendar_next_page", async ctx => {
   ctx.session.calendarPage++;
 
   // Fetch and display next page
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_CALENDARS"]!);
+  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_CALENDARS"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -324,7 +326,7 @@ protectedComposer.callbackQuery("calendar_next_page", async ctx => {
   // If no calendars found, revert page number
   if (calendars.length === 0) {
     ctx.session.calendarPage--;
-    const formattedMsg = combineFormattedDouble(MESSAGES["NO_MORE_CALENDARS"]!);
+    const formattedMsg = joinWithNewlines(MESSAGES["NO_MORE_CALENDARS"]!, 2);
     await ctx.editMessageText(formattedMsg.text, {
       entities: formattedMsg.entities,
     });

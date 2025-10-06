@@ -11,8 +11,7 @@ import {
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
 import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
-  combineFormattedDouble,
-  combineFormattedSingle,
+  joinWithNewlines,
   formatCommand,
 } from "../../../../utils/formatting.js";
 import { createTimetableErrorBoundary } from "../../shared/errorBoundary.js";
@@ -74,9 +73,7 @@ const timetableLookupCommand = new Command<BotContext>(
       ctx.session.timetablePage = 0;
     }
 
-    const formattedMsg = combineFormattedDouble(
-      MESSAGES["FETCHING_TIMETABLES"]!
-    );
+    const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -122,7 +119,7 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
 
   const callbackData = ctx.callbackQuery.data;
   if (!callbackData) {
-    const formattedMsg = combineFormattedDouble(MESSAGES["INVALID_CALLBACK"]!);
+    const formattedMsg = joinWithNewlines(MESSAGES["INVALID_CALLBACK"]!, 2);
     await ctx.editMessageText(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -131,7 +128,7 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
 
   const callbackParts = callbackData.split("_");
   if (callbackParts.length < 3 || !callbackParts[2]) {
-    const formattedMsg = combineFormattedDouble(MESSAGES["INVALID_CALLBACK"]!);
+    const formattedMsg = joinWithNewlines(MESSAGES["INVALID_CALLBACK"]!, 2);
     await ctx.editMessageText(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -147,7 +144,7 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
     timetable => timetable.id === timetableId
   )!;
 
-  let formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_DETAILS"]!);
+  let formattedMsg = joinWithNewlines(MESSAGES["FETCHING_DETAILS"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -156,7 +153,7 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
   const parts: FormattedString[] = [];
   if (selectedTimetable.title) {
     parts.push(
-      combineFormattedSingle([
+      joinWithNewlines([
         fmt`${emoji("glowing_star")} ${b}Title:${b}`,
         fmt`${selectedTimetable.title}`,
       ])
@@ -165,21 +162,24 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
 
   if (selectedTimetable.formattedPublishedDate) {
     parts.push(
-      combineFormattedSingle([
+      joinWithNewlines([
         fmt`${emoji("calendar")} ${b}Date:${b} ${selectedTimetable.formattedPublishedDate}`,
       ])
     );
   }
 
   // Combine all parts into a single message
-  const captionMsg = combineFormattedDouble(parts);
+  const captionMsg = joinWithNewlines(parts, 2);
 
   // Check if timetable has attachment
   if (!selectedTimetable.attachmentId) {
-    const noAttachmentMsg = combineFormattedDouble([
-      captionMsg,
-      fmt`${emoji("woman_shrugging")} No attachment found for this timetable.`,
-    ]);
+    const noAttachmentMsg = joinWithNewlines(
+      [
+        captionMsg,
+        fmt`${emoji("woman_shrugging")} No attachment found for this timetable.`,
+      ],
+      2
+    );
 
     // Create "View Another" keyboard
     const keyboard = new InlineKeyboard()
@@ -203,9 +203,12 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
     selectedTimetable.fileName != null &&
     selectedTimetable.encryptId != null
   ) {
-    formattedMsg = combineFormattedDouble([
-      fmt`${emoji("hourglass_not_done")} Fetching attachment ${selectedTimetable.fileName}... Please wait...`,
-    ]);
+    formattedMsg = joinWithNewlines(
+      [
+        fmt`${emoji("hourglass_not_done")} Fetching attachment ${selectedTimetable.fileName}... Please wait...`,
+      ],
+      2
+    );
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -248,7 +251,7 @@ protectedComposer.callbackQuery("timetable_view_another_true", async ctx => {
   // Store the message ID for error boundary cleanup
   ctx.session.timetableMessageId = ctx.callbackQuery.message!.message_id;
 
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_TIMETABLES"]!);
+  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -304,7 +307,7 @@ protectedComposer.callbackQuery("timetable_prev_page", async ctx => {
   // Store the message ID for error boundary cleanup
   ctx.session.timetableMessageId = ctx.callbackQuery.message!.message_id;
 
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_TIMETABLES"]!);
+  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -340,7 +343,7 @@ protectedComposer.callbackQuery("timetable_next_page", async ctx => {
   // Store the message ID for error boundary cleanup
   ctx.session.timetableMessageId = ctx.callbackQuery.message!.message_id;
 
-  const formattedMsg = combineFormattedDouble(MESSAGES["FETCHING_TIMETABLES"]!);
+  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
   await ctx.editMessageText(formattedMsg.text, {
     entities: formattedMsg.entities,
   });
@@ -353,9 +356,7 @@ protectedComposer.callbackQuery("timetable_next_page", async ctx => {
   // If no timetables found, revert page number
   if (timetables.length === 0) {
     ctx.session.timetablePage--;
-    const formattedMsg = combineFormattedDouble(
-      MESSAGES["NO_MORE_TIMETABLES"]!
-    );
+    const formattedMsg = joinWithNewlines(MESSAGES["NO_MORE_TIMETABLES"]!, 2);
     await ctx.editMessageText(formattedMsg.text, {
       entities: formattedMsg.entities,
     });

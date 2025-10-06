@@ -2,7 +2,7 @@ import { InlineKeyboard } from "grammy";
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
 import { emoji } from "@grammyjs/emoji";
 import { fmt, FormattedString } from "@grammyjs/parse-mode";
-import { combineFormattedDouble } from "../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../utils/formatting.js";
 
 // Helper function to generate keyboard with multi-select functionality
 function generateFilterKeyboard(selectedFilters: string[]): InlineKeyboard {
@@ -53,10 +53,13 @@ function generateMessageText(
 ): FormattedString {
   if (selectedFilters.length === 0) {
     const action = mode === "add" ? "Choose" : "Change";
-    return combineFormattedDouble([
-      fmt`${action} your announcement filters:`,
-      fmt`Select one or more filters to receive announcements for those categories.`,
-    ]);
+    return joinWithNewlines(
+      [
+        fmt`${action} your announcement filters:`,
+        fmt`Select one or more filters to receive announcements for those categories.`,
+      ],
+      2
+    );
   }
 
   const selectedNames = selectedFilters.map(
@@ -64,11 +67,14 @@ function generateMessageText(
       ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]
   );
   const action = mode === "add" ? "Choose" : "Change";
-  return combineFormattedDouble([
-    fmt`${action} your announcement filters:`,
-    fmt`${emoji("check_mark_button")} You have selected: ${selectedNames.join(", ")}`,
-    fmt`Click a filter again to unselect it, or click "Apply Filters" when you're done.`,
-  ]);
+  return joinWithNewlines(
+    [
+      fmt`${action} your announcement filters:`,
+      fmt`${emoji("check_mark_button")} You have selected: ${selectedNames.join(", ")}`,
+      fmt`Click a filter again to unselect it, or click "Apply Filters" when you're done.`,
+    ],
+    2
+  );
 }
 
 export { generateFilterKeyboard, generateMessageText };
