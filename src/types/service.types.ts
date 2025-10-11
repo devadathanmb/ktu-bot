@@ -51,9 +51,15 @@ export interface ApiStatusLog {
 }
 
 export interface ApiStatus {
+  name: string;
+  url: string;
   status: string;
   log: ApiStatusLog | null;
   responseTime: number;
+}
+
+export interface ApiStatusResponse {
+  monitors: ApiStatus[];
 }
 
 // Temporary File Upload Service Types

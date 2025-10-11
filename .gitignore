@@ -28,7 +28,8 @@ gitleaks-report.json
 # Env files
 .env
 .env.dev*
-.env.staging
+.env.staging*
+.env.prod*
 !.env.dev.example
 .env.local
 .env.*.local

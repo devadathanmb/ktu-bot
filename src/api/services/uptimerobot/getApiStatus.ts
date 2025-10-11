@@ -3,7 +3,11 @@ import client from "../../client.js";
 import { UPTIME_ROBOT_API } from "../../../constants/api.js";
 import { ExternalApiConfig } from "../../../configs/api.js";
 import { withServiceWrapper } from "../../utils/serviceWrapper.js";
-import type { ApiStatus, ApiStatusLog } from "../../../types/service.types.js";
+import type {
+  ApiStatus,
+  ApiStatusLog,
+  ApiStatusResponse,
+} from "../../../types/service.types.js";
 
 // Zod schemas for UptimeRobot API response validation
 const UptimeRobotLogSchema = z.object({
@@ -18,6 +22,8 @@ const UptimeRobotLogSchema = z.object({
 });
 
 const UptimeRobotMonitorSchema = z.object({
+  friendly_name: z.string(),
+  url: z.string(),
   status: z.number(),
   average_response_time: z.coerce.number(), // API returns this as a string, coerce to number
   logs: z.array(UptimeRobotLogSchema),
@@ -62,7 +68,7 @@ function formatTimestamp(unixTimestamp: number): string {
   }).format(date);
 }
 
-async function _getApiStatus(): Promise<ApiStatus> {
+async function _getApiStatus(): Promise<ApiStatusResponse> {
   const formData = new FormData();
   formData.append("api_key", ExternalApiConfig.UPTIME_ROBOT_API_KEY);
   formData.append("format", "json");
@@ -89,31 +95,33 @@ async function _getApiStatus(): Promise<ApiStatus> {
     throw new Error("No monitor data available from UptimeRobot API");
   }
 
-  const monitor = data.monitors[0];
-  if (!monitor) {
-    throw new Error("No monitor data available from UptimeRobot API");
-  }
-
-  const apiStatus: ApiStatus = {
-    status: mapStatus(monitor.status),
-    log: null,
-    responseTime: monitor.average_response_time || 0,
-  };
-
-  // Process log information if available
-  const log = monitor.logs?.[0];
-  if (log) {
-    const apiLog: ApiStatusLog = {
-      type: mapLogType(log.type),
-      timestamp: formatTimestamp(log.datetime),
-      duration: Math.round(log.duration / (60 * 60)), // Convert seconds to hours
-      reason: log.reason?.detail || "unknown",
+  // Process all monitors
+  const monitors: ApiStatus[] = data.monitors.map(monitor => {
+    const apiStatus: ApiStatus = {
+      name: monitor.friendly_name,
+      url: monitor.url,
+      status: mapStatus(monitor.status),
+      log: null,
+      responseTime: monitor.average_response_time || 0,
     };
 
-    apiStatus.log = apiLog;
-  }
+    // Process log information if available
+    const log = monitor.logs?.[0];
+    if (log) {
+      const apiLog: ApiStatusLog = {
+        type: mapLogType(log.type),
+        timestamp: formatTimestamp(log.datetime),
+        duration: Math.round(log.duration / (60 * 60)), // Convert seconds to hours
+        reason: log.reason?.detail || "unknown",
+      };
 
-  return apiStatus;
+      apiStatus.log = apiLog;
+    }
+
+    return apiStatus;
+  });
+
+  return { monitors };
 }
 
 // Export the wrapped version with error handling

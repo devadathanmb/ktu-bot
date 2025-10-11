@@ -10,9 +10,9 @@ import { emoji } from "@grammyjs/emoji";
 
 export const ktuAPIStatusCommand = new Command<BotContext>(
   "serverstatus",
-  `${emoji("globe_showing_asia_australia")} Check the KTU API server status`,
+  `${emoji("globe_showing_asia_australia")} Check the KTU services status`,
   async ctx => {
-    const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU API server status...`;
+    const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU services status...`;
 
     // Send loading message with hidden dummy button to allow editing with buttons later
     const statusMessage = await ctx.reply(loadingMessage.text, {
@@ -25,18 +25,24 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
     });
 
     try {
-      const apiStatus = await getApiStatus();
+      const apiStatusResponse = await getApiStatus();
 
-      // Format status message
-      const statusEmoji =
-        apiStatus.status === "up" ? emoji("green_circle") : emoji("red_circle");
-      const statusText =
-        apiStatus.status.charAt(0).toUpperCase() + apiStatus.status.slice(1);
+      // Build status message for all monitors
+      const title = fmt`${emoji("globe_with_meridians")} ${b}KTU Services Status${b}`;
 
-      const title = fmt`${emoji("globe_with_meridians")} ${b}KTU API Server Status${b}`;
-      const status = fmt`${statusEmoji} ${b}Status:${b} ${statusText}`;
-      const responseTime = fmt`${emoji("high_voltage")} ${b}Response Time:${b} ${apiStatus.responseTime}ms`;
-      const message = joinWithNewlines([title, status, responseTime], 2);
+      const monitorMessages = apiStatusResponse.monitors.map(monitor => {
+        const statusEmoji =
+          monitor.status === "up" ? emoji("green_circle") : emoji("red_circle");
+        const statusText = monitor.status.toUpperCase();
+
+        const name = fmt`${b}${monitor.name}${b}`;
+        const status = fmt`  ${statusEmoji} ${b}Status:${b} ${statusText}`;
+        const responseTime = fmt`  ${emoji("high_voltage")} ${b}Response Time:${b} ${monitor.responseTime.toFixed(2)}ms`;
+
+        return joinWithNewlines([name, status, responseTime], 1);
+      });
+
+      const message = joinWithNewlines([title, ...monitorMessages], 2);
 
       const keyboard = new InlineKeyboard().url(
         `${emoji("bar_chart")} View Monitor Page`,
