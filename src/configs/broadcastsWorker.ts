@@ -8,7 +8,7 @@ const broadcastsWorkerConfigSchema = z
     ...config,
     HEALTHCHECK: {
       MAX_FAILED_JOBS: 50,
-      MAX_BACKLOG_JOBS: 100,
+      MAX_BACKLOG_JOBS: 1000,
     },
   }));
 

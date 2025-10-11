@@ -13,7 +13,6 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
       return await serviceFunction(...args);
     } catch (error: unknown) {
       /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
-      logger.error(error);
 
       const errorStatusCode = (error as any)?.response?.statusCode;
       const errorUrl =

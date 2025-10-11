@@ -23,7 +23,7 @@ export const broadcastsQueue = new Queue<BroadcastJob>(BROADCASTS_QUEUE, {
       delay: 10 * 1000, // 10 seconds
     },
     removeOnComplete: {
-      count: 100, // Keep last 100 completed jobs
+      count: 200, // Keep last 200 completed jobs
       age: 24 * 60 * 60, // Keep for 24 hours
     },
     removeOnFail: {

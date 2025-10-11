@@ -62,7 +62,7 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
 
     // Setup event handlers
     this.worker.on("completed", this.onJobCompleted.bind(this));
-    this.worker.on("failed", this.onJobFailed.bind(this));
+    this.worker.on("failed", (job, error) => void this.onJobFailed(job, error));
 
     // Allow worker to perform post-startup tasks (e.g., schedule initial jobs)
     await this.onStartupComplete();
@@ -99,7 +99,7 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
       await this.processJob(job);
     } catch (error) {
       logger.error(
-        { jobId: job.id, workerName: this.workerName, error },
+        { jobId: job.id, data: job.data, workerName: this.workerName, error },
         "Job processing failed"
       );
       throw error;
@@ -111,7 +111,7 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
    */
   protected onJobCompleted(job: Job<TJobData>): void {
     logger.info(
-      { jobId: job.id, workerName: this.workerName },
+      { jobId: job.id, data: job.data, workerName: this.workerName },
       "Job completed"
     );
   }
@@ -119,11 +119,23 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
   /**
    * Default job failed handler
    */
-  protected onJobFailed(job: Job<TJobData> | undefined, error: Error): void {
+  protected async onJobFailed(
+    job: Job<TJobData> | undefined,
+    error: Error
+  ): Promise<void> {
     logger.error(
-      { jobId: job?.id, workerName: this.workerName, error },
+      { jobId: job?.id, data: job?.data, workerName: this.workerName, error },
       "Job failed"
     );
+
+    if (job) {
+      await job.log(
+        `Job failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      if (error.stack) {
+        await job.log(`Stack trace: ${error.stack}`);
+      }
+    }
   }
 
   // ==================== Abstract Methods (must be implemented by subclasses) ====================
