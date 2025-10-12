@@ -28,7 +28,6 @@ const botConfigSchema = z
     IS_WEBHOOK_DEPLOYMENT:
       config.BOT_DEPLOYMENT_TYPE === availableDeploymentTypes.WEBHOOK,
     UNKNOWN_COMMAND_STICKER_DELETION_TIMEOUT: 5 * 1000, // 5 seconds
-    BOT_USERNAME: process.env.BOT_USERNAME || "", // Bot username, can be empty
     IS_PRODUCTION_DEPLOYMENT: config.NODE_ENV === "production",
   }));
 
