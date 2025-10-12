@@ -269,7 +269,6 @@ services:
     container_name: ktu-bot-postgres-dev
     env_file:
       - ./dev/db.env
-      - .env.dev
     volumes:
       - ktu_bot_postgres_data:/var/lib/postgresql/data
     ports:
@@ -277,15 +276,7 @@ services:
     networks:
       - ktu-bot-network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "pg_isready",
-          "-U",
-          "$${DATABASE_USER}",
-          "-d",
-          "$${DATABASE_NAME}",
-        ]
+      test: ["CMD", "pg_isready", "-U", "ktu_bot_user", "-d", "ktu_bot"]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -297,7 +288,6 @@ services:
     container_name: ktu-bot-redis-dev
     env_file:
       - ./dev/redis.env
-      - .env.dev
     ports:
       - "6379:6379"
     networks:
