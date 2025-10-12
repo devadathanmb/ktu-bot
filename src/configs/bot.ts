@@ -38,7 +38,8 @@ export const BotConfig = botConfigSchema.parse({
   BOT_TOKEN: process.env.BOT_TOKEN,
   NODE_ENV: process.env.NODE_ENV || "development",
   BOT_IMAGE_URL:
-    process.env.BOT_IMAGE_URL || "https://i.imgur.com/obaTlOd.jpeg",
+    process.env.BOT_IMAGE_URL ||
+    "https://raw.githubusercontent.com/devadathanmb/ktu-bot/refs/heads/grammy-rewrite/assets/bot-profile-pic.jpg",
   BOT_DEPLOYMENT_TYPE: process.env.BOT_DEPLOYMENT_TYPE,
   BOT_SESSION_DATA_TTL: 1 * 60 * 1000, // 1 minute
   BOT_HEALTH_CHECK_PORT: process.env.BOT_HEALTH_CHECK_PORT,
