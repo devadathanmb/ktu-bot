@@ -133,6 +133,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   logger.info(
     {
       chat_id: ctx.chat?.id,
+      updated_id: ctx.update.update_id,
       update_type: updateType,
       response_time_ms: duration,
     },
