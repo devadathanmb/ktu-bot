@@ -127,6 +127,14 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
       announcement.message || announcement.subject
     );
 
+    logger.debug(
+      {
+        announcement: announcement.message || announcement.subject,
+        filters: Array.from(filters),
+      },
+      "Extracted course filters from announcement"
+    );
+
     // Check relevancy for general-only announcements using LLM
     if (filters.size === 1 && filters.has(AnnouncementFilter.ALL)) {
       // We don't know how many notifications will never match any filters
