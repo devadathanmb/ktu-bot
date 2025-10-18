@@ -50,6 +50,13 @@
       "when": 1759648282543,
       "tag": "0006_sloppy_microbe",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1760777574556,
+      "tag": "0007_powerful_pride",
+      "breakpoints": true
     }
   ]
 }

@@ -14,7 +14,8 @@ import { emoji } from "@grammyjs/emoji";
 // Common messages used throughout the composer
 const MESSAGES: Record<string, Array<FormattedString>> = {
   ALREADY_SUBSCRIBED: [
-    fmt`${emoji("bell")} You are already subscribed to announcements! Use /announcements_show_status to check your announcement subscription status.`,
+    fmt`${emoji("bell")} You are already subscribed to announcements!`,
+    fmt`Use /announcements_show_status to check your announcement subscription status.`,
   ],
   NOT_SUBSCRIBED_WITH_EMOJI: [
     fmt`${emoji("cross_mark")} You are not subscribed to announcements.`,
@@ -42,7 +43,7 @@ announcementSubscriptions.use(protectedComposer);
 // Command: /announcements_subscribe - Subscribe to announcements
 const announcementsSubscribeCommand = new Command<BotContext>(
   "announcements_subscribe",
-  "🔔 Subscribe to announcements",
+  `${emoji("bell")} Subscribe to announcements`,
   async ctx => {
     await withTransaction(async tx => {
       const chatId = ctx.chatId;

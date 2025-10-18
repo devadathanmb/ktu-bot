@@ -4,9 +4,11 @@
 enum Course {
   BTECH = "BTECH",
   MTECH = "MTECH",
+  BCA = "BCA",
   MCA = "MCA",
   PHD = "PHD",
   BDES = "BDES",
+  BBA = "BBA",
   MBA = "MBA",
   BARCH = "BARCH",
   MARCH = "MARCH",
@@ -14,6 +16,7 @@ enum Course {
   MPLAN = "MPLAN",
   HMCT = "HMCT",
   MHM = "MHM",
+  BMS = "BMS",
 }
 
 /**
@@ -40,6 +43,8 @@ type AnnouncementFilter =
 const ANNOUNCEMENT_FILTER_MAP = {
   [Course.BTECH]: "B.Tech",
   [Course.MTECH]: "M.Tech",
+  [Course.BCA]: "BCA",
+  [Course.BBA]: "BBA",
   [Course.MCA]: "MCA",
   [Course.PHD]: "PhD",
   [Course.BDES]: "B.Des",
@@ -50,6 +55,7 @@ const ANNOUNCEMENT_FILTER_MAP = {
   [Course.MPLAN]: "M.Plan",
   [Course.HMCT]: "Hotel Management",
   [Course.MHM]: "MHM",
+  [Course.BMS]: "BMS",
   [AnnouncementSpecificFilter.ALL]: "All Announcements",
   [AnnouncementSpecificFilter.RELEVANT]: "Relevant Announcements",
 } as const;
@@ -62,6 +68,9 @@ const REGEX_COURSE_FILTER_TO_COURSE_MAP: Record<string, Set<Course>> = {
   "\\bb\\.? ?tech": new Set([Course.BTECH]),
   "\\bm\\.? ?tech": new Set([Course.MTECH]),
   "\\bmca\\b": new Set([Course.MCA]),
+  "\\bbca\\b": new Set([Course.BCA]),
+  "\\bbba\\b": new Set([Course.BBA]),
+  "\\bms\\b": new Set([Course.BMS]),
   "\\bp.? ?hd\\b": new Set([Course.PHD]),
   "\\bb\\.? ?des": new Set([Course.BDES]),
   "\\bmba\\b": new Set([Course.MBA]),
@@ -78,6 +87,9 @@ const REGEX_COURSE_FILTER_TO_COURSE_MAP: Record<string, Set<Course>> = {
     Course.BARCH,
     Course.BVOC,
     Course.HMCT,
+    Course.BCA,
+    Course.BBA,
+    Course.BMS,
   ]),
   "(\\bpg\\b)|(\\bpostgraduate\\b)": new Set([
     Course.MTECH,
