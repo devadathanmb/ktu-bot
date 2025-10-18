@@ -38,13 +38,16 @@ export function createBot(): Bot<BotContext> {
   // Create the bot instance
   const bot = new Bot<BotContext>(BotConfig.BOT_TOKEN);
 
-  // Set up middlewares
+  // Set up middlewares:
+  // Logging should be the first middleware in the stack
+  // This is to track response times and other useful info
+  bot.use(logging);
+
   // Use sequentialize middleware only for long polling to avoid race conditions
   if (BotConfig.IS_LONG_POLLING_DEPLOYMENT)
     bot.use(sequentialize(getSessionKey));
 
   // Other middlewares
-  bot.use(logging);
   bot.use(
     session({
       initial: initSession,
