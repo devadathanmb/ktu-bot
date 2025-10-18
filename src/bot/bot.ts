@@ -22,7 +22,6 @@ import { announcementsLookup } from "./composers/lookups/announcements/composer.
 import { timetableLookup } from "./composers/lookups/exam-timetable/composer.js";
 import { calendarLookup } from "./composers/lookups/academic-calendar/composer.js";
 import { inlineQuery } from "./composers/inlineQuery/composer.js";
-import { inlineResultMessage } from "./composers/inlineResultMessage/composer.js";
 import { sequentialize } from "@grammyjs/runner";
 import { chatMemeberHandler } from "./handlers/chatMemeber.js";
 import { DEPRECATED_COMMANDS_LIST } from "../constants/bot.js";
@@ -93,9 +92,6 @@ export function createBot(): Bot<BotContext> {
 
   // Handle unknown commands
   bot.filter(commandNotFound(botCommands)).use(unknownCommandHandler);
-
-  // Handle inline result messages before unhandled
-  bot.use(inlineResultMessage);
 
   // Unhandled stuff — Should remain at the end
   bot.use(unhandled);
