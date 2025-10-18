@@ -138,9 +138,9 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
     logger.debug(
       {
         announcement: content,
-        filters: filters,
+        filters: Array.from(filters),
       },
-      "Extracted course filters from announcement"
+      "Regex extracted course filters from announcement"
     );
 
     // If more than one filter is matched, then it's likely matching UG and PG courses
@@ -161,7 +161,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
         await llmService.findRelevantCoursesFromAnnouncement(contentText);
       logger.debug(
         {
-          llmMatchedCourses: llmMatchedCourses,
+          llmMatchedCourses: Array.from(llmMatchedCourses),
           announcement: content,
         },
         "LLM matched courses from announcement"
