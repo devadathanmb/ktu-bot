@@ -28,8 +28,6 @@ import { chatMemeberHandler } from "./handlers/chatMemeber.js";
 import { DEPRECATED_COMMANDS_LIST } from "../constants/bot.js";
 import { deprecatedCommandHandler } from "./handlers/deprecated.js";
 import trackChatId from "./middlewares/trackChatId.js";
-import { limit } from "@grammyjs/ratelimiter";
-import { rateLimitExceededHandler } from "./handlers/ratelimit.js";
 
 // Sesion key generator function
 function getSessionKey(ctx: Omit<Context, "session">) {
@@ -49,12 +47,12 @@ export function createBot(): Bot<BotContext> {
   // Long polling only middlewares:
   if (BotConfig.IS_LONG_POLLING_DEPLOYMENT) {
     // Rate limiting middleware
-    bot.use(
-      limit({
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        onLimitExceeded: rateLimitExceededHandler,
-      })
-    );
+    // bot.use(
+    //   limit({
+    //     // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    //     onLimitExceeded: rateLimitExceededHandler,
+    //   })
+    // );
 
     // Sequentialize middleware to process updates from the same chat one by one
     // This prevents race conditions
