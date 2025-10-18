@@ -13,5 +13,5 @@ export const rateLimitExceededHandler = async (ctx: BotContext) => {
     ],
     2
   );
-  await ctx.replyWithSticker(replyMessage.text);
+  await ctx.reply(replyMessage.text);
 };
