@@ -12,7 +12,11 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { BroadcastJob } from "../../shared/types.js";
-import { AnnouncementFilter } from "../../../constants/courses.js";
+import {
+  AnnouncementFilter,
+  POSTGRADUATE_COURSES,
+  UNDERGRADUATE_COURSES,
+} from "../../../constants/courses.js";
 import {
   announcementsNotifyQueue,
   setupRecurringSchedule,
@@ -134,10 +138,41 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
     logger.debug(
       {
         announcement: content,
-        filters: Array.from(filters),
+        filters: filters,
       },
       "Extracted course filters from announcement"
     );
+
+    // If more than one filter is matched, then it's likely matching UG and PG courses
+    // But the announcement in itself may not be relevant to all those courses
+    // Hence, we need to rely on LLM to check the relevant courses for such announcements
+    if (
+      filters.size == UNDERGRADUATE_COURSES.size ||
+      filters.size == POSTGRADUATE_COURSES.size
+    ) {
+      // Find the filters using LLM
+      // If LLM finds any specific courses, we will override the filters found so far
+      // Otherwise, we will keep the existing filters
+      logger.debug(
+        "Multiple course filters found, using LLM to determine specific relevant courses"
+      );
+      const llmService = new LLMService();
+      const llmMatchedCourses =
+        await llmService.findRelevantCoursesFromAnnouncement(contentText);
+      logger.debug(
+        {
+          llmMatchedCourses: llmMatchedCourses,
+          announcement: content,
+        },
+        "LLM matched courses from announcement"
+      );
+      if (llmMatchedCourses.size > 0) {
+        filters.clear();
+        llmMatchedCourses.forEach(courseCode => {
+          filters.add(courseCode as AnnouncementFilter);
+        });
+      }
+    }
 
     // Check relevancy for general-only announcements using LLM
     if (filters.size === 1 && filters.has(AnnouncementFilter.ALL)) {

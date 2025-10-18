@@ -1,5 +1,5 @@
 import logger from "../src/utils/logger";
-import { fetchAnnouncements } from "../src/api/services/fetchAnnouncements";
+import { fetchAnnouncements } from "../src/api/services/ktu/fetchAnnouncements.js";
 import { writeFileSync } from "fs";
 
 async function main() {

@@ -1,35 +1,52 @@
-/**
- * Course enum - internal use only
- */
-enum Course {
+// Enums for courses
+enum UnderGraduateCourse {
   BTECH = "BTECH",
-  MTECH = "MTECH",
   BCA = "BCA",
-  MCA = "MCA",
-  PHD = "PHD",
   BDES = "BDES",
-  BBA = "BBA",
-  MBA = "MBA",
   BARCH = "BARCH",
-  MARCH = "MARCH",
   BVOC = "BVOC",
-  MPLAN = "MPLAN",
   HMCT = "HMCT",
-  MHM = "MHM",
+  BBA = "BBA",
   BMS = "BMS",
 }
 
-/**
- * Additional announcement filters - internal use only
- */
+enum PostGraduateCourse {
+  MTECH = "MTECH",
+  MCA = "MCA",
+  MBA = "MBA",
+  MARCH = "MARCH",
+  MPLAN = "MPLAN",
+  MHM = "MHM",
+}
+
+enum OtherCourse {
+  PHD = "PHD",
+}
+
+// Combine and export all courses as a single enum
+const Course = {
+  ...UnderGraduateCourse,
+  ...PostGraduateCourse,
+  ...OtherCourse,
+} as const;
+type Course = (typeof Course)[keyof typeof Course];
+
+// Sets for easy lookup
+const UNDERGRADUATE_COURSES = new Set(
+  Object.values(UnderGraduateCourse) as Course[]
+);
+const POSTGRADUATE_COURSES = new Set(
+  Object.values(PostGraduateCourse) as Course[]
+);
+const COURSES = new Set(Object.values(Course) as Course[]);
+
+// Specific announcement filters
 enum AnnouncementSpecificFilter {
   ALL = "ALL",
   RELEVANT = "RELEVANT",
 }
 
-/**
- * Combined announcement filter enum - contains both courses and announcement filters
- */
+// Combined announcement filter type
 const AnnouncementFilter = {
   ...Course,
   ...AnnouncementSpecificFilter,
@@ -37,9 +54,7 @@ const AnnouncementFilter = {
 type AnnouncementFilter =
   (typeof AnnouncementFilter)[keyof typeof AnnouncementFilter];
 
-/**
- * Announcement filter display names mapping
- */
+// Mapping for display purposes
 const ANNOUNCEMENT_FILTER_MAP = {
   [Course.BTECH]: "B.Tech",
   [Course.MTECH]: "M.Tech",
@@ -60,10 +75,7 @@ const ANNOUNCEMENT_FILTER_MAP = {
   [AnnouncementSpecificFilter.RELEVANT]: "Relevant Announcements",
 } as const;
 
-/**
- * Regex patterns mapped to course keys
- * Uses Course enum for single source of truth
- */
+// Regex patterns to match course mentions in text
 const REGEX_COURSE_FILTER_TO_COURSE_MAP: Record<string, Set<Course>> = {
   "\\bb\\.? ?tech": new Set([Course.BTECH]),
   "\\bm\\.? ?tech": new Set([Course.MTECH]),
@@ -81,28 +93,16 @@ const REGEX_COURSE_FILTER_TO_COURSE_MAP: Record<string, Set<Course>> = {
   "hotel management": new Set([Course.HMCT]),
   "\\bbhmct": new Set([Course.HMCT]),
   "\\bmhm\\b": new Set([Course.MHM]),
-  "(\\bug\\b)|(\\bundergraduate\\b)": new Set([
-    Course.BTECH,
-    Course.BDES,
-    Course.BARCH,
-    Course.BVOC,
-    Course.HMCT,
-    Course.BCA,
-    Course.BBA,
-    Course.BMS,
-  ]),
-  "(\\bpg\\b)|(\\bpostgraduate\\b)": new Set([
-    Course.MTECH,
-    Course.MCA,
-    Course.MBA,
-    Course.MARCH,
-    Course.MPLAN,
-    Course.MHM,
-  ]),
+
+  "(\\bug\\b)|(\\bundergraduate\\b)": UNDERGRADUATE_COURSES,
+  "(\\bpg\\b)|(\\bpostgraduate\\b)": POSTGRADUATE_COURSES,
 };
 
 export {
   AnnouncementFilter,
   ANNOUNCEMENT_FILTER_MAP,
   REGEX_COURSE_FILTER_TO_COURSE_MAP,
+  UNDERGRADUATE_COURSES,
+  POSTGRADUATE_COURSES,
+  COURSES,
 };

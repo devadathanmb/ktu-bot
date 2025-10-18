@@ -2,8 +2,12 @@ import got from "got";
 import { z } from "zod";
 import { LLMConfigSchema } from "../../../configs/llm.js";
 import { GROQ_API } from "../../../constants/llm.js";
-import { ANNOUNCEMENT_RELEVANCE_PROMPT } from "./prompts.js";
+import {
+  ANNOUNCEMENT_RELEVANCE_PROMPT,
+  buildCourseFindingPrompt,
+} from "./prompts.js";
 import logger from "../../../utils/logger.js";
+import { COURSES } from "../../../constants/courses.js";
 
 // Zod schemas for validation
 const GroqMessageSchema = z.object({
@@ -42,6 +46,18 @@ const GroqCompletionResponseSchema = z.object({
 const AnnouncementRelevanceResultSchema = z.object({
   is_relevant: z.boolean(),
 });
+
+const AnnouncementRelevantCoursesResultSchema = z
+  .object({
+    relevant_courses: z.array(z.string()),
+  })
+  .transform(data => {
+    // Filter to only include valid course codes
+    const validCourses = data.relevant_courses.filter(course =>
+      COURSES.has(course as never)
+    );
+    return new Set(validCourses);
+  });
 
 export type AnnouncementRelevanceResult = z.infer<
   typeof AnnouncementRelevanceResultSchema
@@ -95,6 +111,52 @@ export class LLMService {
     }
   }
 
+  async findRelevantCoursesFromAnnouncement(
+    announcementContent: string
+  ): Promise<Set<string>> {
+    try {
+      // Validate input
+      z.string().min(1).parse(announcementContent);
+
+      const prompt = buildCourseFindingPrompt(announcementContent);
+
+      const request = {
+        model: this.config.COMPLETION_MODEL,
+        messages: [
+          {
+            role: "user" as const,
+            content: prompt,
+          },
+        ],
+        temperature: this.config.TEMPERATURE,
+        max_tokens: this.config.MAX_TOKENS,
+      };
+
+      const response = await this.makeGroqRequest(request);
+
+      // Parse and validate JSON response
+      const parsedJson = JSON.parse(response.choices[0]!.message.content);
+      const validatedResult =
+        AnnouncementRelevantCoursesResultSchema.parse(parsedJson);
+      return validatedResult;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        logger.warn(
+          {
+            error: error,
+            announcement: announcementContent.substring(0, 100) + "...",
+          },
+          "Validation error in LLM course finding service"
+        );
+      } else {
+        logger.error(error, "Error in LLM course finding service");
+      }
+
+      // Return empty set as fallback
+      return new Set<string>();
+    }
+  }
+
   async isAnnouncementRelevant(
     announcementContent: string
   ): Promise<AnnouncementRelevanceResult> {
@@ -127,30 +189,21 @@ export class LLMService {
       const validatedResult =
         AnnouncementRelevanceResultSchema.parse(parsedJson);
 
-      logger.info(
-        {
-          tokens_used: response.usage?.total_tokens || 0,
-          result: validatedResult.is_relevant,
-          announcement: announcementContent.substring(0, 100) + "...",
-        },
-        "LLM notification relevance check completed"
-      );
-
       return validatedResult;
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn(
           {
             error: error.issues,
-            notificationContent: announcementContent.substring(0, 100) + "...",
+            announcement: announcementContent.substring(0, 100) + "...",
           },
           "Validation error in LLM service"
         );
       } else {
-        logger.error(error, "Error in LLM notification relevance check");
+        logger.error(error, "Error in LLM announcement relevance check");
       }
 
-      // Return true as fallback to ensure notifications are not missed
+      // Return true as fallback to ensure announcements are not missed
       return { is_relevant: true };
     }
   }
