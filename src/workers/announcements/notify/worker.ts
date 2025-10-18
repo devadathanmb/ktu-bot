@@ -122,14 +122,18 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
   private async findRelevantSubscribers(
     announcement: Announcement
   ): Promise<number[]> {
+    const content = {
+      subject: announcement.subject || "",
+      message: announcement.message || "",
+    };
+    const contentText = JSON.stringify(content);
+
     // Extract course filters from announcement text
-    const filters = findCourseFiltersFromText(
-      announcement.message || announcement.subject
-    );
+    const filters = findCourseFiltersFromText(contentText);
 
     logger.debug(
       {
-        announcement: announcement.message || announcement.subject,
+        announcement: content,
         filters: Array.from(filters),
       },
       "Extracted course filters from announcement"
@@ -144,9 +148,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
       await new Promise(resolve => setTimeout(resolve, 2 * 1000));
       logger.debug("No specific filters found, checking relevancy with LLM");
       const llmService = new LLMService();
-      const isRelevant = await llmService.isAnnouncementRelevant(
-        announcement.message || announcement.subject
-      );
+      const isRelevant = await llmService.isAnnouncementRelevant(contentText);
 
       // If relevant, add "relevant" filter to send to all relevant subscribers
       if (isRelevant) {
