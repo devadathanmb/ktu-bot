@@ -8,10 +8,10 @@ export const rateLimitExceededHandler = async (ctx: BotContext) => {
   logger.warn({ chatId: ctx.chat?.id }, "Rate limit exceeded");
   const replyMessage = joinWithNewlines(
     [
-      fmt`Kure aayi ketto! Ini poyi oru chaaya kudichitu vaa!"`,
-      fmt`Please slow down a bit. You have been rate limited ${emoji("turtle")}`,
+      fmt`Kure aayi ketto! Ini poyi oru chaaya kudichitu vaa!`,
+      fmt`You are sending too many messages! Please slow down a bit ${emoji("snail")}`,
     ],
     2
   );
-  await ctx.reply(replyMessage.text);
+  await ctx.replyWithSticker(replyMessage.text);
 };
