@@ -199,7 +199,8 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (!announcementSubscription) {
         const formattedMsg = joinWithNewlines(
-          MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!
+          MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!,
+          2
         );
         await ctx.reply(formattedMsg.text, {
           entities: formattedMsg.entities,
