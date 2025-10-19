@@ -107,23 +107,6 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     });
   }
 
-  // Pre-checkout and successful payment logging
-  if (ctx.preCheckoutQuery) {
-    Object.assign(logData, {
-      pre_checkout_id: ctx.preCheckoutQuery.id,
-      currency: ctx.preCheckoutQuery.currency,
-      total_amount: ctx.preCheckoutQuery.total_amount,
-    });
-  }
-
-  if (ctx.message?.successful_payment) {
-    Object.assign(logData, {
-      payment_currency: ctx.message.successful_payment.currency,
-      payment_total_amount: ctx.message.successful_payment.total_amount,
-      payment_payload: ctx.message.successful_payment.invoice_payload,
-    });
-  }
-
   // Log the incoming update
   logger.info(logData, `User action: ${updateType}`);
 
