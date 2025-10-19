@@ -7,7 +7,7 @@ import { joinWithNewlines, formatCommand } from "../../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../utils/logger.js";
-import { helpCommand } from "../composers/core/composer.js";
+import { announcementsSubscribeCommand } from "../composers/announcementSubscriptions/composer.js";
 
 export const chatMemeberHandler = async (
   ctx: Filter<BotContext, "my_chat_member">
@@ -33,8 +33,9 @@ export const chatMemeberHandler = async (
       }
 
       const messages = [
-        fmt`Welcome back! It looks like you previously blocked this bot ${emoji("smiling_face_with_tear")}, so your old subscriptions have been cleared for privacy reasons.`,
-        fmt`You can easily resubscribe using ${formatCommand(helpCommand)}. Thank you for giving me another chance! ${emoji("raising_hands")}`,
+        fmt`Welcome back! It looks like you had previously blocked this bot ${emoji("smiling_face_with_tear")}, so your old subscriptions have been cleared for privacy reasons.`,
+        fmt`You can easily resubscribe using ${formatCommand(announcementsSubscribeCommand)}`,
+        fmt`Thank you for giving me another chance! ${emoji("raising_hands")}`,
       ];
 
       const formattedReply = joinWithNewlines(messages, 2);
