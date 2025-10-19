@@ -2,31 +2,46 @@ import { BotContext } from "../../types/bot.types.js";
 import { NextFunction } from "grammy";
 import logger from "../../utils/logger.js";
 
-function getMediaType(
-  message: Record<string, unknown> | undefined
-): string | undefined {
+const MEDIA_TYPES = new Set([
+  "photo",
+  "video",
+  "document",
+  "audio",
+  "voice",
+  "sticker",
+  "animation",
+  "location",
+  "contact",
+]);
+
+const MAX_TEXT_LOG_LENGTH = 100;
+const MAX_QUERY_LOG_LENGTH = 50;
+
+function getMediaType(message: object | undefined): string | undefined {
   if (!message) return undefined;
 
-  const mediaTypes = [
-    "photo",
-    "video",
-    "document",
-    "audio",
-    "voice",
-    "sticker",
-    "animation",
-    "location",
-    "contact",
-  ];
+  for (const key in message) {
+    if (MEDIA_TYPES.has(key)) {
+      return key;
+    }
+  }
 
-  return mediaTypes.find(type => message[type]);
+  return undefined;
+}
+
+function getUpdateType(update: object): string {
+  for (const key in update) {
+    if (key !== "update_id") {
+      return key;
+    }
+  }
+  return "unknown";
 }
 
 async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   const start = Date.now();
 
-  const updateType =
-    Object.keys(ctx.update).find(key => key !== "update_id") || "unknown";
+  const updateType = getUpdateType(ctx.update);
 
   const logData: Record<string, unknown> = {
     update_id: ctx.update.update_id,
@@ -40,24 +55,21 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     language_code: ctx.from?.language_code,
     chat_id: ctx.chat?.id,
     chat_type: ctx.chat?.type,
-    chat_title: ctx.chat?.type !== "private" ? ctx.chat?.title : undefined,
   };
 
   // Message-specific logging
   if (ctx.message) {
     Object.assign(logData, {
       message_id: ctx.message.message_id,
-      text: ctx.message.text?.slice(0, 100), // Truncate long messages
+      text: ctx.message.text?.slice(0, MAX_TEXT_LOG_LENGTH),
       text_length: ctx.message.text?.length,
       command: ctx.message.text?.startsWith("/")
         ? ctx.message.text.split(" ")[0]
         : undefined,
       message_date: ctx.message.date,
-      has_entities: ctx.message.entities && ctx.message.entities.length > 0,
+      has_entities: (ctx.message.entities?.length ?? 0) > 0,
       entity_types: ctx.message.entities?.map(e => e.type),
-      media_type: getMediaType(
-        ctx.message as unknown as Record<string, unknown>
-      ),
+      media_type: getMediaType(ctx.message),
       is_forwarded: !!ctx.message.forward_origin,
       is_reply: !!ctx.message.reply_to_message,
       reply_to_message_id: ctx.message.reply_to_message?.message_id,
@@ -78,7 +90,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   // Inline query logging
   if (ctx.inlineQuery) {
     Object.assign(logData, {
-      query: ctx.inlineQuery.query?.slice(0, 50), // Truncate long queries
+      query: ctx.inlineQuery.query?.slice(0, MAX_QUERY_LOG_LENGTH),
       query_length: ctx.inlineQuery.query?.length,
       inline_query_id: ctx.inlineQuery.id,
       offset: ctx.inlineQuery.offset,
@@ -91,7 +103,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   if (ctx.editedMessage) {
     Object.assign(logData, {
       edited_message_id: ctx.editedMessage.message_id,
-      edited_text: ctx.editedMessage.text?.slice(0, 100),
+      edited_text: ctx.editedMessage.text?.slice(0, MAX_TEXT_LOG_LENGTH),
       edit_date: ctx.editedMessage.edit_date,
     });
   }
@@ -116,7 +128,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   logger.info(
     {
       chat_id: ctx.chat?.id,
-      updated_id: ctx.update.update_id,
+      update_id: ctx.update.update_id,
       update_type: updateType,
       response_time_ms: duration,
     },
