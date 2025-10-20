@@ -10,6 +10,12 @@ Fast lookups • Full-text search • Smart announcement subscriptions • Real-
 Everything the official website should've been, but isn't.
 </p>
 
+<div align="center">
+
+**Bot Status:** [![Better Stack Status](https://uptime.betterstack.com/status-badges/v1/monitor/27lvx.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+
+</div>
+
 <p align="center"><em>No ads. No tracking. 100% libre and will always remain so.</em></p>
 
 ---
