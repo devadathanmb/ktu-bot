@@ -1,9 +1,12 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
-import { getApiStatus } from "../../../../api/services/index.js";
+import { getBetterUptimeApiStatus } from "../../../../api/services/index.js";
 import { editMessageSafely } from "../../../../utils/bot.js";
 import { InlineKeyboard } from "grammy";
-import { UPTIME_ROBOT_API } from "../../../../constants/api.js";
+import {
+  BETTER_UPTIME_API,
+  UPTIME_ROBOT_API,
+} from "../../../../constants/api.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
@@ -13,6 +16,18 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
   `${emoji("globe_showing_asia_australia")} Check the KTU services status`,
   async ctx => {
     const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU services status...`;
+
+    // Keyboard with monitor page links
+    const keyboard = new InlineKeyboard()
+      .url(
+        `${emoji("bar_chart")} View Monitor Page (Uptimerobot)`,
+        UPTIME_ROBOT_API.STATS_PAGE
+      )
+      .row()
+      .url(
+        `${emoji("rocket")} View Monitor Page (Better Uptime)`,
+        BETTER_UPTIME_API.STATS_PAGE
+      );
 
     // Send loading message with hidden dummy button to allow editing with buttons later
     const statusMessage = await ctx.reply(loadingMessage.text, {
@@ -25,7 +40,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
     });
 
     try {
-      const apiStatusResponse = await getApiStatus();
+      const apiStatusResponse = await getBetterUptimeApiStatus();
 
       // Build status message for all monitors
       const title = fmt`${emoji("globe_with_meridians")} ${b}KTU Services Status${b}`;
@@ -44,11 +59,6 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
 
       const message = joinWithNewlines([title, ...monitorMessages], 2);
 
-      const keyboard = new InlineKeyboard().url(
-        `${emoji("bar_chart")} View Monitor Page`,
-        UPTIME_ROBOT_API.STATS_PAGE
-      );
-
       await editMessageSafely(ctx, statusMessage.message_id, message.text, {
         entities: message.entities,
         reply_markup: keyboard,
@@ -64,6 +74,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
         errorMessage.text,
         {
           entities: errorMessage.entities,
+          reply_markup: keyboard,
           link_preview_options: { is_disabled: true },
         }
       );
