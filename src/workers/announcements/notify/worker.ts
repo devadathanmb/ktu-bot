@@ -185,10 +185,15 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
       const llmService = new LLMService();
       const isRelevant = await llmService.isAnnouncementRelevant(contentText);
 
-      // If relevant, add "relevant" filter to send to all relevant subscribers
+      // If relevant, add all available filters to send to all subscribers
+      // If the announcement is relevant, then it should be sent to all subscribes no matter what filters they have subscribed to
       if (isRelevant) {
-        logger.debug("Announcement deemed relevant by LLM");
-        filters.add(AnnouncementFilter.RELEVANT);
+        logger.debug(
+          "Announcement deemed relevant by LLM, adding all filters to reach all subscribers"
+        );
+        Object.values(AnnouncementFilter).forEach(filter => {
+          filters.add(filter);
+        });
       }
     }
 
