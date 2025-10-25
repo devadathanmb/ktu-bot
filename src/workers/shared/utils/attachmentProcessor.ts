@@ -94,6 +94,7 @@ export async function processAttachments(
     }
 
     // If Telegram upload failed, fallback to file hosting and get URL
+    // If file hosting upload fails, throw error to fail the entire job
     if (!processed) {
       try {
         logger.debug(
@@ -108,8 +109,9 @@ export async function processAttachments(
       } catch (error) {
         logger.error(
           { fileName: attachment.name, error: error },
-          "Failed to upload to file hosting. Skipping this attachment."
+          "Failed to upload to file hosting."
         );
+        throw error;
       }
     }
 
