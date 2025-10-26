@@ -16,7 +16,6 @@ import {
   INLINE_CALENDARS_SEARCH_BUTTON,
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
-import { deleteMessageSafely, replyMessageSafely } from "../../../utils/bot.js";
 
 interface AttachmentInfo {
   name: string;
@@ -49,11 +48,17 @@ const SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP: Record<SearchType, string> = {
   [SearchType.TIMETABLES]: "tt",
 } as const;
 
+// Define special result ID prefixes
+const SPECIAL_RESULT_PREFIXES = {
+  HELP: "help_",
+  NO_RESULTS: "no_",
+} as const;
+
 // Helper to construct no-results-found response
 function constructNoResultsFound(type: SearchType) {
   return [
     InlineQueryResultBuilder.article(
-      `no_${type}`,
+      `${SPECIAL_RESULT_PREFIXES.NO_RESULTS}${type}`,
       `${emoji("woman_shrugging")} No ${type} found`
     ).text(
       `${emoji("woman_shrugging")} No ${type} found for your search query.`
@@ -103,6 +108,7 @@ async function searchAnnouncements(
   searchTerm: string
 ): Promise<InlineQueryResult[]> {
   const repo = new AnnouncementsRepository();
+  logger.debug({ searchTerm }, "Searching announcements");
 
   const dbAnnouncements = searchTerm.trim()
     ? await repo.search(searchTerm, { limit: 50 })
@@ -274,6 +280,39 @@ async function searchTimetables(
   return results;
 }
 
+/**
+ * Add "Search Again" button to inline query results
+ */
+function addSearchAgainButton(
+  results: InlineQueryResult[],
+  originalQuery: string
+): InlineQueryResult[] {
+  const searchAgainKeyboard = new InlineKeyboard().switchInlineCurrent(
+    `${emoji("high_voltage")} Search Again`,
+    originalQuery
+  );
+
+  return results.map(result => {
+    // Skip help and no-results items
+    if (
+      result.id?.startsWith(SPECIAL_RESULT_PREFIXES.HELP) ||
+      result.id?.startsWith(SPECIAL_RESULT_PREFIXES.NO_RESULTS)
+    ) {
+      return result;
+    }
+
+    // Add the keyboard to article results
+    if (result.type === "article") {
+      return {
+        ...result,
+        reply_markup: searchAgainKeyboard,
+      };
+    }
+
+    return result;
+  });
+}
+
 inlineQuery.on("inline_query", async ctx => {
   const query = ctx.inlineQuery?.query || "";
   const { type, searchTerm } = parseQuery(query);
@@ -285,7 +324,7 @@ inlineQuery.on("inline_query", async ctx => {
       // No prefix provided - show help with 3 separate search type options
       results = [
         InlineQueryResultBuilder.article(
-          "help_announcements",
+          `${SPECIAL_RESULT_PREFIXES.HELP}announcements`,
           `${emoji("loudspeaker")} Search Announcements`,
           {
             reply_markup: InlineKeyboard.from([
@@ -296,7 +335,7 @@ inlineQuery.on("inline_query", async ctx => {
           `${emoji("loudspeaker")} Click the button below to start searching announcements!`
         ),
         InlineQueryResultBuilder.article(
-          "help_calendars",
+          `${SPECIAL_RESULT_PREFIXES.HELP}calendars`,
           `${emoji("calendar")} Search Academic Calendars`,
           {
             reply_markup: InlineKeyboard.from([INLINE_CALENDARS_SEARCH_BUTTON]),
@@ -305,7 +344,7 @@ inlineQuery.on("inline_query", async ctx => {
           `${emoji("calendar")} Click the button below to start searching academic calendars!`
         ),
         InlineQueryResultBuilder.article(
-          "help_timetables",
+          `${SPECIAL_RESULT_PREFIXES.HELP}timetables`,
           `${emoji("clipboard")} Search Exam Timetables`,
           {
             reply_markup: InlineKeyboard.from([
@@ -329,6 +368,9 @@ inlineQuery.on("inline_query", async ctx => {
           results = await searchTimetables(searchTerm);
           break;
       }
+
+      // Add "Search Again" button to all results
+      results = addSearchAgainButton(results, query);
     }
 
     await ctx.answerInlineQuery(results);
@@ -355,7 +397,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
   if (!chosenResult) return;
 
   const resultId = chosenResult.result_id;
-  const userId = chosenResult.from.id;
+  const chatId = chosenResult.from.id;
 
   // Skip help and no-results items (help items already have keyboards)
   if (resultId.startsWith("help_") || resultId.startsWith("no_")) {
@@ -368,7 +410,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
     if (!prefix || !id) {
       await ctx.api.sendMessage(
-        userId,
+        chatId,
         `${emoji("cross_mark")} Invalid result format.`
       );
       return;
@@ -378,7 +420,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
     if (!searchType) {
       await ctx.api.sendMessage(
-        userId,
+        chatId,
         `${emoji("cross_mark")} Unknown resource type.`
       );
       return;
@@ -394,7 +436,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
         if (!dbAnnouncement) {
           await ctx.api.sendMessage(
-            userId,
+            chatId,
             `${emoji("cross_mark")} Announcement not found.`
           );
           return;
@@ -412,7 +454,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
         if (!dbCalendar) {
           await ctx.api.sendMessage(
-            userId,
+            chatId,
             `${emoji("cross_mark")} Academic calendar not found.`
           );
           return;
@@ -431,7 +473,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
         if (!dbTimetable) {
           await ctx.api.sendMessage(
-            userId,
+            chatId,
             `${emoji("cross_mark")} Exam timetable not found.`
           );
           return;
@@ -452,7 +494,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
     if (attachments.length === 0) {
       await ctx.api.sendMessage(
-        userId,
+        chatId,
         `${emoji("information")} No attachments found for this ${resourceName}.`
       );
       return;
@@ -460,7 +502,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
     // Send initial message that we'll update for each attachment
     const statusMessage = await ctx.api.sendMessage(
-      userId,
+      chatId,
       `${emoji("hourglass_not_done")} Fetching ${attachments.length} attachment${attachments.length > 1 ? "s" : ""} from ${resourceName}...`
     );
 
@@ -470,7 +512,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
       try {
         // Update status message for current attachment
         await ctx.api.editMessageText(
-          userId,
+          chatId,
           statusMessage.message_id,
           `${emoji("hourglass_not_done")} Fetching attachment ${i + 1}/${attachments.length}: ${attachment.name}...`
         );
@@ -480,13 +522,13 @@ inlineQuery.on("chosen_inline_result", async ctx => {
           attachment.name
         );
 
-        await ctx.api.sendDocument(userId, inputFile, {
+        await ctx.api.sendDocument(chatId, inputFile, {
           caption: `${emoji("paperclip")} ${attachment.name}`,
         });
 
         // Update final status message
         await ctx.api.editMessageText(
-          userId,
+          chatId,
           statusMessage.message_id,
           `${emoji("check_mark_button")} Successfully sent ${attachments.length} attachment${attachments.length > 1 ? "s" : ""}!`
         );
@@ -495,21 +537,33 @@ inlineQuery.on("chosen_inline_result", async ctx => {
           { error: attachmentError, attachment },
           "Failed to fetch attachment"
         );
-        await deleteMessageSafely(ctx, statusMessage.message_id);
-        await replyMessageSafely(
-          ctx,
-          `${emoji("cross_mark")} Failed to fetch attachment: ${attachment.name}. Please try again.`
-        );
+        await ctx.api
+          .deleteMessage(chatId, statusMessage.message_id)
+          .catch(() => {});
+        await ctx.api
+          .sendMessage(
+            chatId,
+            joinWithNewlines([
+              fmt`${emoji("crying_cat")} Failed to fetch attachment: ${attachment.name}`,
+              fmt`Please try again.`,
+            ]).text
+          )
+          .catch(() => {});
       }
     }
   } catch (error) {
     logger.error(
-      { error, resultId, userId },
+      { error, resultId, userId: chatId },
       "Error in chosen inline result handler"
     );
-    await replyMessageSafely(
-      ctx,
-      `${emoji("cross_mark")} An error occurred while fetching attachments. Please try again later.`
-    );
+    await ctx.api
+      .sendMessage(
+        chatId,
+        joinWithNewlines([
+          fmt`${emoji("crying_cat")} An error occurred while fetching attachments.`,
+          fmt`Please try again.`,
+        ]).text
+      )
+      .catch(() => {});
   }
 });
