@@ -30,6 +30,7 @@ import { createBot } from "../../../bot/bot.js";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { processAttachments } from "../../shared/utils/attachmentProcessor.js";
+import { setTimeout } from "node:timers/promises";
 
 export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
   private fetchedAnnouncements: Announcement[] = [];
@@ -180,7 +181,9 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
       // There can be a case where many such announcements come in a short span
       // In such a case, lot of requests will be sent in a short burst
       // Since this is anyways async, we can afford to add a small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 2 * 1000));
+      await setTimeout(2 * 1000);
+
+      // Initialize LLM service and find the relevancy
       logger.debug("No specific filters found, checking relevancy with LLM");
       const llmService = new LLMService();
       const isRelevant = await llmService.isAnnouncementRelevant(contentText);
