@@ -16,7 +16,7 @@ import {
   INLINE_CALENDARS_SEARCH_BUTTON,
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
-import { deleteMessageSafely } from "../../../utils/bot.js";
+import { deleteMessageSafely, replyMessageSafely } from "../../../utils/bot.js";
 
 interface AttachmentInfo {
   name: string;
@@ -496,6 +496,10 @@ inlineQuery.on("chosen_inline_result", async ctx => {
           "Failed to fetch attachment"
         );
         await deleteMessageSafely(ctx, statusMessage.message_id);
+        await replyMessageSafely(
+          ctx,
+          `${emoji("cross_mark")} Failed to fetch attachment: ${attachment.name}. Please try again.`
+        );
       }
     }
   } catch (error) {
@@ -503,11 +507,9 @@ inlineQuery.on("chosen_inline_result", async ctx => {
       { error, resultId, userId },
       "Error in chosen inline result handler"
     );
-    await ctx.api
-      .sendMessage(
-        userId,
-        `${emoji("cross_mark")} An error occurred while fetching attachments. Please try again later.`
-      )
-      .catch();
+    await replyMessageSafely(
+      ctx,
+      `${emoji("cross_mark")} An error occurred while fetching attachments. Please try again later.`
+    );
   }
 });
