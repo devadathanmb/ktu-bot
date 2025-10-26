@@ -11,6 +11,7 @@ import { BroadcastsWorkerConfig } from "../../configs/broadcastsWorker.js";
 import { withTransaction } from "../../db/transactions.js";
 import { BaseWorker } from "../base/BaseWorker.js";
 import { createBot } from "../../bot/bot.js";
+import { setTimeout } from "node:timers/promises";
 
 export const BROADCASTS_QUEUE = "BROADCASTS_QUEUE";
 
@@ -279,20 +280,11 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     // Pause the entire queue
     await broadcastsQueue.pause();
 
-    // Schedule resume using a promise-based delay
-    // This ensures proper async flow and error handling
-    await new Promise<void>(resolve => {
-      setTimeout(() => {
-        // Handle resume asynchronously without blocking setTimeout callback
-        void broadcastsQueue
-          .resume()
-          .then(() => logger.info("Queue resumed after rate limit pause"))
-          .catch((error: unknown) =>
-            logger.error({ error }, "Failed to resume queue after rate limit")
-          );
-        resolve();
-      }, duration);
-    });
+    // Sleep for duration
+    await setTimeout(duration);
+
+    // Resume the queue
+    await broadcastsQueue.resume();
   }
 
   private handleTelegramError(error: GrammyError, chatId: number): void {
