@@ -16,6 +16,7 @@ import {
   INLINE_CALENDARS_SEARCH_BUTTON,
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
+import { deleteMessageSafely } from "../../../utils/bot.js";
 
 interface AttachmentInfo {
   name: string;
@@ -482,24 +483,21 @@ inlineQuery.on("chosen_inline_result", async ctx => {
         await ctx.api.sendDocument(userId, inputFile, {
           caption: `${emoji("paperclip")} ${attachment.name}`,
         });
+
+        // Update final status message
+        await ctx.api.editMessageText(
+          userId,
+          statusMessage.message_id,
+          `${emoji("check_mark_button")} Successfully sent ${attachments.length} attachment${attachments.length > 1 ? "s" : ""}!`
+        );
       } catch (attachmentError) {
         logger.error(
           { error: attachmentError, attachment },
           "Failed to fetch attachment"
         );
-        await ctx.api.sendMessage(
-          userId,
-          `${emoji("warning")} Failed to fetch: ${attachment.name}`
-        );
+        await deleteMessageSafely(ctx, statusMessage.message_id);
       }
     }
-
-    // Update final status message
-    await ctx.api.editMessageText(
-      userId,
-      statusMessage.message_id,
-      `${emoji("check_mark_button")} Successfully sent ${attachments.length} attachment${attachments.length > 1 ? "s" : ""}!`
-    );
   } catch (error) {
     logger.error(
       { error, resultId, userId },
