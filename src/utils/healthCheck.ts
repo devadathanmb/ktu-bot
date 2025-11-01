@@ -36,7 +36,13 @@ export function setupHealthCheckServer(
   const app = new Hono();
 
   app.get("/health", async c => {
-    logger.debug(`Health check request received: ${c.req.url}`);
+    const userAgent = c.req.header("User-Agent");
+
+    // Skip logging for uptime monitoring services
+    if (userAgent && !userAgent.toLowerCase().includes("uptime")) {
+      logger.debug(`Health check request received: ${c.req.url}`);
+    }
+
     const isRunning = await getServiceHealth();
     const isDbHealthy = await checkDatabaseHealth();
     const result = createHealthCheckResponse(
