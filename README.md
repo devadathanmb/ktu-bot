@@ -13,8 +13,8 @@ Everything the official website should've been, but isn't.
 <p align="center"><em>No ads. No tracking. 100% libre and will always remain so.</em></p>
 
 <p align="center">
-   <a href="https://ktu-bot.betteruptime.com/">
-      <img src="https://uptime.betterstack.com/status-badges/v1/monitor/27lvx.svg" alt="Better Stack Badge" />
+   <a href="https://ktu-bot-status.betteruptime.com/">
+      <img src="https://uptime.betterstack.com/status-badges/v1/monitor/28gdv.svg" alt="Better Stack Badge" />
    </a>
 </p>
 
