@@ -6,7 +6,7 @@ import { Announcement } from "../../../types/service.types.js";
 import findCourseFiltersFromText from "../../../utils/findCourseFiltersFromText.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
 import { BaseWorker } from "../../base/BaseWorker.js";
-import { addBroadcastJobs } from "../../broadcasts/worker.js";
+import { addBroadcastJobs } from "../../broadcasts/queue.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";

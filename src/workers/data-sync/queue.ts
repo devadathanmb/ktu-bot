@@ -25,11 +25,12 @@ export const dataSyncQueue = new Queue<SyncJobData>(DATA_SYNC_QUEUE, {
       delay: 60 * 1000,
     },
     removeOnComplete: {
-      count: 5,
+      count: 50,
       age: 24 * 60 * 60,
     },
     removeOnFail: {
-      count: 5,
+      count: 50,
+      age: 24 * 60 * 60,
     },
   },
 });

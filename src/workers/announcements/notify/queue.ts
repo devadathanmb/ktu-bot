@@ -21,11 +21,12 @@ export const announcementsNotifyQueue = new Queue<NotifyJobData>(
         delay: 60 * 1000,
       },
       removeOnComplete: {
-        count: 100,
+        count: 50,
         age: 24 * 60 * 60,
       },
       removeOnFail: {
         count: 50,
+        age: 24 * 60 * 60,
       },
     },
   }
