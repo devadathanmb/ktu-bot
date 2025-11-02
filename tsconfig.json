@@ -43,7 +43,7 @@
     /* Node.js Types */
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "constants/constants.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": [
     "node_modules",
     "dist",
