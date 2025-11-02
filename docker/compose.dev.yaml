@@ -1,19 +1,19 @@
 services:
   ktu-bot-app:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: ktu-bot-app
     env_file:
-      - ./dev/bot.env
-      - ./dev/db.env
-      - ./dev/redis.env
-      - ./dev/api.env
-      - ./dev/llm.env
-      - ./dev/logging.env
-      - .env.dev
+      - ../env/dev/bot.env
+      - ../env/dev/db.env
+      - ../env/dev/redis.env
+      - ../env/dev/api.env
+      - ../env/dev/llm.env
+      - ../env/dev/logging.env
+      - ../env/dev/.env
     volumes:
-      - .:/app
+      - ..:/app
       - /app/node_modules
     ports:
       - "3000:3000"
@@ -49,14 +49,14 @@ services:
 
   ktu-bot-db-migrations:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: ktu-bot-db-migrations
     env_file:
-      - ./dev/db.env
-      - .env.dev
+      - ../env/dev/db.env
+      - ../env/dev/.env
     volumes:
-      - .:/app
+      - ..:/app
       - /app/node_modules
     depends_on:
       ktu-bot-postgres:
@@ -73,23 +73,23 @@ services:
 
   announcements-notify-worker:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: announcements-notify-worker
     env_file:
-      - ./dev/bot.env
-      - ./dev/db.env
-      - ./dev/redis.env
-      - ./dev/api.env
-      - ./dev/llm.env
-      - ./dev/announcements-notify-worker.env
-      - ./dev/broadcasts-worker.env
-      - ./dev/logging.env
-      - .env.dev
+      - ../env/dev/bot.env
+      - ../env/dev/db.env
+      - ../env/dev/redis.env
+      - ../env/dev/api.env
+      - ../env/dev/llm.env
+      - ../env/dev/announcements-notify-worker.env
+      - ../env/dev/broadcasts-worker.env
+      - ../env/dev/logging.env
+      - ../env/dev/.env
     ports:
       - "3001:3001"
     volumes:
-      - .:/app
+      - ..:/app
       - /app/node_modules
     depends_on:
       ktu-bot-postgres:
@@ -123,22 +123,22 @@ services:
 
   broadcasts-worker:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: broadcasts-worker
     env_file:
-      - ./dev/bot.env
-      - ./dev/db.env
-      - ./dev/redis.env
-      - ./dev/api.env
-      - ./dev/broadcasts-worker.env
-      - ./dev/llm.env
-      - ./dev/logging.env
-      - .env.dev
+      - ../env/dev/bot.env
+      - ../env/dev/db.env
+      - ../env/dev/redis.env
+      - ../env/dev/api.env
+      - ../env/dev/broadcasts-worker.env
+      - ../env/dev/llm.env
+      - ../env/dev/logging.env
+      - ../env/dev/.env
     ports:
       - "3002:3002"
     volumes:
-      - .:/app
+      - ..:/app
       - /app/node_modules
     depends_on:
       ktu-bot-postgres:
@@ -172,22 +172,22 @@ services:
 
   data-sync-worker:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: data-sync-worker
     env_file:
-      - ./dev/bot.env
-      - ./dev/db.env
-      - ./dev/api.env
-      - ./dev/data-sync-worker.env
-      - ./dev/llm.env
-      - ./dev/redis.env
-      - ./dev/logging.env
-      - .env.dev
+      - ../env/dev/bot.env
+      - ../env/dev/db.env
+      - ../env/dev/api.env
+      - ../env/dev/data-sync-worker.env
+      - ../env/dev/llm.env
+      - ../env/dev/redis.env
+      - ../env/dev/logging.env
+      - ../env/dev/.env
     ports:
       - "3003:3003"
     volumes:
-      - .:/app
+      - ..:/app
       - /app/node_modules
     depends_on:
       ktu-bot-postgres:
@@ -218,26 +218,26 @@ services:
 
   bull-board-service:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: bull-board-service
     env_file:
-      - ./dev/redis.env
-      - ./dev/bot.env
-      - ./dev/llm.env
-      - ./dev/api.env
-      - ./dev/db.env
-      - ./dev/bull-board-service.env
-      - ./dev/logging.env
-      - ./dev/broadcasts-worker.env
-      - ./dev/announcements-notify-worker.env
-      - ./dev/data-sync-worker.env
-      - ./dev/logging.env
-      - .env.dev
+      - ../env/dev/redis.env
+      - ../env/dev/bot.env
+      - ../env/dev/llm.env
+      - ../env/dev/api.env
+      - ../env/dev/db.env
+      - ../env/dev/bull-board-service.env
+      - ../env/dev/logging.env
+      - ../env/dev/broadcasts-worker.env
+      - ../env/dev/announcements-notify-worker.env
+      - ../env/dev/data-sync-worker.env
+      - ../env/dev/logging.env
+      - ../env/dev/.env
     ports:
       - "3010:3010"
     volumes:
-      - .:/app
+      - ..:/app
       - /app/node_modules
     depends_on:
       ktu-bot-redis:
@@ -268,7 +268,7 @@ services:
     image: postgres:17-alpine
     container_name: ktu-bot-postgres-dev
     env_file:
-      - ./dev/db.env
+      - ../env/dev/db.env
     volumes:
       - ktu_bot_postgres_data:/var/lib/postgresql/data
     ports:
@@ -287,7 +287,7 @@ services:
     image: redis:7-alpine
     container_name: ktu-bot-redis-dev
     env_file:
-      - ./dev/redis.env
+      - ../env/dev/redis.env
     ports:
       - "6379:6379"
     networks:

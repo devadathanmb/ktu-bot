@@ -26,11 +26,13 @@ pnpm-debug.log*
 gitleaks-report.json
 
 # Env files
-.env
-.env.dev*
-.env.staging*
-.env.prod*
-!.env.dev.example
+# New structure: env/prod/, env/staging/, env/dev/
+# Dev env files are tracked (contain default configs)
+# Prod/staging are gitignored (contain secrets)
+env/prod/.env
+env/staging/.env
+env/dev/.env
+!env/*/.env.example
 .env.local
 .env.*.local
 

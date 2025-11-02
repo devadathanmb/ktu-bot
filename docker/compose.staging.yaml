@@ -1,12 +1,12 @@
 services:
   ktu-bot-app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     image: ktu-bot:latest
     container_name: ktu-bot-app
     env_file:
-      - .env.staging
+      - ../env/staging/.env
     # networks:
     #   - ktu-bot-network
     ports:
@@ -47,11 +47,11 @@ services:
 
   ktu-bot-db-migrations:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: ktu-bot-db-migrations
     env_file:
-      - .env.staging
+      - ../env/staging/.env
     command:
       [
         "sh",
@@ -64,7 +64,7 @@ services:
     image: ktu-bot:latest
     container_name: announcements-notify-worker
     env_file:
-      - .env.staging
+      - ../env/staging/.env
     ports:
       - "3001:3001"
     # networks:
@@ -111,7 +111,7 @@ services:
       ktu-bot-db-migrations:
         condition: service_completed_successfully
     env_file:
-      - .env.staging
+      - ../env/staging/.env
     ports:
       - "3002:3002"
     # networks:
@@ -152,7 +152,7 @@ services:
     image: ktu-bot:latest
     container_name: data-sync-worker
     env_file:
-      - .env.staging
+      - ../env/staging/.env
     # networks:
     #   - ktu-bot-network
     depends_on:
@@ -196,7 +196,7 @@ services:
     image: ktu-bot:latest
     container_name: bull-board-service
     env_file:
-      - .env.staging
+      - ../env/staging/.env
     # networks:
     #   - ktu-bot-network
     depends_on:

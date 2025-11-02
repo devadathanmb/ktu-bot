@@ -1,12 +1,12 @@
 services:
   ktu-bot-app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     image: ktu-bot:latest
     container_name: ktu-bot-app
     env_file:
-      - .env
+      - ../env/prod/.env
     # networks:
     #   - ktu-bot-network
     ports:
@@ -47,11 +47,11 @@ services:
 
   ktu-bot-db-migrations:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: ktu-bot-db-migrations
     env_file:
-      - .env
+      - ../env/prod/.env
     command:
       [
         "sh",
@@ -64,7 +64,7 @@ services:
     image: ktu-bot:latest
     container_name: announcements-notify-worker
     env_file:
-      - .env
+      - ../env/prod/.env
     ports:
       - "3001:3001"
     # networks:
@@ -111,7 +111,7 @@ services:
       ktu-bot-db-migrations:
         condition: service_completed_successfully
     env_file:
-      - .env
+      - ../env/prod/.env
     ports:
       - "3002:3002"
     # networks:
@@ -152,7 +152,7 @@ services:
     image: ktu-bot:latest
     container_name: data-sync-worker
     env_file:
-      - .env
+      - ../env/prod/.env
     # networks:
     #   - ktu-bot-network
     depends_on:
@@ -196,7 +196,7 @@ services:
     image: ktu-bot:latest
     container_name: bull-board-service
     env_file:
-      - .env
+      - ../env/prod/.env
     # networks:
     #   - ktu-bot-network
     depends_on:
@@ -239,46 +239,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    # networks:
-    #   - ktu-bot-network
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=30d"
-      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-      - "--web.console.templates=/usr/share/prometheus/consoles"
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.25"
-        reservations:
-          memory: 256M
-          cpus: "0.1"
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-volumes:
-  prometheus_data:
-# networks:
-#   ktu-bot-network:
-#     driver: bridge
