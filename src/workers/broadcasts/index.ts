@@ -1,5 +1,7 @@
+export { BroadcastsWorker } from "./worker.js";
 export {
-  BroadcastsWorker,
   addBroadcastJobs,
-  BROADCASTS_QUEUE as BROADCAST_QUEUE,
-} from "./worker.js";
+  addBroadcastJob,
+  broadcastsQueue,
+  BROADCASTS_QUEUE,
+} from "./queue.js";

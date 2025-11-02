@@ -27,13 +27,15 @@ import { chatMemeberHandler } from "./handlers/chatMemeber.js";
 import { DEPRECATED_COMMANDS_LIST } from "../constants/bot.js";
 import { deprecatedCommandHandler } from "./handlers/deprecated.js";
 import trackChatId from "./middlewares/trackChatId.js";
+import { createMetricsMiddleware } from "./middlewares/metrics.js";
+import type { BotMetrics } from "../metrics/definitions.js";
 
 // Sesion key generator function
 function getSessionKey(ctx: Omit<Context, "session">) {
   return ctx.chat?.id.toString();
 }
 
-export function createBot(): Bot<BotContext> {
+export function createBot(metrics?: BotMetrics): Bot<BotContext> {
   // Create the bot instance
   const bot = new Bot<BotContext>(BotConfig.BOT_TOKEN);
 
@@ -41,6 +43,11 @@ export function createBot(): Bot<BotContext> {
   // Logging should be the first middleware in the stack
   // This is to track response times and other useful info
   bot.use(logging);
+
+  // Metrics middleware - track bot performance if metrics are provided
+  if (metrics) {
+    bot.use(createMetricsMiddleware(metrics));
+  }
 
   // Other middlewares:
   // Long polling only middlewares:
@@ -96,8 +103,8 @@ export function createBot(): Bot<BotContext> {
   // Unhandled stuff — Should remain at the end
   bot.use(unhandled);
 
-  // Global bot error handler
-  bot.catch(globalErrorHandler);
+  // Global bot error handler with metrics tracking
+  bot.catch(error => globalErrorHandler(error, metrics));
 
   return bot;
 }

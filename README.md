@@ -82,17 +82,17 @@ cd ktu-bot
 
 ### 2. Configure Environment
 
-Development environment files live in the `dev/` directory. Each service/module has its own `.env` file.
+Development environment files live in the `env/dev/` directory. Each service/module has its own `.env` file.
 
 **Minimum required:**
 
-- `dev/bot.env` — Set `BOT_TOKEN` and `BOT_FILE_UPLOAD_CHANNEL_ID`
+- `env/dev/bot.env` — Set `BOT_TOKEN` and `BOT_FILE_UPLOAD_CHANNEL_ID`
 - Most files come prefilled with sensible defaults
 
 **Optional (for extra features):**
 
-- `dev/api.env` — For UptimeRobot monitoring, file uploads, etc.
-- `dev/llm.env` — For AI-powered announcement filtering
+- `env/dev/api.env` — For UptimeRobot monitoring, file uploads, etc.
+- `env/dev/llm.env` — For AI-powered announcement filtering
 
 > [!NOTE]
 > Most environment variables needed for the development setup come pre-configured in each `.env` file.
@@ -103,11 +103,11 @@ Development environment files live in the `dev/` directory. Each service/module 
 > **For sensitive local secrets:**
 >
 > ```bash
-> cp .env.dev.example .env.dev
+> cp env/dev/.env.example env/dev/.env
 > # Add your personal API keys, tokens, or credentials here
 > ```
 >
-> This file is mounted **last** in Docker Compose, so values here override anything in `dev/*.env` files.
+> This file is mounted **last** in Docker Compose, so values here override anything in `env/dev/*.env` files.
 
 > [!WARNING]
 > If you don't configure certain `.env` variables, those features simply won't work or the [zod validations](https://zod.dev/) may get triggered. Review each file to see what's needed.
@@ -115,8 +115,8 @@ Development environment files live in the `dev/` directory. Each service/module 
 ### 3. Run Everything
 
 ```bash
-docker compose -f docker-compose.dev.yaml down -v --remove-orphans && \
-docker compose -f docker-compose.dev.yaml up --build
+docker compose -f docker/compose.dev.yaml down -v --remove-orphans && \
+docker compose -f docker/compose.dev.yaml up --build
 ```
 
 This starts all services with hot-reload enabled. Code changes trigger automatic restarts.
@@ -126,7 +126,7 @@ This starts all services with hot-reload enabled. Code changes trigger automatic
 If you don't need the workers:
 
 ```bash
-docker compose -f docker-compose.dev.yaml up ktu-bot-app --build
+docker compose -f docker/compose.dev.yaml up ktu-bot-app --build
 ```
 
 > [!TIP]
@@ -140,13 +140,13 @@ Need just the notification worker? No problem:
 
 ```bash
 # Announcements notify worker
-docker compose -f docker-compose.dev.yaml up announcements-notify-worker --build
+docker compose -f docker/compose.dev.yaml up announcements-notify-worker --build
 
 # Data sync worker
-docker compose -f docker-compose.dev.yaml up data-sync-worker --build
+docker compose -f docker/compose.dev.yaml up data-sync-worker --build
 
 # Broadcasts worker
-docker compose -f docker-compose.dev.yaml up broadcasts-worker --build
+docker compose -f docker/compose.dev.yaml up broadcasts-worker --build
 ```
 
 > [!TIP]
@@ -156,24 +156,33 @@ docker compose -f docker-compose.dev.yaml up broadcasts-worker --build
 
 ## Production Deployment 🏭
 
-Production uses a single `.env` file approach for simplicity.
+Production uses a single `.env` file in the `env/prod/` directory.
 
 ### 1. Configure Environment
 
 ```bash
-cp .env.prod.example .env
-# Edit .env and fill in all required values
+cp env/prod/.env.example env/prod/.env
+# Edit env/prod/.env and fill in all required values
 # Most values come pre-configured — just update anything specific to your deployment.
 ```
 
-### 2. Start Services
+### 2. Start Monitoring (Optional but Recommended)
 
 ```bash
-docker compose down -v --remove-orphans && \
-docker compose up -d --build
+# Start Prometheus monitoring independently
+docker compose -f docker/compose.monitoring.yaml up -d
 ```
 
-### 3. Verify Health
+This starts Prometheus on port 9090 with persistent storage. It runs independently from the application stack.
+
+### 3. Start Application Services
+
+```bash
+docker compose -f docker/compose.yaml down -v --remove-orphans && \
+docker compose -f docker/compose.yaml up -d --build
+```
+
+### 4. Verify Health
 
 ```bash
 curl -f http://localhost:3000/health

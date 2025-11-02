@@ -4,15 +4,28 @@ import { initDB, closeDB } from "./db/connection.js";
 import { createBot } from "./bot/bot.js";
 import { run, RunnerHandle } from "@grammyjs/runner";
 import { BotConfig } from "./configs/bot.js";
-import { setupHealthCheckServer } from "./utils/healthCheck.js";
+import { Hono } from "hono";
+import {
+  setupHealthCheckEndpoint,
+  setupMetricsEndpoint,
+  createMonitoringServer,
+} from "./monitoring/index.js";
+import { createMetricsRegistry } from "./metrics/registry.js";
+import { createBotMetrics } from "./metrics/definitions.js";
 
 async function startBotInLongPolling() {
   try {
     // Initialize the DB connection before starting the bot
     await initDB();
 
-    // Create bot instance
-    const bot = createBot();
+    // Initialize Prometheus metrics
+    const metricsRegistry = createMetricsRegistry("ktu-bot-app", {
+      enableDefaultMetrics: false,
+    });
+    const botMetrics = createBotMetrics(metricsRegistry);
+
+    // Create bot instance with metrics
+    const bot = createBot(botMetrics);
 
     // Set bot commands
     await botCommands.setCommands(bot);
@@ -23,10 +36,13 @@ async function startBotInLongPolling() {
     // Create runner
     const runner = run(bot);
 
-    // Start health check server
-    setupHealthCheckServer(
+    // Create monitoring server with health check and metrics endpoints
+    const monitoringApp = new Hono();
+
+    // Add health check endpoint
+    setupHealthCheckEndpoint(
+      monitoringApp,
       "bot",
-      BotConfig.BOT_HEALTH_CHECK_PORT,
       async () =>
         runner.isRunning() &&
         (await bot.api
@@ -34,6 +50,15 @@ async function startBotInLongPolling() {
           .then(() => true)
           .catch(() => false))
     );
+
+    // Add metrics endpoint
+    setupMetricsEndpoint(monitoringApp, metricsRegistry);
+
+    // Start monitoring server
+    createMonitoringServer(monitoringApp, {
+      serviceName: "bot",
+      port: BotConfig.BOT_HEALTH_CHECK_PORT,
+    });
 
     logger.info("🚀 KTU Bot started successfully");
 

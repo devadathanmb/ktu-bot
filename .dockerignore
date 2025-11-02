@@ -17,7 +17,8 @@ pnpm-debug.log
 # .nvmrc
 .nvmrc
 
-# Environment files (don’t bake secrets into image)
+# Environment files (don't bake secrets into image)
+env/
 .env
 .env.*
 
@@ -32,8 +33,10 @@ Thumbs.db
 .gitignore
 
 # Docker-related files
+docker/
 Dockerfile*
 docker-compose*.yml
+compose*.yaml
 
 # Cache
 *.tsbuildinfo
