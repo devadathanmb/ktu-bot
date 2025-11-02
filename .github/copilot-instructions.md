@@ -6,7 +6,7 @@ This is a **Grammy-based Telegram bot** (major rewrite from old version) with a 
 
 - **Main Bot Service** (`src/bot/`) - Grammy framework with composers pattern
 - **Background Workers** (`src/workers/`) - Independent notification and data sync services using BullMQ
-- **Supporting Services** (`src/services/`) - Monitoring and observability tools (Bull Board dashboard)
+- **Supporting Services** (`src/services/`) - Monitoring tools (Bull Board dashboard)
 - **API Services Layer** (`src/api/services/`) - External integrations (KTU, Hugging Face, file hosting)
 - **Database Layer** (`src/db/`) - Drizzle ORM with PostgreSQL
 - **Configuration System** (`src/configs/`) - Zod-validated environment configs

@@ -6,6 +6,7 @@ import {
   KTUAPIError,
   SessionNotFoundError,
 } from "../../../errors/BotErrors.js";
+import { HandledBotError } from "../../../errors/HandledBotError.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 
@@ -81,6 +82,9 @@ export function createComposerErrorBoundary(
       );
     }
 
+    // Track cleanup actions for metadata
+    const cleanupActions: string[] = [];
+
     // Clean up any loading messages stored in session
     for (const key of loadingMessageKeys) {
       const messageId = ctx.session[key];
@@ -88,6 +92,7 @@ export function createComposerErrorBoundary(
         await deleteMessageSafely(ctx, messageId);
         // Clear the message ID from session since we deleted it
         delete ctx.session[key];
+        cleanupActions.push(`deleted-loading-message-${String(key)}`);
       }
     }
 
@@ -98,8 +103,21 @@ export function createComposerErrorBoundary(
       ctx.update?.callback_query?.message?.message_id
     );
 
-    // Don't call next() - we want to stop error propagation here
-    // The error has been handled at the composer level
+    // Wrap the original error to indicate it was handled by this boundary
+    const originalError =
+      error.error instanceof Error
+        ? error.error
+        : new Error(String(error.error));
+
+    const handledError = new HandledBotError(
+      originalError,
+      "composer-error-boundary",
+      true, // user was notified
+      cleanupActions
+    );
+
+    // Re-throw wrapped error so global handler can track metrics centrally
+    throw handledError;
   };
 }
 

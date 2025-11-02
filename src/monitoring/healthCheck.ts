@@ -1,7 +1,6 @@
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
+import type { Hono } from "hono";
 import { checkDatabaseHealth } from "../db/healthCheck.js";
-import logger from "./logger.js";
+import logger from "../utils/logger.js";
 
 export interface HealthCheckResult {
   status: "ok" | "error";
@@ -11,6 +10,14 @@ export interface HealthCheckResult {
   isRunning: boolean;
 }
 
+/**
+ * Creates a standardized health check response
+ *
+ * @param serviceName - Name of the service being checked
+ * @param isRunning - Whether the service is running
+ * @param isDatabaseHealthy - Whether the database connection is healthy
+ * @returns Standardized health check result
+ */
 export function createHealthCheckResponse(
   serviceName: string,
   isRunning: boolean,
@@ -27,14 +34,19 @@ export function createHealthCheckResponse(
   };
 }
 
-// Helper function to setup a health check server
-export function setupHealthCheckServer(
+/**
+ * Adds a /health endpoint to the provided Hono app
+ * Pure utility with no coupling to metrics or other concerns
+ *
+ * @param app - Hono application instance
+ * @param serviceName - Name of the service
+ * @param getServiceHealth - Function that returns whether the service is healthy
+ */
+export function setupHealthCheckEndpoint(
+  app: Hono,
   serviceName: string,
-  port: number,
   getServiceHealth: () => boolean | Promise<boolean>
-) {
-  const app = new Hono();
-
+): void {
   app.get("/health", async c => {
     const userAgent = c.req.header("User-Agent");
 
@@ -51,13 +63,5 @@ export function setupHealthCheckServer(
       isDbHealthy
     );
     return c.json(result, result.status === "ok" ? 200 : 503);
-  });
-
-  app.get("/", c => c.redirect("/health"));
-
-  serve({ fetch: app.fetch, port }, info => {
-    logger.info(
-      `🌐 ${serviceName} healthcheck server listening on port ${info.port}`
-    );
   });
 }

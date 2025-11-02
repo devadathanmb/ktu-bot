@@ -16,6 +16,7 @@ import {
   INLINE_CALENDARS_SEARCH_BUTTON,
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
+import { HandledBotError } from "../../../errors/HandledBotError.js";
 
 interface AttachmentInfo {
   name: string;
@@ -380,6 +381,7 @@ inlineQuery.on("inline_query", async ctx => {
       "Error in inline query handler"
     );
 
+    // Send error result to user
     const errorResult = [
       InlineQueryResultBuilder.article(
         "-1",
@@ -389,6 +391,16 @@ inlineQuery.on("inline_query", async ctx => {
       ),
     ];
     await ctx.answerInlineQuery(errorResult).catch();
+
+    // Wrap and re-throw for central error tracking
+    const originalError =
+      error instanceof Error ? error : new Error(String(error));
+    throw new HandledBotError(
+      originalError,
+      "inline-query-handler",
+      true, // user was notified via error result
+      ["sent-error-result"]
+    );
   }
 });
 
@@ -556,6 +568,8 @@ inlineQuery.on("chosen_inline_result", async ctx => {
       { error, resultId, userId: chatId },
       "Error in chosen inline result handler"
     );
+
+    // Send error message to user
     await ctx.api
       .sendMessage(
         chatId,
@@ -565,5 +579,15 @@ inlineQuery.on("chosen_inline_result", async ctx => {
         ]).text
       )
       .catch(() => {});
+
+    // Wrap and re-throw for central error tracking
+    const originalError =
+      error instanceof Error ? error : new Error(String(error));
+    throw new HandledBotError(
+      originalError,
+      "chosen-inline-result-handler",
+      true, // user was notified
+      ["sent-error-message"]
+    );
   }
 });

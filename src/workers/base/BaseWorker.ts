@@ -92,6 +92,34 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
   }
 
   /**
+   * Health check - returns whether worker is healthy
+   * Checks: worker running AND Redis connected
+   * Note: DB health is checked separately by setupHealthCheckEndpoint
+   */
+  async getStatus(): Promise<boolean> {
+    const isRunning = this.isRunning();
+
+    if (!isRunning) {
+      return false;
+    }
+
+    try {
+      const redisConnected = this.redisClient
+        ? await this.redisClient
+            .ping()
+            .then(() => true)
+            .catch(() => false)
+        : false;
+
+      // Worker is healthy if it's running AND Redis is connected
+      return isRunning && redisConnected;
+    } catch (error) {
+      logger.warn({ error }, "Health check failed");
+      return false;
+    }
+  }
+
+  /**
    * Wrapper for job processing with error handling
    */
   private async processJobWrapper(job: Job<TJobData>): Promise<void> {
@@ -144,14 +172,6 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
    * Process a single job - core business logic
    */
   protected abstract processJob(job: Job<TJobData>): Promise<void>;
-
-  /**
-   * Get worker status for health checks
-   */
-  abstract getStatus(): Promise<{
-    isRunning: boolean;
-    [key: string]: unknown;
-  }>;
 
   // ==================== Optional Hooks (can be overridden by subclasses) ====================
 

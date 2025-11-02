@@ -1,7 +1,13 @@
 import { DataSyncWorker } from "./worker.js";
+import { dataSyncQueue } from "./queue.js";
 import { DataSyncWorkerConfig } from "../../configs/dataSyncWorker.js";
 import { setupGracefulShutdown } from "../shared/shutdown.js";
-import { setupHealthCheckServer } from "../../utils/healthCheck.js";
+import { Hono } from "hono";
+import {
+  setupHealthCheckEndpoint,
+  setupMetricsEndpoint,
+  createMonitoringServer,
+} from "../../monitoring/index.js";
 import logger from "../../utils/logger.js";
 
 async function startWorker() {
@@ -9,14 +15,19 @@ async function startWorker() {
     const worker = new DataSyncWorker();
     await worker.start();
 
-    setupHealthCheckServer(
-      "data-sync-worker",
-      DataSyncWorkerConfig.HEALTHCHECK_PORT,
-      async () => {
-        const status = await worker.getStatus();
-        return status.isRunning && status.queueHealth;
-      }
+    // Create monitoring server with health check and metrics endpoints
+    const monitoringApp = new Hono();
+
+    setupHealthCheckEndpoint(monitoringApp, "data-sync-worker", () =>
+      worker.getStatus()
     );
+
+    setupMetricsEndpoint(monitoringApp, dataSyncQueue);
+
+    createMonitoringServer(monitoringApp, {
+      serviceName: "data-sync-worker",
+      port: DataSyncWorkerConfig.HEALTHCHECK_PORT,
+    });
 
     setupGracefulShutdown(worker);
 
