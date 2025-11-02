@@ -243,6 +243,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    env_file:
+      - .env
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
