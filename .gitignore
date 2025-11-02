@@ -49,3 +49,6 @@ Thumbs.db
 # Misc
 *.swp
 *.swo
+
+# Prometheus
+prometheus/prometheus.yaml
