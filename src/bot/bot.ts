@@ -40,14 +40,14 @@ export function createBot(metrics?: BotMetrics): Bot<BotContext> {
   const bot = new Bot<BotContext>(BotConfig.BOT_TOKEN);
 
   // Set up middlewares:
-  // Logging should be the first middleware in the stack
-  // This is to track response times and other useful info
-  bot.use(logging);
-
   // Metrics middleware - track bot performance if metrics are provided
   if (metrics) {
     bot.use(createMetricsMiddleware(metrics));
   }
+
+  // Logging should be the first middleware in the stack
+  // This is to track response times and other useful info
+  bot.use(logging);
 
   // Other middlewares:
   // Long polling only middlewares:
