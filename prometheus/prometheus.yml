@@ -1,0 +1,68 @@
+# Prometheus configuration for KTU Bot (Production)
+# Scrapes metrics from bot service and Bull Board (centralized queue metrics)
+
+global:
+  scrape_interval: 15s # Scrape targets every 15 seconds
+  evaluation_interval: 15s # Evaluate rules every 15 seconds
+  external_labels:
+    environment: "production"
+    cluster: "ktu-bot"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Bot service metrics (messages, commands, inline queries, API calls)
+  - job_name: "ktu-bot-app"
+    static_configs:
+      - targets: ["ktu-bot-app:3000"]
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: "/metrics"
+    # Drop any Go metrics that might leak from dependencies
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "go_.*"
+        action: drop
+
+  # Announcements Notify Worker - BullMQ queue metrics
+  - job_name: "announcements-notify-worker"
+    static_configs:
+      - targets: ["announcements-notify-worker:3001"]
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: "/metrics"
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "go_.*"
+        action: drop
+
+  # Broadcasts Worker - BullMQ queue metrics
+  - job_name: "broadcasts-worker"
+    static_configs:
+      - targets: ["broadcasts-worker:3002"]
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: "/metrics"
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "go_.*"
+        action: drop
+
+  # Data Sync Worker - BullMQ queue metrics
+  - job_name: "data-sync-worker"
+    static_configs:
+      - targets: ["data-sync-worker:3003"]
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: "/metrics"
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "go_.*"
+        action: drop
+# Storage configuration
+# Retention: 30 days (configurable via command line: --storage.tsdb.retention.time=30d)
+# Path: /prometheus (mounted as Docker volume)

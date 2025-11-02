@@ -10,6 +10,7 @@ import {
 import { fmt, b } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
+import { HandledBotError } from "../../../../errors/HandledBotError.js";
 
 export const ktuAPIStatusCommand = new Command<BotContext>(
   "serverstatus",
@@ -64,7 +65,8 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
         reply_markup: keyboard,
         link_preview_options: { is_disabled: true },
       });
-    } catch {
+    } catch (error) {
+      // Send error message to user
       const errorDescription = fmt`${emoji("frowning_face")} Failed to fetch API status. Please try again later.`;
       const errorMessage = joinWithNewlines([errorDescription], 2);
 
@@ -77,6 +79,16 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
           reply_markup: keyboard,
           link_preview_options: { is_disabled: true },
         }
+      );
+
+      // Wrap and re-throw for central error tracking
+      const originalError =
+        error instanceof Error ? error : new Error(String(error));
+      throw new HandledBotError(
+        originalError,
+        "api-status-command",
+        true, // user was notified
+        ["edited-message-with-error"]
       );
     }
   }

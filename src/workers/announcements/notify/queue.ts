@@ -58,6 +58,7 @@ export async function setupRecurringSchedule() {
       repeat: {
         pattern: AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE,
       },
+      jobId: "recurring-announcements-notify",
     }
   );
 

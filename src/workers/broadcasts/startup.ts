@@ -1,7 +1,12 @@
-import { BroadcastsWorker } from "./worker.js";
+import { BroadcastsWorker, broadcastsQueue } from "./worker.js";
 import { BroadcastsWorkerConfig } from "../../configs/broadcastsWorker.js";
 import { setupGracefulShutdown } from "../shared/shutdown.js";
-import { setupHealthCheckServer } from "../../utils/healthCheck.js";
+import { Hono } from "hono";
+import {
+  setupHealthCheckEndpoint,
+  setupMetricsEndpoint,
+  createObservabilityServer,
+} from "../../observability/index.js";
 import logger from "../../utils/logger.js";
 
 async function startWorker() {
@@ -9,15 +14,19 @@ async function startWorker() {
     const worker = new BroadcastsWorker();
     await worker.start();
 
-    // Start healthcheck server
-    setupHealthCheckServer(
-      "broadcasts-worker",
-      BroadcastsWorkerConfig.HEALTHCHECK_PORT,
-      async () => {
-        const status = await worker.getStatus();
-        return status.isRunning && status.redisConnected;
-      }
+    // Create observability server with health check and metrics endpoints
+    const observabilityApp = new Hono();
+
+    setupHealthCheckEndpoint(observabilityApp, "broadcasts-worker", () =>
+      worker.getStatus()
     );
+
+    setupMetricsEndpoint(observabilityApp, broadcastsQueue);
+
+    createObservabilityServer(observabilityApp, {
+      serviceName: "broadcasts-worker",
+      port: BroadcastsWorkerConfig.HEALTHCHECK_PORT,
+    });
 
     // Setup graceful shutdown
     setupGracefulShutdown(worker);

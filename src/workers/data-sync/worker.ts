@@ -13,8 +13,6 @@ import {
   DATA_SYNC_QUEUE,
 } from "./queue.js";
 import logger from "../../utils/logger.js";
-import { checkQueueHealth } from "../shared/queueHealth.js";
-import { DataSyncWorkerConfig } from "../../configs/dataSyncWorker.js";
 import { BaseWorker } from "../base/BaseWorker.js";
 
 export class DataSyncWorker extends BaseWorker<SyncJobData> {
@@ -23,7 +21,6 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
   constructor() {
     super("data-sync-worker", DATA_SYNC_QUEUE, dataSyncQueue, {
       concurrency: 3,
-      limiter: { max: 10, duration: 1000 },
     });
   }
 
@@ -119,18 +116,5 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
       await Promise.all(jobs);
       logger.info(`Scheduled ${jobs.length} initial sync job(s)`);
     }
-  }
-
-  async getStatus() {
-    const isRunning = this.isRunning();
-    const queueHealth = await checkQueueHealth(dataSyncQueue, {
-      maxFailedJobs: DataSyncWorkerConfig.HEALTHCHECK.MAX_FAILED_JOBS,
-      maxBacklogJobs: DataSyncWorkerConfig.HEALTHCHECK.MAX_BACKLOG_JOBS,
-    });
-
-    return {
-      isRunning,
-      queueHealth,
-    };
   }
 }

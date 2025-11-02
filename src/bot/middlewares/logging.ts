@@ -1,42 +1,10 @@
 import { BotContext } from "../../types/bot.types.js";
 import { NextFunction } from "grammy";
 import logger from "../../utils/logger.js";
-
-const MEDIA_TYPES = new Set([
-  "photo",
-  "video",
-  "document",
-  "audio",
-  "voice",
-  "sticker",
-  "animation",
-  "location",
-  "contact",
-]);
+import { getMediaType, getUpdateType } from "../../utils/bot.js";
 
 const MAX_TEXT_LOG_LENGTH = 100;
 const MAX_QUERY_LOG_LENGTH = 50;
-
-function getMediaType(message: object | undefined): string | undefined {
-  if (!message) return undefined;
-
-  for (const key in message) {
-    if (MEDIA_TYPES.has(key)) {
-      return key;
-    }
-  }
-
-  return undefined;
-}
-
-function getUpdateType(update: object): string {
-  for (const key in update) {
-    if (key !== "update_id") {
-      return key;
-    }
-  }
-  return "unknown";
-}
 
 async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   const start = Date.now();

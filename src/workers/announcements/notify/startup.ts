@@ -1,7 +1,13 @@
 import { AnnouncementsNotifyWorker } from "./worker.js";
+import { announcementsNotifyQueue } from "./queue.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
 import { setupGracefulShutdown } from "../../shared/shutdown.js";
-import { setupHealthCheckServer } from "../../../utils/healthCheck.js";
+import { Hono } from "hono";
+import {
+  setupHealthCheckEndpoint,
+  setupMetricsEndpoint,
+  createObservabilityServer,
+} from "../../../observability/index.js";
 import logger from "../../../utils/logger.js";
 
 async function startWorker() {
@@ -9,14 +15,21 @@ async function startWorker() {
     const worker = new AnnouncementsNotifyWorker();
     await worker.start();
 
-    setupHealthCheckServer(
+    // Create observability server with health check and metrics endpoints
+    const observabilityApp = new Hono();
+
+    setupHealthCheckEndpoint(
+      observabilityApp,
       "announcements-notify-worker",
-      AnnouncementsNotifyWorkerConfig.HEALTHCHECK_PORT,
-      async () => {
-        const status = await worker.getStatus();
-        return status.isRunning && status.queueHealth;
-      }
+      () => worker.getStatus()
     );
+
+    setupMetricsEndpoint(observabilityApp, announcementsNotifyQueue);
+
+    createObservabilityServer(observabilityApp, {
+      serviceName: "announcements-notify-worker",
+      port: AnnouncementsNotifyWorkerConfig.HEALTHCHECK_PORT,
+    });
 
     setupGracefulShutdown(worker);
 

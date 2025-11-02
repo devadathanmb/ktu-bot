@@ -6,8 +6,6 @@ import { GrammyError, InputMediaBuilder } from "grammy";
 import { BroadcastJob, ProcessedAttachment } from "../shared/types.js";
 import { FormattedString } from "@grammyjs/parse-mode";
 import logger from "../../utils/logger.js";
-import { checkQueueHealth } from "../shared/queueHealth.js";
-import { BroadcastsWorkerConfig } from "../../configs/broadcastsWorker.js";
 import { withTransaction } from "../../db/transactions.js";
 import { BaseWorker } from "../base/BaseWorker.js";
 import { createBot } from "../../bot/bot.js";
@@ -299,35 +297,5 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       { jobId: job.id, error },
       "Unhandled generic error in job processing"
     );
-  }
-
-  async getStatus() {
-    const isRunning = this.isRunning();
-
-    if (!isRunning) {
-      return { isRunning: false, redisConnected: false, queueHealth: false };
-    }
-
-    try {
-      const redisConnected = this.redisClient
-        ? await this.redisClient
-            .ping()
-            .then(() => true)
-            .catch(() => false)
-        : false;
-      const queueHealth = await checkQueueHealth(broadcastsQueue, {
-        maxFailedJobs: BroadcastsWorkerConfig.HEALTHCHECK.MAX_FAILED_JOBS,
-        maxBacklogJobs: BroadcastsWorkerConfig.HEALTHCHECK.MAX_BACKLOG_JOBS,
-      });
-
-      return {
-        isRunning: true,
-        redisConnected,
-        queueHealth,
-      };
-    } catch (error) {
-      logger.warn({ error }, "Health check failed");
-      return { isRunning: true, redisConnected: false, queueHealth: false };
-    }
   }
 }

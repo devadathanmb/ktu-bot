@@ -25,7 +25,6 @@ import {
 } from "./queue.js";
 import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
-import { checkQueueHealth } from "../../shared/queueHealth.js";
 import { createBot } from "../../../bot/bot.js";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { autoRetry } from "@grammyjs/auto-retry";
@@ -302,20 +301,5 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
     // Must be done only after successfully adding all jobs to the queue
     // This is because if the job queueing fails, we want to retry sending notifications in the next cron run
     await this.resyncAnnouncementsBuffer();
-  }
-
-  async getStatus() {
-    const isRunning = this.isRunning();
-    const queueHealth = await checkQueueHealth(announcementsNotifyQueue, {
-      maxFailedJobs:
-        AnnouncementsNotifyWorkerConfig.HEALTH_CHECK.MAX_FAILED_JOBS,
-      maxBacklogJobs:
-        AnnouncementsNotifyWorkerConfig.HEALTH_CHECK.MAX_BACKLOG_JOBS,
-    });
-
-    return {
-      isRunning,
-      queueHealth,
-    };
   }
 }
