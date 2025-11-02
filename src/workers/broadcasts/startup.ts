@@ -5,8 +5,8 @@ import { Hono } from "hono";
 import {
   setupHealthCheckEndpoint,
   setupMetricsEndpoint,
-  createObservabilityServer,
-} from "../../observability/index.js";
+  createMonitoringServer,
+} from "../../monitoring/index.js";
 import logger from "../../utils/logger.js";
 
 async function startWorker() {
@@ -14,16 +14,16 @@ async function startWorker() {
     const worker = new BroadcastsWorker();
     await worker.start();
 
-    // Create observability server with health check and metrics endpoints
-    const observabilityApp = new Hono();
+    // Create monitoring server with health check and metrics endpoints
+    const monitoringApp = new Hono();
 
-    setupHealthCheckEndpoint(observabilityApp, "broadcasts-worker", () =>
+    setupHealthCheckEndpoint(monitoringApp, "broadcasts-worker", () =>
       worker.getStatus()
     );
 
-    setupMetricsEndpoint(observabilityApp, broadcastsQueue);
+    setupMetricsEndpoint(monitoringApp, broadcastsQueue);
 
-    createObservabilityServer(observabilityApp, {
+    createMonitoringServer(monitoringApp, {
       serviceName: "broadcasts-worker",
       port: BroadcastsWorkerConfig.HEALTHCHECK_PORT,
     });

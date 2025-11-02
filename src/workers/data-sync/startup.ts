@@ -6,8 +6,8 @@ import { Hono } from "hono";
 import {
   setupHealthCheckEndpoint,
   setupMetricsEndpoint,
-  createObservabilityServer,
-} from "../../observability/index.js";
+  createMonitoringServer,
+} from "../../monitoring/index.js";
 import logger from "../../utils/logger.js";
 
 async function startWorker() {
@@ -15,16 +15,16 @@ async function startWorker() {
     const worker = new DataSyncWorker();
     await worker.start();
 
-    // Create observability server with health check and metrics endpoints
-    const observabilityApp = new Hono();
+    // Create monitoring server with health check and metrics endpoints
+    const monitoringApp = new Hono();
 
-    setupHealthCheckEndpoint(observabilityApp, "data-sync-worker", () =>
+    setupHealthCheckEndpoint(monitoringApp, "data-sync-worker", () =>
       worker.getStatus()
     );
 
-    setupMetricsEndpoint(observabilityApp, dataSyncQueue);
+    setupMetricsEndpoint(monitoringApp, dataSyncQueue);
 
-    createObservabilityServer(observabilityApp, {
+    createMonitoringServer(monitoringApp, {
       serviceName: "data-sync-worker",
       port: DataSyncWorkerConfig.HEALTHCHECK_PORT,
     });

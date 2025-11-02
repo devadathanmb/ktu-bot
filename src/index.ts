@@ -8,8 +8,8 @@ import { Hono } from "hono";
 import {
   setupHealthCheckEndpoint,
   setupMetricsEndpoint,
-  createObservabilityServer,
-} from "./observability/index.js";
+  createMonitoringServer,
+} from "./monitoring/index.js";
 import { createMetricsRegistry } from "./metrics/registry.js";
 import { createBotMetrics } from "./metrics/definitions.js";
 
@@ -36,12 +36,12 @@ async function startBotInLongPolling() {
     // Create runner
     const runner = run(bot);
 
-    // Create observability server with health check and metrics endpoints
-    const observabilityApp = new Hono();
+    // Create monitoring server with health check and metrics endpoints
+    const monitoringApp = new Hono();
 
     // Add health check endpoint
     setupHealthCheckEndpoint(
-      observabilityApp,
+      monitoringApp,
       "bot",
       async () =>
         runner.isRunning() &&
@@ -52,10 +52,10 @@ async function startBotInLongPolling() {
     );
 
     // Add metrics endpoint
-    setupMetricsEndpoint(observabilityApp, metricsRegistry);
+    setupMetricsEndpoint(monitoringApp, metricsRegistry);
 
-    // Start observability server
-    createObservabilityServer(observabilityApp, {
+    // Start monitoring server
+    createMonitoringServer(monitoringApp, {
       serviceName: "bot",
       port: BotConfig.BOT_HEALTH_CHECK_PORT,
     });

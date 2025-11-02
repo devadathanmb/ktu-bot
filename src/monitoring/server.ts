@@ -2,21 +2,21 @@ import type { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import logger from "../utils/logger.js";
 
-export interface ObservabilityServerOptions {
+export interface MonitoringServerOptions {
   serviceName: string;
   port: number;
 }
 
 /**
- * Creates and starts an observability server with the provided Hono app
+ * Creates and starts a monitoring server with the provided Hono app
  * The app should have endpoints configured via setupHealthCheckEndpoint, setupMetricsEndpoint, etc.
  *
  * @param app - Hono application with configured endpoints
  * @param options - Server configuration options
  */
-export function createObservabilityServer(
+export function createMonitoringServer(
   app: Hono,
-  options: ObservabilityServerOptions
+  options: MonitoringServerOptions
 ): void {
   const { serviceName, port } = options;
 
@@ -25,7 +25,7 @@ export function createObservabilityServer(
 
   serve({ fetch: app.fetch, port }, info => {
     logger.info(
-      `🌐 ${serviceName} observability server listening on port ${info.port}`
+      `🌐 ${serviceName} monitoring server listening on port ${info.port}`
     );
   });
 }

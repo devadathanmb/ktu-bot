@@ -1,5 +1,5 @@
 /**
- * Observability utilities for health checks, metrics, and monitoring
+ * Monitoring utilities for health checks and metrics
  */
 
 export {
@@ -11,6 +11,6 @@ export {
 export { setupMetricsEndpoint } from "./metrics.js";
 
 export {
-  createObservabilityServer,
-  type ObservabilityServerOptions,
+  createMonitoringServer,
+  type MonitoringServerOptions,
 } from "./server.js";
