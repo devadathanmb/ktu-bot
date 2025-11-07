@@ -33,9 +33,12 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    # Use host network mode to allow Prometheus to scrape services on localhost
-    # Since services expose ports on host, Prometheus can access them via localhost
-    network_mode: host
+    networks:
+      - ktu-bot-network
+
+networks:
+  ktu-bot-network:
+    external: true
 
 volumes:
   prometheus_data:
