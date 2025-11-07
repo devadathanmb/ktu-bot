@@ -39,6 +39,7 @@ services:
 networks:
   ktu-bot-network:
     external: true
+    name: docker_ktu-bot-network
 
 volumes:
   prometheus_data:
