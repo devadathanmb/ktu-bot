@@ -7,7 +7,7 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import logger from "../../utils/logger.js";
 import { withTransaction } from "../../db/transactions.js";
 import { BaseWorker } from "../base/BaseWorker.js";
-import { createBot } from "../../bot/bot.js";
+import { createWorkerBot } from "../../bot/utils/createWorkerBot.js";
 import { setTimeout } from "node:timers/promises";
 import { BROADCASTS_QUEUE, broadcastsQueue } from "./queue.js";
 
@@ -20,7 +20,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
 
   protected override initializeWorkerSpecific(): Promise<void> {
     // Initialize bot without special middlewares
-    this.bot = createBot();
+    this.bot = createWorkerBot();
     logger.info("Bot instance created");
     return Promise.resolve();
   }

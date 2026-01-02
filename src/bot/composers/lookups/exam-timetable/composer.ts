@@ -1,7 +1,6 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer, InlineKeyboard } from "grammy";
-import { createGrammyInputFileFromAttachment } from "../../../../utils/fileUtils.js";
 import { ExamTimeTable } from "../../../../types/service.types.js";
 import {
   generatePaginatedKeyboard,
@@ -15,9 +14,9 @@ import {
   formatCommand,
 } from "../../../../utils/formatting.js";
 import { createTimetableErrorBoundary } from "../../shared/errorBoundary.js";
-import { deleteMessageSafely } from "../../../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import { fetchTimetables } from "../../../../api/services/index.js";
+import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";
 
 const MESSAGES: Record<string, FormattedString[]> = {
   FETCHING_TIMETABLES: [
@@ -198,14 +197,13 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
     entities: captionMsg.entities,
   });
 
-  // Show loading message for attachment fetching
   if (
     selectedTimetable.fileName != null &&
     selectedTimetable.encryptId != null
   ) {
     formattedMsg = joinWithNewlines(
       [
-        fmt`${emoji("hourglass_not_done")} Fetching attachment ${selectedTimetable.fileName}... Please wait...`,
+        fmt`${emoji("hourglass_not_done")} Working on your timetable... You'll receive it in a moment!`,
       ],
       2
     );
@@ -213,22 +211,24 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
       entities: formattedMsg.entities,
     });
 
-    // Fetch and send the timetable attachment
-    const inputFile = await createGrammyInputFileFromAttachment(
-      selectedTimetable.encryptId,
-      selectedTimetable.fileName
-    );
+    const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
+      chatId: ctx.chat!.id,
+      attachments: [
+        {
+          name: selectedTimetable.fileName,
+          encryptId: selectedTimetable.encryptId,
+        },
+      ],
+      statusMessageId: loadingMessage.message_id,
+      totalAttachments: 1,
+      context: "timetable",
+    };
 
-    await ctx.replyWithDocument(inputFile, {
-      caption: `${emoji("books")} Timetable: ${selectedTimetable.title}`,
-      reply_parameters: {
-        message_id: ctx.msgId!,
-        allow_sending_without_reply: true,
-      },
-    });
+    if (ctx.msgId !== undefined) {
+      jobData.replyToMessageId = ctx.msgId;
+    }
 
-    // Delete the loading message
-    await deleteMessageSafely(ctx, loadingMessage.message_id);
+    await addAttachmentDeliveryJob(jobData);
   }
 
   // Create "View Another" keyboard

@@ -1,7 +1,6 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer, InlineKeyboard } from "grammy";
-import { createGrammyInputFileFromAttachment } from "../../../../utils/fileUtils.js";
 import { Announcement } from "../../../../types/service.types.js";
 import {
   generatePaginatedKeyboard,
@@ -14,9 +13,9 @@ import {
   formatCommand,
 } from "../../../../utils/formatting.js";
 import { createAnnouncementsErrorBoundary } from "../../shared/errorBoundary.js";
-import { deleteMessageSafely } from "../../../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import { fetchAnnouncements } from "../../../../api/services/index.js";
+import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";
 
 // Common messages used throughout the composer
 const MESSAGES: Record<string, FormattedString[]> = {
@@ -175,34 +174,24 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
       entities: captionMsg.entities,
     });
 
-    // Send each attachment as a document
-    for (const attachment of attachments) {
-      const formattedMsg = joinWithNewlines(
-        [
-          fmt`${emoji("hourglass_not_done")} Fetching attachment: ${attachment.name}`,
-        ],
-        2
-      );
-      const loadingMessage = await ctx.reply(formattedMsg.text, {
-        entities: formattedMsg.entities,
-      });
+    const plural = attachments.length > 1 ? "s" : "";
+    const statusMessage = await ctx.reply(
+      `${emoji("hourglass_not_done")} Packaging up your file${plural}... Get ready!`
+    );
 
-      const inputFile = await createGrammyInputFileFromAttachment(
-        attachment.encryptId,
-        attachment.name
-      );
+    const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
+      chatId: ctx.chat!.id,
+      attachments: attachments,
+      statusMessageId: statusMessage.message_id,
+      totalAttachments: attachments.length,
+      context: "announcement",
+    };
 
-      await ctx.replyWithDocument(inputFile, {
-        caption: `${emoji("paperclip")} Attachment: ${attachment.name}`,
-        reply_parameters: {
-          message_id: ctx.msgId!,
-          allow_sending_without_reply: true,
-        },
-      });
-
-      // Delete the loading message
-      await deleteMessageSafely(ctx, loadingMessage.message_id);
+    if (ctx.msgId !== undefined) {
+      jobData.replyToMessageId = ctx.msgId;
     }
+
+    await addAttachmentDeliveryJob(jobData);
 
     // Create "View Another" keyboard
     const keyboard = new InlineKeyboard()

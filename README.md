@@ -56,6 +56,7 @@ The bot follows a microservices architecture where each component handles a spec
 | **Announcements Notify Worker** | Background worker   | Monitors for new announcements using BullMQ scheduled jobs and sends filtered alerts to users |
 | **Broadcasts Worker**           | Background worker   | Handles queued broadcast message delivery                                                     |
 | **Data Sync Worker**            | Background worker   | Periodically syncs KTU data to local DB via BullMQ scheduled jobs to power full-text search   |
+| **Attachment Delivery Worker**  | Background worker   | Downloads and sends files asynchronously to prevent bot blocking                              |
 | **Bull Board Service**          | Monitoring service  | Web dashboard for real-time queue monitoring and job management                               |
 | **PostgreSQL**                  | Database            | Stores all data with Drizzle ORM for type-safe queries                                        |
 | **Redis**                       | Queue               | Powers BullMQ jobs                                                                            |
@@ -147,6 +148,9 @@ docker compose -f docker/compose.dev.yaml up data-sync-worker --build
 
 # Broadcasts worker
 docker compose -f docker/compose.dev.yaml up broadcasts-worker --build
+
+# Attachment delivery worker
+docker compose -f docker/compose.dev.yaml up attachment-delivery-worker --build
 ```
 
 > [!TIP]
