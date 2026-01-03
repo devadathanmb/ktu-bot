@@ -1,5 +1,5 @@
 # Production Dockerfile for KTU Bot
-FROM node:20-alpine
+FROM node:24-alpine
 
 # Setup pnpm environment as per pnpm Docker docs
 ENV PNPM_HOME="/pnpm"
