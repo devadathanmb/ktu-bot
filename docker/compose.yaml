@@ -192,6 +192,51 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  attachment-delivery-worker:
+    image: ktu-bot:latest
+    container_name: attachment-delivery-worker
+    env_file:
+      - ../env/prod/.env
+      - ../env/prod/attachment-delivery-worker.env
+    networks:
+      - ktu-bot-network
+    depends_on:
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    ports:
+      - "3004:3004"
+    command: ["pnpm", "workers:attachment-delivery-worker"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3004/health",
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   bull-board-service:
     image: ktu-bot:latest
     container_name: bull-board-service
@@ -205,6 +250,8 @@ services:
       broadcasts-worker:
         condition: service_healthy
       data-sync-worker:
+        condition: service_healthy
+      attachment-delivery-worker:
         condition: service_healthy
     ports:
       - "3010:3010"

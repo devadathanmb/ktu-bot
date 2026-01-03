@@ -25,6 +25,8 @@
     "workers:broadcasts-worker": "node dist/workers/broadcasts/startup.js",
     "workers:data-sync-worker-dev": "tsx --watch src/workers/data-sync/startup.ts",
     "workers:data-sync-worker": "node dist/workers/data-sync/startup.js",
+    "workers:attachment-delivery-worker-dev": "tsx --watch src/workers/attachment-delivery/startup.ts",
+    "workers:attachment-delivery-worker": "node dist/workers/attachment-delivery/startup.js",
     "services:bull-board-dev": "tsx --watch src/services/bull-board/server.ts",
     "services:bull-board": "node dist/services/bull-board/server.js",
     "prepare": "husky"

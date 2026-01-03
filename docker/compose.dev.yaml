@@ -216,6 +216,54 @@ services:
       retries: 3
       start_period: 30s
 
+  attachment-delivery-worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    container_name: attachment-delivery-worker
+    env_file:
+      - ../env/dev/bot.env
+      - ../env/dev/db.env
+      - ../env/dev/redis.env
+      - ../env/dev/api.env
+      - ../env/dev/attachment-delivery-worker.env
+      - ../env/dev/logging.env
+      - ../env/dev/.env
+    ports:
+      - "3004:3004"
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    depends_on:
+      ktu-bot-postgres:
+        condition: service_healthy
+        restart: true
+      ktu-bot-redis:
+        condition: service_healthy
+        restart: true
+      ktu-bot-db-migrations:
+        condition: service_completed_successfully
+    networks:
+      - ktu-bot-network
+    command: ["pnpm", "workers:attachment-delivery-worker-dev"]
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "-s",
+          "-S",
+          "--max-time",
+          "5",
+          "http://localhost:3004/health",
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   bull-board-service:
     build:
       context: ..
@@ -232,7 +280,7 @@ services:
       - ../env/dev/broadcasts-worker.env
       - ../env/dev/announcements-notify-worker.env
       - ../env/dev/data-sync-worker.env
-      - ../env/dev/logging.env
+      - ../env/dev/attachment-delivery-worker.env
       - ../env/dev/.env
     ports:
       - "3010:3010"

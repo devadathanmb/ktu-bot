@@ -29,6 +29,7 @@ docker compose -f docker-compose.dev.yaml up ktu-bot-app --build
 docker compose -f docker-compose.dev.yaml up announcements-notify-worker --build
 docker compose -f docker-compose.dev.yaml up data-sync-worker --build
 docker compose -f docker-compose.dev.yaml up broadcasts-worker --build
+docker compose -f docker-compose.dev.yaml up attachment-delivery-worker --build
 
 # Local development without Docker
 pnpm dev              # Start bot with tsx hot reload
@@ -62,6 +63,7 @@ pnpm format:check     # Check formatting
 pnpm workers:announcements-notify-worker-dev    # Dev mode with hot reload
 pnpm workers:broadcasts-worker-dev
 pnpm workers:data-sync-worker-dev
+pnpm workers:attachment-delivery-worker-dev
 pnpm services:bull-board-dev                    # Bull Board dashboard
 ```
 
@@ -173,12 +175,14 @@ export class MyWorker extends BaseWorker<JobData> {
 - `DATA_SYNC_QUEUE` - Syncs KTU data (concurrency: 3, rate limited)
 - `ANNOUNCEMENTS_NOTIFY_QUEUE` - New announcement notifications (concurrency: 1)
 - `BROADCASTS_QUEUE` - Message delivery (concurrency: 1)
+- `ATTACHMENT_DELIVERY_QUEUE` - Non-blocking file downloads (concurrency: 2)
 
 **Worker Implementations:**
 
 - [src/workers/announcements/notify/](src/workers/announcements/notify/) - Monitors for new announcements, filters by course, creates broadcast jobs
 - [src/workers/broadcasts/](src/workers/broadcasts/) - Generic message delivery with rate limiting and error handling
 - [src/workers/data-sync/](src/workers/data-sync/) - Syncs KTU data to local DB for full-text search
+- [src/workers/attachment-delivery/](src/workers/attachment-delivery/) - Downloads and sends files asynchronously, prevents bot blocking
 
 **Shared Utilities:**
 
@@ -273,7 +277,7 @@ Middleware sequence is critical in [src/bot/bot.ts](src/bot/bot.ts:37):
 Each service exposes health endpoints:
 
 - Bot: port 3000
-- Workers: ports 3001, 3002, 3003
+- Workers: ports 3001, 3002, 3003, 3004
 - Bull Board: port 3010
 - Check database and Redis connectivity
 
