@@ -203,7 +203,7 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
   ) {
     formattedMsg = joinWithNewlines(
       [
-        fmt`${emoji("hourglass_not_done")} Working on your timetable... You'll receive it in a moment!`,
+        fmt`${emoji("hourglass_not_done")} Fetching your timetable in the background... Please wait!`,
       ],
       2
     );

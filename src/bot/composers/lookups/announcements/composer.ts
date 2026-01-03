@@ -176,7 +176,7 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
 
     const plural = attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.reply(
-      `${emoji("hourglass_not_done")} Packaging up your file${plural}... Get ready!`
+      `${emoji("hourglass_not_done")} Downloading your file${plural} in the background... This may take a moment!`
     );
 
     const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {

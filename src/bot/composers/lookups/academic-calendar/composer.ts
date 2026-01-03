@@ -27,7 +27,7 @@ const MESSAGES: Record<string, FormattedString[]> = {
     fmt`${emoji("hourglass_not_done")} Fetching calendar details... Please wait...`,
   ],
   FETCHING_ATTACHMENT: [
-    fmt`${emoji("hourglass_not_done")} Preparing your calendar... I'll send it shortly!`,
+    fmt`${emoji("hourglass_not_done")} Downloading your calendar in the background... This may take a moment!`,
   ],
   NO_MORE_CALENDARS: [fmt`${emoji("cross_mark")} No more calendars found.`],
   INVALID_CALLBACK: [

@@ -516,7 +516,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     const plural = attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.api.sendMessage(
       chatId,
-      `${emoji("hourglass_not_done")} Gathering your file${plural} from ${resourceName}... I'm on it!`
+      `${emoji("hourglass_not_done")} Downloading your file${plural} from ${resourceName} in the background... Please wait!`
     );
 
     const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
