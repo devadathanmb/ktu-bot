@@ -1,9 +1,7 @@
 import { z } from "zod";
 
 const attachmentDeliveryWorkerConfigSchema = z.object({
-  ATTACHMENT_DELIVERY_WORKER_HEALTHCHECK_PORT: z
-    .string()
-    .transform(val => parseInt(val, 10)),
+  ATTACHMENT_DELIVERY_WORKER_HEALTHCHECK_PORT: z.coerce.number().positive(),
 });
 
 export const AttachmentDeliveryWorkerConfig =

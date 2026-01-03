@@ -70,6 +70,8 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
           );
 
           await this.handleRateLimit(duration);
+          // Don't re-throw - let the job fail and retry naturally when queue resumes
+          // The queue is paused, so retries won't happen until it's resumed
         } else {
           this.handleTelegramError(error, chatId);
         }

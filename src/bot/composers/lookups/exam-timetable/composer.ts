@@ -220,7 +220,6 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
         },
       ],
       statusMessageId: loadingMessage.message_id,
-      totalAttachments: 1,
       context: "timetable",
     };
 

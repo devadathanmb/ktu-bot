@@ -198,6 +198,8 @@ services:
     env_file:
       - ../env/staging/.env
       - ../env/staging/attachment-delivery-worker.env
+    networks:
+      - ktu-bot-network
     depends_on:
       ktu-bot-db-migrations:
         condition: service_completed_successfully

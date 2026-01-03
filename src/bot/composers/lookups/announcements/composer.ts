@@ -183,7 +183,6 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
       chatId: ctx.chat!.id,
       attachments: attachments,
       statusMessageId: statusMessage.message_id,
-      totalAttachments: attachments.length,
       context: "announcement",
     };
 

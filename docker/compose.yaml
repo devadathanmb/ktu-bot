@@ -197,6 +197,7 @@ services:
     container_name: attachment-delivery-worker
     env_file:
       - ../env/prod/.env
+      - ../env/prod/attachment-delivery-worker.env
     networks:
       - ktu-bot-network
     depends_on:

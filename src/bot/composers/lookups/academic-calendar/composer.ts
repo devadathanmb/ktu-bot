@@ -186,7 +186,6 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
       },
     ],
     statusMessageId: loadingMessage.message_id,
-    totalAttachments: 1,
     context: "calendar",
   };
 

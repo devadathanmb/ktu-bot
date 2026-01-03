@@ -523,7 +523,6 @@ inlineQuery.on("chosen_inline_result", async ctx => {
       chatId: chatId,
       attachments: attachments,
       statusMessageId: statusMessage.message_id,
-      totalAttachments: attachments.length,
       context: "inline query result",
     };
 

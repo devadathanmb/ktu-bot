@@ -10,7 +10,6 @@ export interface AttachmentDeliveryJob {
   attachments: Attachment[];
   statusMessageId?: number;
   replyToMessageId?: number;
-  totalAttachments: number;
   context: string;
 }
 
