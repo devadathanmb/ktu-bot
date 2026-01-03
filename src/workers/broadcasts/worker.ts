@@ -1,14 +1,12 @@
 import { Job } from "bullmq";
-import { AnnouncementSubscriptionRepository } from "../../db/repositories/AnnouncementSubscriptionRepository.js";
-import { ChatRepository } from "../../db/repositories/ChatRepository.js";
 import { GrammyError, InputMediaBuilder } from "grammy";
 import { BroadcastJob, ProcessedAttachment } from "../shared/types.js";
 import { FormattedString } from "@grammyjs/parse-mode";
 import logger from "../../utils/logger.js";
-import { withTransaction } from "../../db/transactions.js";
 import { BaseWorker } from "../base/BaseWorker.js";
 import { createWorkerBot } from "../../bot/utils/createWorkerBot.js";
-import { setTimeout } from "node:timers/promises";
+import { TelegramErrorUtils } from "../shared/utils/telegramErrorHandler.js";
+import { AnnouncementSubscriptionRepository } from "../../db/repositories/AnnouncementSubscriptionRepository.js";
 import { BROADCASTS_QUEUE, broadcastsQueue } from "./queue.js";
 
 export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
@@ -34,52 +32,37 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
         const errorCode = error.error_code;
         const errorDescription = error.description;
 
-        // Telegram sends 403 for forbidden errors like bot being blocked by user
-        // It sends 400 with description "Bad Request: USER_IS_BLOCKED" in some cases too
-        const isUserBlockedError =
-          errorCode === 403 ||
-          (errorCode == 400 && errorDescription.includes("USER_IS_BLOCKED"));
-
-        // If the user is deactivated, telegram throws a different error
-        const isUserDeactivedError =
-          (errorCode === 403 && errorDescription.includes("deactivated")) ||
-          (errorCode === 400 && errorDescription.includes("USER_DEACTIVATED"));
-
-        if (isUserBlockedError) {
-          // User blocked the bot
+        if (
+          TelegramErrorUtils.isUserBlockedError(errorCode, errorDescription)
+        ) {
           logger.warn(
             { chatId, error: errorDescription },
             "User blocked the bot, updating status"
           );
-          await this.handleBlockedUser(chatId);
-        } else if (isUserDeactivedError) {
-          // User deactivated their account
+          await TelegramErrorUtils.handleBlockedUser(chatId);
+        } else if (
+          TelegramErrorUtils.isUserDeactivatedError(errorCode, errorDescription)
+        ) {
           logger.warn(
             { chatId, error: errorDescription },
             "User deactivated their account, removing subscriptions and deleting chat"
           );
-          await this.handleDeactivatedUser(chatId);
-        } else if (errorCode === 429) {
-          // Rate limited - pause the entire queue
-          const retryAfter = error.parameters?.retry_after || 30;
-          const duration = retryAfter * 1000 + 1000; // Add 1 second buffer
-
-          logger.warn(
-            { chatId, retryAfter, duration },
-            "Rate limited by Telegram, pausing entire queue"
+          await TelegramErrorUtils.handleDeactivatedUser(chatId);
+        } else if (TelegramErrorUtils.isRateLimitError(errorCode)) {
+          const retryAfter = TelegramErrorUtils.getRateLimitDuration(error);
+          await TelegramErrorUtils.handleRateLimitWithQueuePause(
+            broadcastsQueue,
+            retryAfter
           );
-
-          await this.handleRateLimit(duration);
-
-          // Don't re-throw - let the job fail and retry naturally when queue resumes
-          // The queue is paused, so retries won't happen until it's resumed
         } else {
-          // Handle other Telegram errors
-          this.handleTelegramError(error, chatId);
+          TelegramErrorUtils.logUnhandledTelegramError(
+            chatId,
+            errorCode,
+            errorDescription
+          );
         }
       } else {
-        // Handle non-Telegram errors
-        this.handleGenericError(error as Error, job);
+        TelegramErrorUtils.logUnhandledGenericError(job.id, error as Error);
       }
     }
   }
@@ -198,65 +181,5 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     });
 
     return await this.bot!.api.sendMediaGroup(chatId, documents, params);
-  }
-
-  /**
-   * Handle user who blocked the bot
-   */
-  private async handleBlockedUser(chatId: number) {
-    await withTransaction(async tx => {
-      const subscriptionRepo = new AnnouncementSubscriptionRepository(tx);
-      const chatRepo = new ChatRepository(tx);
-
-      // Remove the user's subscription
-      await subscriptionRepo.delete(chatId);
-
-      // Create a chat record if not exists
-      // There can be cases where user has already blocked the bot but somehow the chat record doesn't exist
-      await chatRepo.createIfNotExists(chatId);
-
-      // Mark the user as blocked
-      await chatRepo.markKicked(chatId);
-    });
-  }
-
-  /*
-   * Handle user who deactivated their account
-   */
-  private async handleDeactivatedUser(chatId: number) {
-    await withTransaction(async tx => {
-      const chatRepo = new ChatRepository(tx);
-      await chatRepo.delete(chatId);
-    });
-  }
-
-  /**
-   * Handle rate limiting by pausing the queue and resuming after duration
-   */
-  private async handleRateLimit(duration: number): Promise<void> {
-    logger.info({ pauseDuration: duration }, "Pausing queue due to rate limit");
-
-    // Pause the entire queue
-    await broadcastsQueue.pause();
-
-    // Sleep for duration
-    await setTimeout(duration);
-
-    // Resume the queue
-    await broadcastsQueue.resume();
-  }
-
-  private handleTelegramError(error: GrammyError, chatId: number): void {
-    logger.error(
-      { chatId, errorCode: error.error_code, error: error.description },
-      "Unhandled Telegram error"
-    );
-  }
-
-  private handleGenericError(error: Error, job: Job<BroadcastJob>): void {
-    logger.error(
-      { jobId: job.id, error },
-      "Unhandled generic error in job processing"
-    );
   }
 }

@@ -3,15 +3,12 @@ import { GrammyError, InputMediaBuilder, InputFile } from "grammy";
 import { AttachmentDeliveryJob, attachmentDeliveryQueue } from "./queue.js";
 import { Attachment } from "../../types/service.types.js";
 import { createGrammyInputFileFromAttachment } from "../../utils/fileUtils.js";
-import { AnnouncementSubscriptionRepository } from "../../db/repositories/AnnouncementSubscriptionRepository.js";
-import { ChatRepository } from "../../db/repositories/ChatRepository.js";
-import { withTransaction } from "../../db/transactions.js";
 import { BaseWorker } from "../base/BaseWorker.js";
 import { createWorkerBot } from "../../bot/utils/createWorkerBot.js";
-import { setTimeout } from "node:timers/promises";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
 import { ATTACHMENT_DELIVERY_QUEUE } from "./queue.js";
+import { TelegramErrorUtils } from "../shared/utils/telegramErrorHandler.js";
 
 export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> {
   constructor() {
@@ -40,43 +37,37 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
         const errorCode = error.error_code;
         const errorDescription = error.description;
 
-        const isUserBlockedError =
-          errorCode === 403 ||
-          (errorCode === 400 && errorDescription.includes("USER_IS_BLOCKED"));
-
-        const isUserDeactivatedError =
-          (errorCode === 403 && errorDescription.includes("deactivated")) ||
-          (errorCode === 400 && errorDescription.includes("USER_DEACTIVATED"));
-
-        if (isUserBlockedError) {
+        if (
+          TelegramErrorUtils.isUserBlockedError(errorCode, errorDescription)
+        ) {
           logger.warn(
             { chatId, error: errorDescription },
             "User blocked the bot, updating status"
           );
-          await this.handleBlockedUser(chatId);
-        } else if (isUserDeactivatedError) {
+          await TelegramErrorUtils.handleBlockedUser(chatId);
+        } else if (
+          TelegramErrorUtils.isUserDeactivatedError(errorCode, errorDescription)
+        ) {
           logger.warn(
             { chatId, error: errorDescription },
             "User deactivated their account, removing chat"
           );
-          await this.handleDeactivatedUser(chatId);
-        } else if (errorCode === 429) {
-          const retryAfter = error.parameters?.retry_after || 30;
-          const duration = retryAfter * 1000 + 1000;
-
-          logger.warn(
-            { chatId, retryAfter, duration },
-            "Rate limited by Telegram, pausing entire queue"
+          await TelegramErrorUtils.handleDeactivatedUser(chatId);
+        } else if (TelegramErrorUtils.isRateLimitError(errorCode)) {
+          const retryAfter = TelegramErrorUtils.getRateLimitDuration(error);
+          await TelegramErrorUtils.handleRateLimitWithQueuePause(
+            attachmentDeliveryQueue,
+            retryAfter
           );
-
-          await this.handleRateLimit(duration);
-          // Don't re-throw - let the job fail and retry naturally when queue resumes
-          // The queue is paused, so retries won't happen until it's resumed
         } else {
-          this.handleTelegramError(error, chatId);
+          TelegramErrorUtils.logUnhandledTelegramError(
+            chatId,
+            errorCode,
+            errorDescription
+          );
         }
       } else {
-        this.handleGenericError(error as Error, job);
+        TelegramErrorUtils.logUnhandledGenericError(job.id, error as Error);
       }
     }
   }
@@ -201,50 +192,5 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
         throw error;
       }
     }
-  }
-
-  private async handleBlockedUser(chatId: number): Promise<void> {
-    await withTransaction(async tx => {
-      const subscriptionRepo = new AnnouncementSubscriptionRepository(tx);
-      const chatRepo = new ChatRepository(tx);
-
-      await subscriptionRepo.delete(chatId);
-      await chatRepo.createIfNotExists(chatId);
-      await chatRepo.markKicked(chatId);
-    });
-  }
-
-  private async handleDeactivatedUser(chatId: number): Promise<void> {
-    await withTransaction(async tx => {
-      const chatRepo = new ChatRepository(tx);
-      await chatRepo.delete(chatId);
-    });
-  }
-
-  private async handleRateLimit(duration: number): Promise<void> {
-    logger.info({ pauseDuration: duration }, "Pausing queue due to rate limit");
-
-    await attachmentDeliveryQueue.pause();
-
-    await setTimeout(duration);
-
-    await attachmentDeliveryQueue.resume();
-  }
-
-  private handleTelegramError(error: GrammyError, chatId: number): void {
-    logger.error(
-      { chatId, errorCode: error.error_code, error: error.description },
-      "Unhandled Telegram error"
-    );
-  }
-
-  private handleGenericError(
-    error: Error,
-    job: Job<AttachmentDeliveryJob>
-  ): void {
-    logger.error(
-      { jobId: job.id, error },
-      "Unhandled generic error in job processing"
-    );
   }
 }
