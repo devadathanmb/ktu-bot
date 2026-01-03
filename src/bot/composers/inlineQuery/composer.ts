@@ -4,7 +4,6 @@ import { createComposerErrorBoundary } from "../shared/errorBoundary.js";
 import { AnnouncementsRepository } from "../../../db/repositories/AnnouncementsRepository.js";
 import { AcademicCalendarsRepository } from "../../../db/repositories/AcademicCalendarsRepository.js";
 import { ExamTimetablesRepository } from "../../../db/repositories/ExamTimetablesRepository.js";
-import { createGrammyInputFileFromAttachment } from "../../../utils/fileUtils.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import type { FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
@@ -17,6 +16,7 @@ import {
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
 import { HandledBotError } from "../../../errors/HandledBotError.js";
+import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/index.js";
 
 interface AttachmentInfo {
   name: string;
@@ -513,56 +513,20 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     }
 
     // Send initial message that we'll update for each attachment
+    const plural = attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.api.sendMessage(
       chatId,
-      `${emoji("hourglass_not_done")} Fetching ${attachments.length} attachment${attachments.length > 1 ? "s" : ""} from ${resourceName}...`
+      `${emoji("hourglass_not_done")} Downloading your file${plural} from ${resourceName} in the background... Please wait!`
     );
 
-    for (let i = 0; i < attachments.length; i++) {
-      const attachment = attachments[i]!;
+    const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
+      chatId: chatId,
+      attachments: attachments,
+      statusMessageId: statusMessage.message_id,
+      context: "inline query result",
+    };
 
-      try {
-        // Update status message for current attachment
-        await ctx.api.editMessageText(
-          chatId,
-          statusMessage.message_id,
-          `${emoji("hourglass_not_done")} Fetching attachment ${i + 1}/${attachments.length}: ${attachment.name}...`
-        );
-
-        const inputFile = await createGrammyInputFileFromAttachment(
-          attachment.encryptId,
-          attachment.name
-        );
-
-        await ctx.api.sendDocument(chatId, inputFile, {
-          caption: `${emoji("paperclip")} ${attachment.name}`,
-        });
-
-        // Update final status message
-        await ctx.api.editMessageText(
-          chatId,
-          statusMessage.message_id,
-          `${emoji("check_mark_button")} Successfully sent ${attachments.length} attachment${attachments.length > 1 ? "s" : ""}!`
-        );
-      } catch (attachmentError) {
-        logger.error(
-          { error: attachmentError, attachment },
-          "Failed to fetch attachment"
-        );
-        await ctx.api
-          .deleteMessage(chatId, statusMessage.message_id)
-          .catch(() => {});
-        await ctx.api
-          .sendMessage(
-            chatId,
-            joinWithNewlines([
-              fmt`${emoji("crying_cat")} Failed to fetch attachment: ${attachment.name}`,
-              fmt`Please try again.`,
-            ]).text
-          )
-          .catch(() => {});
-      }
-    }
+    await addAttachmentDeliveryJob(jobData);
   } catch (error) {
     logger.error(
       { error, resultId, userId: chatId },

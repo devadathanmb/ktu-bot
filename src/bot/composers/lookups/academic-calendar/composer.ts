@@ -2,7 +2,6 @@ import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer, InlineKeyboard } from "grammy";
 import { fetchAcademicCalendars } from "../../../../api/services/index.js";
-import { createGrammyInputFileFromAttachment } from "../../../../utils/fileUtils.js";
 import { AcademicCalendar } from "../../../../types/service.types.js";
 import {
   generatePaginatedKeyboard,
@@ -16,8 +15,8 @@ import {
   joinWithNewlines,
 } from "../../../../utils/formatting.js";
 import { createCalendarErrorBoundary } from "../../shared/errorBoundary.js";
-import { deleteMessageSafely } from "../../../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
+import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";
 
 // Common messages used throughout the composer
 const MESSAGES: Record<string, FormattedString[]> = {
@@ -28,7 +27,7 @@ const MESSAGES: Record<string, FormattedString[]> = {
     fmt`${emoji("hourglass_not_done")} Fetching calendar details... Please wait...`,
   ],
   FETCHING_ATTACHMENT: [
-    fmt`${emoji("hourglass_not_done")} Fetching calendar attachment... Please wait...`,
+    fmt`${emoji("hourglass_not_done")} Downloading your calendar in the background... This may take a moment!`,
   ],
   NO_MORE_CALENDARS: [fmt`${emoji("cross_mark")} No more calendars found.`],
   INVALID_CALLBACK: [
@@ -171,30 +170,30 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
     entities: captionMsg.entities,
   });
 
-  // Show loading message for attachment fetching
-  const formattedMsgAttachment = joinWithNewlines(
-    MESSAGES["FETCHING_ATTACHMENT"]!,
-    2
+  const loadingMessage = await ctx.reply(
+    MESSAGES["FETCHING_ATTACHMENT"]![0]!.text,
+    {
+      entities: MESSAGES["FETCHING_ATTACHMENT"]![0]!.entities,
+    }
   );
-  const loadingMessage = await ctx.reply(formattedMsgAttachment.text, {
-    entities: formattedMsgAttachment.entities,
-  });
 
-  // Fetch and send the calendar attachment
-  const inputFile = await createGrammyInputFileFromAttachment(
-    selectedCalendar.encryptId,
-    selectedCalendar.attachmentName
-  );
-  await ctx.replyWithDocument(inputFile, {
-    caption: `${emoji("calendar")} Academic Calendar: ${selectedCalendar.title}`,
-    reply_parameters: {
-      message_id: ctx.msgId!,
-      allow_sending_without_reply: true,
-    },
-  });
+  const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
+    chatId: ctx.chat!.id,
+    attachments: [
+      {
+        name: selectedCalendar.attachmentName,
+        encryptId: selectedCalendar.encryptId,
+      },
+    ],
+    statusMessageId: loadingMessage.message_id,
+    context: "calendar",
+  };
 
-  // Delete the loading message
-  await deleteMessageSafely(ctx, loadingMessage.message_id);
+  if (ctx.msgId !== undefined) {
+    jobData.replyToMessageId = ctx.msgId;
+  }
+
+  await addAttachmentDeliveryJob(jobData);
 
   // Create "View Another" keyboard
   const keyboard = new InlineKeyboard()

@@ -34,7 +34,8 @@ graph TB
     TG -->|Webhook/Long Polling| Bot
     Bot -->|Fetch Data| KTU
     Bot -->|Store/Retrieve| DB
-    Bot -->|Cache/Queue| Redis
+    Bot -->|Cache| Redis
+    Bot -->|Queue Attachments| Queue
     Bot -->|Response| TG
     TG -->|Messages| User
 
@@ -65,6 +66,7 @@ graph TB
             NotifyWorker[📢 Announcements<br/>Notify Worker<br/>Port: 3001]
             BroadcastWorker[📨 Broadcasts<br/>Worker<br/>Port: 3002]
             SyncWorker[🔄 Data Sync<br/>Worker<br/>Port: 3003]
+            AttachmentWorker[📦 Attachment<br/>Delivery Worker<br/>Port: 3004]
         end
 
         subgraph "Message Queue"
@@ -92,11 +94,15 @@ graph TB
     NotifyWorker -->|Add Jobs| Queue
 
     Queue -->|Process Jobs| BroadcastWorker
+    Queue -->|Process Attachments| AttachmentWorker
     BroadcastWorker -->|Send Messages| TG
     BroadcastWorker -->|Update Status| DB
 
     SyncWorker -->|Fetch All Data| KTU
     SyncWorker -->|Sync| DB
+
+    Bot -->|Queue Attachments| Queue
+    AttachmentWorker -->|Download & Send| TG
 
     Queue -.->|Uses| Redis
 
@@ -198,9 +204,32 @@ When users perform inline searches, their queries hit this local copy instead of
 
 The BullMQ-based approach makes this much more resilient than traditional cron scheduling. Check out [`src/workers/data-sync/`](../src/workers/data-sync/) for the implementation.
 
+### Attachment Delivery Worker 📦
+
+This worker handles file downloads and deliveries asynchronously, preventing the bot from being blocked by large file downloads. When users request attachments (calendars, timetables, announcements), the bot immediately queues the request and returns to serving other users. Here's how it works:
+
+1. **Job Creation**: When a user requests files, the bot creates a job containing all attachment metadata and immediately returns
+   - Bot sends a friendly status message like _"⏳ Preparing your calendar... I'll send it shortly!"_
+   - The bot doesn't wait for downloads to complete
+2. **Background Processing**: The worker picks up jobs from the queue and downloads all attachments
+   - Uses **all-or-nothing delivery** - if any file fails to download, nothing is sent to ensure users get complete data
+   - Downloads happen asynchronously without blocking other users
+3. **Media Group Delivery**: Once all files are ready, sends them as media groups (batches of up to 10 files per Telegram API call)
+   - Much faster than individual file delivery
+   - Single caption listing all attachment names for clarity
+4. **Graceful Error Handling**: Handles various failure scenarios without crashing
+   - If user blocks the bot, marks their chat as kicked and removes subscriptions
+   - If user deactivates account, cleans up their data from the database
+   - If rate limited by Telegram, pauses the entire queue for the specified duration, then resumes processing
+5. **Status Updates**: Deletes the loading message once delivery is complete (or on failure)
+   - No chat pollution - the status message disappears after completion
+   - User receives their files cleanly without extra messages
+
+This worker has a `concurrency` of `2` to prevent overwhelming Telegram's rate limits while still processing requests efficiently. All implementation lives in [`src/workers/attachment-delivery/`](../src/workers/attachment-delivery/)
+
 ## Health Checks and Monitoring
 
-Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3003`) that verifies the service is running and can connect to its dependencies like the database and Redis. This enables zero-downtime deployments and automatic restarts if something goes wrong. The health check utility is in [`src/utils/healthCheck.ts`](../src/utils//healthCheck.ts) if you want to see how it works.
+Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3004`) that verifies the service is running and can connect to its dependencies like the database and Redis. This enables zero-downtime deployments and automatic restarts if something goes wrong. The health check utility is in [`src/utils/healthCheck.ts`](../src/utils//healthCheck.ts) if you want to see how it works.
 
 ### Queue Monitoring with Bull Board 📊
 
