@@ -11,6 +11,7 @@ export interface AttachmentDeliveryJob {
   statusMessageId?: number;
   replyToMessageId?: number;
   context: string;
+  sendViewAnotherMessage?: boolean;
 }
 
 export const attachmentDeliveryQueue = new Queue<AttachmentDeliveryJob>(

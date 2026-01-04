@@ -1,3 +1,5 @@
+import { emoji } from "@grammyjs/emoji";
+
 /**
  * Constants for lookup composers to avoid magic numbers
  */
@@ -11,3 +13,20 @@ export const LOOKUP_CONFIG = {
   /** Initial page number for pagination */
   INITIAL_PAGE: 0,
 } as const;
+
+/**
+ * Map context types to their corresponding emojis
+ */
+export const CONTEXT_EMOJI_MAP: Record<string, string> = {
+  "calendar": emoji("calendar"),
+  "timetable": emoji("books"),
+  "announcement": emoji("paperclip"),
+  "inline query result": emoji("paperclip"),
+} as const;
+
+/**
+ * Get emoji for a given context
+ */
+export function getContextEmoji(context: string): string {
+  return CONTEXT_EMOJI_MAP[context] || emoji("paperclip");
+}

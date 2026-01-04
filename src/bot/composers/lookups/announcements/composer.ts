@@ -122,6 +122,7 @@ async function handleAnnouncementAttachments(
     attachments,
     statusMessageId: statusMessage.message_id,
     context: "announcement",
+    sendViewAnotherMessage: true,
   };
 
   if (ctx.msgId !== undefined) {
@@ -129,10 +130,6 @@ async function handleAnnouncementAttachments(
   }
 
   await addAttachmentDeliveryJob(jobData);
-
-  await ctx.reply(`${emoji("eyes")} View another announcement?`, {
-    reply_markup: keyboard,
-  });
 }
 
 async function fetchAndDisplayAnnouncements(ctx: BotContext): Promise<void> {

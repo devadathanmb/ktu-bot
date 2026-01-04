@@ -9,6 +9,8 @@ import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
 import { ATTACHMENT_DELIVERY_QUEUE } from "./queue.js";
 import { TelegramErrorUtils } from "../shared/utils/telegramErrorHandler.js";
+import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
+import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
 
 export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> {
   constructor() {
@@ -123,6 +125,10 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       if (statusMessageId !== undefined) {
         await this.deleteStatusMessage(chatId, statusMessageId);
       }
+
+      if (job.data.sendViewAnotherMessage) {
+        await this.sendViewAnotherMessage(job.data.chatId, job.data.context);
+      }
     } catch (error) {
       if (statusMessageId !== undefined) {
         await this.updateErrorMessage(chatId, statusMessageId);
@@ -134,7 +140,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
   private buildCaption(attachments: Attachment[], context: string): string {
     if (attachments.length === 0) return "";
 
-    const contextEmoji = this.getContextEmoji(context);
+    const contextEmoji = getContextEmoji(context);
     const lines = [
       `${contextEmoji} Attachments:`,
       ...attachments.map(a => a.name),
@@ -143,14 +149,19 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     return lines.join("\n");
   }
 
-  private getContextEmoji(context: string): string {
-    const emojiMap: Record<string, string> = {
-      "calendar": emoji("calendar"),
-      "timetable": emoji("books"),
-      "announcement": emoji("paperclip"),
-      "inline query result": emoji("paperclip"),
-    };
-    return emojiMap[context] || emoji("paperclip");
+  private async sendViewAnotherMessage(
+    chatId: number,
+    context: string
+  ): Promise<void> {
+    const keyboard = createViewAnotherKeyboard(context);
+    const contextEmoji = getContextEmoji(context);
+
+    await this.bot!.api.sendMessage(
+      chatId,
+      `${contextEmoji} View another ${context}?`,
+      { reply_markup: keyboard }
+    );
+    logger.debug({ chatId, context }, "Sent view another message");
   }
 
   private async deleteStatusMessage(

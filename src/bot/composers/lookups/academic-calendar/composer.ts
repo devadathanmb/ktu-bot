@@ -124,6 +124,7 @@ async function handleCalendarAttachment(
     ],
     statusMessageId: statusMessage.message_id,
     context: "calendar",
+    sendViewAnotherMessage: true,
   };
 
   if (ctx.msgId !== undefined) {
@@ -131,10 +132,6 @@ async function handleCalendarAttachment(
   }
 
   await addAttachmentDeliveryJob(jobData);
-
-  await ctx.reply(`${emoji("eyes")} View another calendar?`, {
-    reply_markup: keyboard,
-  });
 }
 
 async function fetchAndDisplayCalendars(ctx: BotContext): Promise<void> {
