@@ -5,9 +5,13 @@ import { Announcement } from "../../../../types/service.types.js";
 import {
   generatePaginatedKeyboard,
   generatePaginatedMessageText,
-} from "../helpers.js";
+  parseSelectCallback,
+  createViewAnotherKeyboard,
+  findItemById,
+  storeCallbackMessageId,
+} from "../utils.js";
+import { LOOKUP_CONFIG } from "../constants.js";
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
-import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
   joinWithNewlines,
   formatCommand,
@@ -18,14 +22,14 @@ import { fetchAnnouncements } from "../../../../api/services/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";
 
 // Common messages used throughout the composer
-const MESSAGES: Record<string, FormattedString[]> = {
+const MESSAGES = {
   FETCHING_ANNOUNCEMENTS: [
     fmt`${emoji("hourglass_not_done")} Fetching announcements... Please wait...`,
   ],
   FETCHING_DETAILS: [
     fmt`${emoji("hourglass_not_done")} Fetching announcement details... Please wait...`,
   ],
-} as const;
+};
 
 function generateAnnouncementsKeyboard(
   announcements: Announcement[],
@@ -44,6 +48,123 @@ function generateAnnouncementsText(
   );
 }
 
+// Internal helper functions
+
+function formatAnnouncementDetails(
+  announcement: Announcement
+): FormattedString {
+  const parts: FormattedString[] = [];
+
+  if (announcement.subject) {
+    parts.push(
+      joinWithNewlines([
+        fmt`${b}${emoji("open_book")} Subject:${b}`,
+        fmt`${announcement.subject}`,
+      ])
+    );
+  }
+  if (announcement.message) {
+    parts.push(
+      joinWithNewlines([
+        fmt`${b}${emoji("memo")} Message:${b}`,
+        fmt`${announcement.message}`,
+      ])
+    );
+  }
+  if (announcement.formattedPublishedDate) {
+    parts.push(
+      fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`
+    );
+  }
+
+  return joinWithNewlines(parts, 2);
+}
+
+async function handleAnnouncementSelection(
+  ctx: BotContext,
+  announcement: Announcement
+): Promise<void> {
+  // Show loading
+  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
+  await ctx.editMessageText(loadingMsg.text, {
+    entities: loadingMsg.entities,
+  });
+
+  // Format and display details
+  const detailsMsg = formatAnnouncementDetails(announcement);
+  await ctx.editMessageText(detailsMsg.text, {
+    entities: detailsMsg.entities,
+  });
+}
+
+async function handleAnnouncementAttachments(
+  ctx: BotContext,
+  announcement: Announcement
+): Promise<void> {
+  const attachments = announcement.attachments || [];
+  const keyboard = createViewAnotherKeyboard("announcement");
+
+  if (attachments.length === 0) {
+    await ctx.reply(`${emoji("eyes")} View another announcement?`, {
+      reply_markup: keyboard,
+    });
+    return;
+  }
+
+  // Queue attachments for background delivery
+  const plural = attachments.length > 1 ? "s" : "";
+  const statusMessage = await ctx.reply(
+    `${emoji("hourglass_not_done")} Downloading your file${plural} in the background... This may take a moment!`
+  );
+
+  const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
+    chatId: ctx.chat!.id,
+    attachments,
+    statusMessageId: statusMessage.message_id,
+    context: "announcement",
+  };
+
+  if (ctx.msgId !== undefined) {
+    jobData.replyToMessageId = ctx.msgId;
+  }
+
+  await addAttachmentDeliveryJob(jobData);
+
+  await ctx.reply(`${emoji("eyes")} View another announcement?`, {
+    reply_markup: keyboard,
+  });
+}
+
+async function fetchAndDisplayAnnouncements(ctx: BotContext): Promise<void> {
+  // Store message ID for error boundary
+  storeCallbackMessageId(ctx, "announcementsMessageId");
+
+  // Show loading
+  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2);
+  await ctx.editMessageText(loadingMsg.text, {
+    entities: loadingMsg.entities,
+  });
+
+  // Fetch data
+  const announcements = await fetchAnnouncements({
+    pageNumber: ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE,
+    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+  });
+
+  // Update session and display
+  ctx.session.announcementsAnnouncements = announcements;
+  const keyboard = generateAnnouncementsKeyboard(
+    announcements,
+    ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE
+  );
+  const messageText = generateAnnouncementsText(announcements);
+
+  await ctx.editMessageText(messageText.text, {
+    reply_markup: keyboard,
+    entities: messageText.entities,
+  });
+}
+
 // Create a composer for announcements lookup
 const composer = new Composer<BotContext>();
 
@@ -59,11 +180,11 @@ const announcementsLookupCommand = new Command<BotContext>(
   async ctx => {
     // Initialize session data
     if (ctx.session.announcementsPage === null) {
-      ctx.session.announcementsPage = 0;
+      ctx.session.announcementsPage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
 
     // Send a loading message
-    const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
+    const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2);
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -72,7 +193,7 @@ const announcementsLookupCommand = new Command<BotContext>(
     // Get announcements, prepare keyboard and message text and send it
     const announcements = await fetchAnnouncements({
       pageNumber: ctx.session.announcementsPage,
-      dataSize: 10,
+      dataSize: LOOKUP_CONFIG.PAGE_SIZE,
     });
     const keyboard = generateAnnouncementsKeyboard(
       announcements,
@@ -101,143 +222,36 @@ const announcementsLookupCommand = new Command<BotContext>(
 protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
   await ctx.answerCallbackQuery();
 
-  const callbackData = ctx.callbackQuery.data;
-  const callbackParts = callbackData.split("_");
-
-  if (callbackParts.length < 3 || !callbackParts[2]) {
+  // Parse and validate callback
+  const parsed = parseSelectCallback(ctx.callbackQuery.data, "announcement");
+  if (!parsed.isValid) {
     await ctx.editMessageText(
       `${emoji("cross_mark")} Invalid callback format. Please try again.`
     );
     return;
   }
 
-  const announcementId = parseInt(callbackParts[2]);
+  // Store message ID for error boundary cleanup
+  storeCallbackMessageId(ctx, "announcementsMessageId");
 
-  if (!announcementId || ctx.session.announcementsAnnouncements.length === 0)
-    throw new SessionNotFoundError();
+  // Find selected announcement (throws SessionNotFoundError if not found)
+  const announcement = findItemById(
+    ctx.session.announcementsAnnouncements,
+    parsed.id
+  );
 
-  const selectedAnnouncement = ctx.session.announcementsAnnouncements.find(
-    announcement => announcement.id === announcementId
-  )!;
-
-  const formattedFetchingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS!, 2);
-  await ctx.editMessageText(formattedFetchingMsg.text, {
-    entities: formattedFetchingMsg.entities,
-  });
-
-  // Prepare the announcement details message
-  const parts: FormattedString[] = [];
-  if (selectedAnnouncement.subject) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("open_book")} Subject:${b}`,
-        fmt`${selectedAnnouncement.subject}`,
-      ])
-    );
-  }
-  if (selectedAnnouncement.message) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("memo")} Message:${b}`,
-        fmt`${selectedAnnouncement.message}`,
-      ])
-    );
-  }
-  if (selectedAnnouncement.formattedPublishedDate) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("calendar")} Date:${b} ${selectedAnnouncement.formattedPublishedDate}`,
-      ])
-    );
-  }
-
-  const attachments = selectedAnnouncement.attachments || [];
-
-  // Prepare message parts and combine
-  const captionMsg: FormattedString = joinWithNewlines(parts, 2);
-  if (attachments.length === 0) {
-    // Create "View Another" keyboard
-    const keyboard = new InlineKeyboard()
-      .text(
-        `${emoji("check_mark_button")} Yes`,
-        "announcement_view_another_true"
-      )
-      .text(`${emoji("cross_mark")} No`, "announcement_view_another_false");
-
-    await ctx.editMessageText(captionMsg.text, {
-      reply_markup: keyboard,
-      entities: captionMsg.entities,
-    });
-  } else {
-    // Send the announcement details first
-    await ctx.editMessageText(captionMsg.text, {
-      entities: captionMsg.entities,
-    });
-
-    const plural = attachments.length > 1 ? "s" : "";
-    const statusMessage = await ctx.reply(
-      `${emoji("hourglass_not_done")} Downloading your file${plural} in the background... This may take a moment!`
-    );
-
-    const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
-      chatId: ctx.chat!.id,
-      attachments: attachments,
-      statusMessageId: statusMessage.message_id,
-      context: "announcement",
-    };
-
-    if (ctx.msgId !== undefined) {
-      jobData.replyToMessageId = ctx.msgId;
-    }
-
-    await addAttachmentDeliveryJob(jobData);
-
-    // Create "View Another" keyboard
-    const keyboard = new InlineKeyboard()
-      .text(
-        `${emoji("check_mark_button")} Yes`,
-        "announcement_view_another_true"
-      )
-      .text(`${emoji("cross_mark")} No`, "announcement_view_another_false");
-
-    await ctx.reply(`${emoji("eyes")} View another announcement?`, {
-      reply_markup: keyboard,
-    });
-  }
+  // Handle selection flow
+  await handleAnnouncementSelection(ctx, announcement);
+  await handleAnnouncementAttachments(ctx, announcement);
 });
 
 // Handler for "View Another" - Yes
 protectedComposer.callbackQuery("announcement_view_another_true", async ctx => {
   await ctx.answerCallbackQuery();
 
-  // Reset to page 0 and show announcements again
-  ctx.session.announcementsPage = 0;
-
-  // Store the message ID for error boundary cleanup
-  ctx.session.announcementsMessageId = ctx.callbackQuery.message!.message_id;
-
-  const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
-  await ctx.editMessageText(formattedMsg.text, {
-    entities: formattedMsg.entities,
-  });
-
-  const announcements = await fetchAnnouncements({
-    pageNumber: ctx.session.announcementsPage,
-    dataSize: 10,
-  });
-
-  const keyboard = generateAnnouncementsKeyboard(
-    announcements,
-    ctx.session.announcementsPage
-  );
-
-  const messageText = generateAnnouncementsText(announcements);
-  ctx.session.announcementsAnnouncements = announcements;
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  // Reset to first page and refetch
+  ctx.session.announcementsPage = LOOKUP_CONFIG.INITIAL_PAGE;
+  await fetchAndDisplayAnnouncements(ctx);
 });
 
 // Handler for "View Another" - No
@@ -265,86 +279,33 @@ protectedComposer.callbackQuery("announcement_page_info", async ctx => {
 protectedComposer.callbackQuery("announcement_prev_page", async ctx => {
   await ctx.answerCallbackQuery();
 
-  if (
-    ctx.session.announcementsPage === null ||
-    ctx.session.announcementsPage === 0
-  ) {
+  const currentPage =
+    ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
+  if (currentPage === LOOKUP_CONFIG.INITIAL_PAGE) {
     await ctx.answerCallbackQuery("You are already on the first page.");
     return;
   }
 
-  ctx.session.announcementsPage--;
-
-  // Store the message ID for error boundary cleanup
-  ctx.session.announcementsMessageId = ctx.callbackQuery.message!.message_id;
-
-  const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
-  await ctx.editMessageText(formattedMsg.text, {
-    entities: formattedMsg.entities,
-  });
-
-  const announcements = await fetchAnnouncements({
-    pageNumber: ctx.session.announcementsPage,
-    dataSize: 10,
-  });
-
-  const keyboard = generateAnnouncementsKeyboard(
-    announcements,
-    ctx.session.announcementsPage
-  );
-
-  const messageText = generateAnnouncementsText(announcements);
-  ctx.session.announcementsAnnouncements = announcements;
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  ctx.session.announcementsPage = currentPage - 1;
+  await fetchAndDisplayAnnouncements(ctx);
 });
 
 protectedComposer.callbackQuery("announcement_next_page", async ctx => {
   await ctx.answerCallbackQuery();
 
-  if (!ctx.session.announcementsPage) {
-    ctx.session.announcementsPage = 0;
-  }
+  const currentPage =
+    ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
+  ctx.session.announcementsPage = currentPage + 1;
 
-  ctx.session.announcementsPage++;
+  await fetchAndDisplayAnnouncements(ctx);
 
-  // Store the message ID for error boundary cleanup
-  ctx.session.announcementsMessageId = ctx.callbackQuery.message!.message_id;
-
-  const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS!, 2);
-  await ctx.editMessageText(formattedMsg.text, {
-    entities: formattedMsg.entities,
-  });
-
-  const announcements = await fetchAnnouncements({
-    pageNumber: ctx.session.announcementsPage,
-    dataSize: 10,
-  });
-
-  // If no announcements found, revert page number
-  if (announcements.length === 0) {
-    ctx.session.announcementsPage--;
+  // Check if we got results
+  if (ctx.session.announcementsAnnouncements.length === 0) {
+    ctx.session.announcementsPage = currentPage; // Revert
     await ctx.editMessageText(
       `${emoji("cross_mark")} No more announcements found.`
     );
-    return;
   }
-
-  const keyboard = generateAnnouncementsKeyboard(
-    announcements,
-    ctx.session.announcementsPage
-  );
-
-  const messageText = generateAnnouncementsText(announcements);
-  ctx.session.announcementsAnnouncements = announcements;
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
 });
 
 // Create the announcement commands command group
