@@ -6,9 +6,13 @@ import {
   generatePaginatedKeyboard,
   generatePaginatedMessageText,
   PaginatedItem,
-} from "../helpers.js";
+  parseSelectCallback,
+  createViewAnotherKeyboard,
+  findItemById,
+  storeCallbackMessageId,
+} from "../utils.js";
+import { LOOKUP_CONFIG } from "../constants.js";
 import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
-import { SessionNotFoundError } from "../../../../errors/index.js";
 import {
   joinWithNewlines,
   formatCommand,
@@ -18,18 +22,14 @@ import { emoji } from "@grammyjs/emoji";
 import { fetchTimetables } from "../../../../api/services/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";
 
-const MESSAGES: Record<string, FormattedString[]> = {
+const MESSAGES = {
   FETCHING_TIMETABLES: [
     fmt`${emoji("hourglass_not_done")} Fetching timetables... Please wait...`,
   ],
   FETCHING_DETAILS: [
     fmt`${emoji("hourglass_not_done")} Fetching timetable details... Please wait...`,
   ],
-  NO_MORE_TIMETABLES: [fmt`${emoji("cross_mark")} No more timetables found.`],
-  INVALID_CALLBACK: [
-    fmt`${emoji("cross_mark")} Invalid callback format. Please try again.`,
-  ],
-} as const;
+};
 
 function generateTimetablesKeyboard(
   timetables: ExamTimeTable[],
@@ -56,6 +56,126 @@ function generateTimetablesText(timetables: ExamTimeTable[]): FormattedString {
   );
 }
 
+// Internal helper functions
+
+function formatTimetableDetails(timetable: ExamTimeTable): FormattedString {
+  const parts: FormattedString[] = [];
+
+  if (timetable.title) {
+    parts.push(
+      joinWithNewlines([
+        fmt`${b}${emoji("glowing_star")} Title:${b}`,
+        fmt`${timetable.title}`,
+      ])
+    );
+  }
+  if (timetable.formattedPublishedDate) {
+    parts.push(
+      fmt`${b}${emoji("calendar")} Date:${b} ${timetable.formattedPublishedDate}`
+    );
+  }
+
+  return joinWithNewlines(parts, 2);
+}
+
+async function handleTimetableSelection(
+  ctx: BotContext,
+  timetable: ExamTimeTable
+): Promise<void> {
+  // Show loading
+  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
+  await ctx.editMessageText(loadingMsg.text, {
+    entities: loadingMsg.entities,
+  });
+
+  // Format and display details
+  const detailsMsg = formatTimetableDetails(timetable);
+  await ctx.editMessageText(detailsMsg.text, {
+    entities: detailsMsg.entities,
+  });
+}
+
+async function handleTimetableAttachment(
+  ctx: BotContext,
+  timetable: ExamTimeTable
+): Promise<void> {
+  const keyboard = createViewAnotherKeyboard("timetable");
+
+  // Check if timetable has attachment
+  if (!timetable.attachmentId) {
+    const noAttachmentMsg = joinWithNewlines(
+      [
+        formatTimetableDetails(timetable),
+        fmt`${emoji("woman_shrugging")} No attachment found for this timetable.`,
+      ],
+      2
+    );
+
+    await ctx.editMessageText(noAttachmentMsg.text, {
+      reply_markup: keyboard,
+      entities: noAttachmentMsg.entities,
+    });
+    return;
+  }
+
+  // Queue attachment for background delivery
+  const statusMessage = await ctx.reply(
+    `${emoji("hourglass_not_done")} Downloading your timetable in the background... This may take a moment!`
+  );
+
+  const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
+    chatId: ctx.chat!.id,
+    attachments: [
+      {
+        name: timetable.fileName!,
+        encryptId: timetable.encryptId!,
+      },
+    ],
+    statusMessageId: statusMessage.message_id,
+    context: "timetable",
+  };
+
+  if (ctx.msgId !== undefined) {
+    jobData.replyToMessageId = ctx.msgId;
+  }
+
+  await addAttachmentDeliveryJob(jobData);
+
+  await ctx.reply(`${emoji("eyes")} View another timetable?`, {
+    reply_markup: keyboard,
+  });
+}
+
+async function fetchAndDisplayTimetables(ctx: BotContext): Promise<void> {
+  // Store message ID for error boundary
+  storeCallbackMessageId(ctx, "timetableMessageId");
+
+  // Show loading
+  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_TIMETABLES, 2);
+  await ctx.editMessageText(loadingMsg.text, {
+    entities: loadingMsg.entities,
+  });
+
+  // Fetch data
+  const timetables = await fetchTimetables({
+    pageNumber: ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE,
+    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+  });
+
+  // Update session and display
+  ctx.session.timetableTimetables = timetables;
+  const keyboard = generateTimetablesKeyboard(
+    timetables,
+    ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE
+  );
+  const messageText = generateTimetablesText(timetables);
+
+  await ctx.editMessageText(messageText.text, {
+    reply_markup: keyboard,
+    entities: messageText.entities,
+  });
+}
+
 const composer = new Composer<BotContext>();
 
 // Create protected composer with error boundary for loading message cleanup
@@ -69,10 +189,10 @@ const timetableLookupCommand = new Command<BotContext>(
   async (ctx: BotContext) => {
     // Initialize session data
     if (ctx.session.timetablePage === null) {
-      ctx.session.timetablePage = 0;
+      ctx.session.timetablePage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
 
-    const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
+    const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_TIMETABLES, 2);
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -82,7 +202,7 @@ const timetableLookupCommand = new Command<BotContext>(
 
     const timetables = await fetchTimetables({
       pageNumber: ctx.session.timetablePage,
-      dataSize: 10,
+      dataSize: LOOKUP_CONFIG.PAGE_SIZE,
     });
 
     const keyboard = generateTimetablesKeyboard(
@@ -116,162 +236,33 @@ const timetableLookupCommand = new Command<BotContext>(
 protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
   await ctx.answerCallbackQuery();
 
-  const callbackData = ctx.callbackQuery.data;
-  if (!callbackData) {
-    const formattedMsg = joinWithNewlines(MESSAGES["INVALID_CALLBACK"]!, 2);
-    await ctx.editMessageText(formattedMsg.text, {
-      entities: formattedMsg.entities,
-    });
+  // Parse and validate callback
+  const parsed = parseSelectCallback(ctx.callbackQuery.data, "timetable");
+  if (!parsed.isValid) {
+    await ctx.editMessageText(
+      `${emoji("cross_mark")} Invalid callback format. Please try again.`
+    );
     return;
   }
 
-  const callbackParts = callbackData.split("_");
-  if (callbackParts.length < 3 || !callbackParts[2]) {
-    const formattedMsg = joinWithNewlines(MESSAGES["INVALID_CALLBACK"]!, 2);
-    await ctx.editMessageText(formattedMsg.text, {
-      entities: formattedMsg.entities,
-    });
-    return;
-  }
+  // Store message ID for error boundary cleanup
+  storeCallbackMessageId(ctx, "timetableMessageId");
 
-  const timetableId = parseInt(callbackParts[2]);
+  // Find selected timetable (throws SessionNotFoundError if not found)
+  const timetable = findItemById(ctx.session.timetableTimetables, parsed.id);
 
-  if (!timetableId || ctx.session.timetableTimetables.length === 0)
-    throw new SessionNotFoundError();
-
-  const selectedTimetable = ctx.session.timetableTimetables.find(
-    timetable => timetable.id === timetableId
-  )!;
-
-  let formattedMsg = joinWithNewlines(MESSAGES["FETCHING_DETAILS"]!, 2);
-  await ctx.editMessageText(formattedMsg.text, {
-    entities: formattedMsg.entities,
-  });
-
-  // Prepare the timetable details message
-  const parts: FormattedString[] = [];
-  if (selectedTimetable.title) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${emoji("glowing_star")} ${b}Title:${b}`,
-        fmt`${selectedTimetable.title}`,
-      ])
-    );
-  }
-
-  if (selectedTimetable.formattedPublishedDate) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${emoji("calendar")} ${b}Date:${b} ${selectedTimetable.formattedPublishedDate}`,
-      ])
-    );
-  }
-
-  // Combine all parts into a single message
-  const captionMsg = joinWithNewlines(parts, 2);
-
-  // Check if timetable has attachment
-  if (!selectedTimetable.attachmentId) {
-    const noAttachmentMsg = joinWithNewlines(
-      [
-        captionMsg,
-        fmt`${emoji("woman_shrugging")} No attachment found for this timetable.`,
-      ],
-      2
-    );
-
-    // Create "View Another" keyboard
-    const keyboard = new InlineKeyboard()
-      .text(`${emoji("check_mark_button")} Yes`, "timetable_view_another_true")
-      .text(`${emoji("cross_mark")} No`, "timetable_view_another_false");
-
-    await ctx.editMessageText(noAttachmentMsg.text, {
-      reply_markup: keyboard,
-      entities: noAttachmentMsg.entities,
-    });
-    return;
-  }
-
-  // Send the timetable details first
-  await ctx.editMessageText(captionMsg.text, {
-    entities: captionMsg.entities,
-  });
-
-  if (
-    selectedTimetable.fileName != null &&
-    selectedTimetable.encryptId != null
-  ) {
-    formattedMsg = joinWithNewlines(
-      [
-        fmt`${emoji("hourglass_not_done")} Fetching your timetable in the background... Please wait!`,
-      ],
-      2
-    );
-    const loadingMessage = await ctx.reply(formattedMsg.text, {
-      entities: formattedMsg.entities,
-    });
-
-    const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
-      chatId: ctx.chat!.id,
-      attachments: [
-        {
-          name: selectedTimetable.fileName,
-          encryptId: selectedTimetable.encryptId,
-        },
-      ],
-      statusMessageId: loadingMessage.message_id,
-      context: "timetable",
-    };
-
-    if (ctx.msgId !== undefined) {
-      jobData.replyToMessageId = ctx.msgId;
-    }
-
-    await addAttachmentDeliveryJob(jobData);
-  }
-
-  // Create "View Another" keyboard
-  const keyboard = new InlineKeyboard()
-    .text(`${emoji("check_mark_button")} Yes`, "timetable_view_another_true")
-    .text(`${emoji("cross_mark")} No`, "timetable_view_another_false");
-
-  await ctx.reply(`${emoji("eyes")} View another timetable?`, {
-    reply_markup: keyboard,
-  });
+  // Handle selection flow
+  await handleTimetableSelection(ctx, timetable);
+  await handleTimetableAttachment(ctx, timetable);
 });
 
 // Handler for "View Another" - Yes
 protectedComposer.callbackQuery("timetable_view_another_true", async ctx => {
   await ctx.answerCallbackQuery();
 
-  // Reset to page 0 and show timetables again
-  ctx.session.timetablePage = 0;
-
-  // Store the message ID for error boundary cleanup
-  ctx.session.timetableMessageId = ctx.callbackQuery.message!.message_id;
-
-  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
-  await ctx.editMessageText(formattedMsg.text, {
-    entities: formattedMsg.entities,
-  });
-
-  const timetables = await fetchTimetables({
-    pageNumber: ctx.session.timetablePage,
-    dataSize: 10,
-  });
-
-  const keyboard = generateTimetablesKeyboard(
-    timetables,
-    ctx.session.timetablePage
-  );
-
-  const messageText = generateTimetablesText(timetables);
-  ctx.session.timetableTimetables = timetables;
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  // Reset to first page and refetch
+  ctx.session.timetablePage = LOOKUP_CONFIG.INITIAL_PAGE;
+  await fetchAndDisplayTimetables(ctx);
 });
 
 // Handler for "View Another" - No
@@ -296,84 +287,31 @@ protectedComposer.callbackQuery("timetable_page_info", async ctx => {
 protectedComposer.callbackQuery("timetable_prev_page", async ctx => {
   await ctx.answerCallbackQuery();
 
-  if (ctx.session.timetablePage === null || ctx.session.timetablePage === 0) {
+  const currentPage = ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE;
+  if (currentPage === LOOKUP_CONFIG.INITIAL_PAGE) {
     await ctx.answerCallbackQuery("You are already on the first page.");
     return;
   }
 
-  ctx.session.timetablePage--;
-
-  // Store the message ID for error boundary cleanup
-  ctx.session.timetableMessageId = ctx.callbackQuery.message!.message_id;
-
-  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
-  await ctx.editMessageText(formattedMsg.text, {
-    entities: formattedMsg.entities,
-  });
-
-  const timetables = await fetchTimetables({
-    pageNumber: ctx.session.timetablePage,
-    dataSize: 10,
-  });
-
-  const keyboard = generateTimetablesKeyboard(
-    timetables,
-    ctx.session.timetablePage
-  );
-
-  const messageText = generateTimetablesText(timetables);
-  ctx.session.timetableTimetables = timetables;
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  ctx.session.timetablePage = currentPage - 1;
+  await fetchAndDisplayTimetables(ctx);
 });
 
 protectedComposer.callbackQuery("timetable_next_page", async ctx => {
   await ctx.answerCallbackQuery();
 
-  if (ctx.session.timetablePage === null) {
-    ctx.session.timetablePage = 0;
+  const currentPage = ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE;
+  ctx.session.timetablePage = currentPage + 1;
+
+  await fetchAndDisplayTimetables(ctx);
+
+  // Check if we got results
+  if (ctx.session.timetableTimetables.length === 0) {
+    ctx.session.timetablePage = currentPage; // Revert
+    await ctx.editMessageText(
+      `${emoji("cross_mark")} No more timetables found.`
+    );
   }
-
-  ctx.session.timetablePage++;
-
-  // Store the message ID for error boundary cleanup
-  ctx.session.timetableMessageId = ctx.callbackQuery.message!.message_id;
-
-  const formattedMsg = joinWithNewlines(MESSAGES["FETCHING_TIMETABLES"]!, 2);
-  await ctx.editMessageText(formattedMsg.text, {
-    entities: formattedMsg.entities,
-  });
-
-  const timetables = await fetchTimetables({
-    pageNumber: ctx.session.timetablePage,
-    dataSize: 10,
-  });
-
-  // If no timetables found, revert page number
-  if (timetables.length === 0) {
-    ctx.session.timetablePage--;
-    const formattedMsg = joinWithNewlines(MESSAGES["NO_MORE_TIMETABLES"]!, 2);
-    await ctx.editMessageText(formattedMsg.text, {
-      entities: formattedMsg.entities,
-    });
-    return;
-  }
-
-  const keyboard = generateTimetablesKeyboard(
-    timetables,
-    ctx.session.timetablePage
-  );
-
-  const messageText = generateTimetablesText(timetables);
-  ctx.session.timetableTimetables = timetables;
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
 });
 
 // Create the timetable command group
