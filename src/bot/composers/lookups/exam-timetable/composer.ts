@@ -133,6 +133,7 @@ async function handleTimetableAttachment(
     ],
     statusMessageId: statusMessage.message_id,
     context: "timetable",
+    sendViewAnotherMessage: true,
   };
 
   if (ctx.msgId !== undefined) {
@@ -140,10 +141,6 @@ async function handleTimetableAttachment(
   }
 
   await addAttachmentDeliveryJob(jobData);
-
-  await ctx.reply(`${emoji("eyes")} View another timetable?`, {
-    reply_markup: keyboard,
-  });
 }
 
 async function fetchAndDisplayTimetables(ctx: BotContext): Promise<void> {
