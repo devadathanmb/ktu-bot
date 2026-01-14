@@ -3,7 +3,7 @@ import { Command } from "@grammyjs/commands";
 import { fmt, b, code } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
-import { INLINE_SEARCH_HELP_KEYBOARD } from "../../inlineQuery/keyboards.js";
+import { INLINE_SEARCH_HELP_KEYBOARD } from "../../inline-query/keyboards.js";
 
 export const searchCommand = new Command<BotContext>(
   "search",

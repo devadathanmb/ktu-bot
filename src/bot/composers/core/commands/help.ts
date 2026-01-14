@@ -5,7 +5,7 @@ import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { announcementsCommands } from "../../lookups/announcements/composer.js";
 import { calendarCommands } from "../../lookups/academic-calendar/composer.js";
 import { timetableCommands } from "../../lookups/exam-timetable/composer.js";
-import { announcementSubscriptionsCommands } from "../../announcementSubscriptions/composer.js";
+import { announcementSubscriptionsCommands } from "../../announcement-subscriptions/composer.js";
 import { coreCommandsGroup } from "../composer.js";
 import { emoji } from "@grammyjs/emoji";
 

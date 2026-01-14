@@ -1,7 +1,7 @@
 import logger from "./utils/logger.js";
 import { botCommands } from "./bot/commands/index.js";
 import { initDB, closeDB } from "./db/connection.js";
-import { createBot } from "./bot/bot.js";
+import { createBotWithMetrics } from "./bot/bot.js";
 import { run, RunnerHandle } from "@grammyjs/runner";
 import { BotConfig } from "./configs/bot.js";
 import { Hono } from "hono";
@@ -25,7 +25,7 @@ async function startBotInLongPolling() {
     const botMetrics = createBotMetrics(metricsRegistry);
 
     // Create bot instance with metrics
-    const bot = createBot(botMetrics);
+    const bot = createBotWithMetrics(botMetrics);
 
     // Set bot commands
     await botCommands.setCommands(bot);

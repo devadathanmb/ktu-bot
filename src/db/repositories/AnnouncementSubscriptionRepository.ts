@@ -1,6 +1,6 @@
 import { eq, inArray, arrayOverlaps } from "drizzle-orm";
 import { db } from "../connection.js";
-import { announcementSubscriptions } from "../schema/announcementSubscriptions.js";
+import { announcementSubscriptions } from "../schema/announcement-subscriptions.js";
 import type { TransactionType } from "../transactions.js";
 
 // Type for database instance (either db or transaction)

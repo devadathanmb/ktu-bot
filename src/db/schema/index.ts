@@ -1,6 +1,6 @@
 // Export all schema definitions
 export * from "./chats.js";
-export * from "./announcementSubscriptions.js";
+export * from "./announcement-subscriptions.js";
 export * from "./announcementsBuffer.js";
 export * from "./announcements.js";
 export * from "./academicCalendars.js";
