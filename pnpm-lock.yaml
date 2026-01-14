@@ -13,7 +13,7 @@ importers:
         version: 6.13.0(@bull-board/ui@6.13.0)
       '@bull-board/hono':
         specifier: ^6.13.0
-        version: 6.13.0(hono@4.10.3)
+        version: 6.13.0(hono@4.11.4)
       '@grammyjs/auto-retry':
         specifier: ^2.0.2
         version: 2.0.2(grammy@1.38.2)
@@ -40,7 +40,7 @@ importers:
         version: 1.2.1(grammy@1.38.2)
       '@hono/node-server':
         specifier: ^1.19.4
-        version: 1.19.4(hono@4.10.3)
+        version: 1.19.4(hono@4.11.4)
       bullmq:
         specifier: ^5.58.7
         version: 5.58.7
@@ -57,8 +57,8 @@ importers:
         specifier: ^1.38.2
         version: 1.38.2
       hono:
-        specifier: ^4.10.3
-        version: 4.10.3
+        specifier: ^4.11.4
+        version: 4.11.4
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -1183,8 +1183,8 @@ packages:
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
-  hono@4.10.3:
-    resolution: {integrity: sha512-2LOYWUbnhdxdL8MNbNg9XZig6k+cZXm5IjHn2Aviv7honhBMOHb+jxrKIeJRZJRmn+htUCKhaicxwXuUDlchRA==}
+  hono@4.11.4:
+    resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
     engines: {node: '>=16.9.0'}
 
   html-entities@2.6.0:
@@ -1802,12 +1802,12 @@ snapshots:
       '@bull-board/ui': 6.13.0
       redis-info: 3.1.0
 
-  '@bull-board/hono@6.13.0(hono@4.10.3)':
+  '@bull-board/hono@6.13.0(hono@4.11.4)':
     dependencies:
       '@bull-board/api': 6.13.0(@bull-board/ui@6.13.0)
       '@bull-board/ui': 6.13.0
       ejs: 3.1.10
-      hono: 4.10.3
+      hono: 4.11.4
 
   '@bull-board/ui@6.13.0':
     dependencies:
@@ -2051,9 +2051,9 @@ snapshots:
 
   '@grammyjs/types@3.22.1': {}
 
-  '@hono/node-server@1.19.4(hono@4.10.3)':
+  '@hono/node-server@1.19.4(hono@4.11.4)':
     dependencies:
-      hono: 4.10.3
+      hono: 4.11.4
 
   '@humanfs/core@0.19.1': {}
 
@@ -2708,7 +2708,7 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono@4.10.3: {}
+  hono@4.11.4: {}
 
   html-entities@2.6.0: {}
 
