@@ -2,7 +2,7 @@ import {
   announcementsChangeFilterCommand,
   announcementsSubscribeCommand,
   announcementsUnsubscribeCommand,
-} from "../bot/composers/announcementSubscriptions/composer.js";
+} from "../bot/composers/announcement-subscriptions/composer.js";
 import { announcementsLookupCommand } from "../bot/composers/lookups/announcements/composer.js";
 import { formatCommand } from "../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";

@@ -2,7 +2,7 @@ import { CommandGroup } from "@grammyjs/commands";
 import { BotContext } from "../../types/bot.types.js";
 
 import { coreCommandsGroup } from "../composers/core/composer.js";
-import { announcementSubscriptionsCommands } from "../composers/announcementSubscriptions/composer.js";
+import { announcementSubscriptionsCommands } from "../composers/announcement-subscriptions/composer.js";
 import { announcementsCommands } from "../composers/lookups/announcements/composer.js";
 import { timetableCommands } from "../composers/lookups/exam-timetable/composer.js";
 import { calendarCommands } from "../composers/lookups/academic-calendar/composer.js";

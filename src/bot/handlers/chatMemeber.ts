@@ -7,7 +7,7 @@ import { joinWithNewlines, formatCommand } from "../../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../utils/logger.js";
-import { announcementsSubscribeCommand } from "../composers/announcementSubscriptions/composer.js";
+import { announcementsSubscribeCommand } from "../composers/announcement-subscriptions/composer.js";
 
 export const chatMemeberHandler = async (
   ctx: Filter<BotContext, "my_chat_member">
