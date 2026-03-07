@@ -71,7 +71,8 @@ export const editMessageSafely = async (
     await ctx.api.editMessageText(ctx.chat!.id, messageId, text, other);
     return true;
   } catch (error) {
-    logger.debug(error, "Failed to edit message");
+    const chatId = ctx.chat?.id;
+    logger.error({ error, chatId, messageId }, "Failed to edit message");
     return false;
   }
 };

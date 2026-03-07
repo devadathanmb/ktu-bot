@@ -44,7 +44,7 @@ export async function scheduleAnnouncementNotifyJob() {
     }
   );
 
-  logger.debug("Scheduled announcement notification job");
+  logger.info("Scheduled announcement notification job");
 }
 
 // Set up recurring notification checks

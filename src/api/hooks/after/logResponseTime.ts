@@ -7,12 +7,21 @@ export const logResponseTime: AfterResponseHook = response => {
   const { timings } = response;
 
   if (timings) {
+    const url = response.url;
+    const cached = response.isFromCache;
+    const method = response.request.options.method;
+    const statusCode = response.statusCode;
+    const timestamps = {
+      start: timings.start,
+      end: timings.end,
+    };
+    const total = `${timings.phases.total}ms`;
     logger.info(
       {
-        url: response.url,
-        cached: response.isFromCache,
-        method: response.request.options.method,
-        statusCode: response.statusCode,
+        url,
+        cached,
+        method,
+        statusCode,
         // Comprehensive timing breakdown
         // totalTime: `${timings.phases.total}ms`,
         // dnsLookup: `${timings.phases.dns}ms`,
@@ -21,11 +30,8 @@ export const logResponseTime: AfterResponseHook = response => {
         // firstByte: `${timings.phases.firstByte}ms`,
         // download: `${timings.phases.download}ms`,
         // Individual timestamps
-        timestamps: {
-          start: timings.start,
-          end: timings.end,
-        },
-        total: `${timings.phases.total}ms`,
+        timestamps,
+        total,
       },
       "API Response Time"
     );

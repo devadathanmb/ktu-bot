@@ -12,32 +12,24 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
     try {
       return await serviceFunction(...args);
     } catch (error: unknown) {
-      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
-
-      const errorStatusCode = (error as any)?.response?.statusCode;
-      const errorUrl =
-        (error as any)?.response?.requestUrl?.toString() ||
-        (error as any)?.options?.url?.toString();
-      const errorBody = (error as any)?.response?.body;
-      const errorCode = (error as any)?.code;
-
-      logger.error(
-        {
-          service: serviceName,
-          statusCode: errorStatusCode,
-          url: errorUrl,
-          responseBody: errorBody,
-          code: errorCode,
-        },
-        `Error in ${serviceName}`
-      );
-
       // Handle HTTP errors from got
       if (error instanceof HTTPError) {
         const statusCode = error.response.statusCode;
         const url = (
           error.response.requestUrl || error.options.url
         )?.toString();
+        const responseBody = error.response.body as unknown;
+
+        logger.error(
+          {
+            service: serviceName,
+            statusCode,
+            url,
+            responseBody,
+            code: error.code,
+          },
+          `Error in ${serviceName}`
+        );
 
         // Throw KTUAPIError with specific user messages for different status codes
         switch (statusCode) {
@@ -93,6 +85,16 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
       if (error instanceof RequestError) {
         const url = error.options?.url?.toString();
 
+        logger.error(
+          {
+            service: serviceName,
+            url,
+            code: error.code,
+            error: error.message,
+          },
+          `Error in ${serviceName}`
+        );
+
         throw new KTUAPIError(
           serviceName,
           `Network error: ${error.message}`,
@@ -123,6 +125,25 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
           error
         );
       }
+
+      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+      const errorStatusCode = (error as any)?.response?.statusCode;
+      const errorUrl =
+        (error as any)?.response?.requestUrl?.toString() ||
+        (error as any)?.options?.url?.toString();
+      const errorBody = (error as any)?.response?.body;
+      const errorCode = (error as any)?.code;
+
+      logger.error(
+        {
+          service: serviceName,
+          statusCode: errorStatusCode,
+          url: errorUrl,
+          responseBody: errorBody,
+          code: errorCode,
+        },
+        `Error in ${serviceName}`
+      );
 
       // If the error is not handled above, re-throw
       throw error;

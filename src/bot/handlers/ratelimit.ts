@@ -5,7 +5,8 @@ import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
 
 export const rateLimitExceededHandler = async (ctx: BotContext) => {
-  logger.warn({ chatId: ctx.chat?.id }, "Rate limit exceeded");
+  const chatId = ctx.chat?.id;
+  logger.warn({ chatId }, "Rate limit exceeded");
   const replyMessage = joinWithNewlines(
     [
       fmt`Kure aayi ketto! Ini poyi oru chaaya kudichitu vaa!`,

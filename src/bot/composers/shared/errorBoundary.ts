@@ -69,14 +69,19 @@ export function createComposerErrorBoundary(
         `${emoji("slightly_frowning_face")} Sorry, something went wrong on my end. Please try again.`;
 
       // Log the general error
+      const chatId = ctx.chat?.id;
+      const userId = ctx.from?.id;
+      const username = ctx.from?.username;
+      const update = ctx.update;
+      const session = ctx.session;
       logger.error(
         {
           error: error.error,
-          chatId: ctx.chat?.id,
-          userId: ctx.from?.id,
-          username: ctx.from?.username,
-          update: ctx.update,
-          session: ctx.session,
+          chatId,
+          userId,
+          username,
+          update,
+          session,
         },
         `Composer error boundary triggered`
       );

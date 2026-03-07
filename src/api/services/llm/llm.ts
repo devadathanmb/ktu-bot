@@ -98,11 +98,14 @@ export class LLMService {
       /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
       // Log the response body for better debugging
       if ((error as any).response?.body) {
+        const statusCode = (error as any).response.statusCode;
+        const errorBody = (error as any).response.body;
+        const requestBody = validatedRequestPayload;
         logger.error(
           {
-            statusCode: (error as any).response.statusCode,
-            errorBody: (error as any).response.body,
-            requestBody: validatedRequestPayload,
+            statusCode,
+            errorBody,
+            requestBody,
           },
           "Groq API request failed"
         );
@@ -141,10 +144,11 @@ export class LLMService {
       return validatedResult;
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const announcement = announcementContent.substring(0, 100) + "...";
         logger.warn(
           {
-            error: error,
-            announcement: announcementContent.substring(0, 100) + "...",
+            error,
+            announcement,
           },
           "Validation error in LLM course finding service"
         );
@@ -192,10 +196,11 @@ export class LLMService {
       return validatedResult;
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const announcement = announcementContent.substring(0, 100) + "...";
         logger.warn(
           {
             error: error.issues,
-            announcement: announcementContent.substring(0, 100) + "...",
+            announcement,
           },
           "Validation error in LLM service"
         );

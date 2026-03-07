@@ -105,7 +105,8 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
 
     // Find and return the new announcements
     const newAnnouncements = announcements.filter(a => newIds.includes(a.id));
-    logger.info({ count: newAnnouncements.length }, "Found new announcements");
+    const count = newAnnouncements.length;
+    logger.info({ count }, "Found new announcements");
     return newAnnouncements;
   }
 
@@ -134,11 +135,13 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
 
     // Extract course filters from announcement text
     const filters = findCourseFiltersFromText(contentText);
+    const announcementContent = content;
+    const extractedFilters = Array.from(filters);
 
     logger.debug(
       {
-        announcement: content,
-        filters: Array.from(filters),
+        announcement: announcementContent,
+        filters: extractedFilters,
       },
       "Regex extracted course filters from announcement"
     );
@@ -162,7 +165,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
       logger.debug(
         {
           llmMatchedCourses: Array.from(llmMatchedCourses),
-          announcement: content,
+          announcement: announcementContent,
         },
         "LLM matched courses from announcement"
       );
@@ -267,8 +270,9 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
     for (const announcement of newAnnouncements) {
       const chatIds = await this.findRelevantSubscribers(announcement);
       if (chatIds.length === 0) {
+        const announcementId = announcement.id;
         logger.debug(
-          { announcementId: announcement.id },
+          { announcementId },
           `No relevant subscribers for announcement`
         );
         continue;
@@ -294,7 +298,8 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
     // In case of a failure, everything fails so it will be retried in the next cron run
     if (jobs.length > 0) {
       await addBroadcastJobs(jobs);
-      logger.info({ jobCount: jobs.length }, "Added broadcast jobs to queue");
+      const jobCount = jobs.length;
+      logger.info({ jobCount }, "Added broadcast jobs to queue");
     }
 
     // Resync the announcements buffer

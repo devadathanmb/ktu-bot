@@ -26,20 +26,19 @@ export async function checkQueueHealth(
     const isHealthy =
       failed < options.maxFailedJobs &&
       waiting + active < options.maxBacklogJobs;
+    const queueName = queue.name;
 
     if (!isHealthy) {
       logger.warn(
-        { queueName: queue.name, waiting, active, failed },
+        { queueName, waiting, active, failed },
         "Queue health check failed"
       );
     }
 
     return isHealthy;
   } catch (error) {
-    logger.error(
-      { queueName: queue.name, error },
-      "Failed to check queue health"
-    );
+    const queueName = queue.name;
+    logger.error({ queueName, error }, "Failed to check queue health");
     return false;
   }
 }

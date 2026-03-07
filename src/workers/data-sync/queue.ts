@@ -54,7 +54,7 @@ export async function scheduleSyncJobs() {
     }),
   ]);
 
-  logger.debug({ timestamp }, "Manually scheduled all sync jobs");
+  logger.info({ timestamp }, "Manually scheduled all sync jobs");
 }
 
 // Set up recurring sync jobs for all data types

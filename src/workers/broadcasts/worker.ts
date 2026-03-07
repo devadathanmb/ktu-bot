@@ -35,16 +35,18 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
         if (
           TelegramErrorUtils.isUserBlockedError(errorCode, errorDescription)
         ) {
+          const error = errorDescription;
           logger.warn(
-            { chatId, error: errorDescription },
+            { chatId, error },
             "User blocked the bot, updating status"
           );
           await TelegramErrorUtils.handleBlockedUser(chatId);
         } else if (
           TelegramErrorUtils.isUserDeactivatedError(errorCode, errorDescription)
         ) {
+          const error = errorDescription;
           logger.warn(
-            { chatId, error: errorDescription },
+            { chatId, error },
             "User deactivated their account, removing subscriptions and deleting chat"
           );
           await TelegramErrorUtils.handleDeactivatedUser(chatId);

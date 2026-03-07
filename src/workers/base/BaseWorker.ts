@@ -123,25 +123,17 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
    * Wrapper for job processing with error handling
    */
   private async processJobWrapper(job: Job<TJobData>): Promise<void> {
-    try {
-      await this.processJob(job);
-    } catch (error) {
-      logger.error(
-        { jobId: job.id, data: job.data, workerName: this.workerName, error },
-        "Job processing failed"
-      );
-      throw error;
-    }
+    await this.processJob(job);
   }
 
   /**
    * Default job completed handler
    */
   protected onJobCompleted(job: Job<TJobData>): void {
-    logger.info(
-      { jobId: job.id, data: job.data, workerName: this.workerName },
-      "Job completed"
-    );
+    const jobId = job.id;
+    const data = job.data;
+    const workerName = this.workerName;
+    logger.info({ jobId, data, workerName }, "Job completed");
   }
 
   /**
@@ -151,10 +143,10 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     job: Job<TJobData> | undefined,
     error: Error
   ): Promise<void> {
-    logger.error(
-      { jobId: job?.id, data: job?.data, workerName: this.workerName, error },
-      "Job failed"
-    );
+    const jobId = job?.id;
+    const data = job?.data;
+    const workerName = this.workerName;
+    logger.error({ jobId, data, workerName, error }, "Job failed");
 
     if (job) {
       await job.log(

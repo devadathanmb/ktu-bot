@@ -72,8 +72,10 @@ export const TelegramErrorUtils = {
     retryAfterSeconds: number
   ): Promise<void> {
     const duration = retryAfterSeconds * 1000 + 1000; // Add 1 second buffer
+    const pauseDuration = duration;
+    const queueName = queue.name;
     logger.info(
-      { pauseDuration: duration, queueName: queue.name },
+      { pauseDuration, queueName },
       "Pausing queue due to rate limit"
     );
 
@@ -97,10 +99,8 @@ export const TelegramErrorUtils = {
     errorCode: number,
     errorDescription: string
   ): void {
-    logger.error(
-      { chatId, errorCode, error: errorDescription },
-      "Unhandled Telegram error"
-    );
+    const error = errorDescription;
+    logger.error({ chatId, errorCode, error }, "Unhandled Telegram error");
   },
 
   /**

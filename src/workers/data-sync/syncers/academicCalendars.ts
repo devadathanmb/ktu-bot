@@ -11,10 +11,15 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
   private readonly PAGE_SIZE = 100;
   private readonly BATCH_SIZE = 20;
 
-  private async fetchPage(pageNumber: number): Promise<AcademicCalendar[]> {
-    logger.debug(
-      `[${this.name}] Fetching page ${pageNumber} (size: ${this.PAGE_SIZE})`
-    );
+  private async fetchPage(
+    pageNumber: number,
+    options?: { log?: boolean }
+  ): Promise<AcademicCalendar[]> {
+    if (options?.log !== false) {
+      logger.debug(
+        `[${this.name}] Fetching page ${pageNumber} (size: ${this.PAGE_SIZE})`
+      );
+    }
     return await fetchAcademicCalendars({
       pageNumber,
       dataSize: this.PAGE_SIZE,
@@ -112,41 +117,33 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
   }
 
   async performPeriodicSync(): Promise<void> {
-    logger.debug(`[${this.name}] Starting periodic sync`);
+    logger.info(`[${this.name}] Starting periodic sync`);
 
-    try {
-      // Fetch recent calendars (first 2 pages to catch any recent updates)
-      const recentBatch1 = await this.fetchPage(0);
-      const recentBatch2 = await this.fetchPage(1);
-      const recentCalendars = [...recentBatch1, ...recentBatch2];
+    // Fetch recent calendars (first 2 pages to catch any recent updates)
+    const recentBatch1 = await this.fetchPage(0, { log: false });
+    const recentBatch2 = await this.fetchPage(1, { log: false });
+    const recentCalendars = [...recentBatch1, ...recentBatch2];
 
-      if (recentCalendars.length === 0) {
-        logger.debug(`[${this.name}] No recent calendars found`);
-        return;
-      }
-
-      // Transform and upsert in transaction
-      await withTransaction(async tx => {
-        const repo = new AcademicCalendarsRepository(tx);
-        const transformedCalendars = recentCalendars.map(calendar =>
-          AcademicCalendarsRepository.transformFromApi(calendar)
-        );
-        const upserted = await repo.bulkUpsert(transformedCalendars);
-
-        logger.debug(
-          `[${this.name}] Periodic sync: Processed ${upserted.length} calendars`
-        );
-      });
-
-      logger.debug(
-        `[${this.name}] Periodic sync completed. Processed ${recentCalendars.length} calendars`
-      );
-    } catch (error) {
-      logger.error(
-        { error, syncer: this.name },
-        `[${this.name}] Periodic sync failed`
-      );
-      throw error;
+    if (recentCalendars.length === 0) {
+      logger.info(`[${this.name}] No recent calendars found`);
+      return;
     }
+
+    // Transform and upsert in transaction
+    await withTransaction(async tx => {
+      const repo = new AcademicCalendarsRepository(tx);
+      const transformedCalendars = recentCalendars.map(calendar =>
+        AcademicCalendarsRepository.transformFromApi(calendar)
+      );
+      const upserted = await repo.bulkUpsert(transformedCalendars);
+
+      logger.info(
+        `[${this.name}] Periodic sync: Processed ${upserted.length} calendars`
+      );
+    });
+
+    logger.info(
+      `[${this.name}] Periodic sync completed. Processed ${recentCalendars.length} calendars`
+    );
   }
 }

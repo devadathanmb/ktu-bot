@@ -38,31 +38,22 @@ export async function uploadFileToTelegram(
   bot: Bot<BotContext>,
   attachment: Attachment
 ): Promise<string> {
-  try {
-    logger.debug({ fileName: attachment.name }, "Uploading file to Telegram");
-    const inputFile = await createGrammyInputFileFromAttachment(
-      attachment.encryptId,
-      attachment.name
-    );
+  const fileName = attachment.name;
+  logger.debug({ fileName }, "Uploading file to Telegram");
+  const inputFile = await createGrammyInputFileFromAttachment(
+    attachment.encryptId,
+    fileName
+  );
 
-    // Upload to a file storage channel or use getFile to get file_id
-    const message = await bot.api.sendDocument(
-      BotConfig.BOT_FILE_UPLOAD_CHANNEL_ID,
-      inputFile
-    );
+  // Upload to a file storage channel or use getFile to get file_id
+  const message = await bot.api.sendDocument(
+    BotConfig.BOT_FILE_UPLOAD_CHANNEL_ID,
+    inputFile
+  );
 
-    logger.debug(
-      { fileId: message.document?.file_id },
-      "Successfully uploaded file to Telegram"
-    );
-    return message.document?.file_id || "";
-  } catch (error) {
-    logger.error(
-      { fileName: attachment.name, error: error },
-      "Failed to upload file to Telegram"
-    );
-    throw error;
-  }
+  const fileId = message.document?.file_id;
+  logger.debug({ fileId }, "Successfully uploaded file to Telegram");
+  return fileId || "";
 }
 
 /**
@@ -77,19 +68,20 @@ export async function processAttachments(
 
   for (const attachment of attachments) {
     let processed: ProcessedAttachment | null = null;
+    const fileName = attachment.name;
 
     // Try uploading this to telegram first and get the file ID
     // File IDs can be reused as many times as required
     try {
       const fileId = await uploadFileToTelegram(bot, attachment);
       processed = {
-        fileName: attachment.name,
+        fileName,
         fileId,
       };
     } catch (error) {
       logger.warn(
-        { fileName: attachment.name, error: error },
-        `Failed to upload file ${attachment.name} to Telegram, trying file hosting service`
+        { fileName, error },
+        `Failed to upload file ${fileName} to Telegram, trying file hosting service`
       );
     }
 
@@ -97,20 +89,14 @@ export async function processAttachments(
     // If file hosting upload fails, throw error to fail the entire job
     if (!processed) {
       try {
-        logger.debug(
-          { fileName: attachment.name },
-          "Uploading file to file hosting service"
-        );
+        logger.debug({ fileName }, "Uploading file to file hosting service");
         const fileUrl = await uploadFileToFileHosting(attachment);
         processed = {
-          fileName: attachment.name,
+          fileName,
           fileUrl,
         };
       } catch (error) {
-        logger.error(
-          { fileName: attachment.name, error: error },
-          "Failed to upload to file hosting."
-        );
+        logger.error({ fileName, error }, "Failed to upload to file hosting.");
         throw error;
       }
     }

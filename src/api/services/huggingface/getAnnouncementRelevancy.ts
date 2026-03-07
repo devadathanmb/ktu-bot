@@ -51,7 +51,6 @@ export async function getAnnouncementRelevancy(text: string): Promise<boolean> {
     return await _getAnnouncementRelevancy(text);
   } catch (error: unknown) {
     /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-    logger.debug(error);
     const errorMessage = (error as any)?.message || "Unknown error occurred";
     const statusCode = (error as any)?.response?.statusCode;
     const responseBody = (error as any)?.response?.body;
@@ -59,7 +58,8 @@ export async function getAnnouncementRelevancy(text: string): Promise<boolean> {
     logger.error(
       {
         service: "getRelevancy",
-        error: errorMessage,
+        rawError: error,
+        errorMessage,
         statusCode,
         responseBody: responseBody ? JSON.stringify(responseBody) : undefined,
         inputText: text,

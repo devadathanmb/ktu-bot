@@ -14,10 +14,15 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
   /**
    * Fetches a single page of announcements from the API
    */
-  private async fetchPage(pageNumber: number): Promise<Announcement[]> {
-    logger.debug(
-      `[${this.name}] Fetching page ${pageNumber} (size: ${this.PAGE_SIZE})`
-    );
+  private async fetchPage(
+    pageNumber: number,
+    options?: { log?: boolean }
+  ): Promise<Announcement[]> {
+    if (options?.log !== false) {
+      logger.debug(
+        `[${this.name}] Fetching page ${pageNumber} (size: ${this.PAGE_SIZE})`
+      );
+    }
     return await fetchAnnouncements({
       pageNumber,
       dataSize: this.PAGE_SIZE,
@@ -116,41 +121,33 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
   }
 
   async performPeriodicSync(): Promise<void> {
-    logger.debug(`[${this.name}] Starting periodic sync`);
+    logger.info(`[${this.name}] Starting periodic sync`);
 
-    try {
-      // Fetch recent announcements (first 2 pages to catch any recent updates)
-      const recentBatch1 = await this.fetchPage(0);
-      const recentBatch2 = await this.fetchPage(1);
-      const recentAnnouncements = [...recentBatch1, ...recentBatch2];
+    // Fetch recent announcements (first 2 pages to catch any recent updates)
+    const recentBatch1 = await this.fetchPage(0, { log: false });
+    const recentBatch2 = await this.fetchPage(1, { log: false });
+    const recentAnnouncements = [...recentBatch1, ...recentBatch2];
 
-      if (recentAnnouncements.length === 0) {
-        logger.debug(`[${this.name}] No recent announcements found`);
-        return;
-      }
-
-      // Transform and upsert in transaction
-      await withTransaction(async tx => {
-        const repo = new AnnouncementsRepository(tx);
-        const transformedAnnouncements = recentAnnouncements.map(announcement =>
-          AnnouncementsRepository.transformFromApi(announcement)
-        );
-        const upserted = await repo.bulkUpsert(transformedAnnouncements);
-
-        logger.debug(
-          `[${this.name}] Periodic sync: Processed ${upserted.length} announcements`
-        );
-      });
-
-      logger.debug(
-        `[${this.name}] Periodic sync completed. Processed ${recentAnnouncements.length} announcements`
-      );
-    } catch (error) {
-      logger.error(
-        { error, syncer: this.name },
-        `[${this.name}] Periodic sync failed`
-      );
-      throw error;
+    if (recentAnnouncements.length === 0) {
+      logger.info(`[${this.name}] No recent announcements found`);
+      return;
     }
+
+    // Transform and upsert in transaction
+    await withTransaction(async tx => {
+      const repo = new AnnouncementsRepository(tx);
+      const transformedAnnouncements = recentAnnouncements.map(announcement =>
+        AnnouncementsRepository.transformFromApi(announcement)
+      );
+      const upserted = await repo.bulkUpsert(transformedAnnouncements);
+
+      logger.info(
+        `[${this.name}] Periodic sync: Processed ${upserted.length} announcements`
+      );
+    });
+
+    logger.info(
+      `[${this.name}] Periodic sync completed. Processed ${recentAnnouncements.length} announcements`
+    );
   }
 }

@@ -78,12 +78,12 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
   }
 
   private async checkNeedsInitialSync(): Promise<boolean> {
-    logger.debug("Checking if any resource needs initial sync");
+    logger.info("Checking if any resource needs initial sync");
 
     const results = await Promise.allSettled(
       Array.from(this.syncers.values()).map(async syncer => {
         const needs = await syncer.needsInitialSync();
-        logger.debug(`[${syncer.name}] needsInitialSync: ${needs}`);
+        logger.info(`[${syncer.name}] needsInitialSync: ${needs}`);
         return needs;
       })
     );
