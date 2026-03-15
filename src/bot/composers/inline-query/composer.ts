@@ -1,9 +1,9 @@
 import { BotContext } from "../../../types/bot.types.js";
 import { Composer, InlineKeyboard, InlineQueryResultBuilder } from "grammy";
-import { createComposerErrorBoundary } from "../shared/errorBoundary.js";
-import { AnnouncementsRepository } from "../../../db/repositories/AnnouncementsRepository.js";
-import { AcademicCalendarsRepository } from "../../../db/repositories/AcademicCalendarsRepository.js";
-import { ExamTimetablesRepository } from "../../../db/repositories/ExamTimetablesRepository.js";
+import { createComposerErrorBoundary } from "../shared/error-boundary.js";
+import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
+import { AcademicCalendarsRepository } from "../../../db/repositories/academic-calendars-repository.js";
+import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import type { FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
@@ -15,7 +15,7 @@ import {
   INLINE_CALENDARS_SEARCH_BUTTON,
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
-import { HandledBotError } from "../../../errors/HandledBotError.js";
+import { HandledBotError } from "../../../errors/handled-bot-error.js";
 import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/index.js";
 
 interface AttachmentInfo {

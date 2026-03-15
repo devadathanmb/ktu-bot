@@ -3,10 +3,10 @@ import { GrammyError, InputMediaBuilder } from "grammy";
 import { BroadcastJob, ProcessedAttachment } from "../shared/types.js";
 import { FormattedString } from "@grammyjs/parse-mode";
 import logger from "../../utils/logger.js";
-import { BaseWorker } from "../base/BaseWorker.js";
-import { createWorkerBot } from "../../bot/utils/createWorkerBot.js";
-import { TelegramErrorUtils } from "../shared/utils/telegramErrorHandler.js";
-import { AnnouncementSubscriptionRepository } from "../../db/repositories/AnnouncementSubscriptionRepository.js";
+import { BaseWorker } from "../base/base-worker.js";
+import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
+import { TelegramErrorUtils } from "../shared/utils/telegram-error-handler.js";
+import { AnnouncementSubscriptionRepository } from "../../db/repositories/announcement-subscription-repository.js";
 import { BROADCASTS_QUEUE, broadcastsQueue } from "./queue.js";
 
 export class BroadcastsWorker extends BaseWorker<BroadcastJob> {

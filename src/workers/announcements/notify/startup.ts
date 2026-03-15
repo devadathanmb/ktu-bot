@@ -1,6 +1,6 @@
 import { AnnouncementsNotifyWorker } from "./worker.js";
 import { announcementsNotifyQueue } from "./queue.js";
-import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
+import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
 import { setupGracefulShutdown } from "../../shared/shutdown.js";
 import { Hono } from "hono";
 import {

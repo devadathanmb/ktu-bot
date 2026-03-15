@@ -5,7 +5,7 @@ import { startCommand } from "./commands/start.js";
 import { helpCommand } from "./commands/help.js";
 import { codeCommand } from "./commands/code.js";
 import { searchCommand } from "./commands/search.js";
-import { ktuAPIStatusCommand } from "./commands/apiStatus.js";
+import { ktuAPIStatusCommand } from "./commands/api-status.js";
 
 // Create the core commands command group
 export const coreCommandsGroup = new CommandGroup<BotContext>();

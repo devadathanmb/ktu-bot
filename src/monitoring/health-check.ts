@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import { checkDatabaseHealth } from "../db/healthCheck.js";
+import { checkDatabaseHealth } from "../db/health-check.js";
 import logger from "../utils/logger.js";
 
 export interface HealthCheckResult {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import client from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
 import { formatDateToReadableString } from "../../../utils/formatting.js";
-import { withServiceWrapper } from "../../utils/serviceWrapper.js";
+import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import type { ExamTimeTable } from "../../../types/service.types.js";
 
 interface FetchExamTimetablesParams {

@@ -3,8 +3,8 @@ import { serve } from "@hono/node-server";
 import { createBullBoard } from "@bull-board/api";
 import { HonoAdapter } from "@bull-board/hono";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { queueAdapters } from "../../workers/shared/queueRegistry.js";
-import { BullBoardServiceConfig } from "../../configs/bullBoardService.js";
+import { queueAdapters } from "../../workers/shared/queue-registry.js";
+import { BullBoardServiceConfig } from "../../configs/bull-board-service.js";
 import logger from "../../utils/logger.js";
 
 function startBullBoard() {

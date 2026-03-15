@@ -1,7 +1,7 @@
 import { GrammyError } from "grammy";
 import { Queue } from "bullmq";
-import { AnnouncementSubscriptionRepository } from "../../../db/repositories/AnnouncementSubscriptionRepository.js";
-import { ChatRepository } from "../../../db/repositories/ChatRepository.js";
+import { AnnouncementSubscriptionRepository } from "../../../db/repositories/announcement-subscription-repository.js";
+import { ChatRepository } from "../../../db/repositories/chat-repository.js";
 import { withTransaction } from "../../../db/transactions.js";
 import { setTimeout } from "node:timers/promises";
 import logger from "../../../utils/logger.js";

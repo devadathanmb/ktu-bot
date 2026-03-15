@@ -1,14 +1,14 @@
 import { z } from "zod";
 import got from "got";
 import FormData from "form-data";
-import { withServiceWrapper } from "../../utils/serviceWrapper.js";
+import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import { LITTERBOX_API } from "../../../constants/api.js";
 import type { TempFileUploadParams } from "../../../types/service.types.js";
 import {
   readFileAsBuffer,
   createTempFileFromBase64,
   withTempFileCleanup,
-} from "../../../utils/fileUtils.js";
+} from "../../../utils/file-utils.js";
 
 // Zod schema for Litterbox API response validation
 const LitterboxResponseSchema = z

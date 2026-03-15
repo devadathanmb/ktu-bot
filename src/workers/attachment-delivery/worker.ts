@@ -2,13 +2,13 @@ import { Job } from "bullmq";
 import { GrammyError, InputMediaBuilder, InputFile } from "grammy";
 import { AttachmentDeliveryJob, attachmentDeliveryQueue } from "./queue.js";
 import { Attachment } from "../../types/service.types.js";
-import { createGrammyInputFileFromAttachment } from "../../utils/fileUtils.js";
-import { BaseWorker } from "../base/BaseWorker.js";
-import { createWorkerBot } from "../../bot/utils/createWorkerBot.js";
+import { createGrammyInputFileFromAttachment } from "../../utils/file-utils.js";
+import { BaseWorker } from "../base/base-worker.js";
+import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
 import { ATTACHMENT_DELIVERY_QUEUE } from "./queue.js";
-import { TelegramErrorUtils } from "../shared/utils/telegramErrorHandler.js";
+import { TelegramErrorUtils } from "../shared/utils/telegram-error-handler.js";
 import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
 import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
 

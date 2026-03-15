@@ -1,6 +1,6 @@
 import { HTTPError, RequestError } from "got";
 import { ZodError } from "zod";
-import { KTUAPIError } from "../../errors/BotErrors.js";
+import { KTUAPIError } from "../../errors/bot-errors.js";
 import logger from "../../utils/logger.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -16,7 +16,7 @@ import {
   joinWithNewlines,
   formatCommand,
 } from "../../../../utils/formatting.js";
-import { createAnnouncementsErrorBoundary } from "../../shared/errorBoundary.js";
+import { createAnnouncementsErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 import { fetchAnnouncements } from "../../../../api/services/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";

@@ -1,6 +1,6 @@
 import { withTransaction } from "../../db/index.js";
-import { AnnouncementSubscriptionRepository } from "../../db/repositories/AnnouncementSubscriptionRepository.js";
-import { ChatRepository } from "../../db/repositories/ChatRepository.js";
+import { AnnouncementSubscriptionRepository } from "../../db/repositories/announcement-subscription-repository.js";
+import { ChatRepository } from "../../db/repositories/chat-repository.js";
 import { Filter } from "grammy";
 import { BotContext } from "../../types/bot.types.js";
 import { joinWithNewlines, formatCommand } from "../../utils/formatting.js";

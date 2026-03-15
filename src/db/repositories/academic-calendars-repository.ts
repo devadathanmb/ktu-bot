@@ -1,6 +1,6 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
 import { db } from "../connection.js";
-import { academicCalendars } from "../schema/academicCalendars.js";
+import { academicCalendars } from "../schema/academic-calendars.js";
 import type { TransactionType } from "../transactions.js";
 import type { AcademicCalendar } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";

@@ -1,7 +1,7 @@
 import { AcademicCalendar } from "../../../types/service.types.js";
 import { BaseResourceSyncer } from "./base.js";
 import { fetchAcademicCalendars } from "../../../api/services/index.js";
-import { AcademicCalendarsRepository } from "../../../db/repositories/AcademicCalendarsRepository.js";
+import { AcademicCalendarsRepository } from "../../../db/repositories/academic-calendars-repository.js";
 import { withTransaction } from "../../../db/transactions.js";
 import logger from "../../../utils/logger.js";
 

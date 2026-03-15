@@ -1,7 +1,7 @@
 import { Announcement } from "../../../types/service.types.js";
 import { BaseResourceSyncer } from "./base.js";
 import { fetchAnnouncements } from "../../../api/services/index.js";
-import { AnnouncementsRepository } from "../../../db/repositories/AnnouncementsRepository.js";
+import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
 import { withTransaction } from "../../../db/transactions.js";
 import logger from "../../../utils/logger.js";
 

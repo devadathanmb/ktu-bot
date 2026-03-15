@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 import { queueRedisConnectionOptions } from "../../shared/redis.js";
-import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
+import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
 import logger from "../../../utils/logger.js";
 
 export const ANNOUNCEMENTS_NOTIFY_QUEUE = "ANNOUNCEMENTS_NOTIFY_QUEUE";

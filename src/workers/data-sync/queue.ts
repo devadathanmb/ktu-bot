@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 import { queueRedisConnectionOptions } from "../shared/redis.js";
-import { DataSyncWorkerConfig } from "../../configs/dataSyncWorker.js";
+import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
 import logger from "../../utils/logger.js";
 
 export const DATA_SYNC_QUEUE = "DATA_SYNC_QUEUE";

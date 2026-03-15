@@ -1,1 +1,1 @@
-export { BaseWorker } from "./BaseWorker.js";
+export { BaseWorker } from "./base-worker.js";

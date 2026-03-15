@@ -2,4 +2,4 @@ export {
   uploadFileToFileHosting,
   uploadFileToTelegram,
   processAttachments,
-} from "./attachmentProcessor.js";
+} from "./attachment-processor.js";

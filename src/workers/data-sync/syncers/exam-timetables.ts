@@ -1,7 +1,7 @@
 import { ExamTimeTable } from "../../../types/service.types.js";
 import { BaseResourceSyncer } from "./base.js";
 import { fetchTimetables } from "../../../api/services/index.js";
-import { ExamTimetablesRepository } from "../../../db/repositories/ExamTimetablesRepository.js";
+import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
 import { withTransaction } from "../../../db/transactions.js";
 import logger from "../../../utils/logger.js";
 

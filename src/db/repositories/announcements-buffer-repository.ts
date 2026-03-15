@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { db } from "../connection.js";
-import { announcementsBuffer } from "../schema/announcementsBuffer.js";
+import { announcementsBuffer } from "../schema/announcements-buffer.js";
 import type { TransactionType } from "../transactions.js";
 
 // Type for database instance (either db or transaction)

@@ -2,7 +2,7 @@ import { z } from "zod";
 import client from "../../client.js";
 import { BETTER_UPTIME_API } from "../../../constants/api.js";
 import { ExternalApiConfig } from "../../../configs/api.js";
-import { withServiceWrapper } from "../../utils/serviceWrapper.js";
+import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import logger from "../../../utils/logger.js";
 import type {
   ApiStatus,

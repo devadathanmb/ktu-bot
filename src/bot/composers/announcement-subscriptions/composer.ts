@@ -1,6 +1,6 @@
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
 import { withTransaction } from "../../../db/index.js";
-import { AnnouncementSubscriptionRepository } from "../../../db/repositories/AnnouncementSubscriptionRepository.js";
+import { AnnouncementSubscriptionRepository } from "../../../db/repositories/announcement-subscription-repository.js";
 import { SessionNotFoundError } from "../../../errors/index.js";
 import { BotContext } from "../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
@@ -8,7 +8,7 @@ import { Composer } from "grammy";
 import { generateFilterKeyboard, generateMessageText } from "./helpers.js";
 import { fmt, b, FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
-import { createAnnouncementSubscriptionErrorBoundary } from "../shared/errorBoundary.js";
+import { createAnnouncementSubscriptionErrorBoundary } from "../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 
 // Common messages used throughout the composer

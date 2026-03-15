@@ -1,6 +1,6 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
 import { db } from "../connection.js";
-import { examTimetables } from "../schema/examTimetables.js";
+import { examTimetables } from "../schema/exam-timetables.js";
 import type { TransactionType } from "../transactions.js";
 import type { ExamTimeTable } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";

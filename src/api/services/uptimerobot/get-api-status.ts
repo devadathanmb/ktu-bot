@@ -2,7 +2,7 @@ import { z } from "zod";
 import client from "../../client.js";
 import { UPTIME_ROBOT_API } from "../../../constants/api.js";
 import { ExternalApiConfig } from "../../../configs/api.js";
-import { withServiceWrapper } from "../../utils/serviceWrapper.js";
+import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import type {
   ApiStatus,
   ApiStatusLog,

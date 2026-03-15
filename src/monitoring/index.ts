@@ -6,7 +6,7 @@ export {
   setupHealthCheckEndpoint,
   createHealthCheckResponse,
   type HealthCheckResult,
-} from "./healthCheck.js";
+} from "./health-check.js";
 
 export { setupMetricsEndpoint } from "./metrics.js";
 

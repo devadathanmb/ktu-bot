@@ -10,7 +10,7 @@ import {
 import { fmt, b } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
-import { HandledBotError } from "../../../../errors/HandledBotError.js";
+import { HandledBotError } from "../../../../errors/handled-bot-error.js";
 
 export const ktuAPIStatusCommand = new Command<BotContext>(
   "serverstatus",

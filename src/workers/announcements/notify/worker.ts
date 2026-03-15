@@ -1,11 +1,11 @@
 import { Job } from "bullmq";
 import { fetchAnnouncements, LLMService } from "../../../api/services/index.js";
-import { AnnouncementsBufferRepository } from "../../../db/repositories/AnnouncementsBufferRepository.js";
-import { AnnouncementSubscriptionRepository } from "../../../db/repositories/AnnouncementSubscriptionRepository.js";
+import { AnnouncementsBufferRepository } from "../../../db/repositories/announcements-buffer-repository.js";
+import { AnnouncementSubscriptionRepository } from "../../../db/repositories/announcement-subscription-repository.js";
 import { Announcement } from "../../../types/service.types.js";
-import findCourseFiltersFromText from "../../../utils/findCourseFiltersFromText.js";
-import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcementsNotifyWorker.js";
-import { BaseWorker } from "../../base/BaseWorker.js";
+import findCourseFiltersFromText from "../../../utils/find-course-filters-from-text.js";
+import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
+import { BaseWorker } from "../../base/base-worker.js";
 import { addBroadcastJobs } from "../../broadcasts/queue.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { FormattedString } from "@grammyjs/parse-mode";
@@ -28,7 +28,7 @@ import { withTransaction } from "../../../db/transactions.js";
 import { createBot } from "../../../bot/bot.js";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { autoRetry } from "@grammyjs/auto-retry";
-import { processAttachments } from "../../shared/utils/attachmentProcessor.js";
+import { processAttachments } from "../../shared/utils/attachment-processor.js";
 import { setTimeout } from "node:timers/promises";
 
 export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {

@@ -5,8 +5,8 @@ import { replyMessageSafely } from "../../../utils/bot.js";
 import {
   KTUAPIError,
   SessionNotFoundError,
-} from "../../../errors/BotErrors.js";
-import { HandledBotError } from "../../../errors/HandledBotError.js";
+} from "../../../errors/bot-errors.js";
+import { HandledBotError } from "../../../errors/handled-bot-error.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 

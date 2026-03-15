@@ -1,3 +1,3 @@
-export { addKtuHeaders } from "./addKtuHeaders.js";
-export { addXTokenHeader } from "./addXTokenHeader.js";
-export { logRequestHeaders } from "./logRequestHeaders.js";
+export { addKtuHeaders } from "./add-ktu-headers.js";
+export { addXTokenHeader } from "./add-x-token-header.js";
+export { logRequestHeaders } from "./log-request-headers.js";

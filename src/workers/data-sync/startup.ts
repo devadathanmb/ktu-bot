@@ -1,6 +1,6 @@
 import { DataSyncWorker } from "./worker.js";
 import { dataSyncQueue } from "./queue.js";
-import { DataSyncWorkerConfig } from "../../configs/dataSyncWorker.js";
+import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
 import { setupGracefulShutdown } from "../shared/shutdown.js";
 import { Hono } from "hono";
 import {

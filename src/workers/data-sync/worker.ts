@@ -13,7 +13,7 @@ import {
   DATA_SYNC_QUEUE,
 } from "./queue.js";
 import logger from "../../utils/logger.js";
-import { BaseWorker } from "../base/BaseWorker.js";
+import { BaseWorker } from "../base/base-worker.js";
 
 export class DataSyncWorker extends BaseWorker<SyncJobData> {
   private syncers!: Map<string, ResourceSyncer>;

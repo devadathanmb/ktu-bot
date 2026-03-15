@@ -1,6 +1,6 @@
 import { AttachmentDeliveryWorker } from "./worker.js";
 import { attachmentDeliveryQueue } from "./queue.js";
-import { AttachmentDeliveryWorkerConfig } from "../../configs/attachmentDeliveryWorker.js";
+import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
 import { setupGracefulShutdown } from "../shared/shutdown.js";
 import { Hono } from "hono";
 import {

@@ -5,7 +5,7 @@ import { ProcessedAttachment } from "../types.js";
 import {
   createGrammyInputFileFromAttachment,
   createTempFileFromBase64,
-} from "../../../utils/fileUtils.js";
+} from "../../../utils/file-utils.js";
 import {
   fetchAttachment,
   uploadTempFile,

@@ -1,1 +1,1 @@
-export { logResponseTime } from "./logResponseTime.js";
+export { logResponseTime } from "./log-response-time.js";

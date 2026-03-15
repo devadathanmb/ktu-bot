@@ -2,7 +2,7 @@ import { BotError } from "grammy";
 import { replyMessageSafely } from "../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../utils/logger.js";
-import { HandledBotError } from "../../errors/HandledBotError.js";
+import { HandledBotError } from "../../errors/handled-bot-error.js";
 import type { BotMetrics } from "../../metrics/definitions.js";
 
 /**

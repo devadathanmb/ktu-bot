@@ -1,6 +1,6 @@
 import { BroadcastsWorker } from "./worker.js";
 import { broadcastsQueue } from "./queue.js";
-import { BroadcastsWorkerConfig } from "../../configs/broadcastsWorker.js";
+import { BroadcastsWorkerConfig } from "../../configs/broadcasts-worker.js";
 import { setupGracefulShutdown } from "../shared/shutdown.js";
 import { Hono } from "hono";
 import {

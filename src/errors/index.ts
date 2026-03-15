@@ -1,2 +1,2 @@
 // Export all bot errors and utilities
-export * from "./BotErrors.js";
+export * from "./bot-errors.js";

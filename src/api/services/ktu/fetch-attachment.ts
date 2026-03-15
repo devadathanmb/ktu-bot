@@ -1,7 +1,7 @@
 import { z } from "zod";
 import client from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
-import { withServiceWrapper } from "../../utils/serviceWrapper.js";
+import { withServiceWrapper } from "../../utils/service-wrapper.js";
 
 // Zod schema for attachment response validation
 const AttachmentResponseSchema = z
