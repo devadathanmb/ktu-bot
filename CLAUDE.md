@@ -73,11 +73,11 @@ src/
 │   │   ├── announcement-subscriptions/  # Subscription management flow
 │   │   ├── inline-query/     # Inline search
 │   │   ├── unhandled/        # Catch-all fallback
-│   │   └── shared/errorBoundary.ts  # Composer-level error boundary pattern
-│   ├── handlers/             # globalError, ratelimit, chatMember, deprecated
-│   └── middlewares/          # logging, session init, trackChatId, metrics
+│   │   └── shared/error-boundary.ts  # Composer-level error boundary pattern
+│   ├── handlers/             # global-error, rate-limit, chat-member, deprecated
+│   └── middlewares/          # logging, session init, track-chat-id, metrics
 ├── workers/
-│   ├── base/BaseWorker.ts    # Abstract base class for all BullMQ workers
+│   ├── base/base-worker.ts   # Abstract base class for all BullMQ workers
 │   └── {worker-name}/        # Each worker: queue.ts, worker.ts, startup.ts
 ├── api/
 │   ├── client.ts             # got HTTP client with KTU API hooks
@@ -90,7 +90,7 @@ src/
 │   └── connection.ts         # initDB() / closeDB()
 ├── configs/                  # Config modules (validated env vars per service)
 ├── constants/                # Static data (course list, API URLs, stickers)
-├── errors/                   # BotErrors, HandledBotError
+├── errors/                   # bot-errors, handled-bot-error
 ├── metrics/                  # Prometheus metric definitions and registry
 ├── monitoring/               # Health check + metrics Hono server
 ├── types/                    # BotContext, SessionData, service types
