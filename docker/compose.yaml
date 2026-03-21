@@ -18,10 +18,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 768M
+          memory: 384M
           cpus: "0.75"
         reservations:
-          memory: 384M
+          memory: 192M
           cpus: "0.35"
     healthcheck:
       test:
@@ -77,11 +77,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 384M
-          cpus: "0.35"
-        reservations:
           memory: 192M
-          cpus: "0.15"
+          cpus: "0.25"
+        reservations:
+          memory: 96M
+          cpus: "0.10"
     healthcheck:
       test:
         [
@@ -121,11 +121,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 384M
-          cpus: "0.35"
+          memory: 160M
+          cpus: "0.20"
         reservations:
-          memory: 192M
-          cpus: "0.15"
+          memory: 80M
+          cpus: "0.10"
     healthcheck:
       test:
         [
@@ -165,11 +165,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
-          cpus: "0.25"
+          memory: 192M
+          cpus: "0.15"
         reservations:
-          memory: 128M
-          cpus: "0.1"
+          memory: 96M
+          cpus: "0.05"
     healthcheck:
       test:
         [
@@ -210,11 +210,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
-          cpus: "0.5"
+          memory: 200M
+          cpus: "0.30"
         reservations:
-          memory: 256M
-          cpus: "0.25"
+          memory: 100M
+          cpus: "0.10"
     healthcheck:
       test:
         [
@@ -261,7 +261,7 @@ services:
       resources:
         limits:
           memory: 128M
-          cpus: "0.15"
+          cpus: "0.10"
         reservations:
           memory: 64M
           cpus: "0.05"
