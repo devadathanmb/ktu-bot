@@ -20,7 +20,6 @@ import {
 import {
   announcementsNotifyQueue,
   setupRecurringSchedule,
-  NotifyJobData,
   ANNOUNCEMENTS_NOTIFY_QUEUE,
 } from "./queue.js";
 import logger from "../../../utils/logger.js";
@@ -31,7 +30,9 @@ import { autoRetry } from "@grammyjs/auto-retry";
 import { processAttachments } from "../../shared/utils/attachment-processor.js";
 import { setTimeout } from "node:timers/promises";
 
-export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
+export class AnnouncementsNotifyWorker extends BaseWorker<
+  Record<string, never>
+> {
   private fetchedAnnouncements: Announcement[] = [];
 
   constructor() {
@@ -61,7 +62,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
     await setupRecurringSchedule();
   }
 
-  protected async processJob(job: Job<NotifyJobData>): Promise<void> {
+  protected async processJob(job: Job<Record<string, never>>): Promise<void> {
     logger.info(`Processing announcement notification job ${job.id}`);
     await this.processNewAnnouncements();
     logger.info(`Completed announcement notification job ${job.id}`);
@@ -71,9 +72,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
     logger.info("Scheduling initial announcement notification check");
     await announcementsNotifyQueue.add(
       "announcements-notify:initial",
-      {
-        scheduledAt: Date.now(),
-      },
+      {},
       {
         jobId: `announcement-notify-initial-${Date.now()}`,
       }
@@ -287,7 +286,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<NotifyJobData> {
         jobs.push({
           formattedText: formattedText,
           attachments: processedAttachments,
-          timestamp: new Date(),
           chatId: chatId,
         });
       }

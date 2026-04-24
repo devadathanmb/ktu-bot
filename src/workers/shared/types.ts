@@ -19,6 +19,5 @@ export type ProcessedAttachment =
 export interface BroadcastJob {
   formattedText: FormattedString;
   attachments: ProcessedAttachment[];
-  timestamp: Date;
   chatId: number;
 }

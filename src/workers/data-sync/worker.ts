@@ -96,7 +96,6 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
   private async scheduleInitialSyncJobs(): Promise<void> {
     logger.info("Scheduling initial sync jobs for needed resources");
 
-    const timestamp = Date.now();
     const jobs = [];
 
     for (const [syncType, syncer] of this.syncers.entries()) {
@@ -106,7 +105,6 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
         jobs.push(
           dataSyncQueue.add(syncType as SyncJobType, {
             syncType: syncType as SyncJobType,
-            scheduledAt: timestamp,
           })
         );
       }

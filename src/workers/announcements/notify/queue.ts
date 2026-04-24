@@ -5,12 +5,8 @@ import logger from "../../../utils/logger.js";
 
 export const ANNOUNCEMENTS_NOTIFY_QUEUE = "ANNOUNCEMENTS_NOTIFY_QUEUE";
 
-export interface NotifyJobData {
-  scheduledAt: number;
-}
-
 // Queue for announcement notification jobs with automatic retry
-export const announcementsNotifyQueue = new Queue<NotifyJobData>(
+export const announcementsNotifyQueue = new Queue<Record<string, never>>(
   ANNOUNCEMENTS_NOTIFY_QUEUE,
   {
     connection: queueRedisConnectionOptions,
@@ -36,9 +32,7 @@ export const announcementsNotifyQueue = new Queue<NotifyJobData>(
 export async function scheduleAnnouncementNotifyJob() {
   await announcementsNotifyQueue.add(
     "announcements-notify:manual",
-    {
-      scheduledAt: Date.now(),
-    },
+    {},
     {
       jobId: `announcement-notify-${Date.now()}`,
     }
@@ -52,9 +46,7 @@ export async function scheduleAnnouncementNotifyJob() {
 export async function setupRecurringSchedule() {
   await announcementsNotifyQueue.add(
     "announcements-notify:recurring",
-    {
-      scheduledAt: Date.now(),
-    },
+    {},
     {
       repeat: {
         pattern: AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE,
