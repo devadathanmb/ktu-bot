@@ -19,11 +19,6 @@ export interface BotMetrics {
   inlineQueriesTotal: Counter;
   inlineQueryDuration: Histogram;
 
-  // Telegram API metrics
-  telegramApiCallsTotal: Counter;
-  telegramApiErrorsTotal: Counter;
-  telegramApiRequestDuration: Histogram;
-
   // Error metrics
   botErrorsTotal: Counter;
 }
@@ -88,29 +83,6 @@ export function createBotMetrics(registry: Registry): BotMetrics {
       help: "Duration of inline query processing in milliseconds",
       labelNames: ["query_type"],
       buckets: [10, 50, 100, 500, 1000, 2000, 5000],
-      registers: [registry],
-    }),
-
-    // Telegram API metrics
-    telegramApiCallsTotal: new Counter({
-      name: "telegram_api_calls_total",
-      help: "Total Telegram API calls made",
-      labelNames: ["method", "status"], // method: sendMessage, editMessage, etc; status: success, error
-      registers: [registry],
-    }),
-
-    telegramApiErrorsTotal: new Counter({
-      name: "telegram_api_errors_total",
-      help: "Total Telegram API errors",
-      labelNames: ["error_code"],
-      registers: [registry],
-    }),
-
-    telegramApiRequestDuration: new Histogram({
-      name: "telegram_api_request_duration_milliseconds",
-      help: "Duration of Telegram API requests in milliseconds",
-      labelNames: ["method"],
-      buckets: [10, 50, 100, 500, 1000, 2000, 5000, 10000],
       registers: [registry],
     }),
 

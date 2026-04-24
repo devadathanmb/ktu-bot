@@ -1,7 +1,7 @@
 import logger from "./utils/logger.js";
 import { botCommands } from "./bot/commands/index.js";
 import { initDB, closeDB } from "./db/connection.js";
-import { createBotWithMetrics } from "./bot/bot.js";
+import { createBot, createBotWithMetrics } from "./bot/bot.js";
 import { run, RunnerHandle } from "@grammyjs/runner";
 import { BotConfig } from "./configs/bot.js";
 import { Hono } from "hono";
@@ -18,14 +18,21 @@ async function startBotInLongPolling() {
     // Initialize the DB connection before starting the bot
     await initDB();
 
-    // Initialize Prometheus metrics
-    const metricsRegistry = createMetricsRegistry("ktu-bot-app", {
-      enableDefaultMetrics: false,
-    });
-    const botMetrics = createBotMetrics(metricsRegistry);
+    // Create bot instance — metrics only when explicitly enabled
+    let bot;
+    let metricsRegistry;
 
-    // Create bot instance with metrics
-    const bot = createBotWithMetrics(botMetrics);
+    if (BotConfig.ENABLE_PROMETHEUS_METRICS) {
+      metricsRegistry = createMetricsRegistry("ktu-bot-app", {
+        enableDefaultMetrics: false,
+      });
+      const botMetrics = createBotMetrics(metricsRegistry);
+      bot = createBotWithMetrics(botMetrics);
+      logger.info("Prometheus metrics enabled");
+    } else {
+      bot = createBot();
+      logger.info("Prometheus metrics disabled");
+    }
 
     // Set bot commands
     await botCommands.setCommands(bot);
@@ -51,8 +58,10 @@ async function startBotInLongPolling() {
           .catch(() => false))
     );
 
-    // Add metrics endpoint
-    setupMetricsEndpoint(monitoringApp, metricsRegistry);
+    // Add metrics endpoint only when metrics are enabled
+    if (metricsRegistry) {
+      setupMetricsEndpoint(monitoringApp, metricsRegistry);
+    }
 
     // Start monitoring server
     createMonitoringServer(monitoringApp, {

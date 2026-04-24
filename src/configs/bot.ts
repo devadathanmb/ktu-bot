@@ -20,6 +20,10 @@ const botConfigSchema = z
       .number()
       .positive()
       .default(30 * 60 * 1000), // 30 minutes
+    ENABLE_PROMETHEUS_METRICS: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform(v => v === "true"),
   })
   .transform(config => ({
     ...config,
@@ -42,4 +46,5 @@ export const BotConfig = botConfigSchema.parse({
   BOT_DEPLOYMENT_TYPE: process.env.BOT_DEPLOYMENT_TYPE,
   BOT_SESSION_DATA_TTL: 1 * 60 * 1000, // 1 minute
   BOT_HEALTH_CHECK_PORT: process.env.BOT_HEALTH_CHECK_PORT,
+  ENABLE_PROMETHEUS_METRICS: process.env.ENABLE_PROMETHEUS_METRICS,
 });
