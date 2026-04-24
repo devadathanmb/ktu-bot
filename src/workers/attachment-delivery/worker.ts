@@ -35,47 +35,11 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       await this.processAttachmentDeliveryJob(job);
     } catch (error) {
       if (error instanceof GrammyError) {
-        const chatId = job.data.chatId;
-        const errorCode = error.error_code;
-        const errorDescription = error.description;
-
-        if (
-          TelegramErrorUtils.isUserBlockedError(errorCode, errorDescription)
-        ) {
-          const error = errorDescription;
-          logger.warn(
-            { chatId, error },
-            "User blocked the bot, updating status"
-          );
-          await TelegramErrorUtils.handleBlockedUser(chatId);
-        } else if (
-          TelegramErrorUtils.isUserDeactivatedError(errorCode, errorDescription)
-        ) {
-          const error = errorDescription;
-          logger.warn(
-            { chatId, error },
-            "User deactivated their account, removing chat"
-          );
-          await TelegramErrorUtils.handleDeactivatedUser(chatId);
-        } else if (TelegramErrorUtils.isRateLimitError(errorCode)) {
-          const retryAfter = TelegramErrorUtils.getRateLimitDuration(error);
-          await TelegramErrorUtils.handleRateLimitWithQueuePause(
-            attachmentDeliveryQueue,
-            retryAfter
-          );
-          // Re-throw so BullMQ marks the job as failed and retries it later.
-          // Without this, the job is silently completed and the attachment to
-          // this chatId is dropped forever. The queue pause protects future
-          // jobs from hitting the same rate limit; the retry ensures this
-          // specific delivery is eventually completed.
-          throw error;
-        } else {
-          TelegramErrorUtils.logUnhandledTelegramError(
-            chatId,
-            errorCode,
-            errorDescription
-          );
-        }
+        await TelegramErrorUtils.handleWorkerGrammyError(
+          job.data.chatId,
+          error,
+          this.queue
+        );
       } else {
         TelegramErrorUtils.logUnhandledGenericError(job.id, error as Error);
       }

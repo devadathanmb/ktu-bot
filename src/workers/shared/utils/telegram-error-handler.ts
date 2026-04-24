@@ -112,4 +112,43 @@ export const TelegramErrorUtils = {
   ): void {
     logger.error({ jobId, error }, "Unhandled generic error in job processing");
   },
+
+  /**
+   * Handle a GrammyError thrown during job processing.
+   * Dispatches to the appropriate handler (blocked, deactivated, rate-limit,
+   * or unhandled) and re-throws on rate-limit so BullMQ retries the job.
+   */
+  async handleWorkerGrammyError(
+    chatId: number,
+    error: GrammyError,
+    queue: Queue
+  ): Promise<void> {
+    const errorCode = error.error_code;
+    const errorDescription = error.description;
+
+    if (this.isUserBlockedError(errorCode, errorDescription)) {
+      logger.warn(
+        { chatId, error: errorDescription },
+        "User blocked the bot, updating status"
+      );
+      await this.handleBlockedUser(chatId);
+    } else if (this.isUserDeactivatedError(errorCode, errorDescription)) {
+      logger.warn(
+        { chatId, error: errorDescription },
+        "User deactivated their account, removing chat"
+      );
+      await this.handleDeactivatedUser(chatId);
+    } else if (this.isRateLimitError(errorCode)) {
+      const retryAfter = this.getRateLimitDuration(error);
+      await this.handleRateLimitWithQueuePause(queue, retryAfter);
+      // Re-throw so BullMQ marks the job as failed and retries it later.
+      // Without this, the job is silently completed and the message to
+      // this chatId is dropped forever. The queue pause protects future
+      // jobs from hitting the same rate limit; the retry ensures this
+      // specific delivery is eventually completed.
+      throw error;
+    } else {
+      this.logUnhandledTelegramError(chatId, errorCode, errorDescription);
+    }
+  },
 };
