@@ -63,6 +63,12 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
             attachmentDeliveryQueue,
             retryAfter
           );
+          // Re-throw so BullMQ marks the job as failed and retries it later.
+          // Without this, the job is silently completed and the attachment to
+          // this chatId is dropped forever. The queue pause protects future
+          // jobs from hitting the same rate limit; the retry ensures this
+          // specific delivery is eventually completed.
+          throw error;
         } else {
           TelegramErrorUtils.logUnhandledTelegramError(
             chatId,

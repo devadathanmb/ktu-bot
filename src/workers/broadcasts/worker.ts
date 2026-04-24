@@ -56,6 +56,12 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
             broadcastsQueue,
             retryAfter
           );
+          // Re-throw so BullMQ marks the job as failed and retries it later.
+          // Without this, the job is silently completed and the message to
+          // this chatId is dropped forever. The queue pause protects future
+          // jobs from hitting the same rate limit; the retry ensures this
+          // specific broadcast is eventually delivered.
+          throw error;
         } else {
           TelegramErrorUtils.logUnhandledTelegramError(
             chatId,
