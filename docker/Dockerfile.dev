@@ -1,28 +1,22 @@
-# Development Dockerfile for KTU Bot
+# Development image - includes all dependencies and source code for hot reloading.
+# Docker Compose overrides the CMD per service as needed.
+
 FROM node:24-alpine
 
-# Setup pnpm environment as per pnpm Docker docs
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Install curl for healthchecks
+# curl is used by Docker Compose healthchecks.
 RUN apk add --no-cache curl
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
 COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install
 
-# Copy source code
 COPY . .
 
-# Expose port
 EXPOSE 3000
 
-# Use dev:watch for hot reloading (no build step needed)
 CMD ["pnpm", "dev:watch"]

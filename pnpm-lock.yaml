@@ -48,6 +48,9 @@ importers:
       bullmq:
         specifier: ^5.70.4
         version: 5.70.4
+      drizzle-kit:
+        specifier: ^0.31.9
+        version: 0.31.9
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.18.0)(pg@8.20.0)(postgres@3.4.7)
@@ -103,9 +106,6 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.56.1
         version: 8.56.1(eslint@9.39.4)(typescript@5.9.3)
-      drizzle-kit:
-        specifier: ^0.31.9
-        version: 0.31.9
       eslint:
         specifier: ^9.39.4
         version: 9.39.4
