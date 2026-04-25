@@ -37,8 +37,8 @@ pnpm workers:attachment-delivery-worker-dev
 pnpm services:bull-board-dev
 
 # Docker (recommended for full local setup)
-docker compose -f docker/compose.dev.yaml up --build          # All services
-docker compose -f docker/compose.dev.yaml up ktu-bot-app --build  # Bot only
+docker compose -f docker/compose/compose.dev.yaml up --build          # All services
+docker compose -f docker/compose/compose.dev.yaml up ktu-bot-app --build  # Bot only
 ```
 
 There are no tests in this codebase.

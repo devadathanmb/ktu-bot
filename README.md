@@ -116,8 +116,8 @@ Development environment files live in the `env/dev/` directory. Each service/mod
 ### 3. Run Everything
 
 ```bash
-docker compose -f docker/compose.dev.yaml down -v --remove-orphans && \
-docker compose -f docker/compose.dev.yaml up --build
+docker compose -f docker/compose/compose.dev.yaml down -v --remove-orphans && \
+docker compose -f docker/compose/compose.dev.yaml up --build
 ```
 
 This starts all services with hot-reload enabled. Code changes trigger automatic restarts.
@@ -127,7 +127,7 @@ This starts all services with hot-reload enabled. Code changes trigger automatic
 If you don't need the workers:
 
 ```bash
-docker compose -f docker/compose.dev.yaml up ktu-bot-app --build
+docker compose -f docker/compose/compose.dev.yaml up ktu-bot-app --build
 ```
 
 > [!TIP]
@@ -141,16 +141,16 @@ Need just the notification worker? No problem:
 
 ```bash
 # Announcements notify worker
-docker compose -f docker/compose.dev.yaml up announcements-notify-worker --build
+docker compose -f docker/compose/compose.dev.yaml up announcements-notify-worker --build
 
 # Data sync worker
-docker compose -f docker/compose.dev.yaml up data-sync-worker --build
+docker compose -f docker/compose/compose.dev.yaml up data-sync-worker --build
 
 # Broadcasts worker
-docker compose -f docker/compose.dev.yaml up broadcasts-worker --build
+docker compose -f docker/compose/compose.dev.yaml up broadcasts-worker --build
 
 # Attachment delivery worker
-docker compose -f docker/compose.dev.yaml up attachment-delivery-worker --build
+docker compose -f docker/compose/compose.dev.yaml up attachment-delivery-worker --build
 ```
 
 > [!TIP]
@@ -174,7 +174,7 @@ cp env/prod/.env.example env/prod/.env
 
 ```bash
 # Start Prometheus monitoring independently
-docker compose -f docker/compose.monitoring.yaml up -d
+docker compose -f docker/monitoring/compose.yaml up -d
 ```
 
 This starts Prometheus on port 9090 with persistent storage. It runs independently from the application stack.
@@ -182,8 +182,8 @@ This starts Prometheus on port 9090 with persistent storage. It runs independent
 ### 3. Start Application Services
 
 ```bash
-docker compose -f docker/compose.yaml down -v --remove-orphans && \
-docker compose -f docker/compose.yaml up -d --build
+docker compose -f docker/compose/compose.yaml down -v --remove-orphans && \
+docker compose -f docker/compose/compose.yaml up -d --build
 ```
 
 ### 4. Verify Health
