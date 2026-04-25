@@ -83,7 +83,7 @@ async function startBotInLongPolling() {
 // Graceful shutdown function
 async function onShutdown(runner?: RunnerHandle, signal?: string) {
   if (signal) {
-    logger.info(`Received ${signal}, shutting down gracefully`);
+    logger.info({ signal }, "Shutting down gracefully");
   }
   if (runner) {
     await runner.stop();

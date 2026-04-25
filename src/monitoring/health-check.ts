@@ -52,7 +52,7 @@ export function setupHealthCheckEndpoint(
 
     // Skip logging for uptime monitoring services
     if (userAgent && !userAgent.toLowerCase().includes("uptime")) {
-      logger.debug(`Health check request received: ${c.req.url}`);
+      logger.debug({ url: c.req.url }, "Health check request received");
     }
 
     const isRunning = await getServiceHealth();

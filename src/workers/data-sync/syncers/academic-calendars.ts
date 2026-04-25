@@ -17,7 +17,8 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
   ): Promise<AcademicCalendar[]> {
     if (options?.log !== false) {
       logger.debug(
-        `[${this.name}] Fetching page ${pageNumber} (size: ${this.PAGE_SIZE})`
+        { syncer: this.name, pageNumber, pageSize: this.PAGE_SIZE },
+        "Fetching page"
       );
     }
     return await fetchAcademicCalendars({
@@ -60,13 +61,14 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
       // Yield the batch if we collected any calendars
       if (batch.length > 0) {
         logger.debug(
-          `[${this.name}] Yielding batch with ${batch.length} calendars`
+          { syncer: this.name, batchSize: batch.length },
+          "Yielding batch"
         );
         yield batch;
       }
     }
 
-    logger.debug(`[${this.name}] Finished fetching all calendars`);
+    logger.debug({ syncer: this.name }, "Finished fetching all calendars");
   }
 
   async needsInitialSync(): Promise<boolean> {
@@ -74,14 +76,14 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
     const repo = new AcademicCalendarsRepository();
     const count = await repo.getCount();
 
-    logger.debug(`[${this.name}] Current calendars count in DB: ${count}`);
+    logger.debug({ syncer: this.name, count }, "Current calendars count in DB");
 
     // If no calendars exist, we need initial sync
     return count === 0;
   }
 
   async performInitialSync(): Promise<void> {
-    logger.info(`[${this.name}] Starting initial sync...`);
+    logger.info({ syncer: this.name }, "Starting initial sync");
 
     let totalProcessed = 0;
     let batchNumber = 0;
@@ -92,7 +94,8 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
       for await (const batch of this.fetchCalendarsInBatches()) {
         batchNumber++;
         logger.info(
-          `[${this.name}] Processing batch ${batchNumber} with ${batch.length} calendars`
+          { syncer: this.name, batchNumber, batchSize: batch.length },
+          "Processing batch"
         );
 
         const transformedBatch = batch.map(calendar =>
@@ -101,23 +104,26 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
         const inserted = await repo.bulkUpsert(transformedBatch);
 
         logger.debug(
-          `[${this.name}] Batch ${batchNumber}: upserted ${inserted.length} calendars`
+          { syncer: this.name, batchNumber, upsertedCount: inserted.length },
+          "Batch upserted"
         );
 
         totalProcessed += batch.length;
         logger.info(
-          `[${this.name}] Processed ${totalProcessed} calendars so far`
+          { syncer: this.name, totalProcessed },
+          "Processed calendars so far"
         );
       }
     });
 
     logger.info(
-      `[${this.name}] Initial sync completed. Total calendars processed: ${totalProcessed}`
+      { syncer: this.name, totalProcessed },
+      "Initial sync completed"
     );
   }
 
   async performPeriodicSync(): Promise<void> {
-    logger.info(`[${this.name}] Starting periodic sync`);
+    logger.info({ syncer: this.name }, "Starting periodic sync");
 
     // Fetch recent calendars (first 2 pages to catch any recent updates)
     const recentBatch1 = await this.fetchPage(0, { log: false });
@@ -125,7 +131,7 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
     const recentCalendars = [...recentBatch1, ...recentBatch2];
 
     if (recentCalendars.length === 0) {
-      logger.info(`[${this.name}] No recent calendars found`);
+      logger.info({ syncer: this.name }, "No recent calendars found");
       return;
     }
 
@@ -138,12 +144,14 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
       const upserted = await repo.bulkUpsert(transformedCalendars);
 
       logger.info(
-        `[${this.name}] Periodic sync: Processed ${upserted.length} calendars`
+        { syncer: this.name, processedCount: upserted.length },
+        "Periodic sync processed calendars"
       );
     });
 
     logger.info(
-      `[${this.name}] Periodic sync completed. Processed ${recentCalendars.length} calendars`
+      { syncer: this.name, processedCount: recentCalendars.length },
+      "Periodic sync completed"
     );
   }
 }

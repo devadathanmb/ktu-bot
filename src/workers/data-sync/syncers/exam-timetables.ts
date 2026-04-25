@@ -17,7 +17,8 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
   ): Promise<ExamTimeTable[]> {
     if (options?.log !== false) {
       logger.debug(
-        `[${this.name}] Fetching page ${pageNumber} (size: ${this.PAGE_SIZE})`
+        { syncer: this.name, pageNumber, pageSize: this.PAGE_SIZE },
+        "Fetching page"
       );
     }
     return await fetchTimetables({
@@ -60,13 +61,14 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
       // Yield the batch if we collected any timetables
       if (batch.length > 0) {
         logger.debug(
-          `[${this.name}] Yielding batch with ${batch.length} timetables`
+          { syncer: this.name, batchSize: batch.length },
+          "Yielding batch"
         );
         yield batch;
       }
     }
 
-    logger.debug(`[${this.name}] Finished fetching all timetables`);
+    logger.debug({ syncer: this.name }, "Finished fetching all timetables");
   }
 
   async needsInitialSync(): Promise<boolean> {
@@ -74,14 +76,17 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
     const repo = new ExamTimetablesRepository();
     const count = await repo.getCount();
 
-    logger.debug(`[${this.name}] Current timetables count in DB: ${count}`);
+    logger.debug(
+      { syncer: this.name, count },
+      "Current timetables count in DB"
+    );
 
     // If no timetables exist, we need initial sync
     return count === 0;
   }
 
   async performInitialSync(): Promise<void> {
-    logger.info(`[${this.name}] Starting initial sync...`);
+    logger.info({ syncer: this.name }, "Starting initial sync");
 
     let totalProcessed = 0;
     let batchNumber = 0;
@@ -92,7 +97,8 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
       for await (const batch of this.fetchTimetablesInBatches()) {
         batchNumber++;
         logger.info(
-          `[${this.name}] Processing batch ${batchNumber} with ${batch.length} timetables`
+          { syncer: this.name, batchNumber, batchSize: batch.length },
+          "Processing batch"
         );
 
         const transformedBatch = batch.map(timetable =>
@@ -101,23 +107,26 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
         const upserted = await repo.bulkUpsert(transformedBatch);
 
         logger.debug(
-          `[${this.name}] Batch ${batchNumber}: upserted ${upserted.length} timetables`
+          { syncer: this.name, batchNumber, upsertedCount: upserted.length },
+          "Batch upserted"
         );
 
         totalProcessed += batch.length;
         logger.info(
-          `[${this.name}] Processed ${totalProcessed} timetables so far`
+          { syncer: this.name, totalProcessed },
+          "Processed timetables so far"
         );
       }
     });
 
     logger.info(
-      `[${this.name}] Initial sync completed. Total timetables processed: ${totalProcessed}`
+      { syncer: this.name, totalProcessed },
+      "Initial sync completed"
     );
   }
 
   async performPeriodicSync(): Promise<void> {
-    logger.info(`[${this.name}] Starting periodic sync`);
+    logger.info({ syncer: this.name }, "Starting periodic sync");
 
     // Fetch recent timetables (first 2 pages to catch any recent updates)
     const recentBatch1 = await this.fetchPage(0, { log: false });
@@ -125,7 +134,7 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
     const recentTimetables = [...recentBatch1, ...recentBatch2];
 
     if (recentTimetables.length === 0) {
-      logger.info(`[${this.name}] No recent timetables found`);
+      logger.info({ syncer: this.name }, "No recent timetables found");
       return;
     }
 
@@ -138,12 +147,14 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
       const upserted = await repo.bulkUpsert(transformedTimetables);
 
       logger.info(
-        `[${this.name}] Periodic sync: Processed ${upserted.length} timetables`
+        { syncer: this.name, processedCount: upserted.length },
+        "Periodic sync processed timetables"
       );
     });
 
     logger.info(
-      `[${this.name}] Periodic sync completed. Processed ${recentTimetables.length} timetables`
+      { syncer: this.name, processedCount: recentTimetables.length },
+      "Periodic sync completed"
     );
   }
 }

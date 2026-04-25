@@ -20,7 +20,8 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
   ): Promise<Announcement[]> {
     if (options?.log !== false) {
       logger.debug(
-        `[${this.name}] Fetching page ${pageNumber} (size: ${this.PAGE_SIZE})`
+        { syncer: this.name, pageNumber, pageSize: this.PAGE_SIZE },
+        "Fetching page"
       );
     }
     return await fetchAnnouncements({
@@ -64,13 +65,14 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
       // Yield the batch if we collected any announcements
       if (batch.length > 0) {
         logger.debug(
-          `[${this.name}] Yielding batch with ${batch.length} announcements`
+          { syncer: this.name, batchSize: batch.length },
+          "Yielding batch"
         );
         yield batch;
       }
     }
 
-    logger.debug(`[${this.name}] Finished fetching all announcements`);
+    logger.debug({ syncer: this.name }, "Finished fetching all announcements");
   }
 
   async needsInitialSync(): Promise<boolean> {
@@ -78,14 +80,17 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
     const repo = new AnnouncementsRepository();
     const count = await repo.getCount();
 
-    logger.debug(`[${this.name}] Current announcements count in DB: ${count}`);
+    logger.debug(
+      { syncer: this.name, count },
+      "Current announcements count in DB"
+    );
 
     // If no announcements exist, we need initial sync
     return count === 0;
   }
 
   async performInitialSync(): Promise<void> {
-    logger.info(`[${this.name}] Starting initial sync...`);
+    logger.info({ syncer: this.name }, "Starting initial sync");
 
     let totalProcessed = 0;
     let batchNumber = 0;
@@ -96,7 +101,8 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
       for await (const batch of this.fetchAnnouncementsInBatches()) {
         batchNumber++;
         logger.info(
-          `[${this.name}] Processing batch ${batchNumber} with ${batch.length} announcements`
+          { syncer: this.name, batchNumber, batchSize: batch.length },
+          "Processing batch"
         );
 
         const transformedBatch = batch.map(announcement =>
@@ -105,23 +111,26 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
         const upserted = await repo.bulkUpsert(transformedBatch);
 
         logger.debug(
-          `[${this.name}] Batch ${batchNumber}: upserted ${upserted.length} announcements`
+          { syncer: this.name, batchNumber, upsertedCount: upserted.length },
+          "Batch upserted"
         );
 
         totalProcessed += batch.length;
         logger.info(
-          `[${this.name}] Processed ${totalProcessed} announcements so far`
+          { syncer: this.name, totalProcessed },
+          "Processed announcements so far"
         );
       }
     });
 
     logger.info(
-      `[${this.name}] Initial sync completed. Total announcements processed: ${totalProcessed}`
+      { syncer: this.name, totalProcessed },
+      "Initial sync completed"
     );
   }
 
   async performPeriodicSync(): Promise<void> {
-    logger.info(`[${this.name}] Starting periodic sync`);
+    logger.info({ syncer: this.name }, "Starting periodic sync");
 
     // Fetch recent announcements (first 2 pages to catch any recent updates)
     const recentBatch1 = await this.fetchPage(0, { log: false });
@@ -129,7 +138,7 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
     const recentAnnouncements = [...recentBatch1, ...recentBatch2];
 
     if (recentAnnouncements.length === 0) {
-      logger.info(`[${this.name}] No recent announcements found`);
+      logger.info({ syncer: this.name }, "No recent announcements found");
       return;
     }
 
@@ -142,12 +151,14 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
       const upserted = await repo.bulkUpsert(transformedAnnouncements);
 
       logger.info(
-        `[${this.name}] Periodic sync: Processed ${upserted.length} announcements`
+        { syncer: this.name, processedCount: upserted.length },
+        "Periodic sync processed announcements"
       );
     });
 
     logger.info(
-      `[${this.name}] Periodic sync completed. Processed ${recentAnnouncements.length} announcements`
+      { syncer: this.name, processedCount: recentAnnouncements.length },
+      "Periodic sync completed"
     );
   }
 }

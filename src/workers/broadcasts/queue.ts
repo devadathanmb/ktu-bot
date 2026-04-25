@@ -33,7 +33,10 @@ export async function addBroadcastJobs(jobsData: BroadcastJob[]) {
 
   const results = await broadcastsQueue.addBulk(jobs);
   const jobCount = results.length;
-  logger.debug({ jobCount }, "Added broadcast jobs in bulk");
+  logger.debug(
+    { jobCount, queueName: BROADCASTS_QUEUE },
+    "Added broadcast jobs in bulk"
+  );
   return results;
 }
 
@@ -41,6 +44,9 @@ export async function addBroadcastJobs(jobsData: BroadcastJob[]) {
 export async function addBroadcastJob(jobData: BroadcastJob) {
   const job = await broadcastsQueue.add("broadcast:send", jobData);
   const jobId = job.id;
-  logger.debug({ jobId }, "Added single broadcast job");
+  logger.debug(
+    { jobId, queueName: BROADCASTS_QUEUE },
+    "Added single broadcast job"
+  );
   return job;
 }

@@ -7,19 +7,15 @@ import { BaseWorker } from "../base/base-worker.js";
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
-import { ATTACHMENT_DELIVERY_QUEUE } from "./queue.js";
-import { TelegramErrorUtils } from "../shared/utils/telegram-error-handler.js";
+import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
 import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
 import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
 
 export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> {
   constructor() {
-    super(
-      "attachment-delivery-worker",
-      ATTACHMENT_DELIVERY_QUEUE,
-      attachmentDeliveryQueue,
-      { concurrency: 2 }
-    );
+    super("attachment-delivery-worker", attachmentDeliveryQueue, {
+      concurrency: 2,
+    });
   }
 
   protected override initializeWorkerSpecific(): Promise<void> {
@@ -91,7 +87,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
             }
           : undefined;
 
-        await this.bot!.api.sendMediaGroup(chatId, mediaGroup, replyParams);
+        await this.getBot().api.sendMediaGroup(chatId, mediaGroup, replyParams);
       }
 
       if (statusMessageId !== undefined) {
@@ -128,7 +124,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     const keyboard = createViewAnotherKeyboard(context);
     const contextEmoji = getContextEmoji(context);
 
-    await this.bot!.api.sendMessage(
+    await this.getBot().api.sendMessage(
       chatId,
       `${contextEmoji} View another ${context}?`,
       { reply_markup: keyboard }
@@ -141,7 +137,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     messageId: number
   ): Promise<void> {
     try {
-      await this.bot!.api.deleteMessage(chatId, messageId);
+      await this.getBot().api.deleteMessage(chatId, messageId);
       logger.debug({ chatId, messageId }, "Deleted status message");
     } catch (error) {
       if (error instanceof GrammyError && error.error_code === 400) {
@@ -160,7 +156,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     messageId: number
   ): Promise<void> {
     try {
-      await this.bot!.api.editMessageText(
+      await this.getBot().api.editMessageText(
         chatId,
         messageId,
         `${emoji("crying_cat")} Oops! Something went wrong. Please try again.`

@@ -72,18 +72,14 @@ export function createComposerErrorBoundary(
       const chatId = ctx.chat?.id;
       const userId = ctx.from?.id;
       const username = ctx.from?.username;
-      const update = ctx.update;
-      const session = ctx.session;
       logger.error(
         {
-          error: error.error,
+          err: error.error,
           chatId,
           userId,
           username,
-          update,
-          session,
         },
-        `Composer error boundary triggered`
+        "Composer error boundary triggered"
       );
     }
 

@@ -32,7 +32,7 @@ async function startWorker() {
     // Setup graceful shutdown
     setupGracefulShutdown(worker);
   } catch (error) {
-    logger.error(error, "Failed to start worker service");
+    logger.error(error, "Failed to start broadcasts worker service");
     process.exit(1);
   }
 }

@@ -10,34 +10,36 @@ import {
   setupRecurringSchedule,
   SyncJobData,
   SyncJobType,
-  DATA_SYNC_QUEUE,
 } from "./queue.js";
 import logger from "../../utils/logger.js";
 import { BaseWorker } from "../base/base-worker.js";
 
 export class DataSyncWorker extends BaseWorker<SyncJobData> {
-  private syncers!: Map<string, ResourceSyncer>;
+  private syncers!: Record<SyncJobType, ResourceSyncer>;
 
   constructor() {
-    super("data-sync-worker", DATA_SYNC_QUEUE, dataSyncQueue, {
+    super("data-sync-worker", dataSyncQueue, {
       concurrency: 3,
     });
   }
 
   protected override initializeWorkerSpecific(): Promise<void> {
     // Initialize syncers for each data type
-    this.syncers = new Map<string, ResourceSyncer>([
-      ["data-sync:announcements", new AnnouncementsSyncer(this.db)],
-      ["data-sync:academic-calendars", new CalendarsSyncer(this.db)],
-      ["data-sync:exam-timetables", new ExamTimetablesSyncer(this.db)],
-    ]);
+    this.syncers = {
+      "data-sync:announcements": new AnnouncementsSyncer(this.db),
+      "data-sync:academic-calendars": new CalendarsSyncer(this.db),
+      "data-sync:exam-timetables": new ExamTimetablesSyncer(this.db),
+    };
 
+    const syncerNames = Object.values(this.syncers)
+      .map(s => s.name)
+      .join(", ");
     logger.info(
-      `Initialized ${this.syncers.size} syncers: ${Array.from(
-        this.syncers.values()
-      )
-        .map(s => s.name)
-        .join(", ")}`
+      {
+        syncerCount: Object.keys(this.syncers).length,
+        syncers: syncerNames,
+      },
+      "Initialized syncers"
     );
 
     return Promise.resolve();
@@ -45,10 +47,13 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
 
   protected override async onStartupComplete(): Promise<void> {
     // Perform initial sync if database is empty
-    const needsInitialSync = await this.checkNeedsInitialSync();
-    if (needsInitialSync) {
-      logger.info("Initial sync required for one or more resources");
-      await this.scheduleInitialSyncJobs();
+    const syncTypesNeedingInitialSync = await this.checkNeedsInitialSync();
+    if (syncTypesNeedingInitialSync.length > 0) {
+      logger.info(
+        { syncTypes: syncTypesNeedingInitialSync },
+        "Initial sync required for one or more resources"
+      );
+      await this.scheduleInitialSyncJobs(syncTypesNeedingInitialSync);
     }
 
     // Set up recurring jobs (called once - BullMQ handles the schedule)
@@ -57,7 +62,7 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
 
   protected async processJob(job: Job<SyncJobData>): Promise<void> {
     const { syncType } = job.data;
-    const syncer = this.syncers.get(syncType);
+    const syncer = this.syncers[syncType];
 
     if (!syncer) {
       throw new Error(`Unknown sync type: ${syncType}`);
@@ -67,52 +72,70 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
     const needsInitial = await syncer.needsInitialSync();
 
     if (needsInitial) {
-      logger.info(`[${syncer.name}] Performing initial sync via job ${job.id}`);
+      logger.info(
+        { syncer: syncer.name, jobId: job.id },
+        "Performing initial sync"
+      );
       await syncer.performInitialSync();
-      logger.info(`[${syncer.name}] Initial sync completed via job ${job.id}`);
+      logger.info(
+        { syncer: syncer.name, jobId: job.id },
+        "Initial sync completed"
+      );
     } else {
-      logger.info(`[${syncer.name}] Starting periodic sync via job ${job.id}`);
+      logger.info(
+        { syncer: syncer.name, jobId: job.id },
+        "Starting periodic sync"
+      );
       await syncer.performPeriodicSync();
-      logger.info(`[${syncer.name}] Completed periodic sync via job ${job.id}`);
+      logger.info(
+        { syncer: syncer.name, jobId: job.id },
+        "Periodic sync completed"
+      );
     }
   }
 
-  private async checkNeedsInitialSync(): Promise<boolean> {
-    logger.info("Checking if any resource needs initial sync");
+  private async checkNeedsInitialSync(): Promise<SyncJobType[]> {
+    const entries = Object.entries(this.syncers) as [
+      SyncJobType,
+      ResourceSyncer,
+    ][];
 
     const results = await Promise.allSettled(
-      Array.from(this.syncers.values()).map(async syncer => {
+      entries.map(async ([syncType, syncer]) => {
         const needs = await syncer.needsInitialSync();
-        logger.info(`[${syncer.name}] needsInitialSync: ${needs}`);
-        return needs;
+        logger.info(
+          { syncer: syncer.name, needsInitialSync: needs },
+          "Checked initial sync need"
+        );
+        return needs ? syncType : null;
       })
     );
 
-    return results.some(
-      result => result.status === "fulfilled" && result.value === true
-    );
+    return results
+      .filter(
+        (result): result is PromiseFulfilledResult<SyncJobType> =>
+          result.status === "fulfilled" && result.value !== null
+      )
+      .map(result => result.value);
   }
 
-  private async scheduleInitialSyncJobs(): Promise<void> {
+  private async scheduleInitialSyncJobs(
+    syncTypes: SyncJobType[]
+  ): Promise<void> {
     logger.info("Scheduling initial sync jobs for needed resources");
 
-    const jobs = [];
-
-    for (const [syncType, syncer] of this.syncers.entries()) {
-      const needs = await syncer.needsInitialSync();
-      if (needs) {
-        logger.info(`[${syncer.name}] Needs initial sync, scheduling job`);
-        jobs.push(
-          dataSyncQueue.add(syncType as SyncJobType, {
-            syncType: syncType as SyncJobType,
-          })
-        );
-      }
-    }
+    const jobs = syncTypes.map(syncType => {
+      const syncer = this.syncers[syncType];
+      logger.info(
+        { syncer: syncer.name },
+        "Needs initial sync, scheduling job"
+      );
+      return dataSyncQueue.add(syncType, { syncType });
+    });
 
     if (jobs.length > 0) {
       await Promise.all(jobs);
-      logger.info(`Scheduled ${jobs.length} initial sync job(s)`);
+      logger.info({ jobCount: jobs.length }, "Scheduled initial sync jobs");
     }
   }
 }

@@ -12,6 +12,6 @@ export const logRequestHeaders: BeforeRequestHook = options => {
       method,
       headers,
     },
-    "Request Headers"
+    "Request headers"
   );
 };
