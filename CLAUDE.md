@@ -71,7 +71,20 @@ Use `.superRefine()` for cross-field validation and `.transform()` for derived v
 1. Composer error boundaries catch errors → clean up loading messages from session → notify user → wrap in `HandledBotError` and re-throw.
 2. Global error handler catches everything. If it's a `HandledBotError`, it skips (already notified). Otherwise sends a generic message.
 
-When writing new composers, always apply: `.errorBoundary(createComposerErrorBoundary([...sessionKeys]))` on the composer handling callback queries.
+When writing new composers, always apply: `.errorBoundary(createComposerErrorBoundary([...sessionKeys]))` on the composer handling callback queries. **Capture the return value** and register handlers on the protected composer; middleware on the original composer is not protected.
+
+### Logging
+
+Use **pino** (`import logger from "../../utils/logger.js"`). It has serializers for `err` and `error` keys.
+
+- **Serialize errors with `err`**: `logger.error({ err: error, chatId }, "Failed")` — never destructure manually.
+- **Never log and throw**: log at the boundary, or throw — not both.
+- **Structured data, not template strings**: `logger.info({ jobId, workerName }, "Job completed")` not `` `Job ${job.id}...` ``.
+- **Sentence case, no trailing periods**. Messages describe the event; identifiers live in the log object.
+- **Include correlation context**:
+  - Bot layer: `chatId`, `userId`
+  - Worker layer: `jobId`, `queueName`, `workerName`
+  - API layer: `service`, `url`
 
 ### Session
 
