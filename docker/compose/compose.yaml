@@ -1,3 +1,7 @@
+networks:
+  ktu-bot-network:
+    driver: bridge
+
 services:
   ktu-bot-app:
     build:

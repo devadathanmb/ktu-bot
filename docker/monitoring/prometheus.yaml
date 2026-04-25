@@ -63,6 +63,12 @@ scrape_configs:
       - source_labels: [__name__]
         regex: "go_.*"
         action: drop
+
+remote_write:
+  - url: ${PROMETHEUS_REMOTE_WRITE_URL}
+    basic_auth:
+      username: ${PROMETHEUS_REMOTE_WRITE_USERNAME}
+      password: ${PROMETHEUS_REMOTE_WRITE_PASSWORD}
 # Storage configuration
 # Retention: 30 days (configurable via command line: --storage.tsdb.retention.time=30d)
 # Path: /prometheus (mounted as Docker volume)
