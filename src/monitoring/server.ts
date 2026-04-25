@@ -25,7 +25,8 @@ export function createMonitoringServer(
 
   serve({ fetch: app.fetch, port }, info => {
     logger.info(
-      `🌐 ${serviceName} monitoring server listening on port ${info.port}`
+      { serviceName, port: info.port },
+      "Monitoring server listening"
     );
   });
 }

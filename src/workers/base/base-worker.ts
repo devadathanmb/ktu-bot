@@ -20,7 +20,6 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
 
   constructor(
     protected readonly workerName: string,
-    protected readonly queueName: string,
     protected readonly queue: Queue<TJobData>,
     protected readonly config?: {
       concurrency?: number;
@@ -33,7 +32,7 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
    */
   async start(): Promise<void> {
     if (this.worker) {
-      logger.warn(`${this.workerName} already running`);
+      logger.warn({ workerName: this.workerName }, "Worker already running");
       return;
     }
 
@@ -51,8 +50,8 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
 
     // Create BullMQ worker instance
     this.worker = new Worker<TJobData>(
-      this.queueName,
-      this.processJobWrapper.bind(this),
+      this.queue.name,
+      this.processJob.bind(this),
       {
         connection: workerRedisConnectionOptions,
         concurrency: this.config?.concurrency ?? 1,
@@ -67,7 +66,10 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     // Allow worker to perform post-startup tasks (e.g., schedule initial jobs)
     await this.onStartupComplete();
 
-    logger.info(`${this.workerName} started`);
+    logger.info(
+      { workerName: this.workerName, queueName: this.queue.name },
+      "Worker started"
+    );
   }
 
   /**
@@ -81,7 +83,10 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
 
     await this.queue.close();
     await closeDB();
-    logger.info(`${this.workerName} stopped`);
+    logger.info(
+      { workerName: this.workerName, queueName: this.queue.name },
+      "Worker stopped"
+    );
   }
 
   /**
@@ -114,16 +119,9 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
       // Worker is healthy if it's running AND Redis is connected
       return isRunning && redisConnected;
     } catch (error) {
-      logger.warn({ error }, "Health check failed");
+      logger.warn({ err: error as Error }, "Health check failed");
       return false;
     }
-  }
-
-  /**
-   * Wrapper for job processing with error handling
-   */
-  private async processJobWrapper(job: Job<TJobData>): Promise<void> {
-    await this.processJob(job);
   }
 
   /**
@@ -131,9 +129,11 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
    */
   protected onJobCompleted(job: Job<TJobData>): void {
     const jobId = job.id;
-    const data = job.data;
     const workerName = this.workerName;
-    logger.info({ jobId, data, workerName }, "Job completed");
+    logger.info(
+      { jobId, workerName, queueName: this.queue.name },
+      "Job completed"
+    );
   }
 
   /**
@@ -144,9 +144,11 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     error: Error
   ): Promise<void> {
     const jobId = job?.id;
-    const data = job?.data;
     const workerName = this.workerName;
-    logger.error({ jobId, data, workerName, error }, "Job failed");
+    logger.error(
+      { jobId, workerName, queueName: this.queue.name, err: error },
+      "Job failed"
+    );
 
     if (job) {
       await job.log(
@@ -156,6 +158,21 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
         await job.log(`Stack trace: ${error.stack}`);
       }
     }
+  }
+
+  // ==================== Protected Helpers ====================
+
+  /**
+   * Safely access the bot instance.
+   * Throws if the bot has not been initialized via initializeWorkerSpecific().
+   */
+  protected getBot(): Bot<BotContext> {
+    if (!this.bot) {
+      throw new Error(
+        "Bot not initialized. Ensure initializeWorkerSpecific() is called before using the bot."
+      );
+    }
+    return this.bot;
   }
 
   // ==================== Abstract Methods (must be implemented by subclasses) ====================

@@ -48,7 +48,10 @@ export async function scheduleSyncJobs() {
     }),
   ]);
 
-  logger.info("Manually scheduled all sync jobs");
+  logger.info(
+    { queueName: DATA_SYNC_QUEUE },
+    "Manually scheduled all sync jobs"
+  );
 }
 
 // Set up recurring sync jobs for all data types
@@ -94,6 +97,10 @@ export async function setupRecurringSchedule() {
   ]);
 
   logger.info(
-    `Set up recurring data sync with schedule: ${DataSyncWorkerConfig.SYNC_SCHEDULE}`
+    {
+      queueName: DATA_SYNC_QUEUE,
+      schedule: DataSyncWorkerConfig.SYNC_SCHEDULE,
+    },
+    "Set up recurring data sync"
   );
 }

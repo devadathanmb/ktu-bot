@@ -15,7 +15,6 @@ import {
   INLINE_CALENDARS_SEARCH_BUTTON,
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
-import { HandledBotError } from "../../../errors/handled-bot-error.js";
 import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/index.js";
 
 interface AttachmentInfo {
@@ -23,10 +22,12 @@ interface AttachmentInfo {
   encryptId: string;
 }
 
-export const inlineQuery = new Composer<BotContext>();
+const _inlineQuery = new Composer<BotContext>();
 
-// Add error boundary
-inlineQuery.errorBoundary(createComposerErrorBoundary([]));
+// Add error boundary and register handlers on the protected composer
+export const inlineQuery = _inlineQuery.errorBoundary(
+  createComposerErrorBoundary([])
+);
 
 // Define search types enum as single source of truth
 enum SearchType {
@@ -376,8 +377,9 @@ inlineQuery.on("inline_query", async ctx => {
 
     await ctx.answerInlineQuery(results);
   } catch (error) {
+    const chatId = ctx.from?.id;
     logger.error(
-      { error, query, type, searchTerm },
+      { err: error as Error, chatId, query, type, searchTerm },
       "Error in inline query handler"
     );
 
@@ -391,16 +393,6 @@ inlineQuery.on("inline_query", async ctx => {
       ),
     ];
     await ctx.answerInlineQuery(errorResult).catch();
-
-    // Wrap and re-throw for central error tracking
-    const originalError =
-      error instanceof Error ? error : new Error(String(error));
-    throw new HandledBotError(
-      originalError,
-      "inline-query-handler",
-      true, // user was notified via error result
-      ["sent-error-result"]
-    );
   }
 });
 
@@ -529,7 +521,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     await addAttachmentDeliveryJob(jobData);
   } catch (error) {
     logger.error(
-      { error, resultId, userId: chatId },
+      { err: error as Error, resultId, chatId },
       "Error in chosen inline result handler"
     );
 
@@ -543,15 +535,5 @@ inlineQuery.on("chosen_inline_result", async ctx => {
         ]).text
       )
       .catch(() => {});
-
-    // Wrap and re-throw for central error tracking
-    const originalError =
-      error instanceof Error ? error : new Error(String(error));
-    throw new HandledBotError(
-      originalError,
-      "chosen-inline-result-handler",
-      true, // user was notified
-      ["sent-error-message"]
-    );
   }
 });

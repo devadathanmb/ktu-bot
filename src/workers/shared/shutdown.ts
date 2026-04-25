@@ -6,7 +6,7 @@ interface ShutdownHandler {
 
 export function setupGracefulShutdown(handler: ShutdownHandler) {
   const onShutdown = async (signal: string) => {
-    logger.info(`Received ${signal}, shutting down...`);
+    logger.info({ signal }, "Shutting down");
     try {
       await handler.stop();
       process.exit(0);

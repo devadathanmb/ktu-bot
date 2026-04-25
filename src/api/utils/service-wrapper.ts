@@ -18,15 +18,13 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
         const url = (
           error.response.requestUrl || error.options.url
         )?.toString();
-        const responseBody = error.response.body as unknown;
 
         logger.error(
           {
             service: serviceName,
+            err: error,
             statusCode,
             url,
-            responseBody,
-            code: error.code,
           },
           `Error in ${serviceName}`
         );
@@ -88,9 +86,8 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
         logger.error(
           {
             service: serviceName,
+            err: error,
             url,
-            code: error.code,
-            error: error.message,
           },
           `Error in ${serviceName}`
         );
@@ -110,8 +107,7 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
         logger.error(
           {
             service: serviceName,
-            zodError: error.format(),
-            issues: error.issues,
+            err: error,
           },
           `Zod validation error in ${serviceName}`
         );
@@ -131,16 +127,13 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
       const errorUrl =
         (error as any)?.response?.requestUrl?.toString() ||
         (error as any)?.options?.url?.toString();
-      const errorBody = (error as any)?.response?.body;
-      const errorCode = (error as any)?.code;
 
       logger.error(
         {
           service: serviceName,
+          err: error as Error,
           statusCode: errorStatusCode,
           url: errorUrl,
-          responseBody: errorBody,
-          code: errorCode,
         },
         `Error in ${serviceName}`
       );

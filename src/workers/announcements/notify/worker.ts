@@ -17,11 +17,7 @@ import {
   POSTGRADUATE_COURSES,
   UNDERGRADUATE_COURSES,
 } from "../../../constants/courses.js";
-import {
-  announcementsNotifyQueue,
-  setupRecurringSchedule,
-  ANNOUNCEMENTS_NOTIFY_QUEUE,
-} from "./queue.js";
+import { announcementsNotifyQueue, setupRecurringSchedule } from "./queue.js";
 import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
 import { createBot } from "../../../bot/bot.js";
@@ -34,14 +30,12 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
   Record<string, never>
 > {
   private fetchedAnnouncements: Announcement[] = [];
+  private llmService = new LLMService();
 
   constructor() {
-    super(
-      "announcements-notify-worker",
-      ANNOUNCEMENTS_NOTIFY_QUEUE,
-      announcementsNotifyQueue,
-      { concurrency: 1 }
-    );
+    super("announcements-notify-worker", announcementsNotifyQueue, {
+      concurrency: 1,
+    });
   }
 
   protected override initializeWorkerSpecific(): Promise<void> {
@@ -63,9 +57,9 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
   }
 
   protected async processJob(job: Job<Record<string, never>>): Promise<void> {
-    logger.info(`Processing announcement notification job ${job.id}`);
+    logger.info({ jobId: job.id }, "Processing announcement notification job");
     await this.processNewAnnouncements();
-    logger.info(`Completed announcement notification job ${job.id}`);
+    logger.info({ jobId: job.id }, "Completed announcement notification job");
   }
 
   private async scheduleInitialNotificationCheck(): Promise<void> {
@@ -158,9 +152,8 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       logger.debug(
         "Multiple course filters found, using LLM to determine specific relevant courses"
       );
-      const llmService = new LLMService();
       const llmMatchedCourses =
-        await llmService.findRelevantCoursesFromAnnouncement(contentText);
+        await this.llmService.findRelevantCoursesFromAnnouncement(contentText);
       logger.debug(
         {
           llmMatchedCourses: Array.from(llmMatchedCourses),
@@ -184,10 +177,9 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       // Since this is anyways async, we can afford to add a small delay between requests
       await setTimeout(2 * 1000);
 
-      // Initialize LLM service and find the relevancy
       logger.debug("No specific filters found, checking relevancy with LLM");
-      const llmService = new LLMService();
-      const isRelevant = await llmService.isAnnouncementRelevant(contentText);
+      const isRelevant =
+        await this.llmService.isAnnouncementRelevant(contentText);
 
       // If relevant, add all available filters to send to all subscribers
       // If the announcement is relevant, then it should be sent to all subscribes no matter what filters they have subscribed to
@@ -272,14 +264,14 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
         const announcementId = announcement.id;
         logger.debug(
           { announcementId },
-          `No relevant subscribers for announcement`
+          "No relevant subscribers for announcement"
         );
         continue;
       }
 
       const formattedText = this.prepareFormattedMessage(announcement);
       const processedAttachments = announcement.attachments
-        ? await processAttachments(this.bot!, announcement.attachments)
+        ? await processAttachments(this.getBot(), announcement.attachments)
         : [];
 
       for (const chatId of chatIds) {

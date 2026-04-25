@@ -39,16 +39,20 @@ export const globalErrorHandler = async (
     });
   }
 
+  const chatId = ctx.chat?.id;
+  const userId = ctx.from?.id;
+
   // Check if error was already handled by an error boundary
   if (actualError instanceof HandledBotError) {
     // Error was handled at boundary level - user already notified
     logger.info(
       {
-        originalError: actualError.originalError.message,
-        originalErrorType: actualError.originalError.constructor.name,
+        err: actualError.originalError,
         handledBy: actualError.handledBy,
         cleanupActions: actualError.cleanupActions,
         userNotified: actualError.userNotified,
+        chatId,
+        userId,
       },
       "Error already handled by boundary"
     );
@@ -58,7 +62,10 @@ export const globalErrorHandler = async (
   }
 
   // Unhandled error - log with full context and notify user
-  logger.error(error, "Unhandled error in global handler");
+  logger.error(
+    { err: actualError, chatId, userId },
+    "Unhandled error in global handler"
+  );
 
   await replyMessageSafely(
     ctx,

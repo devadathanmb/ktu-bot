@@ -51,18 +51,13 @@ export async function getAnnouncementRelevancy(text: string): Promise<boolean> {
     return await _getAnnouncementRelevancy(text);
   } catch (error: unknown) {
     /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-    const errorMessage = (error as any)?.message || "Unknown error occurred";
     const statusCode = (error as any)?.response?.statusCode;
-    const responseBody = (error as any)?.response?.body;
 
     logger.error(
       {
         service: "getRelevancy",
-        rawError: error,
-        errorMessage,
+        err: error as Error,
         statusCode,
-        responseBody: responseBody ? JSON.stringify(responseBody) : undefined,
-        inputText: text,
       },
       "Service getRelevancy failed - defaulting to relevant"
     );

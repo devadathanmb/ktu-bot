@@ -31,7 +31,7 @@ import logger from "./logger.js";
 export const deleteMessageSafely = async (ctx: Context, messageId?: number) => {
   try {
     if (messageId) {
-      logger.debug(`Deleting message ${messageId} in chat ${ctx.chat?.id}`);
+      logger.debug({ messageId, chatId: ctx.chat?.id }, "Deleting message");
       await ctx.api.deleteMessage(ctx.chat!.id, messageId);
     }
   } catch {

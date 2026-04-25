@@ -38,7 +38,10 @@ export async function scheduleAnnouncementNotifyJob() {
     }
   );
 
-  logger.info("Scheduled announcement notification job");
+  logger.info(
+    { queueName: ANNOUNCEMENTS_NOTIFY_QUEUE },
+    "Scheduled announcement notification job"
+  );
 }
 
 // Set up recurring notification checks
@@ -56,6 +59,10 @@ export async function setupRecurringSchedule() {
   );
 
   logger.info(
-    `Set up recurring announcement notifications with schedule: ${AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE}`
+    {
+      queueName: ANNOUNCEMENTS_NOTIFY_QUEUE,
+      schedule: AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE,
+    },
+    "Set up recurring announcement notifications"
   );
 }

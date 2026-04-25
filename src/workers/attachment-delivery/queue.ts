@@ -39,6 +39,9 @@ export async function addAttachmentDeliveryJob(jobData: AttachmentDeliveryJob) {
   const job = await attachmentDeliveryQueue.add("attachment:deliver", jobData);
   const jobId = job.id;
   const { chatId, context } = jobData;
-  logger.debug({ jobId, chatId, context }, "Added attachment delivery job");
+  logger.debug(
+    { jobId, chatId, context, queueName: ATTACHMENT_DELIVERY_QUEUE },
+    "Added attachment delivery job"
+  );
   return job;
 }

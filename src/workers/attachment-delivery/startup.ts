@@ -30,7 +30,7 @@ async function startWorker() {
 
     setupGracefulShutdown(worker);
   } catch (error) {
-    logger.error(error, "Failed to start worker service");
+    logger.error(error, "Failed to start attachment delivery worker service");
     process.exit(1);
   }
 }

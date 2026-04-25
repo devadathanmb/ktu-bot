@@ -63,6 +63,16 @@ export type AnnouncementRelevanceResult = z.infer<
   typeof AnnouncementRelevanceResultSchema
 >;
 
+function parseJsonResponse<T>(schema: z.ZodSchema<T>, jsonString: string): T {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch {
+    throw new Error("Invalid JSON in LLM response");
+  }
+  return schema.parse(parsed);
+}
+
 export class LLMService {
   private config: typeof LLMConfigSchema;
 
@@ -76,42 +86,23 @@ export class LLMService {
     // Validate request
     const validatedRequestPayload = GroqCompletionRequestSchema.parse(request);
 
-    try {
-      const response = await got.post(GROQ_API.COMPLETION_ENDPOINT, {
-        headers: {
-          "Authorization": `Bearer ${this.config.API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        json: validatedRequestPayload,
-        responseType: "json",
-        timeout: {
-          request: this.config.TIMEOUT_MS,
-        },
-        retry: {
-          limit: this.config.MAX_RETRIES,
-        },
-      });
+    const response = await got.post(GROQ_API.COMPLETION_ENDPOINT, {
+      headers: {
+        "Authorization": `Bearer ${this.config.API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      json: validatedRequestPayload,
+      responseType: "json",
+      timeout: {
+        request: this.config.TIMEOUT_MS,
+      },
+      retry: {
+        limit: this.config.MAX_RETRIES,
+      },
+    });
 
-      // Validate response
-      return GroqCompletionResponseSchema.parse(response.body);
-    } catch (error: unknown) {
-      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-      // Log the response body for better debugging
-      if ((error as any).response?.body) {
-        const statusCode = (error as any).response.statusCode;
-        const errorBody = (error as any).response.body;
-        const requestBody = validatedRequestPayload;
-        logger.error(
-          {
-            statusCode,
-            errorBody,
-            requestBody,
-          },
-          "Groq API request failed"
-        );
-      }
-      throw error;
-    }
+    // Validate response
+    return GroqCompletionResponseSchema.parse(response.body);
   }
 
   async findRelevantCoursesFromAnnouncement(
@@ -138,22 +129,25 @@ export class LLMService {
       const response = await this.makeGroqRequest(request);
 
       // Parse and validate JSON response
-      const parsedJson = JSON.parse(response.choices[0]!.message.content);
-      const validatedResult =
-        AnnouncementRelevantCoursesResultSchema.parse(parsedJson);
-      return validatedResult;
+      return parseJsonResponse(
+        AnnouncementRelevantCoursesResultSchema,
+        response.choices[0]!.message.content
+      );
     } catch (error) {
       if (error instanceof z.ZodError) {
         const announcement = announcementContent.substring(0, 100) + "...";
         logger.warn(
           {
-            error,
+            err: error,
             announcement,
           },
           "Validation error in LLM course finding service"
         );
       } else {
-        logger.error(error, "Error in LLM course finding service");
+        logger.error(
+          { err: error as Error },
+          "Error in LLM course finding service"
+        );
       }
 
       // Return empty set as fallback
@@ -188,24 +182,25 @@ export class LLMService {
       const response = await this.makeGroqRequest(request);
 
       // Parse and validate JSON response
-
-      const parsedJson = JSON.parse(response.choices[0]!.message.content);
-      const validatedResult =
-        AnnouncementRelevanceResultSchema.parse(parsedJson);
-
-      return validatedResult;
+      return parseJsonResponse(
+        AnnouncementRelevanceResultSchema,
+        response.choices[0]!.message.content
+      );
     } catch (error) {
       if (error instanceof z.ZodError) {
         const announcement = announcementContent.substring(0, 100) + "...";
         logger.warn(
           {
-            error: error.issues,
+            err: error,
             announcement,
           },
           "Validation error in LLM service"
         );
       } else {
-        logger.error(error, "Error in LLM announcement relevance check");
+        logger.error(
+          { err: error as Error },
+          "Error in LLM announcement relevance check"
+        );
       }
 
       // Return true as fallback to ensure announcements are not missed

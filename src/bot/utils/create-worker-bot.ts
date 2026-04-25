@@ -9,16 +9,11 @@ export function createWorkerBot(): Bot<BotContext> {
 
   bot.catch(error => {
     if (error instanceof GrammyError) {
-      logger.error(
-        {
-          error_code: error.error_code,
-          description: error.description,
-        },
-        "Worker bot API error"
-      );
-    } else {
-      logger.error(error, "Worker bot error");
+      logger.error({ err: error }, "Telegram API error");
+      return;
     }
+
+    logger.error({ err: error as Error }, "Unexpected bot error");
   });
 
   return bot;

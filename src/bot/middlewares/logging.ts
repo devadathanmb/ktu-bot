@@ -88,7 +88,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   }
 
   // Log the incoming update
-  logger.info(logData, `User action: ${updateType}`);
+  logger.info(logData, "User action");
 
   await next();
 
@@ -100,7 +100,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
       update_type: updateType,
       response_time_ms: duration,
     },
-    `Response time: ${duration}ms`
+    "Response time"
   );
 }
 

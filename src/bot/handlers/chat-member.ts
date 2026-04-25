@@ -24,7 +24,7 @@ export const chatMemeberHandler = async (
 
     // If oldStatus is 'kicked' and newStatus is not 'kicked', user has unblocked the bot
     if (oldStatus === "kicked" && newStatus !== "kicked") {
-      logger.info(`User ${chatId} has unblocked the bot.`);
+      logger.info({ chatId }, "User has unblocked the bot");
 
       // 1. Update DB to mark the user as unblocked
       const chat = await chatRepo.getById(chatId);
@@ -46,7 +46,7 @@ export const chatMemeberHandler = async (
 
     // If oldStatus is not 'kicked' and newStatus is 'kicked', user has blocked the bot
     if (oldStatus !== "kicked" && newStatus === "kicked") {
-      logger.info(`User ${chatId} has blocked the bot.`);
+      logger.info({ chatId }, "User has blocked the bot");
       // 1. Update DB to mark the user as blocked
       await chatRepo.markKicked(chatId);
 

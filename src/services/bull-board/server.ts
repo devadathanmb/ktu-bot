@@ -30,7 +30,10 @@ function startBullBoard() {
 
     // Request logging middleware for Bull Board routes
     app.use("/*", async (c, next) => {
-      logger.info(`Bull Board request: ${c.req.method} ${c.req.path}`);
+      logger.info(
+        { method: c.req.method, path: c.req.path },
+        "Bull Board request"
+      );
       await next();
     });
 
@@ -50,9 +53,9 @@ function startBullBoard() {
     // Start server
     serve({ fetch: app.fetch, port: BullBoardServiceConfig.PORT }, info => {
       logger.info(
-        `🎯 Bull Board monitoring dashboard running on http://localhost:${info.port}`
+        { port: info.port, queues: queueAdapters.length },
+        "Bull Board monitoring dashboard running"
       );
-      logger.info(`Monitoring ${queueAdapters.length} queue(s)`);
     });
   } catch (error) {
     logger.error(error, "Failed to start Bull Board monitoring service");

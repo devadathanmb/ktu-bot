@@ -5,13 +5,13 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import logger from "../../utils/logger.js";
 import { BaseWorker } from "../base/base-worker.js";
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
-import { TelegramErrorUtils } from "../shared/utils/telegram-error-handler.js";
+import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
 import { AnnouncementSubscriptionRepository } from "../../db/repositories/announcement-subscription-repository.js";
-import { BROADCASTS_QUEUE, broadcastsQueue } from "./queue.js";
+import { broadcastsQueue } from "./queue.js";
 
 export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   constructor() {
-    super("broadcasts-worker", BROADCASTS_QUEUE, broadcastsQueue, {
+    super("broadcasts-worker", broadcastsQueue, {
       concurrency: 1,
     });
   }
@@ -88,7 +88,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
    * Send a formatted text message
    */
   private async sendMessage(chatId: number, formattedText: FormattedString) {
-    return await this.bot!.api.sendMessage(chatId, formattedText.rawText, {
+    return await this.getBot().api.sendMessage(chatId, formattedText.rawText, {
       entities: formattedText.rawEntities,
       link_preview_options: { is_disabled: true },
     });
@@ -122,7 +122,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       );
     });
 
-    return await this.bot!.api.sendMediaGroup(chatId, documents);
+    return await this.getBot().api.sendMediaGroup(chatId, documents);
   }
 
   /**
@@ -152,6 +152,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       );
     });
 
-    return await this.bot!.api.sendMediaGroup(chatId, documents, params);
+    return await this.getBot().api.sendMediaGroup(chatId, documents, params);
   }
 }

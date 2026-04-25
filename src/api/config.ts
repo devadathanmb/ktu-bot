@@ -17,7 +17,7 @@ const KTU_API_HEADERS = {
 
 // API Client options
 const API_CLIENT_OPTIONS = {
-  timeout: { request: 10 * 1000 },
+  timeout: { request: 20 * 1000 },
   retry: { limit: 2 },
 };
 

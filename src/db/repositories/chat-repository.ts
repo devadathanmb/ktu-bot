@@ -17,7 +17,7 @@ export class ChatRepository {
   async createIfNotExists(chatId: number) {
     let chat = await this.getById(chatId);
     if (!chat) {
-      logger.info(`Chat ID ${chatId} not found in DB, creating new record`);
+      logger.info({ chatId }, "Chat not found in DB, creating new record");
       [chat] = await this.create({ id: chatId });
     }
     return chat;

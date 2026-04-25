@@ -102,8 +102,10 @@ export class TelegramErrorUtils {
     errorCode: number,
     errorDescription: string
   ): void {
-    const error = errorDescription;
-    logger.error({ chatId, errorCode, error }, "Unhandled Telegram error");
+    logger.error(
+      { chatId, errorCode, errorDescription },
+      "Unhandled Telegram error"
+    );
   }
 
   /**
@@ -131,13 +133,13 @@ export class TelegramErrorUtils {
 
     if (this.isUserBlockedError(errorCode, errorDescription)) {
       logger.warn(
-        { chatId, error: errorDescription },
+        { chatId, errorCode, errorDescription },
         "User blocked the bot, updating status"
       );
       await this.handleBlockedUser(chatId);
     } else if (this.isUserDeactivatedError(errorCode, errorDescription)) {
       logger.warn(
-        { chatId, error: errorDescription },
+        { chatId, errorCode, errorDescription },
         "User deactivated their account, removing chat"
       );
       await this.handleDeactivatedUser(chatId);

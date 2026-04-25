@@ -33,7 +33,7 @@ export const logResponseTime: AfterResponseHook = response => {
         timestamps,
         total,
       },
-      "API Response Time"
+      "API response time"
     );
   }
 
