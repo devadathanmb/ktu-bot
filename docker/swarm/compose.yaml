@@ -21,7 +21,7 @@ services:
   ktu-bot-app:
     image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
     env_file:
-      - ../../env/staging/.env.swarm
+      - ../../env/prod/.env.swarm
     configs:
       - source: db-ca-certificate
         target: /certs/db-ca.pem
@@ -82,7 +82,7 @@ services:
   announcements-notify-worker:
     image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
     env_file:
-      - ../../env/staging/.env.swarm
+      - ../../env/prod/.env.swarm
     configs:
       - source: db-ca-certificate
         target: /certs/db-ca.pem
@@ -143,7 +143,7 @@ services:
   broadcasts-worker:
     image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
     env_file:
-      - ../../env/staging/.env.swarm
+      - ../../env/prod/.env.swarm
     configs:
       - source: db-ca-certificate
         target: /certs/db-ca.pem
@@ -204,7 +204,7 @@ services:
   data-sync-worker:
     image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
     env_file:
-      - ../../env/staging/.env.swarm
+      - ../../env/prod/.env.swarm
     configs:
       - source: db-ca-certificate
         target: /certs/db-ca.pem
@@ -265,8 +265,8 @@ services:
   attachment-delivery-worker:
     image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
     env_file:
-      - ../../env/staging/.env.swarm
-      - ../../env/staging/attachment-delivery-worker.env
+      - ../../env/prod/.env.swarm
+      - ../../env/prod/attachment-delivery-worker.env
     configs:
       - source: db-ca-certificate
         target: /certs/db-ca.pem
@@ -327,7 +327,7 @@ services:
   bull-board-service:
     image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
     env_file:
-      - ../../env/staging/.env.swarm
+      - ../../env/prod/.env.swarm
     configs:
       - source: db-ca-certificate
         target: /certs/db-ca.pem

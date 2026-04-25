@@ -19,7 +19,7 @@ services:
   db-migrations:
     image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
     env_file:
-      - ../../env/staging/.env.swarm
+      - ../../env/prod/.env.swarm
     configs:
       - source: db-ca-certificate
         target: /certs/db-ca.pem
