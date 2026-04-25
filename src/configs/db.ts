@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { z } from "zod";
 
 const dbConfigSchema = z
@@ -5,32 +6,54 @@ const dbConfigSchema = z
     DATABASE_URI: z.string(),
     PGSSLMODE: z.enum(["disable", "verify-full"]),
     DATABASE_CA_CERTIFICATE: z.string().optional(),
+    DATABASE_CA_CERTIFICATE_PATH: z.string().optional(),
   })
   .superRefine((config, ctx) => {
-    if (config.PGSSLMODE !== "disable" && !config.DATABASE_CA_CERTIFICATE) {
+    if (config.PGSSLMODE === "disable") return;
+
+    // At least one of cert or cert path must be provided
+    if (
+      !config.DATABASE_CA_CERTIFICATE &&
+      !config.DATABASE_CA_CERTIFICATE_PATH
+    ) {
       ctx.addIssue({
         path: ["DATABASE_CA_CERTIFICATE"],
         code: "custom",
         message:
-          "DATABASE_CA_CERTIFICATE is required when PGSSLMODE is not 'disable'",
+          "DATABASE_CA_CERTIFICATE or DATABASE_CA_CERTIFICATE_PATH required when PGSSLMODE is not 'disable'",
       });
+    }
+
+    // If path is set, verify the file exists and is readable
+    if (config.DATABASE_CA_CERTIFICATE_PATH) {
+      try {
+        readFileSync(config.DATABASE_CA_CERTIFICATE_PATH, "utf-8");
+      } catch {
+        ctx.addIssue({
+          path: ["DATABASE_CA_CERTIFICATE_PATH"],
+          code: "custom",
+          message: `Cannot read CA certificate file at ${config.DATABASE_CA_CERTIFICATE_PATH}`,
+        });
+      }
     }
   })
   .transform(config => {
-    // Transform to include SSL config
     // If PGSSLMODE is 'disable', SSL config is false
-    // Otherwise, set up SSL config with rejectUnauthorized false and CA must be provided
+    if (config.PGSSLMODE === "disable") {
+      return { ...config, SSL_CONFIG: false };
+    }
+
+    // Prefer file path over env var for CA cert
+    const ca = config.DATABASE_CA_CERTIFICATE_PATH
+      ? readFileSync(config.DATABASE_CA_CERTIFICATE_PATH, "utf-8")
+      : config.DATABASE_CA_CERTIFICATE || undefined;
+
     return {
       ...config,
-      SSL_CONFIG:
-        config.PGSSLMODE === "disable"
-          ? false
-          : {
-              rejectUnauthorized: false,
-              ca: config.DATABASE_CA_CERTIFICATE
-                ? config.DATABASE_CA_CERTIFICATE
-                : undefined,
-            },
+      SSL_CONFIG: {
+        rejectUnauthorized: false,
+        ca,
+      },
     };
   });
 
@@ -38,6 +61,7 @@ const DbConfigBase = dbConfigSchema.parse({
   DATABASE_URI: process.env.DATABASE_URI,
   PGSSLMODE: process.env.PGSSLMODE,
   DATABASE_CA_CERTIFICATE: process.env.DATABASE_CA_CERTIFICATE,
+  DATABASE_CA_CERTIFICATE_PATH: process.env.DATABASE_CA_CERTIFICATE_PATH,
 });
 
 export const DbConfig = {
