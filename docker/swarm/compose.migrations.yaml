@@ -1,0 +1,40 @@
+# Docker Swarm migrations stack
+# Deploy BEFORE the app stack to run DB migrations as a one-shot service.
+# The deploy script polls for completion before deploying the app stack.
+#
+# Usage:
+#   REGISTRY=ghcr.io/me TAG=v1.2.3 ./deploy-swarm.sh
+
+networks:
+  ktu-bot-overlay:
+    driver: overlay
+    name: ktu-bot-overlay
+    attachable: true
+
+services:
+  db-migrations:
+    image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
+    env_file:
+      - ../../env/staging/.env
+    networks:
+      - ktu-bot-overlay
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        echo "==> Running DB migrations..."
+        pnpm db:migrate
+        echo "==> DB migrations applied successfully"
+    deploy:
+      restart_policy:
+        condition: none
+      resources:
+        limits:
+          memory: 384M
+          cpus: "0.40"
+        reservations:
+          memory: 128M
+          cpus: "0.20"
+      labels:
+        - "com.ktu-bot.role=migrations"

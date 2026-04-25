@@ -1,0 +1,357 @@
+# Docker Swarm app stack — all application services.
+# Deploy AFTER compose.migrations.yaml has completed successfully.
+#
+# Swarm does not support depends_on. All services start concurrently.
+# Each service's healthcheck verifies DB connectivity; Swarm restarts
+# unhealthy replicas until they pass. For initial cold starts, run the
+# migrations stack first — the deploy-swarm.sh script enforces this.
+
+networks:
+  ktu-bot-overlay:
+    driver: overlay
+    name: ktu-bot-overlay
+    attachable: true
+
+services:
+  # Main bot (long polling)
+  ktu-bot-app:
+    image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
+    env_file:
+      - ../../env/staging/.env
+    networks:
+      - ktu-bot-overlay
+    ports:
+      - "3000:3000"
+    command: ["pnpm", "start"]
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+        monitor: 30s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          memory: 384M
+          cpus: "0.75"
+        reservations:
+          memory: 192M
+          cpus: "0.35"
+      labels:
+        - "com.ktu-bot.role=bot"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - -s
+        - -S
+        - --max-time
+        - "5"
+        - http://localhost:3000/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Announcements Notify Worker
+  announcements-notify-worker:
+    image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
+    env_file:
+      - ../../env/staging/.env
+    networks:
+      - ktu-bot-overlay
+    ports:
+      - "3001:3001"
+    command: ["pnpm", "workers:announcements-notify-worker"]
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+        monitor: 30s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.25"
+        reservations:
+          memory: 96M
+          cpus: "0.10"
+      labels:
+        - "com.ktu-bot.role=worker"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - -s
+        - -S
+        - --max-time
+        - "5"
+        - http://localhost:3001/health
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Broadcasts Worker
+  broadcasts-worker:
+    image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
+    env_file:
+      - ../../env/staging/.env
+    networks:
+      - ktu-bot-overlay
+    ports:
+      - "3002:3002"
+    command: ["pnpm", "workers:broadcasts-worker"]
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+        monitor: 30s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          memory: 160M
+          cpus: "0.20"
+        reservations:
+          memory: 80M
+          cpus: "0.10"
+      labels:
+        - "com.ktu-bot.role=worker"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - -s
+        - -S
+        - --max-time
+        - "5"
+        - http://localhost:3002/health
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Data Sync Worker
+  data-sync-worker:
+    image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
+    env_file:
+      - ../../env/staging/.env
+    networks:
+      - ktu-bot-overlay
+    ports:
+      - "3003:3003"
+    command: ["pnpm", "workers:data-sync-worker"]
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+        monitor: 30s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.15"
+        reservations:
+          memory: 96M
+          cpus: "0.05"
+      labels:
+        - "com.ktu-bot.role=worker"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - -s
+        - -S
+        - --max-time
+        - "5"
+        - http://localhost:3003/health
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Attachment Delivery Worker
+  attachment-delivery-worker:
+    image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
+    env_file:
+      - ../../env/staging/.env
+      - ../../env/staging/attachment-delivery-worker.env
+    networks:
+      - ktu-bot-overlay
+    ports:
+      - "3004:3004"
+    command: ["pnpm", "workers:attachment-delivery-worker"]
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+        monitor: 30s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          memory: 200M
+          cpus: "0.30"
+        reservations:
+          memory: 100M
+          cpus: "0.10"
+      labels:
+        - "com.ktu-bot.role=worker"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - -s
+        - -S
+        - --max-time
+        - "5"
+        - http://localhost:3004/health
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Bull Board (Queue Dashboard)
+  bull-board-service:
+    image: ${REGISTRY:-docker.io/library}/ktu-bot-private:${TAG:-latest}
+    env_file:
+      - ../../env/staging/.env
+    networks:
+      - ktu-bot-overlay
+    ports:
+      - "3010:3010"
+    command: ["pnpm", "services:bull-board"]
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: stop-first
+        monitor: 30s
+        max_failure_ratio: 0.3
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.10"
+        reservations:
+          memory: 64M
+          cpus: "0.05"
+      labels:
+        - "com.ktu-bot.role=dashboard"
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - -s
+        - -S
+        - --max-time
+        - "5"
+        - http://localhost:3010/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
