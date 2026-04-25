@@ -1,4 +1,12 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "drizzle-kit";
+
+function getCaCert(): string | undefined {
+  if (process.env.DATABASE_CA_CERTIFICATE_PATH) {
+    return readFileSync(process.env.DATABASE_CA_CERTIFICATE_PATH, "utf-8");
+  }
+  return process.env.DATABASE_CA_CERTIFICATE || undefined;
+}
 
 export default defineConfig({
   dialect: "postgresql",
@@ -10,12 +18,7 @@ export default defineConfig({
     user: process.env.DATABASE_USER!,
     password: process.env.DATABASE_PASSWORD!,
     database: process.env.DATABASE_NAME!,
-
-    // Do not use SSL in local development
-    ssl:
-      process.env.PGSSLMODE != "disable"
-        ? { ca: process.env.DATABASE_CA_CERTIFICATE! }
-        : false,
+    ssl: process.env.PGSSLMODE !== "disable" ? { ca: getCaCert() } : false,
   },
 
   verbose: true,
