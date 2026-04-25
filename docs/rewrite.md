@@ -52,9 +52,9 @@ GrammY's team has thought of everything that makes bot development easy. They ha
 
 I needed to run the database locally. So Firebase had to go, and over time I've realized how powerful [PostgreSQL](https://www.postgresql.org/) is - and how powerful SQL databases are in general. Postgres was a no-brainer choice. It even supports features like [full-text search](https://www.postgresql.org/docs/current/textsearch.html) that make things incredibly powerful (and a ton of features which I don't even know about). To make things easy, I found [Drizzle ORM](https://orm.drizzle.team/docs/get-started/postgresql-new) that was lightweight yet very powerful.
 
-### 3. Microservices - Doing It Right This Time
+### 3. Separation of Concerns - Doing It Right This Time
 
-This was also a no-brainer. I had to decouple the bot from other services and do broadcasts the right way, even if it required creating multiple services. This makes the project maintainable in the long run and creates clear boundaries for errors and future development. You can read more about the current setup here: [How It Works](./working.md)
+This was also a no-brainer. I had to decouple the bot from other services and do broadcasts the right way, even if it meant splitting things into multiple independent services. This makes the project maintainable in the long run and creates clear boundaries for errors and future development. You can read more about the current setup here: [How It Works](./working.md)
 
 ### The Rest of the Stack
 

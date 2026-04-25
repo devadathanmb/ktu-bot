@@ -48,7 +48,7 @@ What started as a quick 50-line script to check my own results eventually became
 
 ## Architecture Overview 🏗️
 
-The bot follows a microservices architecture where each component handles a specific responsibility. If one service fails, others keep running.
+The bot is built as independent services — the main bot, background workers for notifications and data syncing, and supporting databases. If one worker crashes, the bot keeps running.
 
 | Component                       | Type                | What It Does                                                                                  |
 | ------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
@@ -212,23 +212,17 @@ curl -f http://localhost:3000/health
 
 Contributions are welcome! Whether it's bug fixes, new features, documentation improvements, or ideas — all are appreciated.
 
+Found a bug? Have an idea? [Open an issue](https://github.com/devadathanmb/ktu-bot/issues). When reporting bugs, please include:
+
+- What you were trying to do?
+- What happened instead?
+- Steps to reproduce (if reproducible)
+
 > [!TIP]
 > **Need help getting started?** Check out [How It Works](./docs/working.md) to understand the architecture.
 
 > [!TIP]
 > **New to Telegram Bot ecosystem?** Check out this [awesome getting started guide](https://grammy.dev/guide/getting-started) from GrammY.
-
-## Bugs & Feedback 🐛
-
-Found a bug? Have an idea? Want to discuss something?
-
-**Open an issue:** https://github.com/devadathanmb/ktu-bot/issues
-
-When reporting bugs, please try to include:
-
-- What you were trying to do?
-- What happened instead?
-- Steps to reproduce (if reproducible)
 
 ---
 

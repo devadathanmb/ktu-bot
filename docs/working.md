@@ -2,7 +2,7 @@
 
 This document provides a high-level overview of how the entire system works. The goal is to help anyone understand the core architecture, whether you want to contribute, fork the project, or are just curious about how it all comes together.
 
-## This Isn't Magic ✨
+## This Isn't Magic
 
 Before we dive in, let's clear something up. If you don't have much technical background, you might wonder how this bot pulls data from KTU and sends you announcements as they arrive, or _"How is it able to find my results?"_ _"Is it safe?"_ I know you may have a lot of such questions, and I've received plenty of them from users in the past.
 
@@ -17,7 +17,7 @@ If you're curious to learn more about how it works under the hood, keep reading.
 > [!NOTE]
 > In all diagrams below, direct user interaction with the bot is shown for simplicity. In reality, all communication flows through Telegram's servers - users send messages to Telegram, which forwards them to the bot, and responses follow the reverse path.
 
-The bot follows a [microservices architecture](https://microservices.io/) pattern. Instead of one giant application doing everything, different components handle specific responsibilities independently. This means if one piece fails, it doesn't bring down the entire system. For example, if the notification worker crashes, users can still interact with the bot normally - notifications just won't go out until the worker recovers.
+The bot is built as independent services — each handles a specific responsibility, and they communicate through a job queue and database. This means if one piece fails, it doesn't bring down the entire system. For example, if the notification worker crashes, users can still interact with the bot normally — notifications just won't go out until the worker recovers.
 
 Here's how everything fits together at a high level:
 
@@ -124,19 +124,19 @@ graph TB
 
 The entire system is orchestrated using [Docker Compose](https://docs.docker.com/compose/), which lets you define and run all these services together. Compose files are organized under `docker/compose/` (production, staging, dev) and `docker/swarm/` (Docker Swarm deployment). Each service gets its own container and they all communicate over a Docker network. This makes development super easy - one command starts everything up with proper networking and all dependencies configured.
 
-### Bot Service 🤖
+### Bot Service
 
 This is the main service that users interact with. It handles all commands, inline queries, searches, and conversations. The bot is built using [GrammY](https://grammy.dev/), which is a modern TypeScript framework for building Telegram bots. GrammY has a great ecosystem of plugins and excellent documentation, making it really easy and fun to work with.
 
 The bot uses a [composers pattern](https://grammy.dev/plugins/composer.html) to organize different features - each feature gets its own composer that handles related functionality. This keeps the code clean and maintainable. All the core bot logic lives in the `src/bot/` directory. The bot also uses GrammY's plugin ecosystem extensively - for things like auto-retry, rate limiting, hydration, emoji parsing, and more. You can see the full list of plugins in [`package.json`](../package.json) or check how they're wired up in the middleware section of [`src/bot/bot.ts`](../src/bot/bot.ts)
 
-### PostgreSQL Database 📊
+### PostgreSQL Database
 
 The bot needs permanent storage for things like user subscription preferences, cached announcements, exam timetables, academic calendars, and metadata about blocked users. This is where [PostgreSQL](https://www.postgresql.org/) comes in. The bot uses [Drizzle ORM](https://orm.drizzle.team/) for type-safe database operations, with all schema definitions in [`src/db/schema/`](../src/db/schema/)
 
 PostgreSQL isn't just a simple database - it offers powerful features like [full-text search](https://www.postgresql.org/docs/current/textsearch.html), which the bot leverages heavily for its inline search functionality. When you search for something inline, that query hits the bot's database (not KTU's APIs) and uses PostgreSQL's built-in full-text search to find relevant results quickly.
 
-### Redis and BullMQ 🔴
+### Redis and BullMQ
 
 [Redis](https://redis.io/) is an in-memory data store that powers [BullMQ](https://docs.bullmq.io/), which is the job queue system that lets different parts of the bot communicate.
 
@@ -144,11 +144,11 @@ Think of BullMQ as a post office for tasks. The announcements worker creates "jo
 
 You can read more about the different background workers the bot uses in the below section.
 
-## Background Workers ⚙️
+## Background Workers
 
 These are independent services that handle specific tasks in the background. Unlike the main bot that responds to user interactions, workers run on schedules or process queued jobs without direct user involvement. They're crucial because they handle time-consuming or periodic tasks without blocking the bot - if a worker crashes, the bot keeps running, and vice versa. This separation also makes the system more scalable since you can run multiple instances of workers independently.
 
-### Announcements Notify Worker 📢
+### Announcements Notify Worker
 
 This worker uses **BullMQ repeatable jobs** to continuously monitor for new announcements. Here's what it does:
 
@@ -166,7 +166,7 @@ This worker uses **BullMQ repeatable jobs** to continuously monitor for new anno
 
 BullMQ automatically handles retries if a job fails (with exponential backoff), making this more resilient than traditional cron. All this logic lives in [`src/workers/announcements/notify/`](../src/workers//announcements/notify/)
 
-### Broadcasts Worker 📨
+### Broadcasts Worker
 
 This is the worker that actually delivers messages to users. It's designed to be generic - it can broadcast anything (announcements, manual admin broadcasts, alerts) as long as the job payload is in the right format. Here's how it works:
 
@@ -185,7 +185,7 @@ This is the worker that actually delivers messages to users. It's designed to be
 
 The code and the entire logic lives in [`src/workers/broadcasts/`](../src/workers/broadcasts/)
 
-### Data Sync Worker 🔄
+### Data Sync Worker
 
 Here's a frustrating thing about KTU's APIs - their APIs don't expose any text search functionality. You can't search for _"examination results 2025"_ anywhere on their website and get filtered results (this used to be there if I recall correctly but not anymore). It's honestly poor design for such a basic feature, but the bot needs this capability for inline search. The solution? Maintain a local, searchable copy of their data. This worker uses **BullMQ for scheduling** and handles syncing in three separate jobs:
 
@@ -204,7 +204,7 @@ When users perform inline searches, their queries hit this local copy instead of
 
 The BullMQ-based approach makes this much more resilient than traditional cron scheduling. Check out [`src/workers/data-sync/`](../src/workers/data-sync/) for the implementation.
 
-### Attachment Delivery Worker 📦
+### Attachment Delivery Worker
 
 This worker handles file downloads and deliveries asynchronously, preventing the bot from being blocked by large file downloads. When users request attachments (calendars, timetables, announcements), the bot immediately queues the request and returns to serving other users. Here's how it works:
 
@@ -231,11 +231,11 @@ This worker has a `concurrency` of `2` to prevent overwhelming Telegram's rate l
 
 Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3004`) that verifies the service is running and can connect to its dependencies like the database and Redis. This enables zero-downtime deployments and automatic restarts if something goes wrong. The health check utility is in [`src/utils/healthCheck.ts`](../src/utils//healthCheck.ts) if you want to see how it works.
 
-### Queue Monitoring with Bull Board 📊
+### Queue Monitoring with Bull Board
 
 There's a dedicated [**Bull Board**](https://github.com/felixmosh/bull-board) service running on port `3010` that provides a web dashboard for monitoring all BullMQ queues in real-time. Access it at `http://localhost:3010` to view job states, retry failed jobs, and monitor queue health across all workers.
 
-## Tech Stack 🛠️
+## Tech Stack
 
 Here's what powers the bot:
 
@@ -245,6 +245,6 @@ Here's what powers the bot:
 - [**Drizzle ORM**](https://orm.drizzle.team/) - Type-safe database queries
 - [**BullMQ with Redis**](https://docs.bullmq.io/) - Job queue for background tasks
 
-## Wrapping Up 🎉
+## Wrapping Up
 
 That's the gist of how everything works! The architecture might seem complex at first, but each piece has a clear purpose. The bot handles user interactions, workers process background tasks, the database stores everything, and the queue system ties it all together. If you want to contribute or have questions, feel free to open an issue.
