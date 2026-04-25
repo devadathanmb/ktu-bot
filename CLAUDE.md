@@ -1,126 +1,94 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working in this repository.
 
-## Commands
+## Project
+
+A GrammY-based Telegram bot serving KTU (Kerala Technological University) students. The system consists of a long-polling bot and several BullMQ background workers, all orchestrated via Docker Compose. PostgreSQL (Drizzle ORM) for persistence, Redis (BullMQ) for job queues.
+
+## Local Development
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Development (hot-reload)
-pnpm dev                    # Run bot only
-pnpm dev:watch              # Run bot with file watch
-
-# Type checking & linting
-pnpm typecheck              # tsc --noEmit (no emit)
-pnpm lint                   # ESLint
-pnpm lint:fix               # ESLint with auto-fix
-pnpm format                 # Prettier write
-pnpm format:check           # Prettier check
-
-# Build & production
-pnpm build                  # tsc → dist/
-pnpm start                  # node dist/index.js
-
-# Database (requires DATABASE_* env vars)
-pnpm db:generate            # Generate new Drizzle migration from schema changes
-pnpm db:migrate             # Run pending migrations
-pnpm db:push                # Push schema directly (dev only)
-pnpm db:studio              # Drizzle Studio UI
-
-# Run individual workers (dev)
-pnpm workers:data-sync-worker-dev
-pnpm workers:announcements-notify-worker-dev
-pnpm workers:broadcasts-worker-dev
-pnpm workers:attachment-delivery-worker-dev
-pnpm services:bull-board-dev
-
-# Docker (recommended for full local setup)
-docker compose -f docker/compose/compose.dev.yaml up --build          # All services
-docker compose -f docker/compose/compose.dev.yaml up ktu-bot-app --build  # Bot only
+docker compose -f docker/compose/compose.dev.yaml up --build
 ```
 
-There are no tests in this codebase.
+This starts all services (bot, workers, PostgreSQL, Redis, Bull Board on :3010) with hot-reload.
 
-## Architecture
+## How It Works
 
-This is a GrammY-based Telegram bot that serves KTU (Kerala Technological University) students. It runs as independent processes, each with a specific responsibility:
+For detailed architecture, data flow, and worker responsibilities, read [`docs/working.md`](docs/working.md). Do **not** repeat that information here — refer to it on demand when you need deeper context.
 
-### Processes
+## TypeScript Conventions
 
-| Process                     | Entry Point                                   | Role                                                                                 |
-| --------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Bot                         | `src/index.ts`                                | Main GrammY bot (long polling), handles all user interactions                        |
-| Data Sync Worker            | `src/workers/data-sync/startup.ts`            | Periodically fetches KTU data (announcements, timetables, calendars) into PostgreSQL |
-| Announcements Notify Worker | `src/workers/announcements/notify/startup.ts` | Monitors new announcements, sends filtered notifications to subscribed users         |
-| Broadcasts Worker           | `src/workers/broadcasts/startup.ts`           | Queued mass message delivery                                                         |
-| Attachment Delivery Worker  | `src/workers/attachment-delivery/startup.ts`  | Downloads KTU attachments and sends files asynchronously                             |
-| Bull Board Service          | `src/services/bull-board/server.ts`           | Hono-based BullMQ dashboard on port 3010                                             |
+### Module System
 
-Each process runs as a separate Docker container. Workers are **BullMQ** jobs backed by **Redis**. The DB is **PostgreSQL** accessed via **Drizzle ORM**.
+- Pure ESM (`"type": "module"` in package.json).
+- Module resolution: `NodeNext`. **All local imports MUST use `.js` extensions** even though source files are `.ts`:
+  ```ts
+  import { BotError } from "../errors/bot-errors.js";
+  ```
+- Third-party imports do NOT use `.js`.
 
-### Source Layout
+### Strictness
 
-```
-src/
-├── index.ts                  # Bot entry point
-├── bot/
-│   ├── bot.ts                # Bot factory: createBot() / createBotWithMetrics()
-│   ├── composers/            # GrammY Composer modules (feature slices)
-│   │   ├── core/             # /start, /help, /search, /code, /apistatus
-│   │   ├── lookups/          # Paginated lookups: announcements, timetables, calendars
-│   │   ├── announcement-subscriptions/  # Subscription management flow
-│   │   ├── inline-query/     # Inline search
-│   │   ├── unhandled/        # Catch-all fallback
-│   │   └── shared/error-boundary.ts  # Composer-level error boundary pattern
-│   ├── handlers/             # global-error, rate-limit, chat-member, deprecated
-│   └── middlewares/          # logging, session init, track-chat-id, metrics
-├── workers/
-│   ├── base/base-worker.ts   # Abstract base class for all BullMQ workers
-│   └── {worker-name}/        # Each worker: queue.ts, worker.ts, startup.ts
-├── api/
-│   ├── client.ts             # got HTTP client with KTU API hooks
-│   ├── hooks/                # before/after hooks (headers, x-token, logging)
-│   └── services/             # ktu/, huggingface/, betteruptime/, file/
-├── db/
-│   ├── schema/               # Drizzle table definitions
-│   ├── repositories/         # Repository pattern for DB access
-│   ├── migrations/           # Generated SQL migrations
-│   └── connection.ts         # initDB() / closeDB()
-├── configs/                  # Config modules (validated env vars per service)
-├── constants/                # Static data (course list, API URLs, stickers)
-├── errors/                   # bot-errors, handled-bot-error
-├── metrics/                  # Prometheus metric definitions and registry
-├── monitoring/               # Health check + metrics Hono server
-├── types/                    # BotContext, SessionData, service types
-└── utils/                    # logger, formatting, bot helpers
+`tsconfig.json` enables full strict mode plus:
+
+- `noUncheckedIndexedAccess` — all indexed access includes `undefined`.
+- `exactOptionalPropertyTypes` — `{ key?: string }` forbids passing `undefined`.
+- `noUnusedLocals`, `noUnusedParameters` — unused variables are errors. Prefix with `_` to suppress.
+- `noImplicitOverride` — must use `override` keyword on class overrides.
+- `noImplicitReturns` — all code paths must return.
+
+### Code Style
+
+- **ESLint**: Flat config with `typescript-eslint` type-checked rules. `no-floating-promises: error`, `no-unused-vars` (with `_` prefix exception).
+- **`any` is strictly banned**. Never use `any`. Type everything properly — use `unknown` if the type is truly unknown and narrow it with type guards.
+- **Formatting strings**: Use GrammY's `fmt` template literal tag (from `@grammyjs/parse-mode`). Use `joinWithNewlines()` for multi-line messages.
+- **Prettier** is enforced by the pre-commit hook — you don't need to worry about formatting.
+- **Naming**: Files/dirs use `kebab-case`. Functions `camelCase`. Classes/interfaces `PascalCase`. Exported configs `PascalCase`.
+- **Barrel exports**: Every directory has an `index.ts` re-exporting all public members.
+
+### Config Validation
+
+All environment variables are validated at startup using **Zod v4** schemas in `src/configs/`. The pattern:
+
+```ts
+const schema = z.object({ ... });
+export const Config = schema.parse({ ENV_VAR: process.env.ENV_VAR, ... });
 ```
 
-### Key Patterns
+Use `.superRefine()` for cross-field validation and `.transform()` for derived values. Never access `process.env` directly outside of config modules.
 
-**BotContext** (`src/types/bot.types.ts`): Extended GrammY context with `HydrateFlavor`, `CommandsFlavor`, `EmojiFlavor`, and `SessionFlavor<SessionData>`. Always use `BotContext` as the generic type parameter.
+### Error Handling
 
-**Composer pattern**: Each feature is a `Composer<BotContext>` mounted in `bot.ts`. Use `.errorBoundary(createComposerErrorBoundary([...sessionKeys]))` on composers for consistent error handling and loading message cleanup.
+- **`BotError`** (base class): carries `userMessage` — the safe-to-show-user message.
+- **`KTUAPIError extends BotError`**: API errors with `statusCode`, `url`, `serviceName`.
+- **`SessionNotFoundError extends BotError`**: Session expired, has a default user-friendly message.
+- **`HandledBotError`**: Wraps an error that was already handled by a composer error boundary. Prevent double-notification.
 
-**Worker pattern**: Extend `BaseWorker<TJobData>` and implement `processJob(job)`. Override `initializeWorkerSpecific()` to set up a bot instance, `onStartupComplete()` to schedule recurring jobs.
+**Error handling flow**:
 
-**Error handling**: `KTUAPIError` and `SessionNotFoundError` carry a `userMessage` shown to the user. Other errors are logged and show a generic fallback. `HandledBotError` wraps errors after handling so the global error handler can skip re-notifying the user.
+1. Composer error boundaries catch errors → clean up loading messages from session → notify user → wrap in `HandledBotError` and re-throw.
+2. Global error handler catches everything. If it's a `HandledBotError`, it skips (already notified). Otherwise sends a generic message.
 
-**Imports**: Use `.js` extensions on all local imports (NodeNext module resolution). All modules use ESM (`"type": "module"`).
+When writing new composers, always apply: `.errorBoundary(createComposerErrorBoundary([...sessionKeys]))` on the composer handling callback queries.
 
-**Env config**: Each service/worker has its own env file in `env/dev/` (development) or a single `env/prod/.env` (production). Config is validated and typed in `src/configs/*.ts` files.
+### Session
 
-## Environment Setup
+`BotContext` extends GrammY's `Context` with `HydrateFlavor`, `CommandsFlavor`, `EmojiFlavor`, and `SessionFlavor<SessionData>`. Session stores pagination state and message IDs for cleanup. Always type session keys with `keyof SessionData`.
 
-Minimum required env vars for local dev (see `env/dev/bot.env`):
+## GrammY Best Practices
 
-- `BOT_TOKEN` — Telegram bot token from @BotFather
-- `BOT_FILE_UPLOAD_CHANNEL_ID` — Channel ID for file uploads
+**Before making any changes involving GrammY APIs, plugins, or patterns**, look up the relevant documentation first:
 
-Optional features:
+- Main docs: https://grammy.dev
+- Use `context7_query-docs` with library ID `/grammyjs/grammY` for code examples.
+- Use `deepwiki_ask_question` with repo `grammyjs/grammY` for questions.
 
-- `env/dev/llm.env` — HuggingFace API key for AI-powered announcement relevancy filtering
-- `env/dev/api.env` — UptimeRobot API key for `/apistatus` command
+Common GrammY patterns in this codebase:
 
-All other env files (db, redis, logging, etc.) come prefilled with Docker Compose defaults.
+- **Composers**: Each feature is a `Composer<BotContext>` mounted in `src/bot/bot.ts`. Use `@grammyjs/commands` for command groups.
+- **Plugins**: The project uses `auto-retry`, `commands`, `emoji`, `hydrate`, `parse-mode`, `ratelimiter`, `runner`, `transformer-throttler`. Check `package.json` for versions before adding new plugins.
+- **API calls**: Always use `ctx.api` (the auto-retry-aware instance). For workers (no middleware), use the raw `bot.api` from a worker bot created via `createWorkerBot()`.
+- **Media groups**: Max 10 files per `sendMediaGroup` call. Caption only on the first item of the first batch.
+- **Rate limiting**: Telegram rate limits are undocumented. The broadcasts worker uses `concurrency: 1` to handle them safely. When you hit a `retry_after` error, pause the queue and re-throw for BullMQ retry.
