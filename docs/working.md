@@ -122,7 +122,7 @@ graph TB
 
 ## Core Components
 
-The entire system is orchestrated using [Docker Compose](https://docs.docker.com/compose/), which lets you define and run all these services together. There's a `docker-compose.yaml` for production and `docker-compose.dev.yaml` for development with hot-reload. Each service gets its own container and they all communicate over a Docker network. This makes development super easy - one command starts everything up with proper networking and all dependencies configured.
+The entire system is orchestrated using [Docker Compose](https://docs.docker.com/compose/), which lets you define and run all these services together. Compose files are organized under `docker/compose/` (production, staging, dev) and `docker/swarm/` (Docker Swarm deployment). Each service gets its own container and they all communicate over a Docker network. This makes development super easy - one command starts everything up with proper networking and all dependencies configured.
 
 ### Bot Service 🤖
 

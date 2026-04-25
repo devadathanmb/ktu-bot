@@ -1,12 +1,12 @@
 services:
   ktu-bot-app:
     build:
-      context: ..
+      context: ../..
       dockerfile: docker/Dockerfile
     image: ktu-bot:latest
     container_name: ktu-bot-app
     env_file:
-      - ../env/prod/.env
+      - ../../env/prod/.env
     networks:
       - ktu-bot-network
     ports:
@@ -47,11 +47,11 @@ services:
 
   ktu-bot-db-migrations:
     build:
-      context: ..
+      context: ../..
       dockerfile: docker/Dockerfile
     container_name: ktu-bot-db-migrations
     env_file:
-      - ../env/prod/.env
+      - ../../env/prod/.env
     command:
       [
         "sh",
@@ -64,7 +64,7 @@ services:
     image: ktu-bot:latest
     container_name: announcements-notify-worker
     env_file:
-      - ../env/prod/.env
+      - ../../env/prod/.env
     ports:
       - "3001:3001"
     networks:
@@ -111,7 +111,7 @@ services:
       ktu-bot-db-migrations:
         condition: service_completed_successfully
     env_file:
-      - ../env/prod/.env
+      - ../../env/prod/.env
     ports:
       - "3002:3002"
     networks:
@@ -152,7 +152,7 @@ services:
     image: ktu-bot:latest
     container_name: data-sync-worker
     env_file:
-      - ../env/prod/.env
+      - ../../env/prod/.env
     networks:
       - ktu-bot-network
     depends_on:
@@ -196,8 +196,8 @@ services:
     image: ktu-bot:latest
     container_name: attachment-delivery-worker
     env_file:
-      - ../env/prod/.env
-      - ../env/prod/attachment-delivery-worker.env
+      - ../../env/prod/.env
+      - ../../env/prod/attachment-delivery-worker.env
     networks:
       - ktu-bot-network
     depends_on:
@@ -241,7 +241,7 @@ services:
     image: ktu-bot:latest
     container_name: bull-board-service
     env_file:
-      - ../env/prod/.env
+      - ../../env/prod/.env
     networks:
       - ktu-bot-network
     depends_on:
