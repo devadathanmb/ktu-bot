@@ -45,7 +45,7 @@ There are no tests in this codebase.
 
 ## Architecture
 
-This is a GrammY-based Telegram bot that serves KTU (Kerala Technological University) students. It follows a **microservices architecture** with independent processes:
+This is a GrammY-based Telegram bot that serves KTU (Kerala Technological University) students. It runs as independent processes, each with a specific responsibility:
 
 ### Processes
 
