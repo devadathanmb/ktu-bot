@@ -15,7 +15,7 @@ import {
   INLINE_CALENDARS_SEARCH_BUTTON,
   INLINE_TIMETABLES_SEARCH_BUTTON,
 } from "./keyboards.js";
-import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/index.js";
+import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/queue.js";
 
 interface AttachmentInfo {
   name: string;

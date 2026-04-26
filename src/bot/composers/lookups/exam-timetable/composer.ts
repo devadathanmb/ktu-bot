@@ -20,7 +20,7 @@ import {
 import { createTimetableErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 import { fetchTimetables } from "../../../../api/services/index.js";
-import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";
+import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 
 const MESSAGES = {
   FETCHING_TIMETABLES: [

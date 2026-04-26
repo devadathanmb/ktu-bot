@@ -20,7 +20,7 @@ import {
 } from "../../../../utils/formatting.js";
 import { createCalendarErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
-import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/index.js";
+import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 
 // Common messages used throughout the composer
 const MESSAGES = {
