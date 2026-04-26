@@ -14,9 +14,19 @@ docker compose -f docker/compose/compose.dev.yaml up --build
 
 This starts all services (bot, workers, PostgreSQL, Redis, Bull Board on :3010) with hot-reload.
 
+## Package Manager
+
+- Use `pnpm` for project scripts and dependency operations.
+- Use `pnpm exec <command>` for project-local binaries, for example:
+  ```bash
+  pnpm exec tsc --noEmit
+  ```
+- Use `pnpx <package>` only when you need to run a package temporarily from the registry and it is not already installed in this project.
+- Do not use `npx` in this repository.
+
 ## How It Works
 
-For detailed architecture, data flow, and worker responsibilities, read [`docs/working.md`](docs/working.md). Do **not** repeat that information here — refer to it on demand when you need deeper context.
+For detailed architecture, data flow, and worker responsibilities, read [`docs/working.md`](docs/working.md). Do **not** repeat that information here - refer to it on demand when you need deeper context.
 
 ## TypeScript Conventions
 
@@ -33,18 +43,18 @@ For detailed architecture, data flow, and worker responsibilities, read [`docs/w
 
 `tsconfig.json` enables full strict mode plus:
 
-- `noUncheckedIndexedAccess` — all indexed access includes `undefined`.
-- `exactOptionalPropertyTypes` — `{ key?: string }` forbids passing `undefined`.
-- `noUnusedLocals`, `noUnusedParameters` — unused variables are errors. Prefix with `_` to suppress.
-- `noImplicitOverride` — must use `override` keyword on class overrides.
-- `noImplicitReturns` — all code paths must return.
+- `noUncheckedIndexedAccess` - all indexed access includes `undefined`.
+- `exactOptionalPropertyTypes` - `{ key?: string }` forbids passing `undefined`.
+- `noUnusedLocals`, `noUnusedParameters` - unused variables are errors. Prefix with `_` to suppress.
+- `noImplicitOverride` - must use `override` keyword on class overrides.
+- `noImplicitReturns` - all code paths must return.
 
 ### Code Style
 
 - **ESLint**: Flat config with `typescript-eslint` type-checked rules. `no-floating-promises: error`, `no-unused-vars` (with `_` prefix exception).
-- **`any` is strictly banned**. Never use `any`. Type everything properly — use `unknown` if the type is truly unknown and narrow it with type guards.
+- **`any` is strictly banned**. Never use `any`. Type everything properly - use `unknown` if the type is truly unknown and narrow it with type guards.
 - **Formatting strings**: Use GrammY's `fmt` template literal tag (from `@grammyjs/parse-mode`). Use `joinWithNewlines()` for multi-line messages.
-- **Prettier** is enforced by the pre-commit hook — you don't need to worry about formatting.
+- **Prettier** is enforced by the pre-commit hook - you don't need to worry about formatting.
 - **Naming**: Files/dirs use `kebab-case`. Functions `camelCase`. Classes/interfaces `PascalCase`. Exported configs `PascalCase`.
 - **Barrel exports**: Every directory has an `index.ts` re-exporting all public members.
 
@@ -61,15 +71,15 @@ Use `.superRefine()` for cross-field validation and `.transform()` for derived v
 
 ### Error Handling
 
-- **`BotError`** (base class): carries `userMessage` — the safe-to-show-user message.
+- **`BotError`** (base class): carries `userMessage` - the safe-to-show-user message.
 - **`KTUAPIError extends BotError`**: API errors with `statusCode`, `url`, `serviceName`.
 - **`SessionNotFoundError extends BotError`**: Session expired, has a default user-friendly message.
 - **`HandledBotError`**: Wraps an error that was already handled by a composer error boundary. Prevent double-notification.
 
 **Error handling flow**:
 
-1. Composer error boundaries catch errors → clean up loading messages from session → notify user → wrap in `HandledBotError` and re-throw.
-2. Global error handler catches everything. If it's a `HandledBotError`, it skips (already notified). Otherwise sends a generic message.
+1. Composer error boundaries catch errors, clean up loading messages from session, notify user, wrap in `HandledBotError`, and re-throw.
+2. Global error handler catches everything. If it's a `HandledBotError`, it skips because the user was already notified. Otherwise sends a generic message.
 
 When writing new composers, always apply: `.errorBoundary(createComposerErrorBoundary([...sessionKeys]))` on the composer handling callback queries. **Capture the return value** and register handlers on the protected composer; middleware on the original composer is not protected.
 
@@ -77,8 +87,8 @@ When writing new composers, always apply: `.errorBoundary(createComposerErrorBou
 
 Use **pino** (`import logger from "../../utils/logger.js"`). It has serializers for `err` and `error` keys.
 
-- **Serialize errors with `err`**: `logger.error({ err: error, chatId }, "Failed")` — never destructure manually.
-- **Never log and throw**: log at the boundary, or throw — not both.
+- **Serialize errors with `err`**: `logger.error({ err: error, chatId }, "Failed")` - never destructure manually.
+- **Never log and throw**: log at the boundary, or throw - not both.
 - **Structured data, not template strings**: `logger.info({ jobId, workerName }, "Job completed")` not `` `Job ${job.id}...` ``.
 - **Sentence case, no trailing periods**. Messages describe the event; identifiers live in the log object.
 - **Include correlation context**:
