@@ -10,11 +10,18 @@ import { emoji } from "@grammyjs/emoji";
 import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
 import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
 import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
+import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
 
 export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> {
   constructor() {
     super("attachment-delivery-worker", attachmentDeliveryQueue, {
       concurrency: 2,
+      healthCheck: {
+        maxFailedJobs: AttachmentDeliveryWorkerConfig.MAX_FAILED_JOBS,
+        maxBacklogJobs: AttachmentDeliveryWorkerConfig.MAX_BACKLOG_JOBS,
+        failedJobsLookbackMinutes:
+          AttachmentDeliveryWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
+      },
     });
   }
 

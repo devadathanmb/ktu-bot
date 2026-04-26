@@ -13,6 +13,7 @@ import {
 } from "./queue.js";
 import logger from "../../utils/logger.js";
 import { BaseWorker } from "../base/base-worker.js";
+import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
 
 export class DataSyncWorker extends BaseWorker<SyncJobData> {
   private syncers!: Record<SyncJobType, ResourceSyncer>;
@@ -20,6 +21,12 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
   constructor() {
     super("data-sync-worker", dataSyncQueue, {
       concurrency: 3,
+      healthCheck: {
+        maxFailedJobs: DataSyncWorkerConfig.MAX_FAILED_JOBS,
+        maxBacklogJobs: DataSyncWorkerConfig.MAX_BACKLOG_JOBS,
+        failedJobsLookbackMinutes:
+          DataSyncWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
+      },
     });
   }
 
