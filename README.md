@@ -39,7 +39,7 @@ What started as a quick 50-line script to check my own results eventually became
 ### What You Can Do
 
 - 🔍 **Full-text search** across announcements, academic calendars, and exam timetables — find what you need right from the chat
-- 📂 **Browse historical data** — announcements, exam timetables, academic calendars, all in one place
+- 📂 **Browse historical data** — announcements, exam timetables, academic calendars, and syllabi, all in one place
 - ⚡ **Smart subscriptions** — get only the announcements that matter to you using filters (course, type), delivered the moment they arrive
 - 📊 **Results lookup** _(currently broken, not the bot's fault — [read why](./docs/rewrite.md#results-not-working-))_
 

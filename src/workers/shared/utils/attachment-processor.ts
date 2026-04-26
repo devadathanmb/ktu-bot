@@ -8,18 +8,28 @@ import {
 } from "../../../utils/file-utils.js";
 import {
   fetchAttachment,
+  fetchSyllabusAttachment,
   uploadTempFile,
 } from "../../../api/services/index.js";
 import { BotConfig } from "../../../configs/bot.js";
 import logger from "../../../utils/logger.js";
 
-/**
- * Upload file to file hosting service and return URL
- */
+async function fetchAttachmentBySource(
+  encryptId: string,
+  source: Attachment["source"]
+): Promise<string> {
+  return source === "syllabus"
+    ? fetchSyllabusAttachment(encryptId)
+    : fetchAttachment(encryptId);
+}
+
 export async function uploadFileToFileHosting(
   attachment: Attachment
 ): Promise<string> {
-  const base64FileData = await fetchAttachment(attachment.encryptId);
+  const base64FileData = await fetchAttachmentBySource(
+    attachment.encryptId,
+    attachment.source
+  );
   const tempFilePath = await createTempFileFromBase64(
     base64FileData,
     attachment.name
@@ -31,9 +41,6 @@ export async function uploadFileToFileHosting(
   return fileUrl;
 }
 
-/**
- * Upload file to Telegram and return file ID
- */
 export async function uploadFileToTelegram(
   bot: Bot<BotContext>,
   attachment: Attachment
@@ -42,7 +49,8 @@ export async function uploadFileToTelegram(
   logger.debug({ fileName }, "Uploading file to Telegram");
   const inputFile = await createGrammyInputFileFromAttachment(
     attachment.encryptId,
-    fileName
+    fileName,
+    attachment.source
   );
 
   // Upload to a file storage channel or use getFile to get file_id

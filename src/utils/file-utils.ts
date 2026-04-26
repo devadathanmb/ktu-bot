@@ -2,7 +2,12 @@ import { readFile, writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
 import { InputFile } from "grammy";
-import { fetchAttachment } from "../api/services/index.js";
+import {
+  fetchAttachment,
+  fetchSyllabusAttachment,
+} from "../api/services/index.js";
+import type { AttachmentSource } from "../types/service.types.js";
+import logger from "../utils/logger.js";
 
 /**
  * Convert base64 string to Buffer
@@ -82,13 +87,24 @@ export async function withTempFileCleanup<T>(
  * Fetch attachment data by encryptId and create a Grammy InputFile
  * @param encryptId - The encrypted ID of the attachment
  * @param fileName - The filename to assign to the InputFile
+ * @param source - Attachment source ("default" for regular, "syllabus" for syllabus attachments)
  * @returns Grammy InputFile ready for sending
  */
 export async function createGrammyInputFileFromAttachment(
   encryptId: string,
-  fileName: string
+  fileName: string,
+  source: AttachmentSource = "default"
 ): Promise<InputFile> {
-  const base64Data = await fetchAttachment(encryptId);
+  const base64Data =
+    source === "syllabus"
+      ? await fetchSyllabusAttachment(encryptId)
+      : await fetchAttachment(encryptId);
   const buffer = base64ToBuffer(base64Data);
+
+  logger.info(
+    { fileName, source, fileSizeBytes: buffer.length },
+    "Attachment downloaded"
+  );
+
   return new InputFile(buffer, fileName);
 }

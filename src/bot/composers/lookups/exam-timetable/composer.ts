@@ -298,6 +298,13 @@ protectedComposer.callbackQuery("timetable_next_page", async ctx => {
   await ctx.answerCallbackQuery();
 
   const currentPage = ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE;
+
+  // If current page returned fewer items than PAGE_SIZE, we're on the last page
+  if (ctx.session.timetableTimetables.length < LOOKUP_CONFIG.PAGE_SIZE) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
+  }
+
   ctx.session.timetablePage = currentPage + 1;
 
   await fetchAndDisplayTimetables(ctx);

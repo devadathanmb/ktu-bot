@@ -6,6 +6,17 @@ export const KTU_API_BASE_URI = "https://api.ktu.edu.in";
 // KTU Web Portal API (for announcements, timetables, etc.)
 export const KTU_API_WEBPORTAL_API_URI =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon";
+
+// KTU Service API (for syllabus lookup — different path prefix)
+export const KTU_API_SERVICE_URI =
+  "https://api.ktu.edu.in/ktu-web-portal-api/service/anon";
+export const KTU_API_SERVICE_ENDPOINTS = {
+  GET_PROGRAMS: `${KTU_API_SERVICE_URI}/getprograms`,
+  GET_SCHEMES: `${KTU_API_SERVICE_URI}/scheme`,
+  GET_BRANCHES: `${KTU_API_SERVICE_URI}/branchAccordingToScheme`,
+  GET_SYLLABUS: `${KTU_API_SERVICE_URI}/getSyllabus`,
+  SYLLABUS_ATTACHMENT: `${KTU_API_SERVICE_URI}/getAttachments`,
+} as const;
 export const KTU_API_ENDPOINTS = {
   RECAPTCHA_SCRIPT: `${KTU_API_WEBPORTAL_API_URI}/get?key=v3`,
   ANNOUNCEMENTS: `${KTU_API_WEBPORTAL_API_URI}/announcemnts`,

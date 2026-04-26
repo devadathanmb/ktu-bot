@@ -4,11 +4,27 @@ import { shortenString, joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotContext } from "../../../types/bot.types.js";
 import { SessionNotFoundError } from "../../../errors/index.js";
+import { LOOKUP_CONFIG } from "./constants.js";
 
 export interface PaginatedItem {
   id: number;
   subject: string;
   formattedPublishedDate: string;
+}
+
+/**
+ * Slice a full list to the items for the given page number
+ */
+export function slicePage<T>(items: T[], page: number): T[] {
+  const start = page * LOOKUP_CONFIG.PAGE_SIZE;
+  return items.slice(start, start + LOOKUP_CONFIG.PAGE_SIZE);
+}
+
+/**
+ * Calculate total pages for a given item count
+ */
+export function totalPages(itemCount: number): number {
+  return Math.max(1, Math.ceil(itemCount / LOOKUP_CONFIG.PAGE_SIZE));
 }
 
 export function generatePaginatedKeyboard(
@@ -49,15 +65,19 @@ export function generatePaginatedKeyboard(
 export function generatePaginatedMessageText(
   items: PaginatedItem[],
   title: string,
-  itemType: string
+  itemType: string,
+  subtitleLabel = "Published date"
 ): FormattedString {
   // Create individual formatted strings for each item
   const formattedItems: FormattedString[] = items.map((item, index) => {
     const shortSubject = fmt`${shortenString(item.subject)}`;
     const publishedDate = item.formattedPublishedDate;
     const indexPart = fmt`${index + 1}) ${shortSubject}`;
-    const datePart = fmt`${i}Published date:${i} ${publishedDate}`;
-    return joinWithNewlines([indexPart, datePart]);
+    if (publishedDate) {
+      const datePart = fmt`${i}${subtitleLabel}:${i} ${publishedDate}`;
+      return joinWithNewlines([indexPart, datePart]);
+    }
+    return indexPart;
   });
 
   // Join all items with double newlines
@@ -165,6 +185,7 @@ export function storeCallbackMessageId(
     | "announcementsMessageId"
     | "calendarMessageId"
     | "timetableMessageId"
+    | "syllabusMessageId"
 ): void {
   const messageId = ctx.callbackQuery?.message?.message_id;
   if (messageId !== undefined) {

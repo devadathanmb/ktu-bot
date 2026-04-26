@@ -6,6 +6,10 @@ import {
   Announcement,
   ExamTimeTable,
   AcademicCalendar,
+  Program,
+  Scheme,
+  Branch,
+  SyllabusEntry,
 } from "./service.types.js";
 
 interface SessionData {
@@ -23,6 +27,18 @@ interface SessionData {
   calendarPage: number | null;
   calendarCalendars: AcademicCalendar[];
   calendarMessageId: number | null;
+  // Syllabus lookup session data
+  syllabusProgramPage: number | null;
+  syllabusSchemePage: number | null;
+  syllabusBranchPage: number | null;
+  syllabusSyllabusPage: number | null;
+  syllabusPrograms: Program[];
+  syllabusSchemes: Scheme[];
+  syllabusBranches: Branch[];
+  syllabusEntries: SyllabusEntry[];
+  syllabusSelectedProgramId: number | null;
+  syllabusSelectedSchemeId: number | null;
+  syllabusMessageId: number | null;
 }
 
 type BotContext = HydrateFlavor<Context> &
