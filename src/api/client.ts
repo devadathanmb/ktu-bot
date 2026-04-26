@@ -1,7 +1,11 @@
 import got, { type ExtendOptions } from "got";
 import https from "node:https";
 import { API_CLIENT_OPTIONS } from "./config.js";
-import { addKtuHeaders, addXTokenHeader } from "./hooks/index.js";
+import {
+  addKtuHeaders,
+  addXTokenHeader,
+  cleanGotError,
+} from "./hooks/index.js";
 
 // Create a custom HTTPS agent that ignores SSL certificate errors
 const agent = new https.Agent({
@@ -15,6 +19,7 @@ const baseConfig: ExtendOptions = {
   agent: { https: agent },
   hooks: {
     beforeRequest: [addKtuHeaders, addXTokenHeader],
+    beforeError: [cleanGotError],
     afterResponse: [],
   },
 };
