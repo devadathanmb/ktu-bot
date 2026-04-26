@@ -8,11 +8,18 @@ import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
 import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
 import { AnnouncementSubscriptionRepository } from "../../db/repositories/announcement-subscription-repository.js";
 import { broadcastsQueue } from "./queue.js";
+import { BroadcastsWorkerConfig } from "../../configs/broadcasts-worker.js";
 
 export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   constructor() {
     super("broadcasts-worker", broadcastsQueue, {
       concurrency: 1,
+      healthCheck: {
+        maxFailedJobs: BroadcastsWorkerConfig.MAX_FAILED_JOBS,
+        maxBacklogJobs: BroadcastsWorkerConfig.MAX_BACKLOG_JOBS,
+        failedJobsLookbackMinutes:
+          BroadcastsWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
+      },
     });
   }
 

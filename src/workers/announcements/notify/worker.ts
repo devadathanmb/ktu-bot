@@ -35,6 +35,12 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
   constructor() {
     super("announcements-notify-worker", announcementsNotifyQueue, {
       concurrency: 1,
+      healthCheck: {
+        maxFailedJobs: AnnouncementsNotifyWorkerConfig.MAX_FAILED_JOBS,
+        maxBacklogJobs: AnnouncementsNotifyWorkerConfig.MAX_BACKLOG_JOBS,
+        failedJobsLookbackMinutes:
+          AnnouncementsNotifyWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
+      },
     });
   }
 

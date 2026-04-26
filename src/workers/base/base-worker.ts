@@ -7,6 +7,10 @@ import * as schema from "../../db/schema/index.js";
 import { Bot } from "grammy";
 import { BotContext } from "../../types/bot.types.js";
 import logger from "../../utils/logger.js";
+import {
+  checkQueueHealth,
+  type QueueHealthCheckOptions,
+} from "../shared/queue-health.js";
 
 /**
  * Base worker class that provides common lifecycle management for all BullMQ workers.
@@ -24,6 +28,7 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     protected readonly config?: {
       concurrency?: number;
       limiter?: { max: number; duration: number };
+      healthCheck?: QueueHealthCheckOptions;
     }
   ) {}
 
@@ -116,8 +121,22 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
             .catch(() => false)
         : false;
 
-      // Worker is healthy if it's running AND Redis is connected
-      return isRunning && redisConnected;
+      if (!redisConnected) {
+        return false;
+      }
+
+      // Check queue health if thresholds are configured
+      if (this.config?.healthCheck) {
+        const queueHealthy = await checkQueueHealth(
+          this.queue,
+          this.config.healthCheck
+        );
+        if (!queueHealthy) {
+          return false;
+        }
+      }
+
+      return true;
     } catch (error) {
       logger.warn({ err: error as Error }, "Health check failed");
       return false;
