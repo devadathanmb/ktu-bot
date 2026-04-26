@@ -1,6 +1,5 @@
 import { z } from "zod";
 import got from "got";
-import FormData from "form-data";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import { LITTERBOX_API } from "../../../constants/api.js";
 import type { TempFileUploadParams } from "../../../types/service.types.js";
@@ -21,13 +20,11 @@ async function _uploadTempFile(params: TempFileUploadParams): Promise<string> {
   // Read file as buffer
   const fileBuffer = await readFileAsBuffer(filePath);
 
-  // Create FormData instance
+  // Create native FormData instance (got v15 requires native Web API FormData)
   const form = new FormData();
   form.append("reqtype", "fileupload");
   form.append("time", "24h"); // Files expire after 24 hours
-  form.append("fileToUpload", fileBuffer, {
-    filename: fileName || "file",
-  });
+  form.append("fileToUpload", new Blob([fileBuffer]), fileName || "file");
 
   const response = await got.post(LITTERBOX_API.UPLOAD_ENDPOINT, {
     body: form,

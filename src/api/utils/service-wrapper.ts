@@ -15,9 +15,7 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
       // Handle HTTP errors from got
       if (error instanceof HTTPError) {
         const statusCode = error.response.statusCode;
-        const url = (
-          error.response.requestUrl || error.options.url
-        )?.toString();
+        const url = error.response.requestUrl?.toString();
 
         logger.error(
           {
@@ -81,7 +79,7 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
 
       // Handle request errors from got (network issues, timeouts, etc.)
       if (error instanceof RequestError) {
-        const url = error.options?.url?.toString();
+        const url = error.request?.requestUrl?.toString();
 
         logger.error(
           {
@@ -126,7 +124,7 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
       const errorStatusCode = (error as any)?.response?.statusCode;
       const errorUrl =
         (error as any)?.response?.requestUrl?.toString() ||
-        (error as any)?.options?.url?.toString();
+        (error as any)?.request?.requestUrl?.toString();
 
       logger.error(
         {
