@@ -3,7 +3,7 @@ import { z } from "zod";
 const broadcastsWorkerConfigSchema = z.object({
   HEALTHCHECK_PORT: z.coerce.number().positive(),
   MAX_FAILED_JOBS: z.coerce.number().positive().default(30),
-  MAX_BACKLOG_JOBS: z.coerce.number().positive().default(500),
+  MAX_BACKLOG_JOBS: z.coerce.number().positive().default(2000),
   FAILED_JOBS_WINDOW_MINUTES: z.coerce.number().positive().default(15),
 });
 
