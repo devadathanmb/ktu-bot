@@ -22,6 +22,7 @@ export const CONTEXT_EMOJI_MAP: Record<string, string> = {
   "timetable": emoji("books"),
   "announcement": emoji("paperclip"),
   "inline query result": emoji("paperclip"),
+  "syllabus": emoji("scroll"),
 } as const;
 
 /**

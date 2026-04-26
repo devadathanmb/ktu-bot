@@ -5,6 +5,7 @@ import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { announcementsCommands } from "../../lookups/announcements/composer.js";
 import { calendarCommands } from "../../lookups/academic-calendar/composer.js";
 import { timetableCommands } from "../../lookups/exam-timetable/composer.js";
+import { syllabusCommands } from "../../lookups/syllabus/composer.js";
 import { announcementSubscriptionsCommands } from "../../announcement-subscriptions/composer.js";
 import { coreCommandsGroup } from "../composer.js";
 import { emoji } from "@grammyjs/emoji";
@@ -21,6 +22,7 @@ ${commands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;
       ...announcementsCommands.commands,
       ...calendarCommands.commands,
       ...timetableCommands.commands,
+      ...syllabusCommands.commands,
     ];
     const lookupCommands = fmt`${emoji("magnifying_glass_tilted_left")} ${b}Lookup Commands${b}
 ${allLookupCommands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;

@@ -292,6 +292,13 @@ protectedComposer.callbackQuery("announcement_next_page", async ctx => {
 
   const currentPage =
     ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
+
+  // If current page returned fewer items than PAGE_SIZE, we're on the last page
+  if (ctx.session.announcementsAnnouncements.length < LOOKUP_CONFIG.PAGE_SIZE) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
+  }
+
   ctx.session.announcementsPage = currentPage + 1;
 
   await fetchAndDisplayAnnouncements(ctx);

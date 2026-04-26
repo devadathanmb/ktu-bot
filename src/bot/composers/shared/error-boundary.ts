@@ -152,3 +152,9 @@ export const createAnnouncementSubscriptionErrorBoundary = (
     ["announcementSubscriptionMessageId"],
     fallbackErrorMessage
   );
+
+/**
+ * Convenience function to create error boundary specifically for syllabus composers
+ */
+export const createSyllabusErrorBoundary = (fallbackErrorMessage?: string) =>
+  createComposerErrorBoundary(["syllabusMessageId"], fallbackErrorMessage);

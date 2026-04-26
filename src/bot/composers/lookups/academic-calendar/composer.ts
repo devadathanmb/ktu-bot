@@ -285,6 +285,13 @@ protectedComposer.callbackQuery("calendar_next_page", async ctx => {
   await ctx.answerCallbackQuery();
 
   const currentPage = ctx.session.calendarPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
+
+  // If current page returned fewer items than PAGE_SIZE, we're on the last page
+  if (ctx.session.calendarCalendars.length < LOOKUP_CONFIG.PAGE_SIZE) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
+  }
+
   ctx.session.calendarPage = currentPage + 1;
 
   await fetchAndDisplayCalendars(ctx);

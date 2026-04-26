@@ -55,6 +55,16 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     const { chatId, attachments, statusMessageId, replyToMessageId, context } =
       job.data;
 
+    logger.info(
+      {
+        jobId: job.id,
+        chatId,
+        context,
+        attachmentCount: attachments.length,
+      },
+      "Processing attachment delivery job"
+    );
+
     const downloadedFiles: Array<{
       inputFile: InputFile;
       attachment: Attachment;
@@ -64,7 +74,8 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       for (const attachment of attachments) {
         const inputFile = await createGrammyInputFileFromAttachment(
           attachment.encryptId,
-          attachment.name
+          attachment.name,
+          attachment.source
         );
         downloadedFiles.push({ inputFile, attachment });
       }
@@ -104,6 +115,16 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       if (job.data.sendViewAnotherMessage) {
         await this.sendViewAnotherMessage(job.data.chatId, job.data.context);
       }
+
+      logger.info(
+        {
+          jobId: job.id,
+          chatId,
+          context,
+          attachmentCount: attachments.length,
+        },
+        "Attachment delivery job completed"
+      );
     } catch (error) {
       if (statusMessageId !== undefined) {
         await this.updateErrorMessage(chatId, statusMessageId);

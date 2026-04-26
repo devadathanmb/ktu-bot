@@ -21,6 +21,7 @@ import { unhandled } from "./composers/unhandled/composer.js";
 import { announcementsLookup } from "./composers/lookups/announcements/composer.js";
 import { timetableLookup } from "./composers/lookups/exam-timetable/composer.js";
 import { calendarLookup } from "./composers/lookups/academic-calendar/composer.js";
+import { syllabusLookup } from "./composers/lookups/syllabus/composer.js";
 import { inlineQuery } from "./composers/inline-query/composer.js";
 import { sequentialize } from "@grammyjs/runner";
 import { chatMemeberHandler } from "./handlers/chat-member.js";
@@ -110,6 +111,7 @@ function configureBot(bot: Bot<BotContext>): void {
   bot.use(announcementsLookup);
   bot.use(timetableLookup);
   bot.use(calendarLookup);
+  bot.use(syllabusLookup);
 
   // Command group middleware
   bot.use(botCommands);

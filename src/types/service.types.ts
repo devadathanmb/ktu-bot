@@ -1,6 +1,9 @@
+export type AttachmentSource = "default" | "syllabus";
+
 export interface Attachment {
   name: string;
   encryptId: string;
+  source?: AttachmentSource;
 }
 
 export interface Announcement {
@@ -66,4 +69,33 @@ export interface ApiStatusResponse {
 export interface TempFileUploadParams {
   filePath: string;
   fileName?: string;
+}
+
+// Syllabus Lookup Service Types
+export interface Program {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+export interface Scheme {
+  id: number;
+  scheme: string;
+  academicYear: string;
+  programTypeName: string;
+}
+
+export interface Branch {
+  id: number; // curriculumId used in getSyllabus
+  branchName: string;
+  schemeName: string;
+  programTypeName: string;
+  academicYear: string;
+}
+
+export interface SyllabusEntry {
+  attachmentId: number | null;
+  encryptAttachmentId: string | null;
+  attachmentName: string | null;
+  description: string | null;
 }
