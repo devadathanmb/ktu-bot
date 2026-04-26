@@ -30,11 +30,11 @@ export const UPTIME_ROBOT_API = {
   STATS_PAGE: "https://stats.uptimerobot.com/Drq58GdQoC",
 } as const;
 
-// Litterbox (Catbox) API for temporary file uploads (used for attachments broadcasting)
-const LITTERBOX_BASE_URI = "https://litterbox.catbox.moe";
-export const LITTERBOX_API = {
-  BASE_URI: LITTERBOX_BASE_URI,
-  UPLOAD_ENDPOINT: `${LITTERBOX_BASE_URI}/resources/internals/api.php`,
+// Catbox API for temporary file uploads (used for attachments broadcasting)
+const CATBOX_BASE_URI = "https://catbox.moe";
+export const CATBOX_API = {
+  BASE_URI: CATBOX_BASE_URI,
+  UPLOAD_ENDPOINT: `${CATBOX_BASE_URI}/user/api.php`,
 } as const;
 
 // Better Uptime API for uptime monitoring

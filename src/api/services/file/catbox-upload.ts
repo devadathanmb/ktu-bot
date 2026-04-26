@@ -1,7 +1,7 @@
 import { z } from "zod";
 import got from "got";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
-import { LITTERBOX_API } from "../../../constants/api.js";
+import { CATBOX_API } from "../../../constants/api.js";
 import type { TempFileUploadParams } from "../../../types/service.types.js";
 import {
   readFileAsBuffer,
@@ -9,9 +9,9 @@ import {
   withTempFileCleanup,
 } from "../../../utils/file-utils.js";
 
-// Zod schema for Litterbox API response validation
-const LitterboxResponseSchema = z
-  .url("Invalid URL returned from Litterbox API")
+// Zod schema for Catbox API response validation
+const CatboxResponseSchema = z
+  .url("Invalid URL returned from Catbox API")
   .startsWith("https://", "Response must be a secure HTTPS URL");
 
 async function _uploadTempFile(params: TempFileUploadParams): Promise<string> {
@@ -23,17 +23,16 @@ async function _uploadTempFile(params: TempFileUploadParams): Promise<string> {
   // Create native FormData instance (got v15 requires native Web API FormData)
   const form = new FormData();
   form.append("reqtype", "fileupload");
-  form.append("time", "24h"); // Files expire after 24 hours
   form.append("fileToUpload", new Blob([fileBuffer]), fileName || "file");
 
-  const response = await got.post(LITTERBOX_API.UPLOAD_ENDPOINT, {
+  const response = await got.post(CATBOX_API.UPLOAD_ENDPOINT, {
     body: form,
-    responseType: "text", // Litterbox returns plain text URI
+    responseType: "text", // Catbox returns plain text URI
   });
 
   // Validate and return the URI using Zod
   const uri = response.body.trim();
-  return LitterboxResponseSchema.parse(uri);
+  return CatboxResponseSchema.parse(uri);
 }
 
 // Helper function to upload base64 data
