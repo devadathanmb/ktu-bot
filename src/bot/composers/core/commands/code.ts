@@ -9,7 +9,7 @@ export const codeCommand = new Command<BotContext>(
   "code",
   `${emoji("laptop")} View the bot source code and license information`,
   async ctx => {
-    const license = fmt`This bot is fully open source under GPL 3.0 ${emoji("high_voltage")}`;
+    const license = fmt`This bot is fully open source under AGPL 3.0 ${emoji("high_voltage")}`;
     const repository = fmt`Check out the source code on GitHub`;
     const starRequest = fmt`${emoji("star")} Liked the bot? Consider giving it a star!`;
     const issues = fmt`${emoji("bug")} Found a bug or have a feature request? Open an issue on GitHub!`;
