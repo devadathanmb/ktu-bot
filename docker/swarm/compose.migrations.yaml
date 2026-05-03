@@ -46,3 +46,4 @@ services:
           cpus: "0.20"
       labels:
         - "com.ktu-bot.role=migrations"
+        - "autoheal=true"

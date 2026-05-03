@@ -58,6 +58,7 @@ services:
           cpus: "0.35"
       labels:
         - "com.ktu-bot.role=bot"
+        - "autoheal=true"
     healthcheck:
       test:
         - CMD
@@ -119,6 +120,7 @@ services:
           cpus: "0.10"
       labels:
         - "com.ktu-bot.role=worker"
+        - "autoheal=true"
     healthcheck:
       test:
         - CMD
@@ -180,6 +182,7 @@ services:
           cpus: "0.10"
       labels:
         - "com.ktu-bot.role=worker"
+        - "autoheal=true"
     healthcheck:
       test:
         - CMD
@@ -241,6 +244,7 @@ services:
           cpus: "0.05"
       labels:
         - "com.ktu-bot.role=worker"
+        - "autoheal=true"
     healthcheck:
       test:
         - CMD
@@ -303,6 +307,7 @@ services:
           cpus: "0.10"
       labels:
         - "com.ktu-bot.role=worker"
+        - "autoheal=true"
     healthcheck:
       test:
         - CMD
@@ -364,6 +369,7 @@ services:
           cpus: "0.05"
       labels:
         - "com.ktu-bot.role=dashboard"
+        - "autoheal=true"
     healthcheck:
       test:
         - CMD

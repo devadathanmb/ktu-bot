@@ -9,6 +9,8 @@ services:
       dockerfile: docker/Dockerfile
     image: ktu-bot:latest
     container_name: ktu-bot-app
+    labels:
+      autoheal: "true"
     env_file:
       - ../../env/prod/.env
     networks:
@@ -54,6 +56,8 @@ services:
       context: ../..
       dockerfile: docker/Dockerfile
     container_name: ktu-bot-db-migrations
+    labels:
+      autoheal: "true"
     env_file:
       - ../../env/prod/.env
     command:
@@ -67,6 +71,8 @@ services:
   announcements-notify-worker:
     image: ktu-bot:latest
     container_name: announcements-notify-worker
+    labels:
+      autoheal: "true"
     env_file:
       - ../../env/prod/.env
     ports:
@@ -111,6 +117,8 @@ services:
   broadcasts-worker:
     image: ktu-bot:latest
     container_name: broadcasts-worker
+    labels:
+      autoheal: "true"
     depends_on:
       ktu-bot-db-migrations:
         condition: service_completed_successfully
@@ -155,6 +163,8 @@ services:
   data-sync-worker:
     image: ktu-bot:latest
     container_name: data-sync-worker
+    labels:
+      autoheal: "true"
     env_file:
       - ../../env/prod/.env
     networks:
@@ -199,6 +209,8 @@ services:
   attachment-delivery-worker:
     image: ktu-bot:latest
     container_name: attachment-delivery-worker
+    labels:
+      autoheal: "true"
     env_file:
       - ../../env/prod/.env
       - ../../env/prod/attachment-delivery-worker.env
@@ -244,6 +256,8 @@ services:
   bull-board-service:
     image: ktu-bot:latest
     container_name: bull-board-service
+    labels:
+      autoheal: "true"
     env_file:
       - ../../env/prod/.env
     networks:

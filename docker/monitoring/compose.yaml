@@ -2,6 +2,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    labels:
+      autoheal: "true"
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
