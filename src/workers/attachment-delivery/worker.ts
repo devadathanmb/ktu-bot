@@ -45,6 +45,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
         );
       } else {
         TelegramErrorUtils.logUnhandledGenericError(job.id, error as Error);
+        throw error;
       }
     }
   }
@@ -190,14 +191,10 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
         `${emoji("crying_cat")} Oops! Something went wrong. Please try again.`
       );
     } catch (error) {
-      if (error instanceof GrammyError && error.error_code === 400) {
-        logger.debug(
-          { chatId, messageId },
-          "Status message deleted by user, skipping error update"
-        );
-      } else {
-        throw error;
-      }
+      logger.warn(
+        { chatId, messageId, err: error as Error },
+        "Failed to update status message with error text"
+      );
     }
   }
 }
