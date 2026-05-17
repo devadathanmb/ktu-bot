@@ -294,7 +294,7 @@ announcementSubscriptionsCommands
   .add(announcementsShowFilterCommand)
   .add(announcementsChangeFilterCommand);
 
-announcementSubscriptions.use(announcementSubscriptionsCommands);
+protectedComposer.use(announcementSubscriptionsCommands);
 
 export {
   announcementSubscriptionsCommands,

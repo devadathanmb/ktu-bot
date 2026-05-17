@@ -224,7 +224,6 @@ protectedComposer.callbackQuery("calendar_view_another_true", async ctx => {
 
 protectedComposer.callbackQuery("calendar_view_another_false", async ctx => {
   await ctx.answerCallbackQuery();
-  await ctx.answerCallbackQuery();
   await ctx.editMessageText(
     `Academic calendar lookup ended. Use ${formatCommand(calendarLookupCommand)} to start again.`
   );

@@ -116,44 +116,6 @@ export class AcademicCalendarsRepository {
   }
 
   /**
-   * Check if academic calendar exists
-   */
-  async exists(id: number): Promise<boolean> {
-    const result = await this.db
-      .select({ id: academicCalendars.id })
-      .from(academicCalendars)
-      .where(eq(academicCalendars.id, id))
-      .limit(1);
-
-    return result.length > 0;
-  }
-
-  /**
-   * Insert a single academic calendar (upsert)
-   */
-  async upsert(calendar: AcademicCalendarInsert) {
-    return this.db
-      .insert(academicCalendars)
-      .values({
-        id: calendar.id,
-        publishedAt: calendar.publishedAt,
-        title: calendar.title,
-        attachment: calendar.attachment,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: academicCalendars.id,
-        set: {
-          publishedAt: calendar.publishedAt,
-          title: calendar.title,
-          attachment: calendar.attachment,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-  }
-
-  /**
    * Bulk insert/upsert academic calendars
    */
   async bulkUpsert(calendarList: AcademicCalendarInsert[]) {

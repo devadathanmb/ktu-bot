@@ -16,18 +16,11 @@ const tsvector = customType<{ data: string }>({
   },
 });
 
-/**
- * Academic calendars table for storing KTU academic calendars with full-text search capabilities
- * This table stores academic calendars fetched from the KTU API and enables text-based search
- * functionality that is not provided by the external API.
- */
 export const academicCalendars = pgTable(
   "academic_calendars",
   {
-    // Primary key - matches the calendar ID from KTU API
     id: integer("id").primaryKey().notNull(),
 
-    // Required fields from API
     publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
     title: text("title").notNull(),
 
@@ -40,8 +33,6 @@ export const academicCalendars = pgTable(
       }>()
       .notNull(),
 
-    // Generated tsvector column for full-text search on title
-    // Uses 'english' text search configuration for better stemming and stop words
     searchVector: tsvector("search_vector")
       .notNull()
       .generatedAlwaysAs(
@@ -49,7 +40,6 @@ export const academicCalendars = pgTable(
           sql`to_tsvector('english', coalesce(${academicCalendars.title}, ''))`
       ),
 
-    // Metadata columns for tracking when records are created/updated
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

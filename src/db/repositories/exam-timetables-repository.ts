@@ -116,44 +116,6 @@ export class ExamTimetablesRepository {
   }
 
   /**
-   * Check if exam timetable exists
-   */
-  async exists(id: number): Promise<boolean> {
-    const result = await this.db
-      .select({ id: examTimetables.id })
-      .from(examTimetables)
-      .where(eq(examTimetables.id, id))
-      .limit(1);
-
-    return result.length > 0;
-  }
-
-  /**
-   * Insert a single exam timetable (upsert)
-   */
-  async upsert(timetable: ExamTimetableInsert) {
-    return this.db
-      .insert(examTimetables)
-      .values({
-        id: timetable.id,
-        publishedAt: timetable.publishedAt,
-        title: timetable.title,
-        attachment: timetable.attachment,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: examTimetables.id,
-        set: {
-          publishedAt: timetable.publishedAt,
-          title: timetable.title,
-          attachment: timetable.attachment,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-  }
-
-  /**
    * Bulk insert/upsert exam timetables
    */
   async bulkUpsert(timetableList: ExamTimetableInsert[]) {

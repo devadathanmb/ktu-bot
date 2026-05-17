@@ -207,8 +207,6 @@ const timetableLookupCommand = new Command<BotContext>(
         entities: messageText.entities,
       }
     );
-
-    ctx.session.timetableMessageId = loadingMessage.message_id;
   }
 );
 

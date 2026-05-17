@@ -8,7 +8,6 @@ import {
 import { AnnouncementFilter } from "../../constants/courses.js";
 import { chats } from "./chats.js";
 
-// Create an enum type in PostgreSQL for announcement filters
 const ANNOUNCEMENT_FILTER_VALUES = Object.values(AnnouncementFilter) as [
   string,
   ...string[],

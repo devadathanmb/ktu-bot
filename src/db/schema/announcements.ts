@@ -16,18 +16,11 @@ const tsvector = customType<{ data: string }>({
   },
 });
 
-/**
- * Announcements table for storing KTU announcements with full-text search capabilities
- * This table stores announcements fetched from the KTU API and enables text-based search
- * functionality that is not provided by the external API.
- */
 export const announcements = pgTable(
   "announcements",
   {
-    // Primary key - matches the announcement ID from KTU API
     id: integer("id").primaryKey().notNull(),
 
-    // Required fields from API
     publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
     subject: text("subject").notNull(),
     message: text("message").notNull(),
@@ -43,8 +36,6 @@ export const announcements = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
 
-    // Generated tsvector column combining subject and message for full-text search
-    // Uses 'english' text search configuration for better stemming and stop words
     searchVector: tsvector("search_vector")
       .notNull()
       .generatedAlwaysAs(
@@ -54,7 +45,6 @@ export const announcements = pgTable(
         )`
       ),
 
-    // Metadata columns for tracking when records are created/updated
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

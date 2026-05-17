@@ -1,5 +1,5 @@
 // To add a new sticker, find the sticker file ID
-// This can be done by sending a sticker to the bot and logging the message object or using a uitlity bot
+// This can be done by sending a sticker to the bot and logging the message object or using a utility bot
 // [IMPORTANT]: Don't get offended
 const STICKERS = [
   "CAACAgUAAxkBAAIjEmWkDMdaYjUf4T6uEmKZqP3_XVt9AALEAwACGvW5VeOu79-faKRbNAQ",
