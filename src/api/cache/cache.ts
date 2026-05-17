@@ -2,13 +2,17 @@ import { LRUCache } from "lru-cache";
 import type { CacheConfig, CachedEntry } from "./types.js";
 import logger from "../../utils/logger.js";
 
+// Thin wrapper around lru-cache that centralises cache operations
+// and emits structured debug logs for hit/miss diagnostics.
 export class APICache {
   private cache: LRUCache<string, CachedEntry>;
 
   constructor(config: CacheConfig) {
     this.cache = new LRUCache<string, CachedEntry>({
-      max: config.max,
-      ttl: config.defaultTtl,
+      max: config.maxEntries,
+      ttl: config.defaultTTL,
+      // Automatically purge expired entries so the cache doesn't
+      // accumulate dead weight between requests.
       ttlAutopurge: true,
     });
   }
@@ -28,6 +32,8 @@ export class APICache {
     logger.debug({ key, ttl }, "Cached response");
   }
 
+  // Used when a non-200 response arrives — we invalidate so the next
+  // request doesn't get a stale 200 from a different key collision.
   delete(key: string): void {
     this.cache.delete(key);
     logger.debug({ key }, "Cache invalidated");

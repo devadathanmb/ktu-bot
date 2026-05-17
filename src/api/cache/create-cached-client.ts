@@ -6,6 +6,10 @@ import { createCacheKey, getTtlForUrl, isPathExcluded } from "./keys.js";
 import type { CacheConfig, CachedEntry } from "./types.js";
 import logger from "../../utils/logger.js";
 
+// Wraps a got instance with beforeRequest/afterResponse hooks that
+// intercept the HTTP lifecycle. On beforeRequest we check the cache;
+// on afterResponse we store successful responses. This replaces got's
+// built-in cache because KTU APIs don't emit standard Cache-Control headers.
 export function createCachedApiClient(
   baseApiClient: Got,
   config: CacheConfig
@@ -14,11 +18,14 @@ export function createCachedApiClient(
 
   return baseApiClient.extend({
     hooks: {
+      // Return a synthetic Response from cache to short-circuit the request.
+      // Returning undefined lets the request proceed normally.
       beforeRequest: [
         options => {
           const url = options.url?.toString();
           if (!url) return undefined;
 
+          // Attachment endpoints and anti-bot checks are never cached.
           if (isPathExcluded(url, config.excludePaths)) return undefined;
 
           const key = createCacheKey(options.method, url, options.body);
@@ -29,6 +36,8 @@ export function createCachedApiClient(
           return createSyntheticResponse(url, cached);
         },
       ],
+      // Cache 200 responses; invalidate on any other status to prevent
+      // a future request from accidentally reusing a stale success.
       afterResponse: [
         response => {
           const url = response.request.options.url?.toString();
@@ -45,8 +54,8 @@ export function createCachedApiClient(
           if (response.statusCode === 200) {
             const ttl = getTtlForUrl(
               url,
-              config.endpointTtls,
-              config.defaultTtl
+              config.endpointTTLs,
+              config.defaultTTL
             );
             cache.set(
               key,
@@ -68,7 +77,10 @@ export function createCachedApiClient(
   });
 }
 
+// Reconstructs a got-compatible Response from a cached entry so
+// beforeRequest can short-circuit without hitting the network.
 function createSyntheticResponse(url: string, cached: CachedEntry): Response {
+  // Flatten array header values — got expects comma-joined strings.
   const headers = Object.fromEntries(
     Object.entries(cached.headers).map(([key, value]) => [
       key,
