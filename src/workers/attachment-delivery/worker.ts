@@ -2,12 +2,16 @@ import { Job } from "bullmq";
 import { GrammyError, InputMediaBuilder, InputFile } from "grammy";
 import { AttachmentDeliveryJob, attachmentDeliveryQueue } from "./queue.js";
 import { Attachment } from "../../types/service.types.js";
-import { createGrammyInputFileFromAttachment } from "../../utils/file-utils.js";
+import {
+  withDownloadedAttachment,
+  TELEGRAM_MAX_FILE_SIZE_BYTES,
+} from "../../utils/file-utils.js";
 import { BaseWorker } from "../base/base-worker.js";
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
 import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
+import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
 import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
 import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
@@ -57,56 +61,51 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       job.data;
 
     logger.info(
-      {
-        jobId: job.id,
-        chatId,
-        context,
-        attachmentCount: attachments.length,
-      },
+      { jobId: job.id, chatId, context, attachmentCount: attachments.length },
       "Processing attachment delivery job"
     );
 
-    const downloadedFiles: Array<{
-      inputFile: InputFile;
-      attachment: Attachment;
-    }> = [];
-
     try {
       for (const attachment of attachments) {
-        const inputFile = await createGrammyInputFileFromAttachment(
+        await withDownloadedAttachment(
           attachment.encryptId,
           attachment.name,
-          attachment.source
-        );
-        downloadedFiles.push({ inputFile, attachment });
-      }
-
-      const caption = this.buildCaption(attachments, context);
-
-      const batchSize = 10;
-      for (let i = 0; i < downloadedFiles.length; i += batchSize) {
-        const batch = downloadedFiles.slice(i, i + batchSize);
-        const firstInBatch = i === 0;
-
-        const mediaGroup = batch.map((item, index) => {
-          const params: Record<string, unknown> = {};
-          if (firstInBatch && index === 0 && caption) {
-            params.caption = caption;
-          }
-
-          return InputMediaBuilder.document(item.inputFile, params);
-        });
-
-        const replyParams = replyToMessageId
-          ? {
-              reply_parameters: {
-                message_id: replyToMessageId,
-                allow_sending_without_reply: true,
-              },
+          attachment.source ?? "default",
+          async downloaded => {
+            if (downloaded.fileSizeBytes > TELEGRAM_MAX_FILE_SIZE_BYTES) {
+              await sendAsLink(this.getBot(), chatId, downloaded, {
+                contextLabel: getContextEmoji(context),
+                replyToMessageId,
+              });
+              return;
             }
-          : undefined;
 
-        await this.getBot().api.sendMediaGroup(chatId, mediaGroup, replyParams);
+            const caption = this.buildCaption(attachments, context);
+            const params: Record<string, unknown> = {};
+            if (caption) params.caption = caption;
+
+            const inputFile = new InputFile(
+              downloaded.tempFilePath,
+              downloaded.fileName
+            );
+            const mediaGroup = [InputMediaBuilder.document(inputFile, params)];
+
+            const replyParams = replyToMessageId
+              ? {
+                  reply_parameters: {
+                    message_id: replyToMessageId,
+                    allow_sending_without_reply: true,
+                  },
+                }
+              : undefined;
+
+            await this.getBot().api.sendMediaGroup(
+              chatId,
+              mediaGroup,
+              replyParams
+            );
+          }
+        );
       }
 
       if (statusMessageId !== undefined) {
@@ -114,16 +113,11 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       }
 
       if (job.data.sendViewAnotherMessage) {
-        await this.sendViewAnotherMessage(job.data.chatId, job.data.context);
+        await this.sendViewAnotherMessage(chatId, context);
       }
 
       logger.info(
-        {
-          jobId: job.id,
-          chatId,
-          context,
-          attachmentCount: attachments.length,
-        },
+        { jobId: job.id, chatId, context, attachmentCount: attachments.length },
         "Attachment delivery job completed"
       );
     } catch (error) {
@@ -136,14 +130,11 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
 
   private buildCaption(attachments: Attachment[], context: string): string {
     if (attachments.length === 0) return "";
-
     const contextEmoji = getContextEmoji(context);
-    const lines = [
+    return [
       `${contextEmoji} Attachments:`,
       ...attachments.map(a => a.name),
-    ];
-
-    return lines.join("\n");
+    ].join("\n");
   }
 
   private async sendViewAnotherMessage(
@@ -152,13 +143,11 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
   ): Promise<void> {
     const keyboard = createViewAnotherKeyboard(context);
     const contextEmoji = getContextEmoji(context);
-
     await this.getBot().api.sendMessage(
       chatId,
       `${contextEmoji} View another ${context}?`,
       { reply_markup: keyboard }
     );
-    logger.debug({ chatId, context }, "Sent view another message");
   }
 
   private async deleteStatusMessage(
@@ -167,13 +156,9 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
   ): Promise<void> {
     try {
       await this.getBot().api.deleteMessage(chatId, messageId);
-      logger.debug({ chatId, messageId }, "Deleted status message");
     } catch (error) {
       if (error instanceof GrammyError && error.error_code === 400) {
-        logger.debug(
-          { chatId, messageId },
-          "Status message already deleted, ignoring"
-        );
+        // Already deleted
       } else {
         throw error;
       }
@@ -193,7 +178,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     } catch (error) {
       logger.warn(
         { chatId, messageId, err: error as Error },
-        "Failed to update status message with error text"
+        "Failed to update status message"
       );
     }
   }
