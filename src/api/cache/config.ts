@@ -1,9 +1,9 @@
 import type { CacheConfig } from "./types.js";
 
 export const CACHE_CONFIG: CacheConfig = {
-  max: 500,
-  defaultTtl: 5 * 60 * 1000, // 5 min
-  endpointTtls: {
+  maxEntries: 500, // Maximum number of cached responses before LRU eviction
+  defaultTTL: 5 * 60 * 1000, // 5 min
+  endpointTTLs: {
     "/getprograms": 60 * 60 * 1000, // 1 hour
     "/scheme": 60 * 60 * 1000,
     "/branchAccordingToScheme": 60 * 60 * 1000,
