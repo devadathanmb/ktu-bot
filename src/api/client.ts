@@ -22,6 +22,7 @@ const baseConfig: ExtendOptions = {
     beforeError: [cleanGotError],
     afterResponse: [],
   },
+  responseType: "json" as const,
 };
 
 const baseApiClient = got.extend(baseConfig);

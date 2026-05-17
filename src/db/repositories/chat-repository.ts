@@ -1,10 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "../connection.js";
 import { chats } from "../schema/chats.js";
-import type { TransactionType } from "../transactions.js";
+import { DatabaseInstance } from "../types.js";
 import logger from "../../utils/logger.js";
-
-type DatabaseInstance = typeof db | TransactionType;
 
 export class ChatRepository {
   private db: DatabaseInstance;

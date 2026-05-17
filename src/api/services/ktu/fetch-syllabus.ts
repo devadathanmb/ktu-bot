@@ -26,7 +26,6 @@ async function _fetchSyllabus({
   const c = apiClient ?? cachedApiClient;
   const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_SYLLABUS, {
     json: { curriculumId },
-    responseType: "json" as const,
   });
 
   const data = SyllabusResponseSchema.parse(response.body);

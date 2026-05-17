@@ -23,7 +23,6 @@ async function _fetchPrograms({ apiClient }: FetchProgramsParams = {}): Promise<
   const c = apiClient ?? cachedApiClient;
   const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_PROGRAMS, {
     json: "",
-    responseType: "json" as const,
   });
 
   const data = ProgramsResponseSchema.parse(response.body);

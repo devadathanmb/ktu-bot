@@ -29,7 +29,6 @@ async function _fetchBranches({
   const c = apiClient ?? cachedApiClient;
   const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_BRANCHES, {
     json: { number: 0, size: 100, id: schemeId, branchId: null },
-    responseType: "json" as const,
   });
 
   const data = BranchesResponseSchema.parse(response.body);

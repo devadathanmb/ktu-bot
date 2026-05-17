@@ -1,9 +1,7 @@
 import { eq, desc } from "drizzle-orm";
 import { db } from "../connection.js";
 import { announcementsBuffer } from "../schema/announcements-buffer.js";
-import type { TransactionType } from "../transactions.js";
-
-type DatabaseInstance = typeof db | TransactionType;
+import { DatabaseInstance } from "../types.js";
 
 export class AnnouncementsBufferRepository {
   private db: DatabaseInstance;
