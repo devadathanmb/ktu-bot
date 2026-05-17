@@ -19,7 +19,7 @@ async function fetchAttachmentBySource(
   source: Attachment["source"]
 ): Promise<string> {
   return source === "syllabus"
-    ? fetchSyllabusAttachment(encryptId)
+    ? fetchSyllabusAttachment({ encryptId })
     : fetchAttachment(encryptId);
 }
 

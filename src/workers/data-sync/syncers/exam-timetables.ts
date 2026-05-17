@@ -24,6 +24,7 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
     return await fetchTimetables({
       pageNumber,
       dataSize: this.PAGE_SIZE,
+      apiClient: this.apiClient,
     });
   }
 

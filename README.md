@@ -206,7 +206,7 @@ curl -f http://localhost:3000/health
 - **Database:** [PostgreSQL](https://www.postgresql.org/) — Powerful relational DB with god knows how many features
 - **ORM:** [Drizzle](https://orm.drizzle.team/) — Type-safe SQL queries and migrations
 - **Job Queue:** [BullMQ](https://docs.bullmq.io/) — Reliable background job processing
-- **HTTP Client:** [got](https://github.com/sindresorhus/got) — Modern fetch wrapper
+- **HTTP Client:** [got](https://github.com/sindresorhus/got) — Modern fetch wrapper with in-memory caching
 
 ## Contributing 🤝
 

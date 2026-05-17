@@ -1,5 +1,6 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../../../db/schema/index.js";
+import type { Got } from "got";
 
 /**
  * Base interface for all resource syncers
@@ -36,9 +37,11 @@ export interface ResourceSyncer {
  */
 export abstract class BaseResourceSyncer implements ResourceSyncer {
   protected db: NodePgDatabase<typeof schema>;
+  protected apiClient: Got;
 
-  constructor(database: NodePgDatabase<typeof schema>) {
+  constructor(database: NodePgDatabase<typeof schema>, apiClient: Got) {
     this.db = database;
+    this.apiClient = apiClient;
   }
 
   abstract readonly name: string;

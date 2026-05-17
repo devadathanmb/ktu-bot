@@ -1,5 +1,5 @@
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { UPTIME_ROBOT_API } from "../../../constants/api.js";
 import { ExternalApiConfig } from "../../../configs/api.js";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
@@ -76,17 +76,20 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
   formData.append("logs_limit", "1");
   formData.append("response_times", "1");
 
-  // Use regular client for API status - should always be fresh
-  const response = await client.post(UPTIME_ROBOT_API.MONITORS_ENDPOINT, {
-    body: formData,
-    responseType: "json" as const,
-    headers: {
-      "Cache-Control": "no-cache",
-    },
-    timeout: {
-      request: 10000,
-    },
-  });
+  // Use cachedApiClient for API status - should always be fresh
+  const response = await cachedApiClient.post(
+    UPTIME_ROBOT_API.MONITORS_ENDPOINT,
+    {
+      body: formData,
+      responseType: "json" as const,
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+      timeout: {
+        request: 10000,
+      },
+    }
+  );
 
   // Validate API response with Zod
   const data = UptimeRobotResponseSchema.parse(response.body);

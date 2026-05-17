@@ -53,6 +53,7 @@ For detailed architecture, data flow, and worker responsibilities, read [`docs/w
 
 - **ESLint**: Flat config with `typescript-eslint` type-checked rules. `no-floating-promises: error`, `no-unused-vars` (with `_` prefix exception).
 - **`any` is strictly banned**. Never use `any`. Type everything properly - use `unknown` if the type is truly unknown and narrow it with type guards.
+- **Caching**: The cached Got client is in `src/api/client.ts`. Service functions accept an optional `apiClient?: Got` parameter (dependency injection). Workers pass `baseApiClient` to bypass cache. Never pass `cache: false` to Got's built-in cache option — use the `apiClient` parameter instead.
 - **Formatting strings**: Use GrammY's `fmt` template literal tag (from `@grammyjs/parse-mode`). Use `joinWithNewlines()` for multi-line messages.
 - **Prettier** is enforced by the pre-commit hook - you don't need to worry about formatting.
 - **Naming**: Files/dirs use `kebab-case`. Functions `camelCase`. Classes/interfaces `PascalCase`. Exported configs `PascalCase`.
@@ -68,6 +69,16 @@ export const Config = schema.parse({ ENV_VAR: process.env.ENV_VAR, ... });
 ```
 
 Use `.superRefine()` for cross-field validation and `.transform()` for derived values. Never access `process.env` directly outside of config modules.
+
+### API Layer and Caching
+
+The project uses [Got](https://github.com/sindresorhus/got) as its HTTP client for all KTU API calls. The API layer is organized under `src/api/`:
+
+- **`client.ts`** — Exports `cachedApiClient` (cached) and `baseApiClient` (uncached) Got instances. The cached client wraps the base client with in-memory response caching via `beforeRequest`/`afterResponse` hooks.
+- **`services/`** — Each service function (e.g., `fetchPrograms`, `fetchAnnouncements`) accepts an optional `apiClient?: Got` parameter. When omitted, the cached client is used. Workers that need fresh data pass `baseApiClient`.
+- **`cache/`** — In-memory caching layer using `lru-cache`. Bypasses Got's HTTP-semantics-based caching (which doesn't work with KTU's non-standard APIs) in favor of custom URL+body-hash cache keys with per-endpoint TTLs. Only 200 responses are cached; non-200 responses invalidate the cache entry. Attachment endpoints (`/getAttachments`, `/getAttachment`) are excluded from caching to avoid memory bloat from large base64 payloads.
+
+**Cache configuration** is in `src/api/cache/config.ts` — per-endpoint TTLs and exclusion paths are defined there. To disable caching globally, edit `src/api/client.ts` and swap `createCachedApiClient(baseApiClient, CACHE_CONFIG)` for `baseApiClient`.
 
 ### Error Handling
 

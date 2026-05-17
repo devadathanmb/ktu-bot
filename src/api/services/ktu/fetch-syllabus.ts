@@ -1,11 +1,13 @@
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import type { SyllabusEntry } from "../../../types/service.types.js";
+import type { Got } from "got";
 
 interface FetchSyllabusParams {
   curriculumId: number;
+  apiClient?: Got;
 }
 
 const SyllabusResponseSchema = z.array(
@@ -19,8 +21,10 @@ const SyllabusResponseSchema = z.array(
 
 async function _fetchSyllabus({
   curriculumId,
+  apiClient,
 }: FetchSyllabusParams): Promise<SyllabusEntry[]> {
-  const response = await client.post(KTU_API_SERVICE_ENDPOINTS.GET_SYLLABUS, {
+  const c = apiClient ?? cachedApiClient;
+  const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_SYLLABUS, {
     json: { curriculumId },
     responseType: "json" as const,
   });

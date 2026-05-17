@@ -1,11 +1,13 @@
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import type { Branch } from "../../../types/service.types.js";
+import type { Got } from "got";
 
 interface FetchBranchesParams {
   schemeId: number;
+  apiClient?: Got;
 }
 
 const BranchesResponseSchema = z.object({
@@ -22,8 +24,10 @@ const BranchesResponseSchema = z.object({
 
 async function _fetchBranches({
   schemeId,
+  apiClient,
 }: FetchBranchesParams): Promise<Branch[]> {
-  const response = await client.post(KTU_API_SERVICE_ENDPOINTS.GET_BRANCHES, {
+  const c = apiClient ?? cachedApiClient;
+  const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_BRANCHES, {
     json: { number: 0, size: 100, id: schemeId, branchId: null },
     responseType: "json" as const,
   });

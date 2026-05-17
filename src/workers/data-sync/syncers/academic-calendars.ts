@@ -24,6 +24,7 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
     return await fetchAcademicCalendars({
       pageNumber,
       dataSize: this.PAGE_SIZE,
+      apiClient: this.apiClient,
     });
   }
 

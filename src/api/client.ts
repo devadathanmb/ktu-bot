@@ -6,6 +6,8 @@ import {
   addXTokenHeader,
   cleanGotError,
 } from "./hooks/index.js";
+import { createCachedApiClient } from "./cache/create-cached-client.js";
+import { CACHE_CONFIG } from "./cache/config.js";
 
 // Create a custom HTTPS agent that ignores SSL certificate errors
 const agent = new https.Agent({
@@ -13,7 +15,7 @@ const agent = new https.Agent({
   keepAlive: true,
 });
 
-// Base client configuration
+// Base API client configuration (uncached, no hooks beyond base)
 const baseConfig: ExtendOptions = {
   ...API_CLIENT_OPTIONS,
   agent: { https: agent },
@@ -24,7 +26,13 @@ const baseConfig: ExtendOptions = {
   },
 };
 
-// Create the regular client instance without caching
-const client = got.extend(baseConfig);
+// Create the base API client instance (uncached)
+const baseApiClient = got.extend(baseConfig);
 
-export default client;
+// Create the cached API client instance
+// Hot-swap: comment out the next line and uncomment the one after to disable caching
+const cachedApiClient = createCachedApiClient(baseApiClient, CACHE_CONFIG);
+// const cachedApiClient = baseApiClient;
+
+export { cachedApiClient, baseApiClient };
+export default cachedApiClient;

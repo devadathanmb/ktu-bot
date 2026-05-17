@@ -1,5 +1,5 @@
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 
@@ -13,7 +13,7 @@ async function _fetchAttachment(encryptId: string): Promise<string> {
     encryptId: encryptId,
   };
 
-  const response = await client.post(KTU_API_ENDPOINTS.ATTACHMENT, {
+  const response = await cachedApiClient.post(KTU_API_ENDPOINTS.ATTACHMENT, {
     json: payload,
     responseType: "text" as const,
   });

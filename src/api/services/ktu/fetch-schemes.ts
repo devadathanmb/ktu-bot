@@ -1,11 +1,13 @@
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import type { Scheme } from "../../../types/service.types.js";
+import type { Got } from "got";
 
 interface FetchSchemesParams {
   programId: number;
+  apiClient?: Got;
 }
 
 const SchemesResponseSchema = z.array(
@@ -19,8 +21,10 @@ const SchemesResponseSchema = z.array(
 
 async function _fetchSchemes({
   programId,
+  apiClient,
 }: FetchSchemesParams): Promise<Scheme[]> {
-  const response = await client.post(KTU_API_SERVICE_ENDPOINTS.GET_SCHEMES, {
+  const c = apiClient ?? cachedApiClient;
+  const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_SCHEMES, {
     json: { id: programId },
     responseType: "json" as const,
   });

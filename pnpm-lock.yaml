@@ -66,6 +66,9 @@ importers:
       ioredis:
         specifier: ^5.10.0
         version: 5.10.0
+      lru-cache:
+        specifier: ^11.3.6
+        version: 11.3.6
       pg:
         specifier: ^8.20.0
         version: 8.20.0
@@ -78,6 +81,9 @@ importers:
       prom-client:
         specifier: ^15.1.3
         version: 15.1.3
+      responselike:
+        specifier: ^4.0.2
+        version: 4.0.2
       string-strip-html:
         specifier: ^13.5.3
         version: 13.5.3
@@ -1434,6 +1440,10 @@ packages:
   lowercase-keys@4.0.1:
     resolution: {integrity: sha512-wI9Nui/L8VfADa/cr/7NQruaASk1k23/Uh1khQ02BCVYiiy8F4AhOGnQzJy3Fl/c44GnYSbZHv8g7EcG3kJ1Qg==}
     engines: {node: '>=20'}
+
+  lru-cache@11.3.6:
+    resolution: {integrity: sha512-Gf/KoL3C/MlI7Bt0PGI9I+TeTC/I6r/csU58N4BSNc4lppLBeKsOdFYkK+dX0ABDUMJNfCHTyPpzwwO21Awd3A==}
+    engines: {node: 20 || >=22}
 
   luxon@3.7.2:
     resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
@@ -2984,6 +2994,8 @@ snapshots:
   lowercase-keys@3.0.0: {}
 
   lowercase-keys@4.0.1: {}
+
+  lru-cache@11.3.6: {}
 
   luxon@3.7.2: {}
 

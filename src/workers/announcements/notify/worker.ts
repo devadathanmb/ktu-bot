@@ -1,5 +1,6 @@
 import { Job } from "bullmq";
 import { fetchAnnouncements, LLMService } from "../../../api/services/index.js";
+import { baseApiClient } from "../../../api/client.js";
 import { AnnouncementsBufferRepository } from "../../../db/repositories/announcements-buffer-repository.js";
 import { AnnouncementSubscriptionRepository } from "../../../db/repositories/announcement-subscription-repository.js";
 import { Announcement } from "../../../types/service.types.js";
@@ -86,7 +87,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     const announcements = await fetchAnnouncements({
       pageNumber: 0,
       dataSize: AnnouncementsNotifyWorkerConfig.DATA_LOOKUP_LIMIT,
-      cache: false, // Always fetch fresh data
+      apiClient: baseApiClient,
     });
     this.fetchedAnnouncements = announcements;
 

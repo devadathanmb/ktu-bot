@@ -27,7 +27,7 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
     return await fetchAnnouncements({
       pageNumber,
       dataSize: this.PAGE_SIZE,
-      cache: false, // Always fetch fresh data during sync
+      apiClient: this.apiClient,
     });
   }
 

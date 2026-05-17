@@ -1,5 +1,5 @@
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { HUGGING_FACE_API } from "../../../constants/api.js";
 import { ExternalApiConfig } from "../../../configs/api.js";
 import logger from "../../../utils/logger.js";
@@ -29,17 +29,20 @@ async function _getAnnouncementRelevancy(inputText: string): Promise<boolean> {
     },
   };
 
-  const response = await client.post(HUGGING_FACE_API.RELEVANCY_ENDPOINT, {
-    json: payload,
-    // responseType: "json" as const,
-    headers: {
-      Authorization: `Bearer ${ExternalApiConfig.HUGGING_FACE_API_TOKEN}`,
-    },
-    // Hugging Face API might take ~20 seconds to load the model
-    timeout: {
-      request: 30000,
-    },
-  });
+  const response = await cachedApiClient.post(
+    HUGGING_FACE_API.RELEVANCY_ENDPOINT,
+    {
+      json: payload,
+      // responseType: "json" as const,
+      headers: {
+        Authorization: `Bearer ${ExternalApiConfig.HUGGING_FACE_API_TOKEN}`,
+      },
+      // Hugging Face API might take ~20 seconds to load the model
+      timeout: {
+        request: 30000,
+      },
+    }
+  );
 
   // Validate and transform API response with Zod - returns boolean directly
   return HuggingFaceRelevancyResponseSchema.parse(response.body);
