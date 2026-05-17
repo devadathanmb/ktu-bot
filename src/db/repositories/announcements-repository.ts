@@ -1,11 +1,9 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
 import { db } from "../connection.js";
 import { announcements } from "../schema/announcements.js";
-import type { TransactionType } from "../transactions.js";
+import { DatabaseInstance } from "../types.js";
 import type { Announcement } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";
-
-type DatabaseInstance = typeof db | TransactionType;
 
 // Interface for search options
 interface SearchOptions {

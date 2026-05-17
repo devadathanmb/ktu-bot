@@ -54,7 +54,6 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
   const monitorsResponse = await cachedApiClient.get(
     `${BETTER_UPTIME_API.MONITOR_GROUPS_ENDPOINT}/${ExternalApiConfig.BETTER_UPTIME_MONITOR_GROUP_ID}/monitors`,
     {
-      responseType: "json" as const,
       headers: {
         Authorization: `Bearer ${ExternalApiConfig.BETTER_UPTIME_API_TOKEN}`,
       },
@@ -76,7 +75,6 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
         const responseTimesResponse = await cachedApiClient.get(
           `${BETTER_UPTIME_API.MONITORS_ENDPOINT}/${monitor.id}/response-times`,
           {
-            responseType: "json" as const,
             headers: {
               "Authorization": `Bearer ${ExternalApiConfig.BETTER_UPTIME_API_TOKEN}`,
               "Cache-Control": "no-cache",

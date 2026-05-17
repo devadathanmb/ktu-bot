@@ -42,7 +42,6 @@ async function _fetchExamTimetables({
 
   const response = await c.post(KTU_API_ENDPOINTS.TIMETABLES, {
     json: payload,
-    responseType: "json" as const,
   });
 
   const data = ExamTimetableResponseSchema.parse(response.body);

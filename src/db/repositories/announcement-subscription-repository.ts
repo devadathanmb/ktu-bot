@@ -1,9 +1,7 @@
 import { eq, arrayOverlaps } from "drizzle-orm";
 import { db } from "../connection.js";
 import { announcementSubscriptions } from "../schema/announcement-subscriptions.js";
-import type { TransactionType } from "../transactions.js";
-
-type DatabaseInstance = typeof db | TransactionType;
+import { DatabaseInstance } from "../types.js";
 
 export class AnnouncementSubscriptionRepository {
   private db: DatabaseInstance;

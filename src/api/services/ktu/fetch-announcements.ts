@@ -52,7 +52,6 @@ async function _fetchAnnouncements({
 
   const response = await c.post(KTU_API_ENDPOINTS.ANNOUNCEMENTS, {
     json: payload,
-    responseType: "json" as const,
   });
 
   const data = AnnouncementResponseSchema.parse(response.body);

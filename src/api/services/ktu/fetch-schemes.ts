@@ -26,7 +26,6 @@ async function _fetchSchemes({
   const c = apiClient ?? cachedApiClient;
   const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_SCHEMES, {
     json: { id: programId },
-    responseType: "json" as const,
   });
 
   const data = SchemesResponseSchema.parse(response.body);

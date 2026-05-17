@@ -42,7 +42,6 @@ async function _fetchAcademicCalendars({
 
   const response = await c.post(KTU_API_ENDPOINTS.ACADEMIC_CALENDAR, {
     json: payload,
-    responseType: "json" as const,
   });
 
   const data = AcademicCalendarResponseSchema.parse(response.body);
