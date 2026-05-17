@@ -1,8 +1,13 @@
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import type { Program } from "../../../types/service.types.js";
+import type { Got } from "got";
+
+interface FetchProgramsParams {
+  apiClient?: Got;
+}
 
 const ProgramsResponseSchema = z.array(
   z.object({
@@ -12,8 +17,11 @@ const ProgramsResponseSchema = z.array(
   })
 );
 
-async function _fetchPrograms(): Promise<Program[]> {
-  const response = await client.post(KTU_API_SERVICE_ENDPOINTS.GET_PROGRAMS, {
+async function _fetchPrograms({ apiClient }: FetchProgramsParams = {}): Promise<
+  Program[]
+> {
+  const c = apiClient ?? cachedApiClient;
+  const response = await c.post(KTU_API_SERVICE_ENDPOINTS.GET_PROGRAMS, {
     json: "",
     responseType: "json" as const,
   });

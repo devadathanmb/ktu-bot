@@ -34,6 +34,7 @@ graph TB
     TG -->|Webhook/Long Polling| Bot
     Bot -->|Fetch Data| KTU
     Bot -->|Store/Retrieve| DB
+    Bot -->|In-memory cache| Bot
     Bot -->|Cache| Redis
     Bot -->|Queue Attachments| Queue
     Bot -->|Response| TG
@@ -129,6 +130,17 @@ The entire system is orchestrated using [Docker Compose](https://docs.docker.com
 This is the main service that users interact with. It handles all commands, inline queries, searches, and conversations. The bot is built using [GrammY](https://grammy.dev/), which is a modern TypeScript framework for building Telegram bots. GrammY has a great ecosystem of plugins and excellent documentation, making it really easy and fun to work with.
 
 The bot uses a [composers pattern](https://grammy.dev/plugins/composer.html) to organize different features - each feature gets its own composer that handles related functionality. This keeps the code clean and maintainable. All the core bot logic lives in the `src/bot/` directory. The bot also uses GrammY's plugin ecosystem extensively - for things like auto-retry, rate limiting, hydration, emoji parsing, and more. You can see the full list of plugins in [`package.json`](../package.json) or check how they're wired up in the middleware section of [`src/bot/bot.ts`](../src/bot/bot.ts)
+
+### API Layer and Caching
+
+All KTU API calls go through a shared Got HTTP client in `src/api/client.ts`, which has two variants:
+
+- **`cachedApiClient`** — The default, cached client. Wraps the base client with an in-memory LRU cache via `beforeRequest`/`afterResponse` hooks. Responses are cached by URL + request body hash, with configurable per-endpoint TTLs (e.g., 1 hour for programs/schemes, 5 minutes for announcements). Only 200 responses are cached.
+- **`baseApiClient`** — The uncached client. Used by workers that need fresh data (data-sync, notification checks).
+
+Service functions (like `fetchPrograms`, `fetchAnnouncements`) accept an optional `apiClient?: Got` parameter. When omitted, the cached client is used. Workers pass `baseApiClient` when they need fresh data.
+
+The cache configuration lives in `src/api/cache/config.ts`. Attachment endpoints (`/getAttachments`, `/getAttachment`) are excluded from caching because they return large base64 payloads that would bloat memory.
 
 ### PostgreSQL Database
 

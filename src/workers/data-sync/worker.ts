@@ -14,6 +14,7 @@ import {
 import logger from "../../utils/logger.js";
 import { BaseWorker } from "../base/base-worker.js";
 import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
+import { baseApiClient } from "../../api/client.js";
 
 export class DataSyncWorker extends BaseWorker<SyncJobData> {
   private syncers!: Record<SyncJobType, ResourceSyncer>;
@@ -33,9 +34,18 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
   protected override initializeWorkerSpecific(): Promise<void> {
     // Initialize syncers for each data type
     this.syncers = {
-      "data-sync:announcements": new AnnouncementsSyncer(this.db),
-      "data-sync:academic-calendars": new CalendarsSyncer(this.db),
-      "data-sync:exam-timetables": new ExamTimetablesSyncer(this.db),
+      "data-sync:announcements": new AnnouncementsSyncer(
+        this.db,
+        baseApiClient
+      ),
+      "data-sync:academic-calendars": new CalendarsSyncer(
+        this.db,
+        baseApiClient
+      ),
+      "data-sync:exam-timetables": new ExamTimetablesSyncer(
+        this.db,
+        baseApiClient
+      ),
     };
 
     const syncerNames = Object.values(this.syncers)

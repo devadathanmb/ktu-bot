@@ -97,7 +97,7 @@ export async function createGrammyInputFileFromAttachment(
 ): Promise<InputFile> {
   const base64Data =
     source === "syllabus"
-      ? await fetchSyllabusAttachment(encryptId)
+      ? await fetchSyllabusAttachment({ encryptId })
       : await fetchAttachment(encryptId);
   const buffer = base64ToBuffer(base64Data);
 

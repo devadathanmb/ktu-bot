@@ -1,16 +1,17 @@
 import { stripHtml } from "string-strip-html";
 import { z } from "zod";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
 import { formatDateToReadableString } from "../../../utils/formatting.js";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import type { Announcement } from "../../../types/service.types.js";
+import type { Got } from "got";
 
 interface FetchAnnouncementsParams {
   pageNumber: number;
   dataSize: number;
   searchText?: string;
-  cache?: boolean;
+  apiClient?: Got;
 }
 
 // Zod schema for API response validation with transformations
@@ -41,15 +42,16 @@ async function _fetchAnnouncements({
   pageNumber,
   dataSize,
   searchText = "",
-  cache: _cache = false,
+  apiClient,
 }: FetchAnnouncementsParams): Promise<Announcement[]> {
+  const c = apiClient ?? cachedApiClient;
   const payload = {
     number: pageNumber,
     size: dataSize,
     searchText: searchText,
   };
 
-  const response = await client.post(KTU_API_ENDPOINTS.ANNOUNCEMENTS, {
+  const response = await c.post(KTU_API_ENDPOINTS.ANNOUNCEMENTS, {
     json: payload,
     responseType: "json" as const,
   });

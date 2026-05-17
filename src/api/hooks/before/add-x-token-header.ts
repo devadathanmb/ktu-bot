@@ -1,7 +1,7 @@
 import { type BeforeRequestHook } from "got";
 import logger from "../../../utils/logger.js";
 import { KTU_API_BASE_URI, KTU_API_ENDPOINTS } from "../../../constants/api.js";
-import client from "../../client.js";
+import { cachedApiClient } from "../../client.js";
 
 // This hook is to add X-Token in the KTU API requests
 // XToken only needs to be added if recaptcha is enabled
@@ -12,10 +12,12 @@ export const addXTokenHeader: BeforeRequestHook = async options => {
     !options.url.toString().includes(KTU_API_ENDPOINTS.RECAPTCHA_SCRIPT)
   ) {
     try {
-      const response = await client.post(KTU_API_ENDPOINTS.RECAPTCHA_SCRIPT, {
-        responseType: "json",
-        cache: false,
-      });
+      const response = await cachedApiClient.post(
+        KTU_API_ENDPOINTS.RECAPTCHA_SCRIPT,
+        {
+          responseType: "json",
+        }
+      );
       const data = response.body as { key?: string; script?: string };
 
       if (data.key != null || data.script != null) {
