@@ -116,8 +116,8 @@ export class AnnouncementsRepository {
   /**
    * Bulk insert/upsert announcements
    */
-  async bulkUpsert(announcementList: AnnouncementInsert[]) {
-    if (announcementList.length === 0) return [];
+  async bulkUpsert(announcementList: AnnouncementInsert[]): Promise<number> {
+    if (announcementList.length === 0) return 0;
 
     const values = announcementList.map(announcement => ({
       id: announcement.id,
@@ -128,7 +128,7 @@ export class AnnouncementsRepository {
       updatedAt: new Date(),
     }));
 
-    return this.db
+    const result = await this.db
       .insert(announcements)
       .values(values)
       .onConflictDoUpdate({
@@ -142,6 +142,8 @@ export class AnnouncementsRepository {
         },
       })
       .returning();
+
+    return result.length;
   }
 
   /**

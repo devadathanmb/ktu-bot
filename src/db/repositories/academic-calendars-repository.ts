@@ -116,8 +116,8 @@ export class AcademicCalendarsRepository {
   /**
    * Bulk insert/upsert academic calendars
    */
-  async bulkUpsert(calendarList: AcademicCalendarInsert[]) {
-    if (calendarList.length === 0) return [];
+  async bulkUpsert(calendarList: AcademicCalendarInsert[]): Promise<number> {
+    if (calendarList.length === 0) return 0;
 
     const values = calendarList.map(calendar => ({
       id: calendar.id,
@@ -127,7 +127,7 @@ export class AcademicCalendarsRepository {
       updatedAt: new Date(),
     }));
 
-    return this.db
+    const result = await this.db
       .insert(academicCalendars)
       .values(values)
       .onConflictDoUpdate({
@@ -140,6 +140,8 @@ export class AcademicCalendarsRepository {
         },
       })
       .returning();
+
+    return result.length;
   }
 
   /**
