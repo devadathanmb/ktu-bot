@@ -1,6 +1,3 @@
-dist/
-dev-start.sh
-
 # Dependencies
 /node_modules
 
@@ -9,38 +6,22 @@ dev-start.sh
 
 # Build output
 /dist
-/build
-/coverage
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-*.log
-
-# Git leaks stuff
-gitleaks-report.json
 
 # Env files
 # New structure: env/prod/, env/staging/, env/dev/
 # Dev env files are tracked (contain default configs)
 # Prod/staging are gitignored (contain secrets)
 env/prod/.env
-env/staging/.env
-env/staging/.env.swarm
-env/staging/db-ca.pem
-env/prod/.env
-env/prod/.env.swarm
+env/prod/*.env.swarm
 env/prod/db-ca.pem
+env/staging/.env
+env/staging/*.env.swarm
+env/staging/db-ca.pem
 env/dev/.env
 !env/*/.env.example
+.env
 .env.local
 .env.*.local
-.env
 
 # OS
 .DS_Store
@@ -58,6 +39,10 @@ Thumbs.db
 *.swp
 *.swo
 *.har
+
+# Logs
+*.log
+logs/
 
 # Prometheus
 prometheus/prometheus.yaml
