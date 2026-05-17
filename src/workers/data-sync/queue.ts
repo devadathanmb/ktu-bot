@@ -1,7 +1,6 @@
-import { Queue } from "bullmq";
-import { queueRedisConnectionOptions } from "../shared/redis.js";
 import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
 import logger from "../../utils/logger.js";
+import { createQueue } from "../shared/create-queue.js";
 
 export const DATA_SYNC_QUEUE = "DATA_SYNC_QUEUE";
 
@@ -14,22 +13,11 @@ export interface SyncJobData {
   syncType: SyncJobType;
 }
 
-export const dataSyncQueue = new Queue<SyncJobData>(DATA_SYNC_QUEUE, {
-  connection: queueRedisConnectionOptions,
+export const dataSyncQueue = createQueue<SyncJobData>({
+  name: DATA_SYNC_QUEUE,
   defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 60 * 1000,
-    },
-    removeOnComplete: {
-      count: 50,
-      age: 24 * 60 * 60,
-    },
-    removeOnFail: {
-      count: 50,
-      age: 24 * 60 * 60,
-    },
+    removeOnComplete: { count: 50 },
+    removeOnFail: { count: 50, age: 24 * 60 * 60 },
   },
 });
 
