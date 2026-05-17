@@ -67,10 +67,8 @@ function configureBot(bot: Bot<BotContext>): void {
   // This is to track response times and other useful info
   bot.use(logging);
 
-  // Other middlewares:
   // Long polling only middlewares:
   if (BotConfig.IS_LONG_POLLING_DEPLOYMENT) {
-    // Rate limiting middleware
     // bot.use(
     //   limit({
     //     // eslint-disable-next-line @typescript-eslint/no-misused-promises

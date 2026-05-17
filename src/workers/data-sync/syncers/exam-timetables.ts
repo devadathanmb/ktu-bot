@@ -39,11 +39,9 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
     while (hasMorePages) {
       const batch: ExamTimeTable[] = [];
 
-      // Fetch BATCH_SIZE pages at once
       for (let i = 0; i < this.BATCH_SIZE && hasMorePages; i++) {
         const timetables = await this.fetchPage(pageNumber);
 
-        // If we get fewer items than PAGE_SIZE, we've reached the end
         if (timetables.length === 0) {
           hasMorePages = false;
           break;
@@ -52,14 +50,12 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
         batch.push(...timetables);
         pageNumber++;
 
-        // If we got less than a full page, we're at the end
         if (timetables.length < this.PAGE_SIZE) {
           hasMorePages = false;
           break;
         }
       }
 
-      // Yield the batch if we collected any timetables
       if (batch.length > 0) {
         logger.debug(
           { syncer: this.name, batchSize: batch.length },
@@ -73,7 +69,6 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
   }
 
   async needsInitialSync(): Promise<boolean> {
-    // Check if exam timetables search table is empty
     const repo = new ExamTimetablesRepository();
     const count = await repo.getCount();
 
@@ -82,7 +77,6 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
       "Current timetables count in DB"
     );
 
-    // If no timetables exist, we need initial sync
     return count === 0;
   }
 
@@ -129,7 +123,6 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
   async performPeriodicSync(): Promise<void> {
     logger.info({ syncer: this.name }, "Starting periodic sync");
 
-    // Fetch recent timetables (first 2 pages to catch any recent updates)
     const recentBatch1 = await this.fetchPage(0, { log: false });
     const recentBatch2 = await this.fetchPage(1, { log: false });
     const recentTimetables = [...recentBatch1, ...recentBatch2];
@@ -139,7 +132,6 @@ export class ExamTimetablesSyncer extends BaseResourceSyncer {
       return;
     }
 
-    // Transform and upsert in transaction
     await withTransaction(async tx => {
       const repo = new ExamTimetablesRepository(tx);
       const transformedTimetables = recentTimetables.map(timetable =>

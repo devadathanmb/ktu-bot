@@ -46,7 +46,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
   }
 
   protected override initializeWorkerSpecific(): Promise<void> {
-    // Initialize bot with throttler and auto-retry for file uploads
     const bot = createBot();
     bot.api.config.use(apiThrottler());
     bot.api.config.use(autoRetry({ maxRetryAttempts: 5 }));
@@ -56,10 +55,8 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
   }
 
   protected override async onStartupComplete(): Promise<void> {
-    // Trigger initial notification check on startup
     await this.scheduleInitialNotificationCheck();
 
-    // Set up recurring jobs (called once - BullMQ handles the schedule)
     await setupRecurringSchedule();
   }
 
@@ -83,7 +80,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
   private async getNewAnnouncements(): Promise<Announcement[]> {
     logger.info("Checking for new announcements");
 
-    // Fetch latest announcements from API
     const announcements = await fetchAnnouncements({
       pageNumber: 0,
       dataSize: AnnouncementsNotifyWorkerConfig.DATA_LOOKUP_LIMIT,
@@ -91,19 +87,16 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     });
     this.fetchedAnnouncements = announcements;
 
-    // Find the new announcements by comparing IDs with buffer
     const latestIds = announcements.map(a => a.id).sort((a, b) => b - a);
     const announcementsBufferRepo = new AnnouncementsBufferRepository(this.db);
     const existingIds = await announcementsBufferRepo.getAllAnnouncementIds();
 
-    // If no new IDs, return early
     const newIds = latestIds.filter(id => !existingIds.includes(id));
     if (newIds.length === 0) {
       logger.info("No new announcements found");
       return [];
     }
 
-    // Find and return the new announcements
     const newAnnouncements = announcements.filter(a => newIds.includes(a.id));
     const count = newAnnouncements.length;
     logger.info({ count }, "Found new announcements");
@@ -133,7 +126,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     };
     const contentText = JSON.stringify(content);
 
-    // Extract course filters from announcement text
     const filters = findCourseFiltersFromText(contentText);
     const announcementContent = content;
     const extractedFilters = Array.from(filters);
@@ -253,7 +245,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
   }
 
   private async processNewAnnouncements() {
-    // Get new announcements, if none, return
     const newAnnouncements = await this.getNewAnnouncements();
     if (newAnnouncements.length === 0) return;
 
@@ -290,7 +281,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       }
     }
 
-    // Finally, add all jobs to queue in batch
     // This is done to make this operation atomic and idempotent
     // In case of a failure, everything fails so it will be retried in the next cron run
     if (jobs.length > 0) {

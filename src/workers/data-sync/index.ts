@@ -1,6 +1,2 @@
 export { DataSyncWorker } from "./worker.js";
-export {
-  dataSyncQueue,
-  scheduleSyncJobs,
-  setupRecurringSchedule,
-} from "./queue.js";
+export { dataSyncQueue, setupRecurringSchedule } from "./queue.js";

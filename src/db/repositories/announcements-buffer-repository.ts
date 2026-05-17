@@ -3,7 +3,6 @@ import { db } from "../connection.js";
 import { announcementsBuffer } from "../schema/announcements-buffer.js";
 import type { TransactionType } from "../transactions.js";
 
-// Type for database instance (either db or transaction)
 type DatabaseInstance = typeof db | TransactionType;
 
 export class AnnouncementsBufferRepository {
@@ -45,20 +44,6 @@ export class AnnouncementsBufferRepository {
       .limit(1);
 
     return result.length > 0;
-  }
-
-  async deleteOldest(keepCount: number) {
-    const allEntries = await this.getAll();
-
-    if (allEntries.length > keepCount) {
-      const entriesToDelete = allEntries.slice(keepCount);
-
-      for (const entry of entriesToDelete) {
-        await this.db
-          .delete(announcementsBuffer)
-          .where(eq(announcementsBuffer.id, entry.id));
-      }
-    }
   }
 
   async clear(): Promise<void> {

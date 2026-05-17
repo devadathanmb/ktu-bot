@@ -24,33 +24,6 @@ export async function uploadToFileChannel(
   return fileId;
 }
 
-export async function sendAsDocument(
-  bot: Bot<BotContext>,
-  chatId: number,
-  downloaded: DownloadedAttachment,
-  options?: {
-    caption?: string | undefined;
-    replyToMessageId?: number | undefined;
-  }
-): Promise<void> {
-  const inputFile = new InputFile(downloaded.tempFilePath, downloaded.fileName);
-
-  const sendOptions: Parameters<typeof bot.api.sendDocument>[2] = {};
-
-  if (options?.caption) {
-    sendOptions.caption = options.caption;
-  }
-
-  if (options?.replyToMessageId !== undefined) {
-    sendOptions.reply_parameters = {
-      message_id: options.replyToMessageId,
-      allow_sending_without_reply: true,
-    };
-  }
-
-  await bot.api.sendDocument(chatId, inputFile, sendOptions);
-}
-
 export async function uploadToFileHost(
   downloaded: DownloadedAttachment
 ): Promise<string> {

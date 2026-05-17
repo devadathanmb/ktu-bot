@@ -11,7 +11,6 @@ import { joinWithNewlines } from "../../../utils/formatting.js";
 import { createAnnouncementSubscriptionErrorBoundary } from "../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 
-// Common messages used throughout the composer
 const MESSAGES: Record<string, Array<FormattedString>> = {
   ALREADY_SUBSCRIBED: [
     fmt`${emoji("bell")} You are already subscribed to announcements!`,
@@ -31,16 +30,13 @@ const MESSAGES: Record<string, Array<FormattedString>> = {
   ],
 } as const;
 
-// Create the subscriptions composer
 export const announcementSubscriptions = new Composer<BotContext>();
 
-// Create protected composer with error boundary
 const protectedComposer = new Composer<BotContext>();
 protectedComposer.errorBoundary(createAnnouncementSubscriptionErrorBoundary());
 
 announcementSubscriptions.use(protectedComposer);
 
-// Command: /announcements_subscribe - Subscribe to announcements
 const announcementsSubscribeCommand = new Command<BotContext>(
   "announcements_subscribe",
   `${emoji("bell")} Subscribe to announcements`,
@@ -50,7 +46,6 @@ const announcementsSubscribeCommand = new Command<BotContext>(
       const announcementSubscriptionRepo =
         new AnnouncementSubscriptionRepository(tx);
 
-      // Check if user is already subscribed
       const announcementSubscription =
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (announcementSubscription) {
@@ -74,13 +69,9 @@ const announcementsSubscribeCommand = new Command<BotContext>(
   }
 );
 
-// Callbackquery: Handle filter button clicks
-// Filter selection callback handler
 protectedComposer.callbackQuery(/^announcement_filter_select_/, async ctx => {
-  // Answer the callback query
   await ctx.answerCallbackQuery();
 
-  // If previous message ID is not set, throw error
   const prevMessageId = ctx.session.announcementSubscriptionMessageId;
   if (!prevMessageId) throw new SessionNotFoundError();
 
@@ -90,26 +81,19 @@ protectedComposer.callbackQuery(/^announcement_filter_select_/, async ctx => {
     ""
   );
 
-  // Check if the filter is valid
   if (!(filter in ANNOUNCEMENT_FILTER_MAP)) {
     const invalidMessage = `${emoji("cross_mark")} Invalid filter selected. Please try again.`;
     await ctx.api.editMessageText(chatId, prevMessageId, invalidMessage);
     return;
   }
 
-  // No need to initialize selectedFilters; always an array
-
-  // Toggle the filter selection
   const filterIndex = ctx.session.selectedFilters.indexOf(filter);
   if (filterIndex === -1) {
-    // Add filter if not selected
     ctx.session.selectedFilters.push(filter);
   } else {
-    // Remove filter if already selected
     ctx.session.selectedFilters.splice(filterIndex, 1);
   }
 
-  // Update the keyboard and message
   const newKeyboard = generateFilterKeyboard(ctx.session.selectedFilters);
   const newMessageText = generateMessageText(ctx.session.selectedFilters);
 
@@ -119,25 +103,20 @@ protectedComposer.callbackQuery(/^announcement_filter_select_/, async ctx => {
   });
 });
 
-// Callbackquery: Handle Apply Filters button
 protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
   await withTransaction(async tx => {
-    // Answer the callback query
     await ctx.answerCallbackQuery();
 
     const chatId = ctx.chatId!;
     const prevMessageId = ctx.session.announcementSubscriptionMessageId;
     if (!prevMessageId) throw new SessionNotFoundError();
 
-    // Check if filters are selected
     if (ctx.session.selectedFilters.length === 0) {
       const errorMessage = `${emoji("cross_mark")} Please select at least one filter before applying.`;
       await ctx.api.editMessageText(chatId, prevMessageId, errorMessage);
       return;
     }
 
-    // Create the announcement subscription with selected filters
-    // If announcementSubscription already exists, update instead of create
     const announcementSubscriptionRepo = new AnnouncementSubscriptionRepository(
       tx
     );
@@ -149,19 +128,16 @@ protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
       });
       const updateMessage = `${emoji("check_mark_button")} Your announcement filters have been updated successfully!`;
       await ctx.api.editMessageText(chatId, prevMessageId, updateMessage);
-      // Clear session data
       ctx.session.selectedFilters = [];
       ctx.session.announcementSubscriptionMessageId = null;
       return;
     }
 
-    // Create new subscription
     announcementSubscription = await announcementSubscriptionRepo.create({
       chatId: chatId,
       filters: ctx.session.selectedFilters,
     });
 
-    // Create success message
     const selectedFilterNames = ctx.session.selectedFilters.map(
       (filter: string) =>
         ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]
@@ -178,13 +154,11 @@ protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
       entities: successMessage.entities,
     });
 
-    // Clear session data
     ctx.session.selectedFilters = [];
     ctx.session.announcementSubscriptionMessageId = null;
   });
 });
 
-// Command: /announcements_unsubscribe - Unsubscribe from announcements
 const announcementsUnsubscribeCommand = new Command<BotContext>(
   "announcements_unsubscribe",
   `${emoji("prohibited")} Unsubscribe from announcements`,
@@ -194,7 +168,6 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
       const announcementSubscriptionRepo =
         new AnnouncementSubscriptionRepository(tx);
 
-      // Check if subscription exists
       const announcementSubscription =
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (!announcementSubscription) {
@@ -208,7 +181,6 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
         return;
       }
 
-      // Unsubscribe the user
       const formattedMsg = joinWithNewlines(MESSAGES.UNSUBSCRIBE_SUCCESS!);
       await announcementSubscriptionRepo.delete(chatId);
       await ctx.reply(formattedMsg.text, {
@@ -218,7 +190,6 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
   }
 );
 
-// Command: /announcements_show_status - Show current subscription status
 const announcementsShowFilterCommand = new Command<BotContext>(
   "announcements_show_status",
   `${emoji("clipboard")} Show current announcement subscription status`,
@@ -240,7 +211,6 @@ const announcementsShowFilterCommand = new Command<BotContext>(
       return;
     }
 
-    // Convert filter codes to readable names
     const filterNames = announcementSubscription.filters.map(
       (filter: string) =>
         ANNOUNCEMENT_FILTER_MAP[
@@ -248,7 +218,6 @@ const announcementsShowFilterCommand = new Command<BotContext>(
         ] || filter
     );
 
-    // Create a nicely formatted status message using emoji context
     const filtersList = filterNames
       .map((name: string) => `   • ${name}`)
       .join("\n");
@@ -279,7 +248,6 @@ const announcementsShowFilterCommand = new Command<BotContext>(
   }
 );
 
-// Command: /announcements_change_filter - Change announcement filters
 const announcementsChangeFilterCommand = new Command<BotContext>(
   "announcements_change_filter",
   `${emoji("toolbox")} Change announcement filters`,
@@ -289,7 +257,6 @@ const announcementsChangeFilterCommand = new Command<BotContext>(
       const announcementSubscriptionRepo =
         new AnnouncementSubscriptionRepository(tx);
 
-      // Check if user has an existing subscription
       const existingSubscription =
         await announcementSubscriptionRepo.getBychatId(chatId);
       if (!existingSubscription) {
@@ -302,10 +269,8 @@ const announcementsChangeFilterCommand = new Command<BotContext>(
         return;
       }
 
-      // Initialize session with current filters
       ctx.session.selectedFilters = existingSubscription.filters || [];
 
-      // Generate keyboard and send message
       const keyboard = generateFilterKeyboard(ctx.session.selectedFilters);
       const messageText = generateMessageText(
         ctx.session.selectedFilters,
@@ -316,23 +281,19 @@ const announcementsChangeFilterCommand = new Command<BotContext>(
         reply_markup: keyboard,
       });
 
-      // Store the message ID for later editing
       ctx.session.announcementSubscriptionMessageId = sentMessage.message_id;
     });
   }
 );
 
-// Create the announcement subscriptions command group
 const announcementSubscriptionsCommands = new CommandGroup<BotContext>();
 
-// Add commands to the group
 announcementSubscriptionsCommands
   .add(announcementsSubscribeCommand)
   .add(announcementsUnsubscribeCommand)
   .add(announcementsShowFilterCommand)
   .add(announcementsChangeFilterCommand);
 
-// Hook the command group into the composer
 announcementSubscriptions.use(announcementSubscriptionsCommands);
 
 export {

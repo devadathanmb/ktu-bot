@@ -24,7 +24,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   }
 
   protected override initializeWorkerSpecific(): Promise<void> {
-    // Initialize bot without special middlewares
     this.bot = createWorkerBot();
     logger.info("Bot instance created");
     return Promise.resolve();
@@ -47,7 +46,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   }
 
   private async processBroadcastJob(job: Job<BroadcastJob>): Promise<void> {
-    // Get job data from the job
     const { formattedText, attachments, chatId } = job.data;
 
     // By the time the job has reached broadcasts worker, the user may have blocked the bot
@@ -57,13 +55,11 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     const subscriptionExists = await subscriptionRepo.exists(chatId);
     if (!subscriptionExists) return;
 
-    // If there are no attachments, send text message only
     if (!attachments || attachments.length === 0) {
       await this.sendMessage(chatId, formattedText);
       return;
     }
 
-    // If there are attachments, batch them into groups of 10 and send as media groups
     const batchSize = 10;
     const batches: ProcessedAttachment[][] = [];
 
@@ -71,7 +67,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       batches.push(attachments.slice(i, i + batchSize));
     }
 
-    // Send first batch with the formatted text as caption
     if (batches.length > 0) {
       const message = await this.sendMessageWithAttachmentsAsMediaGroup(
         chatId,
@@ -79,7 +74,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
         batches[0]!
       );
 
-      // Send remaining batches without caption
       // messages[0] will represent the first message in the media group so we can reply to it
       for (let i = 1; i < batches.length; i++) {
         await this.sendAttachmentsAsMediaGroup(
@@ -91,9 +85,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     }
   }
 
-  /**
-   * Send a formatted text message
-   */
   private async sendMessage(chatId: number, formattedText: FormattedString) {
     return await this.getBot().api.sendMessage(chatId, formattedText.rawText, {
       entities: formattedText.rawEntities,
@@ -101,12 +92,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     });
   }
 
-  /**
-   * Send message with attachments as a media group in a single API call
-   * First attachment includes the caption (formatted text)
-   * Subsequent attachments have no caption
-   * Note: Telegram limits media groups to 10 items max
-   */
   private async sendMessageWithAttachmentsAsMediaGroup(
     chatId: number,
     formattedText: FormattedString,
@@ -132,10 +117,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     return await this.getBot().api.sendMediaGroup(chatId, documents);
   }
 
-  /**
-   * Send attachments as a media group without caption
-   * Used for subsequent batches when there are more than 10 attachments
-   */
   private async sendAttachmentsAsMediaGroup(
     chatId: number,
     attachments: ProcessedAttachment[],

@@ -12,17 +12,11 @@ export interface PaginatedItem {
   formattedPublishedDate: string;
 }
 
-/**
- * Slice a full list to the items for the given page number
- */
 export function slicePage<T>(items: T[], page: number): T[] {
   const start = page * LOOKUP_CONFIG.PAGE_SIZE;
   return items.slice(start, start + LOOKUP_CONFIG.PAGE_SIZE);
 }
 
-/**
- * Calculate total pages for a given item count
- */
 export function totalPages(itemCount: number): number {
   return Math.max(1, Math.ceil(itemCount / LOOKUP_CONFIG.PAGE_SIZE));
 }
@@ -68,7 +62,6 @@ export function generatePaginatedMessageText(
   itemType: string,
   subtitleLabel = "Published date"
 ): FormattedString {
-  // Create individual formatted strings for each item
   const formattedItems: FormattedString[] = items.map((item, index) => {
     const shortSubject = fmt`${shortenString(item.subject)}`;
     const publishedDate = item.formattedPublishedDate;
@@ -80,7 +73,6 @@ export function generatePaginatedMessageText(
     return indexPart;
   });
 
-  // Join all items with double newlines
   const itemsList = joinWithNewlines(formattedItems, 2);
 
   const titlePart = fmt`${b}${title}:${b}`;
@@ -94,28 +86,12 @@ export function generatePaginatedMessageText(
   return joinWithNewlines([titlePart, itemsList, instructions], 2);
 }
 
-/**
- * Parse a select callback to extract the ID safely
- *
- * @param callbackData - Callback data string (e.g., "announcement_select_123")
- * @param expectedPrefix - Expected prefix (e.g., "announcement")
- * @returns Parsed result with validation
- *
- * @example
- * const result = parseSelectCallback("announcement_select_42", "announcement");
- * if (!result.isValid) {
- *   // Handle error
- *   return;
- * }
- * const id = result.id; // TypeScript knows this is number
- */
 export function parseSelectCallback(
   callbackData: string,
   expectedPrefix: string
 ): { isValid: true; id: number } | { isValid: false; id: null; error: string } {
   const parts = callbackData.split("_");
 
-  // Validate format: prefix_select_id
   if (parts.length < 3) {
     return { isValid: false, id: null, error: "Invalid callback format" };
   }
@@ -137,12 +113,6 @@ export function parseSelectCallback(
   return { isValid: true, id };
 }
 
-/**
- * Create standardized "View Another?" keyboard
- *
- * @param callbackPrefix - Prefix for callback data (e.g., "announcement")
- * @returns InlineKeyboard with yes/no buttons
- */
 export function createViewAnotherKeyboard(
   callbackPrefix: string
 ): InlineKeyboard {
@@ -154,14 +124,6 @@ export function createViewAnotherKeyboard(
     .text(`${emoji("cross_mark")} No`, `${callbackPrefix}_view_another_false`);
 }
 
-/**
- * Safely find an item by ID from an array
- *
- * @param items - Array of items to search
- * @param id - ID to find
- * @returns Found item
- * @throws SessionNotFoundError if item not found
- */
 export function findItemById<T extends { id: number }>(
   items: T[],
   id: number
@@ -173,12 +135,6 @@ export function findItemById<T extends { id: number }>(
   return item;
 }
 
-/**
- * Safely store message ID from callback query message
- *
- * @param ctx - Bot context
- * @param sessionKey - Session key to store message ID
- */
 export function storeCallbackMessageId(
   ctx: BotContext,
   sessionKey:

@@ -21,7 +21,6 @@ import { emoji } from "@grammyjs/emoji";
 import { fetchAnnouncements } from "../../../../api/services/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 
-// Common messages used throughout the composer
 const MESSAGES = {
   FETCHING_ANNOUNCEMENTS: [
     fmt`${emoji("hourglass_not_done")} Fetching announcements... Please wait...`,
@@ -47,8 +46,6 @@ function generateAnnouncementsText(
     "announcement"
   );
 }
-
-// Internal helper functions
 
 function formatAnnouncementDetails(
   announcement: Announcement
@@ -84,13 +81,11 @@ async function handleAnnouncementSelection(
   ctx: BotContext,
   announcement: Announcement
 ): Promise<void> {
-  // Show loading
   const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
   await ctx.editMessageText(loadingMsg.text, {
     entities: loadingMsg.entities,
   });
 
-  // Format and display details
   const detailsMsg = formatAnnouncementDetails(announcement);
   await ctx.editMessageText(detailsMsg.text, {
     entities: detailsMsg.entities,
@@ -111,7 +106,6 @@ async function handleAnnouncementAttachments(
     return;
   }
 
-  // Queue attachments for background delivery
   const plural = attachments.length > 1 ? "s" : "";
   const statusMessage = await ctx.reply(
     `${emoji("hourglass_not_done")} Downloading your file${plural} in the background... This may take a moment!`
@@ -133,22 +127,18 @@ async function handleAnnouncementAttachments(
 }
 
 async function fetchAndDisplayAnnouncements(ctx: BotContext): Promise<void> {
-  // Store message ID for error boundary
   storeCallbackMessageId(ctx, "announcementsMessageId");
 
-  // Show loading
   const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2);
   await ctx.editMessageText(loadingMsg.text, {
     entities: loadingMsg.entities,
   });
 
-  // Fetch data
   const announcements = await fetchAnnouncements({
     pageNumber: ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE,
     dataSize: LOOKUP_CONFIG.PAGE_SIZE,
   });
 
-  // Update session and display
   ctx.session.announcementsAnnouncements = announcements;
   const keyboard = generateAnnouncementsKeyboard(
     announcements,
@@ -162,32 +152,26 @@ async function fetchAndDisplayAnnouncements(ctx: BotContext): Promise<void> {
   });
 }
 
-// Create a composer for announcements lookup
 const composer = new Composer<BotContext>();
 
-// Create protected composer with error boundary for loading message cleanup
 const protectedComposer = composer.errorBoundary(
   createAnnouncementsErrorBoundary()
 );
 
-// Command: /announcements — Lookup announcements
 const announcementsLookupCommand = new Command<BotContext>(
   "announcements",
   `${emoji("loudspeaker")} Find published announcements from KTU`,
   async ctx => {
-    // Initialize session data
     if (ctx.session.announcementsPage === null) {
       ctx.session.announcementsPage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
 
-    // Send a loading message
     const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2);
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
     ctx.session.announcementsMessageId = loadingMessage.message_id;
 
-    // Get announcements, prepare keyboard and message text and send it
     const announcements = await fetchAnnouncements({
       pageNumber: ctx.session.announcementsPage,
       dataSize: LOOKUP_CONFIG.PAGE_SIZE,
@@ -198,10 +182,8 @@ const announcementsLookupCommand = new Command<BotContext>(
     );
     const messageText = generateAnnouncementsText(announcements);
 
-    // Store data in session
     ctx.session.announcementsAnnouncements = announcements;
 
-    // Edit the loading message with the actual content
     await ctx.api.editMessageText(
       ctx.chat.id,
       loadingMessage.message_id,
@@ -214,12 +196,9 @@ const announcementsLookupCommand = new Command<BotContext>(
   }
 );
 
-// Callback query handler for selecting announcements
-// Callback query handlers - use protected composer for error boundary coverage
 protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
   await ctx.answerCallbackQuery();
 
-  // Parse and validate callback
   const parsed = parseSelectCallback(ctx.callbackQuery.data, "announcement");
   if (!parsed.isValid) {
     await ctx.editMessageText(
@@ -228,21 +207,17 @@ protectedComposer.callbackQuery(/^announcement_select_/, async ctx => {
     return;
   }
 
-  // Store message ID for error boundary cleanup
   storeCallbackMessageId(ctx, "announcementsMessageId");
 
-  // Find selected announcement (throws SessionNotFoundError if not found)
   const announcement = findItemById(
     ctx.session.announcementsAnnouncements,
     parsed.id
   );
 
-  // Handle selection flow
   await handleAnnouncementSelection(ctx, announcement);
   await handleAnnouncementAttachments(ctx, announcement);
 });
 
-// Handler for "View Another" - Yes
 protectedComposer.callbackQuery("announcement_view_another_true", async ctx => {
   await ctx.answerCallbackQuery();
 
@@ -251,7 +226,6 @@ protectedComposer.callbackQuery("announcement_view_another_true", async ctx => {
   await fetchAndDisplayAnnouncements(ctx);
 });
 
-// Handler for "View Another" - No
 protectedComposer.callbackQuery(
   "announcement_view_another_false",
   async ctx => {
@@ -261,14 +235,12 @@ protectedComposer.callbackQuery(
       `Announcements lookup ended. Use ${formatCommand(announcementsLookupCommand)} to start again.`
     );
 
-    // Clear session data
     ctx.session.announcementsPage = null;
     ctx.session.announcementsAnnouncements = [];
     ctx.session.announcementsMessageId = null;
   }
 );
 
-// Callback query handlers for navigation
 protectedComposer.callbackQuery("announcement_page_info", async ctx => {
   await ctx.answerCallbackQuery();
 });
@@ -303,7 +275,6 @@ protectedComposer.callbackQuery("announcement_next_page", async ctx => {
 
   await fetchAndDisplayAnnouncements(ctx);
 
-  // Check if we got results
   if (ctx.session.announcementsAnnouncements.length === 0) {
     ctx.session.announcementsPage = currentPage; // Revert
     await ctx.editMessageText(
@@ -312,13 +283,10 @@ protectedComposer.callbackQuery("announcement_next_page", async ctx => {
   }
 });
 
-// Create the announcement commands command group
 const announcementsCommands = new CommandGroup<BotContext>();
 
-// Add commands to the group
 announcementsCommands.add(announcementsLookupCommand);
 
-// Hook the command group into the protected composer (with error boundary)
 protectedComposer.use(announcementsCommands);
 
 export const announcementsLookup = composer;

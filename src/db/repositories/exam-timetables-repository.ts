@@ -5,7 +5,6 @@ import type { TransactionType } from "../transactions.js";
 import type { ExamTimeTable } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";
 
-// Type for database instance (either db or transaction)
 type DatabaseInstance = typeof db | TransactionType;
 
 // Interface for search options
@@ -117,19 +116,6 @@ export class ExamTimetablesRepository {
   }
 
   /**
-   * Get exam timetables by multiple IDs
-   */
-  async getByIds(ids: number[]) {
-    if (ids.length === 0) return [];
-
-    return this.db
-      .select()
-      .from(examTimetables)
-      .where(sql`${examTimetables.id} = ANY(${ids})`)
-      .orderBy(desc(examTimetables.publishedAt));
-  }
-
-  /**
    * Check if exam timetable exists
    */
   async exists(id: number): Promise<boolean> {
@@ -205,41 +191,6 @@ export class ExamTimetablesRepository {
       .from(examTimetables);
 
     return Number(result[0]?.count || 0);
-  }
-
-  /**
-   * Get latest exam timetable ID (useful for sync operations)
-   */
-  async getLatestId(): Promise<number | null> {
-    const result = await this.db
-      .select({ id: examTimetables.id })
-      .from(examTimetables)
-      .orderBy(desc(examTimetables.id))
-      .limit(1);
-
-    return result[0]?.id || null;
-  }
-
-  /**
-   * Get exam timetables published after a specific date (useful for incremental sync)
-   */
-  async getTimetablesSince(date: Date, limit = 100) {
-    return this.db
-      .select()
-      .from(examTimetables)
-      .where(sql`${examTimetables.publishedAt} > ${date}`)
-      .orderBy(desc(examTimetables.publishedAt))
-      .limit(limit);
-  }
-
-  /**
-   * Delete exam timetable by ID
-   */
-  async delete(id: number) {
-    return this.db
-      .delete(examTimetables)
-      .where(eq(examTimetables.id, id))
-      .returning();
   }
 
   /**

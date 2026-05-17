@@ -13,7 +13,6 @@ interface FetchExamTimetablesParams {
   apiClient?: Got;
 }
 
-// Zod schema for API response validation with transformations
 const ExamTimetableResponseSchema = z.object({
   content: z.array(
     z.object({
@@ -46,7 +45,6 @@ async function _fetchExamTimetables({
     responseType: "json" as const,
   });
 
-  // Validate API response with Zod
   const data = ExamTimetableResponseSchema.parse(response.body);
 
   const timetables: ExamTimeTable[] = data.content.map(obj => ({

@@ -15,10 +15,8 @@ import { createBotMetrics } from "./metrics/definitions.js";
 
 async function startBotInLongPolling() {
   try {
-    // Initialize the DB connection before starting the bot
     await initDB();
 
-    // Create bot instance — metrics only when explicitly enabled
     let bot;
     let metricsRegistry;
 
@@ -34,19 +32,14 @@ async function startBotInLongPolling() {
       logger.info("Prometheus metrics disabled");
     }
 
-    // Set bot commands
     await botCommands.setCommands(bot);
 
-    // Delete webhook since this is long polling
     await bot.api.deleteWebhook({ drop_pending_updates: false });
 
-    // Create runner
     const runner = run(bot);
 
-    // Create monitoring server with health check and metrics endpoints
     const monitoringApp = new Hono();
 
-    // Add health check endpoint
     setupHealthCheckEndpoint(
       monitoringApp,
       "bot",
@@ -58,12 +51,10 @@ async function startBotInLongPolling() {
           .catch(() => false))
     );
 
-    // Add metrics endpoint only when metrics are enabled
     if (metricsRegistry) {
       setupMetricsEndpoint(monitoringApp, metricsRegistry);
     }
 
-    // Start monitoring server
     createMonitoringServer(monitoringApp, {
       serviceName: "bot",
       port: BotConfig.BOT_HEALTH_CHECK_PORT,
@@ -71,7 +62,6 @@ async function startBotInLongPolling() {
 
     logger.info("🚀 KTU Bot started successfully");
 
-    // Graceful shutdown handling
     process.on("SIGINT", () => void onShutdown(runner, "SIGINT"));
     process.on("SIGTERM", () => void onShutdown(runner, "SIGTERM"));
   } catch (error) {
@@ -80,7 +70,6 @@ async function startBotInLongPolling() {
   }
 }
 
-// Graceful shutdown function
 async function onShutdown(runner?: RunnerHandle, signal?: string) {
   if (signal) {
     logger.info({ signal }, "Shutting down gracefully");
@@ -92,5 +81,4 @@ async function onShutdown(runner?: RunnerHandle, signal?: string) {
   process.exit(signal ? 0 : 1);
 }
 
-// Start the bot application
 await startBotInLongPolling();

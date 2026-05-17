@@ -22,7 +22,6 @@ import { createCalendarErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 
-// Common messages used throughout the composer
 const MESSAGES = {
   FETCHING_CALENDARS: [
     fmt`${emoji("hourglass_not_done")} Fetching academic calendars... Please wait...`,
@@ -57,8 +56,6 @@ function generateCalendarsText(calendars: AcademicCalendar[]): FormattedString {
   );
 }
 
-// Internal helper functions
-
 function formatCalendarDetails(calendar: AcademicCalendar): FormattedString {
   return joinWithNewlines(
     [
@@ -73,13 +70,11 @@ async function handleCalendarSelection(
   ctx: BotContext,
   calendar: AcademicCalendar
 ): Promise<void> {
-  // Show loading
   const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
   await ctx.editMessageText(loadingMsg.text, {
     entities: loadingMsg.entities,
   });
 
-  // Format and display details
   const detailsMsg = formatCalendarDetails(calendar);
   await ctx.editMessageText(detailsMsg.text, {
     entities: detailsMsg.entities,
@@ -92,7 +87,6 @@ async function handleCalendarAttachment(
 ): Promise<void> {
   const keyboard = createViewAnotherKeyboard("calendar");
 
-  // Check if calendar has attachment
   if (!calendar.attachmentId) {
     const noAttachmentMsg = joinWithNewlines(
       [
@@ -109,7 +103,6 @@ async function handleCalendarAttachment(
     return;
   }
 
-  // Queue attachment for background delivery
   const statusMessage = await ctx.reply(
     `${emoji("hourglass_not_done")} Downloading your calendar in the background... This may take a moment!`
   );
@@ -135,22 +128,18 @@ async function handleCalendarAttachment(
 }
 
 async function fetchAndDisplayCalendars(ctx: BotContext): Promise<void> {
-  // Store message ID for error boundary
   storeCallbackMessageId(ctx, "calendarMessageId");
 
-  // Show loading
   const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_CALENDARS, 2);
   await ctx.editMessageText(loadingMsg.text, {
     entities: loadingMsg.entities,
   });
 
-  // Fetch data
   const calendars = await fetchAcademicCalendars({
     pageNumber: ctx.session.calendarPage ?? LOOKUP_CONFIG.INITIAL_PAGE,
     dataSize: LOOKUP_CONFIG.PAGE_SIZE,
   });
 
-  // Update session and display
   ctx.session.calendarCalendars = calendars;
   const keyboard = generateCalendarsKeyboard(
     calendars,
@@ -164,30 +153,24 @@ async function fetchAndDisplayCalendars(ctx: BotContext): Promise<void> {
   });
 }
 
-// Create the composer with error boundary
 const composer = new Composer<BotContext>();
 const protectedComposer = composer.errorBoundary(createCalendarErrorBoundary());
 
-// Command: /calendars - Start academic calendar lookup
 const calendarLookupCommand = new Command<BotContext>(
   "calendars",
   `${emoji("calendar")} Find published academic calendars from KTU`,
   async (ctx: BotContext) => {
-    // Initialize session data
     if (ctx.session.calendarPage === null) {
       ctx.session.calendarPage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
 
-    // Send a loading message
     const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_CALENDARS, 2);
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
 
-    // Store message ID immediately for error boundary cleanup
     ctx.session.calendarMessageId = loadingMessage.message_id;
 
-    // Fetch the calendars, prepare and display
     const calendars = await fetchAcademicCalendars({
       pageNumber: ctx.session.calendarPage,
       dataSize: LOOKUP_CONFIG.PAGE_SIZE,
@@ -198,10 +181,8 @@ const calendarLookupCommand = new Command<BotContext>(
     );
     const messageText = generateCalendarsText(calendars);
 
-    // Store data in session for callback updates
     ctx.session.calendarCalendars = calendars;
 
-    // Edit the loading message with the actual content
     await ctx.api.editMessageText(
       ctx.chat!.id,
       loadingMessage.message_id,
@@ -214,11 +195,9 @@ const calendarLookupCommand = new Command<BotContext>(
   }
 );
 
-// Callback query handler for selecting calendars
 protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
   await ctx.answerCallbackQuery();
 
-  // Parse and validate callback
   const parsed = parseSelectCallback(ctx.callbackQuery.data, "calendar");
   if (!parsed.isValid) {
     await ctx.editMessageText(
@@ -227,18 +206,14 @@ protectedComposer.callbackQuery(/^calendar_select_/, async ctx => {
     return;
   }
 
-  // Store message ID for error boundary cleanup
   storeCallbackMessageId(ctx, "calendarMessageId");
 
-  // Find selected calendar (throws SessionNotFoundError if not found)
   const calendar = findItemById(ctx.session.calendarCalendars, parsed.id);
 
-  // Handle selection flow
   await handleCalendarSelection(ctx, calendar);
   await handleCalendarAttachment(ctx, calendar);
 });
 
-// Handler for "View Another" - Yes
 protectedComposer.callbackQuery("calendar_view_another_true", async ctx => {
   await ctx.answerCallbackQuery();
 
@@ -247,26 +222,22 @@ protectedComposer.callbackQuery("calendar_view_another_true", async ctx => {
   await fetchAndDisplayCalendars(ctx);
 });
 
-// Handler for "View Another" - No
 protectedComposer.callbackQuery("calendar_view_another_false", async ctx => {
-  // Anwer callback and edit message
+  await ctx.answerCallbackQuery();
   await ctx.answerCallbackQuery();
   await ctx.editMessageText(
     `Academic calendar lookup ended. Use ${formatCommand(calendarLookupCommand)} to start again.`
   );
 
-  // Clear session data
   ctx.session.calendarPage = null;
   ctx.session.calendarCalendars = [];
   ctx.session.calendarMessageId = null;
 });
 
-// Callback query handlers for navigation
 protectedComposer.callbackQuery("calendar_page_info", async ctx => {
   await ctx.answerCallbackQuery();
 });
 
-// Callback query handler for "Previous Page"
 protectedComposer.callbackQuery("calendar_prev_page", async ctx => {
   await ctx.answerCallbackQuery();
 
@@ -280,7 +251,6 @@ protectedComposer.callbackQuery("calendar_prev_page", async ctx => {
   await fetchAndDisplayCalendars(ctx);
 });
 
-// Callback query handler for "Next Page"
 protectedComposer.callbackQuery("calendar_next_page", async ctx => {
   await ctx.answerCallbackQuery();
 
@@ -296,7 +266,6 @@ protectedComposer.callbackQuery("calendar_next_page", async ctx => {
 
   await fetchAndDisplayCalendars(ctx);
 
-  // Check if we got results
   if (ctx.session.calendarCalendars.length === 0) {
     ctx.session.calendarPage = currentPage; // Revert
     await ctx.editMessageText(
@@ -305,13 +274,10 @@ protectedComposer.callbackQuery("calendar_next_page", async ctx => {
   }
 });
 
-// Create the calendar command group
 const calendarCommands = new CommandGroup<BotContext>();
 
-// Add commands to the group
 calendarCommands.add(calendarLookupCommand);
 
-// Hook the command group into the composer
 protectedComposer.use(calendarCommands);
 
 export const calendarLookup = composer;

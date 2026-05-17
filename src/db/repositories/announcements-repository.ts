@@ -5,7 +5,6 @@ import type { TransactionType } from "../transactions.js";
 import type { Announcement } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";
 
-// Type for database instance (either db or transaction)
 type DatabaseInstance = typeof db | TransactionType;
 
 // Interface for search options
@@ -117,19 +116,6 @@ export class AnnouncementsRepository {
   }
 
   /**
-   * Get announcements by multiple IDs
-   */
-  async getByIds(ids: number[]) {
-    if (ids.length === 0) return [];
-
-    return this.db
-      .select()
-      .from(announcements)
-      .where(sql`${announcements.id} = ANY(${ids})`)
-      .orderBy(desc(announcements.publishedAt));
-  }
-
-  /**
    * Check if announcement exists
    */
   async exists(id: number): Promise<boolean> {
@@ -207,41 +193,6 @@ export class AnnouncementsRepository {
     const result = await this.db.select({ count: count() }).from(announcements);
 
     return Number(result[0]?.count || 0);
-  }
-
-  /**
-   * Get latest announcement ID (useful for sync operations)
-   */
-  async getLatestId(): Promise<number | null> {
-    const result = await this.db
-      .select({ id: announcements.id })
-      .from(announcements)
-      .orderBy(desc(announcements.id))
-      .limit(1);
-
-    return result[0]?.id || null;
-  }
-
-  /**
-   * Get announcements published after a specific date (useful for incremental sync)
-   */
-  async getAnnouncementsSince(date: Date, limit = 100) {
-    return this.db
-      .select()
-      .from(announcements)
-      .where(sql`${announcements.publishedAt} > ${date}`)
-      .orderBy(desc(announcements.publishedAt))
-      .limit(limit);
-  }
-
-  /**
-   * Delete announcement by ID
-   */
-  async delete(id: number) {
-    return this.db
-      .delete(announcements)
-      .where(eq(announcements.id, id))
-      .returning();
   }
 
   /**

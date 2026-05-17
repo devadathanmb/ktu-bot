@@ -13,7 +13,6 @@ export const startCommand = new Command<BotContext>(
   "start",
   `${emoji("high_voltage")} Start the bot and explore features`,
   async ctx => {
-    // Prepare and send the welcome message
     const userName = ctx.from?.first_name || ctx.from?.username;
     const greeting = userName ? `Hello ${userName}!` : "Hello there!";
     const welcomeHeader = fmt`${greeting} ${emoji("waving_hand")}`;

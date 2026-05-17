@@ -8,10 +8,8 @@ import { timetableCommands } from "../composers/lookups/exam-timetable/composer.
 import { calendarCommands } from "../composers/lookups/academic-calendar/composer.js";
 import { syllabusCommands } from "../composers/lookups/syllabus/composer.js";
 
-// Create the main bot commands group that combines all command groups
 const botCommands = new CommandGroup<BotContext>();
 
-// Hook individual command groups into the main command group
 botCommands.add(coreCommandsGroup.commands);
 botCommands.add(announcementSubscriptionsCommands.commands);
 botCommands.add(announcementsCommands.commands);
@@ -19,5 +17,4 @@ botCommands.add(timetableCommands.commands);
 botCommands.add(calendarCommands.commands);
 botCommands.add(syllabusCommands.commands);
 
-// Export the combined commands group
 export { botCommands };

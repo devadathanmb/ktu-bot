@@ -9,7 +9,6 @@ import type {
   ApiStatusResponse,
 } from "../../../types/service.types.js";
 
-// Zod schemas for UptimeRobot API response validation
 const UptimeRobotLogSchema = z.object({
   type: z.number(),
   datetime: z.number(),
@@ -33,7 +32,6 @@ const UptimeRobotResponseSchema = z.object({
   monitors: z.array(UptimeRobotMonitorSchema),
 });
 
-// Map UptimeRobot status codes to readable status
 function mapStatus(statusCode: number): string {
   switch (statusCode) {
     case 2:
@@ -47,7 +45,6 @@ function mapStatus(statusCode: number): string {
   }
 }
 
-// Map log type codes to readable strings
 function mapLogType(typeCode: number): string {
   switch (typeCode) {
     case 2:
@@ -59,7 +56,6 @@ function mapLogType(typeCode: number): string {
   }
 }
 
-// Format timestamp from Unix timestamp to localized string
 function formatTimestamp(unixTimestamp: number): string {
   const date = new Date(unixTimestamp * 1000);
   return new Intl.DateTimeFormat("en-IN", {
@@ -91,14 +87,12 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
     }
   );
 
-  // Validate API response with Zod
   const data = UptimeRobotResponseSchema.parse(response.body);
 
   if (!data.monitors || data.monitors.length === 0) {
     throw new Error("No monitor data available from UptimeRobot API");
   }
 
-  // Process all monitors
   const monitors: ApiStatus[] = data.monitors.map(monitor => {
     const apiStatus: ApiStatus = {
       name: monitor.friendly_name,
@@ -127,5 +121,4 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
   return { monitors };
 }
 
-// Export the wrapped version with error handling
 export const getApiStatus = withServiceWrapper("getApiStatus", _getApiStatus);

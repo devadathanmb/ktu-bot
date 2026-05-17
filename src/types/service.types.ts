@@ -39,12 +39,6 @@ export interface AcademicCalendar {
   encryptId: string;
 }
 
-// Hugging Face Relevancy Service Types
-export interface RelevancyScore {
-  label: string;
-  score: number;
-}
-
 // UptimeRobot API Status Service Types
 export interface ApiStatusLog {
   type: string;

@@ -14,7 +14,6 @@ export interface SyncJobData {
   syncType: SyncJobType;
 }
 
-// Queue for data synchronization jobs with automatic retry
 export const dataSyncQueue = new Queue<SyncJobData>(DATA_SYNC_QUEUE, {
   connection: queueRedisConnectionOptions,
   defaultJobOptions: {
@@ -34,28 +33,6 @@ export const dataSyncQueue = new Queue<SyncJobData>(DATA_SYNC_QUEUE, {
   },
 });
 
-// Manually trigger sync jobs for all data types (for testing/admin use)
-export async function scheduleSyncJobs() {
-  await Promise.all([
-    dataSyncQueue.add("data-sync:announcements", {
-      syncType: "data-sync:announcements",
-    }),
-    dataSyncQueue.add("data-sync:academic-calendars", {
-      syncType: "data-sync:academic-calendars",
-    }),
-    dataSyncQueue.add("data-sync:exam-timetables", {
-      syncType: "data-sync:exam-timetables",
-    }),
-  ]);
-
-  logger.info(
-    { queueName: DATA_SYNC_QUEUE },
-    "Manually scheduled all sync jobs"
-  );
-}
-
-// Set up recurring sync jobs for all data types
-// This is called once on worker startup - BullMQ handles the recurring schedule
 export async function setupRecurringSchedule() {
   await Promise.all([
     dataSyncQueue.add(

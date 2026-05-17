@@ -22,11 +22,9 @@ export const chatMemeberHandler = async (
       tx
     );
 
-    // If oldStatus is 'kicked' and newStatus is not 'kicked', user has unblocked the bot
     if (oldStatus === "kicked" && newStatus !== "kicked") {
       logger.info({ chatId }, "User has unblocked the bot");
 
-      // 1. Update DB to mark the user as unblocked
       const chat = await chatRepo.getById(chatId);
       if (chat && chat.kickedAt) {
         await chatRepo.markActive(chatId);
@@ -44,13 +42,10 @@ export const chatMemeberHandler = async (
       });
     }
 
-    // If oldStatus is not 'kicked' and newStatus is 'kicked', user has blocked the bot
     if (oldStatus !== "kicked" && newStatus === "kicked") {
       logger.info({ chatId }, "User has blocked the bot");
-      // 1. Update DB to mark the user as blocked
       await chatRepo.markKicked(chatId);
 
-      // 2. Remove the user from announcement subscriptions
       await announcementSubscriptionRepo.delete(chatId);
     }
   });

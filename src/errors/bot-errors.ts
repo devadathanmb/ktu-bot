@@ -1,7 +1,3 @@
-/**
- * Custom error classes for the bot application
- */
-
 import { emoji } from "@grammyjs/emoji";
 import { joinWithNewlines } from "../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";

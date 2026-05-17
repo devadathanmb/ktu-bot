@@ -25,14 +25,6 @@ export const KTU_API_ENDPOINTS = {
   ACADEMIC_CALENDAR: `${KTU_API_WEBPORTAL_API_URI}/academicCalendar`,
 } as const;
 
-// External API endpoints:
-// Hugging Face Inference API for text relevancy (used for announcements filtering)
-const HUGGING_FACE_BASE_URI = "https://api-inference.huggingface.co";
-export const HUGGING_FACE_API = {
-  BASE_URI: HUGGING_FACE_BASE_URI,
-  RELEVANCY_ENDPOINT: `${HUGGING_FACE_BASE_URI}/models/devadathanmb/ktu-notifs-relevancy-bert`,
-} as const;
-
 // Uptime Robot API
 const UPTIME_ROBOT_BASE_URI = "https://api.uptimerobot.com/v2";
 export const UPTIME_ROBOT_API = {

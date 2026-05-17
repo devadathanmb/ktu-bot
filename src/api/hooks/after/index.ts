@@ -1,2 +1,4 @@
-// logResponseTime hook is available but not currently wired into the API client
-// To enable it, import and add to afterResponse hooks in src/api/client.ts
+// KEPT for debugging — not wired into the API client.
+// To use: import & add to afterResponse hooks in src/api/client.ts.
+
+export { logResponseTime } from "./log-response-time.js";

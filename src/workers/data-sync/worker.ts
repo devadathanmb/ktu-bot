@@ -32,7 +32,6 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
   }
 
   protected override initializeWorkerSpecific(): Promise<void> {
-    // Initialize syncers for each data type
     this.syncers = {
       "data-sync:announcements": new AnnouncementsSyncer(
         this.db,
@@ -63,7 +62,6 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
   }
 
   protected override async onStartupComplete(): Promise<void> {
-    // Perform initial sync if database is empty
     const syncTypesNeedingInitialSync = await this.checkNeedsInitialSync();
     if (syncTypesNeedingInitialSync.length > 0) {
       logger.info(
@@ -73,7 +71,6 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
       await this.scheduleInitialSyncJobs(syncTypesNeedingInitialSync);
     }
 
-    // Set up recurring jobs (called once - BullMQ handles the schedule)
     await setupRecurringSchedule();
   }
 
@@ -85,7 +82,6 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
       throw new Error(`Unknown sync type: ${syncType}`);
     }
 
-    // Check if this syncer needs initial sync
     const needsInitial = await syncer.needsInitialSync();
 
     if (needsInitial) {

@@ -9,7 +9,6 @@ import type {
   ApiStatusResponse,
 } from "../../../types/service.types.js";
 
-// Zod schemas for Better Uptime API response validation
 const BetterUptimeMonitorSchema = z.object({
   id: z.string(),
   type: z.literal("monitor"),
@@ -52,7 +51,6 @@ const BetterUptimeResponseTimeSchema = z.object({
 });
 
 async function _getApiStatus(): Promise<ApiStatusResponse> {
-  // Fetch monitors from the specific monitor group
   const monitorsResponse = await cachedApiClient.get(
     `${BETTER_UPTIME_API.MONITOR_GROUPS_ENDPOINT}/${ExternalApiConfig.BETTER_UPTIME_MONITOR_GROUP_ID}/monitors`,
     {
@@ -70,12 +68,10 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
     monitorsResponse.body
   );
 
-  // Process all monitors
   const monitors: ApiStatus[] = await Promise.all(
     monitorsData.data.map(async monitor => {
       let responseTime = 0;
 
-      // Fetch response times for this monitor
       try {
         const responseTimesResponse = await cachedApiClient.get(
           `${BETTER_UPTIME_API.MONITORS_ENDPOINT}/${monitor.id}/response-times`,
@@ -95,7 +91,6 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
           responseTimesResponse.body
         );
 
-        // Get the most recent response time from the first region
         const firstRegion = responseTimesData.data.attributes.regions[0];
         const firstResponseTime = firstRegion?.response_times[0];
         if (firstResponseTime) {
@@ -103,7 +98,6 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
           responseTime = firstResponseTime.response_time * 1000;
         }
       } catch (error) {
-        // If fetching response times fails, continue with 0
         logger.warn(
           { err: error as Error, monitorId: monitor.id },
           "Failed to fetch response times for monitor"
@@ -123,5 +117,4 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
   return { monitors };
 }
 
-// Export the wrapped version with error handling
 export const getApiStatus = withServiceWrapper("getApiStatus", _getApiStatus);

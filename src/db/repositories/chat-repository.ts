@@ -4,7 +4,6 @@ import { chats } from "../schema/chats.js";
 import type { TransactionType } from "../transactions.js";
 import logger from "../../utils/logger.js";
 
-// Type for database instance (either db or transaction)
 type DatabaseInstance = typeof db | TransactionType;
 
 export class ChatRepository {

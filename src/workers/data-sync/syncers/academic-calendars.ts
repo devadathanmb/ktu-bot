@@ -39,11 +39,9 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
     while (hasMorePages) {
       const batch: AcademicCalendar[] = [];
 
-      // Fetch BATCH_SIZE pages at once
       for (let i = 0; i < this.BATCH_SIZE && hasMorePages; i++) {
         const calendars = await this.fetchPage(pageNumber);
 
-        // If we get fewer items than PAGE_SIZE, we've reached the end
         if (calendars.length === 0) {
           hasMorePages = false;
           break;
@@ -52,14 +50,12 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
         batch.push(...calendars);
         pageNumber++;
 
-        // If we got less than a full page, we're at the end
         if (calendars.length < this.PAGE_SIZE) {
           hasMorePages = false;
           break;
         }
       }
 
-      // Yield the batch if we collected any calendars
       if (batch.length > 0) {
         logger.debug(
           { syncer: this.name, batchSize: batch.length },
@@ -73,13 +69,11 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
   }
 
   async needsInitialSync(): Promise<boolean> {
-    // Check if academic calendars search table is empty
     const repo = new AcademicCalendarsRepository();
     const count = await repo.getCount();
 
     logger.debug({ syncer: this.name, count }, "Current calendars count in DB");
 
-    // If no calendars exist, we need initial sync
     return count === 0;
   }
 
@@ -126,7 +120,6 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
   async performPeriodicSync(): Promise<void> {
     logger.info({ syncer: this.name }, "Starting periodic sync");
 
-    // Fetch recent calendars (first 2 pages to catch any recent updates)
     const recentBatch1 = await this.fetchPage(0, { log: false });
     const recentBatch2 = await this.fetchPage(1, { log: false });
     const recentCalendars = [...recentBatch1, ...recentBatch2];
@@ -136,7 +129,6 @@ export class AcademicCalendarsSyncer extends BaseResourceSyncer {
       return;
     }
 
-    // Transform and upsert in transaction
     await withTransaction(async tx => {
       const repo = new AcademicCalendarsRepository(tx);
       const transformedCalendars = recentCalendars.map(calendar =>
