@@ -1,5 +1,7 @@
+export { processAttachments } from "./attachment-processor.js";
 export {
-  uploadFileToFileHosting,
-  uploadFileToTelegram,
-  processAttachments,
-} from "./attachment-processor.js";
+  uploadToFileChannel,
+  sendAsDocument,
+  uploadToFileHost,
+  sendAsLink,
+} from "./attachment-delivery.js";

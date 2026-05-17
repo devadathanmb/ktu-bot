@@ -61,6 +61,10 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
         connection: workerRedisConnectionOptions,
         concurrency: this.config?.concurrency ?? 1,
         ...(this.config?.limiter && { limiter: this.config.limiter }),
+        // Allow more stall retries before marking a job as permanently failed.
+        // Default (1) is too aggressive — an OOM kill or network blip will
+        // permanently fail the job after just one stall.
+        maxStalledCount: 5,
       }
     );
 
