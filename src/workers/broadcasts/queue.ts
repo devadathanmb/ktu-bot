@@ -1,25 +1,13 @@
-import { Queue } from "bullmq";
-import { queueRedisConnectionOptions } from "../shared/redis.js";
 import { BroadcastJob } from "../shared/types.js";
 import logger from "../../utils/logger.js";
+import { createQueue } from "../shared/create-queue.js";
 
 export const BROADCASTS_QUEUE = "BROADCASTS_QUEUE";
 
-export const broadcastsQueue = new Queue<BroadcastJob>(BROADCASTS_QUEUE, {
-  connection: queueRedisConnectionOptions,
+export const broadcastsQueue = createQueue<BroadcastJob>({
+  name: BROADCASTS_QUEUE,
   defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 10 * 1000, // 10 seconds
-    },
-    removeOnComplete: {
-      count: 200,
-      age: 24 * 60 * 60,
-    },
-    removeOnFail: {
-      count: 50,
-    },
+    removeOnFail: { count: 50 },
   },
 });
 

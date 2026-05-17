@@ -1,31 +1,16 @@
-import { Queue } from "bullmq";
-import { queueRedisConnectionOptions } from "../../shared/redis.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
 import logger from "../../../utils/logger.js";
+import { createQueue } from "../../shared/create-queue.js";
 
 export const ANNOUNCEMENTS_NOTIFY_QUEUE = "ANNOUNCEMENTS_NOTIFY_QUEUE";
 
-export const announcementsNotifyQueue = new Queue<Record<string, never>>(
-  ANNOUNCEMENTS_NOTIFY_QUEUE,
-  {
-    connection: queueRedisConnectionOptions,
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: "exponential",
-        delay: 60 * 1000,
-      },
-      removeOnComplete: {
-        count: 50,
-        age: 24 * 60 * 60,
-      },
-      removeOnFail: {
-        count: 50,
-        age: 24 * 60 * 60,
-      },
-    },
-  }
-);
+export const announcementsNotifyQueue = createQueue<Record<string, never>>({
+  name: ANNOUNCEMENTS_NOTIFY_QUEUE,
+  defaultJobOptions: {
+    removeOnComplete: { count: 50 },
+    removeOnFail: { count: 50, age: 24 * 60 * 60 },
+  },
+});
 
 export async function setupRecurringSchedule() {
   await announcementsNotifyQueue.add(
