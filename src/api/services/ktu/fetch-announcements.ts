@@ -14,7 +14,6 @@ interface FetchAnnouncementsParams {
   apiClient?: Got;
 }
 
-// Zod schema for API response validation with transformations
 const AnnouncementResponseSchema = z.object({
   content: z.array(
     z.object({
@@ -56,7 +55,6 @@ async function _fetchAnnouncements({
     responseType: "json" as const,
   });
 
-  // Validate API response with Zod
   const data = AnnouncementResponseSchema.parse(response.body);
 
   const announcements: Announcement[] = data.content.map(obj => ({
@@ -71,12 +69,9 @@ async function _fetchAnnouncements({
     })),
   }));
 
-  // logger.debug({ announcements: announcements }, "Fetched announcements");
-
   return announcements;
 }
 
-// Export the wrapped version with error handling
 export const fetchAnnouncements = withServiceWrapper(
   "fetchAnnouncements",
   _fetchAnnouncements

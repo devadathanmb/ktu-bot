@@ -1,9 +1,8 @@
-import { eq, inArray, arrayOverlaps } from "drizzle-orm";
+import { eq, arrayOverlaps } from "drizzle-orm";
 import { db } from "../connection.js";
 import { announcementSubscriptions } from "../schema/announcement-subscriptions.js";
 import type { TransactionType } from "../transactions.js";
 
-// Type for database instance (either db or transaction)
 type DatabaseInstance = typeof db | TransactionType;
 
 export class AnnouncementSubscriptionRepository {
@@ -58,13 +57,6 @@ export class AnnouncementSubscriptionRepository {
 
   async getAll() {
     return this.db.select().from(announcementSubscriptions);
-  }
-
-  async getBychatIds(chatIds: number[]) {
-    return this.db
-      .select()
-      .from(announcementSubscriptions)
-      .where(inArray(announcementSubscriptions.chatId, chatIds));
   }
 
   async exists(chatId: number) {

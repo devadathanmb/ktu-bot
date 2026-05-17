@@ -1,4 +1,3 @@
-// Enums for courses
 enum UnderGraduateCourse {
   BTECH = "BTECH",
   BCA = "BCA",
@@ -23,7 +22,6 @@ enum OtherCourse {
   PHD = "PHD",
 }
 
-// Combine and export all courses as a single enum
 const Course = {
   ...UnderGraduateCourse,
   ...PostGraduateCourse,
@@ -31,7 +29,6 @@ const Course = {
 } as const;
 type Course = (typeof Course)[keyof typeof Course];
 
-// Sets for easy lookup
 const UNDERGRADUATE_COURSES = new Set(
   Object.values(UnderGraduateCourse) as Course[]
 );
@@ -40,13 +37,11 @@ const POSTGRADUATE_COURSES = new Set(
 );
 const COURSES = new Set(Object.values(Course) as Course[]);
 
-// Specific announcement filters
 enum AnnouncementSpecificFilter {
   ALL = "ALL",
   RELEVANT = "RELEVANT",
 }
 
-// Combined announcement filter type
 const AnnouncementFilter = {
   ...Course,
   ...AnnouncementSpecificFilter,
@@ -54,7 +49,6 @@ const AnnouncementFilter = {
 type AnnouncementFilter =
   (typeof AnnouncementFilter)[keyof typeof AnnouncementFilter];
 
-// Mapping for display purposes
 const ANNOUNCEMENT_FILTER_MAP = {
   [Course.BTECH]: "B.Tech",
   [Course.MTECH]: "M.Tech",
@@ -75,7 +69,6 @@ const ANNOUNCEMENT_FILTER_MAP = {
   [AnnouncementSpecificFilter.RELEVANT]: "Relevant Announcements",
 } as const;
 
-// Regex patterns to match course mentions in text
 const REGEX_COURSE_FILTER_TO_COURSE_MAP: Record<string, Set<Course>> = {
   "\\bb\\.? ?tech": new Set([Course.BTECH]),
   "\\bm\\.? ?tech": new Set([Course.MTECH]),

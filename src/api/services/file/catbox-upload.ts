@@ -9,7 +9,6 @@ import {
   withTempFileCleanup,
 } from "../../../utils/file-utils.js";
 
-// Zod schema for Catbox API response validation
 const CatboxResponseSchema = z
   .url("Invalid URL returned from Catbox API")
   .startsWith("https://", "Response must be a secure HTTPS URL");
@@ -17,7 +16,6 @@ const CatboxResponseSchema = z
 async function _uploadTempFile(params: TempFileUploadParams): Promise<string> {
   const { filePath, fileName } = params;
 
-  // Read file as buffer
   const fileBuffer = await readFileAsBuffer(filePath);
 
   // Create native FormData instance (got v15 requires native Web API FormData)
@@ -40,10 +38,8 @@ async function _uploadBase64Data(
   base64Data: string,
   fileName: string
 ): Promise<string> {
-  // Create temp file from base64 data
   const tempFilePath = await createTempFileFromBase64(base64Data, fileName);
 
-  // Upload the temp file with automatic cleanup
   return withTempFileCleanup(tempFilePath, async () => {
     return _uploadTempFile({
       filePath: tempFilePath,
@@ -52,7 +48,6 @@ async function _uploadBase64Data(
   });
 }
 
-// Export the wrapped version with error handling
 export const uploadTempFile = withServiceWrapper(
   "uploadTempFile",
   _uploadTempFile

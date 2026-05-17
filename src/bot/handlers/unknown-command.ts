@@ -8,21 +8,11 @@ import { getRandomSticker } from "../../constants/stickers.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../configs/bot.js";
 
-// Define the context type that includes the commandSuggestion property
-// This matches what the commandNotFound filter provides
 type UnknownCommandContext = Context &
   CommandsFlavor &
   EmojiFlavor & {
     commandSuggestion: string | null;
   };
-
-/**
- * Handler for unknown/unrecognized commands
- *
- * This handler is triggered when a user sends a command-like message
- * that doesn't match any registered commands. It provides helpful
- * suggestions when possible or a generic fallback message.
- */
 export const unknownCommandHandler = async (ctx: UnknownCommandContext) => {
   const randomSticker = getRandomSticker();
   const stickerMsg = await ctx.replyWithSticker(randomSticker);

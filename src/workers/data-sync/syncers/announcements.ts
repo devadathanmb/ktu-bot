@@ -42,11 +42,9 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
     while (hasMorePages) {
       const batch: Announcement[] = [];
 
-      // Fetch BATCH_SIZE pages at once
       for (let i = 0; i < this.BATCH_SIZE && hasMorePages; i++) {
         const announcements = await this.fetchPage(pageNumber);
 
-        // If we get fewer items than PAGE_SIZE, we've reached the end
         if (announcements.length === 0) {
           hasMorePages = false;
           break;
@@ -55,14 +53,12 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
         batch.push(...announcements);
         pageNumber++;
 
-        // If we got less than a full page, we're at the end
         if (announcements.length < this.PAGE_SIZE) {
           hasMorePages = false;
           break;
         }
       }
 
-      // Yield the batch if we collected any announcements
       if (batch.length > 0) {
         logger.debug(
           { syncer: this.name, batchSize: batch.length },
@@ -76,7 +72,6 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
   }
 
   async needsInitialSync(): Promise<boolean> {
-    // Check if announcements search table is empty
     const repo = new AnnouncementsRepository();
     const count = await repo.getCount();
 
@@ -85,7 +80,6 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
       "Current announcements count in DB"
     );
 
-    // If no announcements exist, we need initial sync
     return count === 0;
   }
 
@@ -132,7 +126,6 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
   async performPeriodicSync(): Promise<void> {
     logger.info({ syncer: this.name }, "Starting periodic sync");
 
-    // Fetch recent announcements (first 2 pages to catch any recent updates)
     const recentBatch1 = await this.fetchPage(0, { log: false });
     const recentBatch2 = await this.fetchPage(1, { log: false });
     const recentAnnouncements = [...recentBatch1, ...recentBatch2];
@@ -142,7 +135,6 @@ export class AnnouncementsSyncer extends BaseResourceSyncer {
       return;
     }
 
-    // Transform and upsert in transaction
     await withTransaction(async tx => {
       const repo = new AnnouncementsRepository(tx);
       const transformedAnnouncements = recentAnnouncements.map(announcement =>

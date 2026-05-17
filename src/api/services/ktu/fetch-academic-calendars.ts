@@ -13,7 +13,6 @@ interface FetchAcademicCalendarsParams {
   apiClient?: Got;
 }
 
-// Zod schema for API response validation with transformations
 const AcademicCalendarResponseSchema = z.object({
   content: z.array(
     z.object({
@@ -46,7 +45,6 @@ async function _fetchAcademicCalendars({
     responseType: "json" as const,
   });
 
-  // Validate API response with Zod
   const data = AcademicCalendarResponseSchema.parse(response.body);
 
   const calendars: AcademicCalendar[] = data.content.map(obj => ({
@@ -62,7 +60,6 @@ async function _fetchAcademicCalendars({
   return calendars;
 }
 
-// Export the wrapped version with error handling
 export const fetchAcademicCalendars = withServiceWrapper(
   "fetchAcademicCalendars",
   _fetchAcademicCalendars

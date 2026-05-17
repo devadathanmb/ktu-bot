@@ -21,7 +21,4 @@ const API_CLIENT_OPTIONS = {
   retry: { limit: 2 },
 };
 
-// Cache TTL - Used for requests that will be cached
-const CACHE_TTL = 5 * 60 * 1000;
-
-export { KTU_API_HEADERS, API_CLIENT_OPTIONS, CACHE_TTL };
+export { KTU_API_HEADERS, API_CLIENT_OPTIONS };

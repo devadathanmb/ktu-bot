@@ -9,10 +9,6 @@ export interface QueueHealthCheckOptions {
   failedJobsLookbackMinutes: number;
 }
 
-/**
- * Count failed jobs within a time window by inspecting individual job timestamps.
- * Jobs are sorted newest-first by default, so we stop at the first job outside the window.
- */
 async function getFailedCountWithinWindow(
   queue: Queue,
   lookbackMinutes: number
@@ -60,12 +56,6 @@ async function getFailedCountWithinWindow(
   return count;
 }
 
-/**
- * Check the health of a BullMQ queue
- * @param queue - The BullMQ queue to check
- * @param options - Health check thresholds
- * @returns true if queue is healthy, false otherwise
- */
 export async function checkQueueHealth(
   queue: Queue,
   options: QueueHealthCheckOptions

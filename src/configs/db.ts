@@ -24,7 +24,6 @@ const dbConfigSchema = z
       });
     }
 
-    // If path is set, verify the file exists and is readable
     if (config.DATABASE_CA_CERTIFICATE_PATH) {
       try {
         readFileSync(config.DATABASE_CA_CERTIFICATE_PATH, "utf-8");
@@ -38,7 +37,6 @@ const dbConfigSchema = z
     }
   })
   .transform(config => {
-    // If PGSSLMODE is 'disable', SSL config is false
     if (config.PGSSLMODE === "disable") {
       return { ...config, SSL_CONFIG: false };
     }

@@ -10,42 +10,8 @@ import { HandledBotError } from "../../../errors/handled-bot-error.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 
-/**
- * Session keys that contain message IDs for loading/status messages
- * Use keyof SessionData so LSP can provide autocomplete and type checking
- */
 type LoadingMessageKey = keyof SessionData;
 
-/**
- * Creates an error boundary for composers that handles cleanup of loading messages
- * stored in session when errors occur, and uses the actual error message from API errors
- *
- * @param loadingMessageKeys - Array of session keys that contain message IDs to clean up
- * @param fallbackErrorMessage - Optional fallback message if no specific error message is available
- * @returns Error boundary handler function
- *
- * @example
- * ```typescript
- * const timetableComposer = new Composer<BotContext>();
- *
- * // Add error boundary that cleans up timetable loading messages
- * const protectedComposer = timetableComposer.errorBoundary(
- *   createComposerErrorBoundary(["timetableMessageId"])
- * );
- *
- * protectedComposer.on("callback_query", async (ctx) => {
- *   // Store loading message ID in session
- *   const loadingMsg = await ctx.reply("⏳ Fetching timetables...");
- *   ctx.session.timetableMessageId = loadingMsg.message_id;
- *
- *   // This could throw a KTUAPIError with a specific user message
- *   const data = await fetchTimetables();
- *
- *   // Update the loading message with results
- *   await ctx.editMessageText("Results: " + data);
- * });
- * ```
- */
 export function createComposerErrorBoundary(
   loadingMessageKeys: LoadingMessageKey[],
   fallbackErrorMessage?: string
@@ -122,29 +88,17 @@ export function createComposerErrorBoundary(
   };
 }
 
-/**
- * Convenience function to create error boundary specifically for timetable composers
- */
 export const createTimetableErrorBoundary = (fallbackErrorMessage?: string) =>
   createComposerErrorBoundary(["timetableMessageId"], fallbackErrorMessage);
 
-/**
- * Convenience function to create error boundary specifically for announcements composers
- */
 export const createAnnouncementsErrorBoundary = (
   fallbackErrorMessage?: string
 ) =>
   createComposerErrorBoundary(["announcementsMessageId"], fallbackErrorMessage);
 
-/**
- * Convenience function to create error boundary specifically for calendar composers
- */
 export const createCalendarErrorBoundary = (fallbackErrorMessage?: string) =>
   createComposerErrorBoundary(["calendarMessageId"], fallbackErrorMessage);
 
-/**
- * Convenience function to create error boundary specifically for announcement subscription composers
- */
 export const createAnnouncementSubscriptionErrorBoundary = (
   fallbackErrorMessage?: string
 ) =>
@@ -153,8 +107,5 @@ export const createAnnouncementSubscriptionErrorBoundary = (
     fallbackErrorMessage
   );
 
-/**
- * Convenience function to create error boundary specifically for syllabus composers
- */
 export const createSyllabusErrorBoundary = (fallbackErrorMessage?: string) =>
   createComposerErrorBoundary(["syllabusMessageId"], fallbackErrorMessage);

@@ -6,14 +6,7 @@ import { withTransaction } from "../../../db/transactions.js";
 import { setTimeout } from "node:timers/promises";
 import logger from "../../../utils/logger.js";
 
-/**
- * Utility functions for handling common Telegram API errors across workers.
- * All methods are static — this class is a namespace, not meant to be instantiated.
- */
 export class TelegramErrorUtils {
-  /**
-   * Check if error indicates user blocked the bot
-   */
   static isUserBlockedError(errorCode: number, description: string): boolean {
     return (
       errorCode === 403 ||
@@ -21,9 +14,6 @@ export class TelegramErrorUtils {
     );
   }
 
-  /**
-   * Check if error indicates user deactivated their account
-   */
   static isUserDeactivatedError(
     errorCode: number,
     description: string
@@ -34,17 +24,10 @@ export class TelegramErrorUtils {
     );
   }
 
-  /**
-   * Check if error indicates rate limiting
-   */
   static isRateLimitError(errorCode: number): boolean {
     return errorCode === 429;
   }
 
-  /**
-   * Handle user who blocked the bot
-   * Removes subscription and marks chat as kicked
-   */
   static async handleBlockedUser(chatId: number): Promise<void> {
     await withTransaction(async tx => {
       const subscriptionRepo = new AnnouncementSubscriptionRepository(tx);
@@ -56,10 +39,6 @@ export class TelegramErrorUtils {
     });
   }
 
-  /**
-   * Handle user who deactivated their account
-   * Removes chat record entirely
-   */
   static async handleDeactivatedUser(chatId: number): Promise<void> {
     await withTransaction(async tx => {
       const chatRepo = new ChatRepository(tx);
@@ -67,9 +46,6 @@ export class TelegramErrorUtils {
     });
   }
 
-  /**
-   * Handle rate limiting by pausing the queue and resuming after duration
-   */
   static async handleRateLimitWithQueuePause(
     queue: Queue,
     retryAfterSeconds: number
@@ -87,16 +63,10 @@ export class TelegramErrorUtils {
     await queue.resume();
   }
 
-  /**
-   * Extract retry duration from rate limit error
-   */
   static getRateLimitDuration(error: GrammyError): number {
     return error.parameters?.retry_after || 30;
   }
 
-  /**
-   * Log unhandled Telegram error
-   */
   static logUnhandledTelegramError(
     chatId: number,
     errorCode: number,
@@ -108,9 +78,6 @@ export class TelegramErrorUtils {
     );
   }
 
-  /**
-   * Log unhandled generic error
-   */
   static logUnhandledGenericError(
     jobId: string | number | undefined,
     error: Error
@@ -118,11 +85,6 @@ export class TelegramErrorUtils {
     logger.error({ jobId, error }, "Unhandled generic error in job processing");
   }
 
-  /**
-   * Handle a GrammyError thrown during job processing.
-   * Dispatches to the appropriate handler (blocked, deactivated, rate-limit,
-   * or unhandled) and re-throws on rate-limit so BullMQ retries the job.
-   */
   static async handleWorkerGrammyError(
     chatId: number,
     error: GrammyError,

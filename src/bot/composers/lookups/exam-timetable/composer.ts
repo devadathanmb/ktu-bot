@@ -56,8 +56,6 @@ function generateTimetablesText(timetables: ExamTimeTable[]): FormattedString {
   );
 }
 
-// Internal helper functions
-
 function formatTimetableDetails(timetable: ExamTimeTable): FormattedString {
   const parts: FormattedString[] = [];
 
@@ -82,13 +80,11 @@ async function handleTimetableSelection(
   ctx: BotContext,
   timetable: ExamTimeTable
 ): Promise<void> {
-  // Show loading
   const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
   await ctx.editMessageText(loadingMsg.text, {
     entities: loadingMsg.entities,
   });
 
-  // Format and display details
   const detailsMsg = formatTimetableDetails(timetable);
   await ctx.editMessageText(detailsMsg.text, {
     entities: detailsMsg.entities,
@@ -101,7 +97,6 @@ async function handleTimetableAttachment(
 ): Promise<void> {
   const keyboard = createViewAnotherKeyboard("timetable");
 
-  // Check if timetable has attachment
   if (!timetable.attachmentId) {
     const noAttachmentMsg = joinWithNewlines(
       [
@@ -118,7 +113,6 @@ async function handleTimetableAttachment(
     return;
   }
 
-  // Queue attachment for background delivery
   const statusMessage = await ctx.reply(
     `${emoji("hourglass_not_done")} Downloading your timetable in the background... This may take a moment!`
   );
@@ -144,22 +138,18 @@ async function handleTimetableAttachment(
 }
 
 async function fetchAndDisplayTimetables(ctx: BotContext): Promise<void> {
-  // Store message ID for error boundary
   storeCallbackMessageId(ctx, "timetableMessageId");
 
-  // Show loading
   const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_TIMETABLES, 2);
   await ctx.editMessageText(loadingMsg.text, {
     entities: loadingMsg.entities,
   });
 
-  // Fetch data
   const timetables = await fetchTimetables({
     pageNumber: ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE,
     dataSize: LOOKUP_CONFIG.PAGE_SIZE,
   });
 
-  // Update session and display
   ctx.session.timetableTimetables = timetables;
   const keyboard = generateTimetablesKeyboard(
     timetables,
@@ -175,7 +165,6 @@ async function fetchAndDisplayTimetables(ctx: BotContext): Promise<void> {
 
 const composer = new Composer<BotContext>();
 
-// Create protected composer with error boundary for loading message cleanup
 const protectedComposer = composer.errorBoundary(
   createTimetableErrorBoundary()
 );
@@ -184,7 +173,6 @@ const timetableLookupCommand = new Command<BotContext>(
   "timetables",
   `${emoji("books")} Find published exam timetables from KTU`,
   async (ctx: BotContext) => {
-    // Initialize session data
     if (ctx.session.timetablePage === null) {
       ctx.session.timetablePage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
@@ -194,7 +182,6 @@ const timetableLookupCommand = new Command<BotContext>(
       entities: formattedMsg.entities,
     });
 
-    // Store the loading message ID in session for error boundary cleanup
     ctx.session.timetableMessageId = loadingMessage.message_id;
 
     const timetables = await fetchTimetables({
@@ -209,10 +196,8 @@ const timetableLookupCommand = new Command<BotContext>(
 
     const messageText = generateTimetablesText(timetables);
 
-    // Store data in session
     ctx.session.timetableTimetables = timetables;
 
-    // Edit the loading message with the actual content
     await ctx.api.editMessageText(
       ctx.chat!.id,
       loadingMessage.message_id,
@@ -223,17 +208,13 @@ const timetableLookupCommand = new Command<BotContext>(
       }
     );
 
-    // Store message ID for future edits
     ctx.session.timetableMessageId = loadingMessage.message_id;
   }
 );
 
-// Callback query handler for selecting timetables
-// Callback query handlers - use protected composer for error boundary coverage
 protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
   await ctx.answerCallbackQuery();
 
-  // Parse and validate callback
   const parsed = parseSelectCallback(ctx.callbackQuery.data, "timetable");
   if (!parsed.isValid) {
     await ctx.editMessageText(
@@ -242,18 +223,14 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
     return;
   }
 
-  // Store message ID for error boundary cleanup
   storeCallbackMessageId(ctx, "timetableMessageId");
 
-  // Find selected timetable (throws SessionNotFoundError if not found)
   const timetable = findItemById(ctx.session.timetableTimetables, parsed.id);
 
-  // Handle selection flow
   await handleTimetableSelection(ctx, timetable);
   await handleTimetableAttachment(ctx, timetable);
 });
 
-// Handler for "View Another" - Yes
 protectedComposer.callbackQuery("timetable_view_another_true", async ctx => {
   await ctx.answerCallbackQuery();
 
@@ -262,7 +239,6 @@ protectedComposer.callbackQuery("timetable_view_another_true", async ctx => {
   await fetchAndDisplayTimetables(ctx);
 });
 
-// Handler for "View Another" - No
 protectedComposer.callbackQuery("timetable_view_another_false", async ctx => {
   await ctx.answerCallbackQuery();
 
@@ -270,13 +246,11 @@ protectedComposer.callbackQuery("timetable_view_another_false", async ctx => {
     `Timetable lookup ended. Use ${formatCommand(timetableLookupCommand)} to start again.`
   );
 
-  // Clear session data
   ctx.session.timetablePage = null;
   ctx.session.timetableTimetables = [];
   ctx.session.timetableMessageId = null;
 });
 
-// Callback query handlers for navigation
 protectedComposer.callbackQuery("timetable_page_info", async ctx => {
   await ctx.answerCallbackQuery();
 });
@@ -309,7 +283,6 @@ protectedComposer.callbackQuery("timetable_next_page", async ctx => {
 
   await fetchAndDisplayTimetables(ctx);
 
-  // Check if we got results
   if (ctx.session.timetableTimetables.length === 0) {
     ctx.session.timetablePage = currentPage; // Revert
     await ctx.editMessageText(
@@ -318,13 +291,10 @@ protectedComposer.callbackQuery("timetable_next_page", async ctx => {
   }
 });
 
-// Create the timetable command group
 const timetableCommands = new CommandGroup<BotContext>();
 
-// Add commands to the group
 timetableCommands.add(timetableLookupCommand);
 
-// Hook the command group into the protected composer (with error boundary)
 protectedComposer.use(timetableCommands);
 
 export const timetableLookup = composer;

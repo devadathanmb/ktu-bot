@@ -24,39 +24,33 @@ interface AttachmentInfo {
 
 const _inlineQuery = new Composer<BotContext>();
 
-// Add error boundary and register handlers on the protected composer
 export const inlineQuery = _inlineQuery.errorBoundary(
   createComposerErrorBoundary([])
 );
 
-// Define search types enum as single source of truth
 enum SearchType {
   ANNOUNCEMENTS = "announcements",
   CALENDARS = "calendars",
   TIMETABLES = "timetables",
 }
 
-// Define search prefixes mapped to search types
 const SEARCH_PREFIXES_TO_TYPE_MAP: Record<string, SearchType> = {
   "ann:": SearchType.ANNOUNCEMENTS,
   "cal:": SearchType.CALENDARS,
   "tt:": SearchType.TIMETABLES,
 } as const;
 
-// Define result ID prefixes for each search type
 const SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP: Record<SearchType, string> = {
   [SearchType.ANNOUNCEMENTS]: "ann",
   [SearchType.CALENDARS]: "cal",
   [SearchType.TIMETABLES]: "tt",
 } as const;
 
-// Define special result ID prefixes
 const SPECIAL_RESULT_PREFIXES = {
   HELP: "help_",
   NO_RESULTS: "no_",
 } as const;
 
-// Helper to construct no-results-found response
 function constructNoResultsFound(type: SearchType) {
   return [
     InlineQueryResultBuilder.article(
@@ -68,9 +62,6 @@ function constructNoResultsFound(type: SearchType) {
   ];
 }
 
-/**
- * Parse query to extract search type and actual search terms
- */
 function parseQuery(query: string): {
   type: SearchType | null;
   searchTerm: string;
@@ -89,9 +80,6 @@ function parseQuery(query: string): {
   return { type: null, searchTerm: trimmedQuery };
 }
 
-/**
- * Get search type from result ID prefix
- */
 function getSearchTypeFromPrefix(prefix: string): SearchType | null {
   for (const [searchType, idPrefix] of Object.entries(
     SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP
@@ -103,9 +91,6 @@ function getSearchTypeFromPrefix(prefix: string): SearchType | null {
   return null;
 }
 
-/**
- * Search announcements and format results
- */
 async function searchAnnouncements(
   searchTerm: string
 ): Promise<InlineQueryResult[]> {
@@ -164,9 +149,6 @@ async function searchAnnouncements(
   return results;
 }
 
-/**
- * Search academic calendars and format results
- */
 async function searchCalendars(
   searchTerm: string
 ): Promise<InlineQueryResult[]> {
@@ -223,9 +205,6 @@ async function searchCalendars(
   return results;
 }
 
-/**
- * Search exam timetables and format results
- */
 async function searchTimetables(
   searchTerm: string
 ): Promise<InlineQueryResult[]> {
@@ -282,9 +261,6 @@ async function searchTimetables(
   return results;
 }
 
-/**
- * Add "Search Again" button to inline query results
- */
 function addSearchAgainButton(
   results: InlineQueryResult[],
   originalQuery: string
@@ -323,7 +299,6 @@ inlineQuery.on("inline_query", async ctx => {
     let results: InlineQueryResult[] = [];
 
     if (!type) {
-      // No prefix provided - show help with 3 separate search type options
       results = [
         InlineQueryResultBuilder.article(
           `${SPECIAL_RESULT_PREFIXES.HELP}announcements`,
@@ -358,7 +333,6 @@ inlineQuery.on("inline_query", async ctx => {
         ),
       ];
     } else {
-      // Search based on type
       switch (type) {
         case SearchType.ANNOUNCEMENTS:
           results = await searchAnnouncements(searchTerm);
@@ -371,7 +345,6 @@ inlineQuery.on("inline_query", async ctx => {
           break;
       }
 
-      // Add "Search Again" button to all results
       results = addSearchAgainButton(results, query);
     }
 
@@ -383,7 +356,6 @@ inlineQuery.on("inline_query", async ctx => {
       "Error in inline query handler"
     );
 
-    // Send error result to user
     const errorResult = [
       InlineQueryResultBuilder.article(
         "-1",
@@ -403,13 +375,12 @@ inlineQuery.on("chosen_inline_result", async ctx => {
   const resultId = chosenResult.result_id;
   const chatId = chosenResult.from.id;
 
-  // Skip help and no-results items (help items already have keyboards)
+  // help items already have keyboards
   if (resultId.startsWith("help_") || resultId.startsWith("no_")) {
     return;
   }
 
   try {
-    // Parse the result ID to determine type and actual ID
     const [prefix, id] = resultId.split("_");
 
     if (!prefix || !id) {
@@ -504,7 +475,6 @@ inlineQuery.on("chosen_inline_result", async ctx => {
       return;
     }
 
-    // Send initial message that we'll update for each attachment
     const plural = attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.api.sendMessage(
       chatId,
@@ -525,7 +495,6 @@ inlineQuery.on("chosen_inline_result", async ctx => {
       "Error in chosen inline result handler"
     );
 
-    // Send error message to user
     await ctx.api
       .sendMessage(
         chatId,

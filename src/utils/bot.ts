@@ -78,33 +78,6 @@ export const editMessageSafely = async (
 };
 
 /**
- * Safely edit message reply markup without throwing errors
- *
- * This function attempts to edit only the reply markup of a message but silently
- * handles any errors that occur, such as when the message was already deleted
- * or cannot be edited due to permissions.
- *
- * @param ctx - Bot context containing chat information and API access
- * @param replyMarkup - New reply markup for the message
- *
- * @example
- * ```typescript
- * await editMessageReplyMarkupSafely(ctx, newKeyboard);
- * // Reply markup will be edited if possible, no error thrown if it fails
- * ```
- */
-export const editMessageReplyMarkupSafely = async (
-  ctx: Context,
-  replyMarkup?: Parameters<Context["editMessageReplyMarkup"]>[0]
-) => {
-  try {
-    await ctx.editMessageReplyMarkup(replyMarkup);
-  } catch {
-    // Silently ignore edit failures - same pattern as deleteMessageSafely and replyMessageSafely
-  }
-};
-
-/**
  * Safely send a reply message without throwing errors
  *
  * This function attempts to send a reply message but silently handles any errors that occur,
@@ -271,6 +244,5 @@ export function getInlineQueryType(query?: string): string {
     return "empty";
   }
 
-  // Can be extended with more sophisticated query classification
   return "search";
 }

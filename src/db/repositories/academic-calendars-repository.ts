@@ -5,7 +5,6 @@ import type { TransactionType } from "../transactions.js";
 import type { AcademicCalendar } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";
 
-// Type for database instance (either db or transaction)
 type DatabaseInstance = typeof db | TransactionType;
 
 // Interface for search options
@@ -117,19 +116,6 @@ export class AcademicCalendarsRepository {
   }
 
   /**
-   * Get academic calendars by multiple IDs
-   */
-  async getByIds(ids: number[]) {
-    if (ids.length === 0) return [];
-
-    return this.db
-      .select()
-      .from(academicCalendars)
-      .where(sql`${academicCalendars.id} = ANY(${ids})`)
-      .orderBy(desc(academicCalendars.publishedAt));
-  }
-
-  /**
    * Check if academic calendar exists
    */
   async exists(id: number): Promise<boolean> {
@@ -205,41 +191,6 @@ export class AcademicCalendarsRepository {
       .from(academicCalendars);
 
     return Number(result[0]?.count || 0);
-  }
-
-  /**
-   * Get latest academic calendar ID (useful for sync operations)
-   */
-  async getLatestId(): Promise<number | null> {
-    const result = await this.db
-      .select({ id: academicCalendars.id })
-      .from(academicCalendars)
-      .orderBy(desc(academicCalendars.id))
-      .limit(1);
-
-    return result[0]?.id || null;
-  }
-
-  /**
-   * Get academic calendars published after a specific date (useful for incremental sync)
-   */
-  async getCalendarsSince(date: Date, limit = 100) {
-    return this.db
-      .select()
-      .from(academicCalendars)
-      .where(sql`${academicCalendars.publishedAt} > ${date}`)
-      .orderBy(desc(academicCalendars.publishedAt))
-      .limit(limit);
-  }
-
-  /**
-   * Delete academic calendar by ID
-   */
-  async delete(id: number) {
-    return this.db
-      .delete(academicCalendars)
-      .where(eq(academicCalendars.id, id))
-      .returning();
   }
 
   /**

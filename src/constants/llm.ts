@@ -1,5 +1,3 @@
-// LLM providers APIs
-// All LLM provider stuff should live here
 const GROQ_BASE_URI = "https://api.groq.com/openai/v1";
 
 export const GROQ_API = {

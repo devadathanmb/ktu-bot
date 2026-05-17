@@ -25,7 +25,6 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     chat_type: ctx.chat?.type,
   };
 
-  // Message-specific logging
   if (ctx.message) {
     Object.assign(logData, {
       message_id: ctx.message.message_id,
@@ -45,7 +44,6 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     });
   }
 
-  // Callback query logging
   if (ctx.callbackQuery) {
     Object.assign(logData, {
       callback_data: ctx.callbackQuery.data,
@@ -55,7 +53,6 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     });
   }
 
-  // Inline query logging
   if (ctx.inlineQuery) {
     Object.assign(logData, {
       query: ctx.inlineQuery.query?.slice(0, MAX_QUERY_LOG_LENGTH),
@@ -67,7 +64,6 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     });
   }
 
-  // Edited message logging
   if (ctx.editedMessage) {
     Object.assign(logData, {
       edited_message_id: ctx.editedMessage.message_id,
@@ -76,7 +72,6 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     });
   }
 
-  // Chat member updates
   if (ctx.update.chat_member || ctx.update.my_chat_member) {
     const memberUpdate = ctx.update.chat_member || ctx.update.my_chat_member;
     Object.assign(logData, {
@@ -87,7 +82,6 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
     });
   }
 
-  // Log the incoming update
   logger.info(logData, "User action");
 
   await next();

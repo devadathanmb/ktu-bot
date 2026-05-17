@@ -5,7 +5,6 @@ import logger from "../../../utils/logger.js";
 
 export const ANNOUNCEMENTS_NOTIFY_QUEUE = "ANNOUNCEMENTS_NOTIFY_QUEUE";
 
-// Queue for announcement notification jobs with automatic retry
 export const announcementsNotifyQueue = new Queue<Record<string, never>>(
   ANNOUNCEMENTS_NOTIFY_QUEUE,
   {
@@ -28,24 +27,6 @@ export const announcementsNotifyQueue = new Queue<Record<string, never>>(
   }
 );
 
-// Manually schedule a single notification check (for testing/admin use)
-export async function scheduleAnnouncementNotifyJob() {
-  await announcementsNotifyQueue.add(
-    "announcements-notify:manual",
-    {},
-    {
-      jobId: `announcement-notify-${Date.now()}`,
-    }
-  );
-
-  logger.info(
-    { queueName: ANNOUNCEMENTS_NOTIFY_QUEUE },
-    "Scheduled announcement notification job"
-  );
-}
-
-// Set up recurring notification checks
-// This is called once on worker startup - BullMQ handles the recurring schedule
 export async function setupRecurringSchedule() {
   await announcementsNotifyQueue.add(
     "announcements-notify:recurring",

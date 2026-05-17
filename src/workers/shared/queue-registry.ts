@@ -12,11 +12,3 @@ export const queueAdapters = [
   new BullMQAdapter(broadcastsQueue),
   new BullMQAdapter(attachmentDeliveryQueue),
 ];
-
-// Export raw queues for Prometheus metrics collection
-export const queues = [
-  dataSyncQueue,
-  announcementsNotifyQueue,
-  broadcastsQueue,
-  attachmentDeliveryQueue,
-];

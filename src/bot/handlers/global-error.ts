@@ -5,11 +5,6 @@ import logger from "../../utils/logger.js";
 import { HandledBotError } from "../../errors/handled-bot-error.js";
 import type { BotMetrics } from "../../metrics/definitions.js";
 
-/**
- * Global error handler for the bot
- * Catches all errors that bubble up from middleware and composers
- * Tracks all errors centrally for metrics, but only responds to user if error wasn't already handled
- */
 export const globalErrorHandler = async (
   error: BotError,
   metrics?: BotMetrics
@@ -17,7 +12,6 @@ export const globalErrorHandler = async (
   const ctx = error.ctx;
   const actualError = error.error;
 
-  // Track ALL errors centrally in metrics (handled or not)
   if (metrics) {
     let errorType: string;
     let handledBy: string;
@@ -42,7 +36,6 @@ export const globalErrorHandler = async (
   const chatId = ctx.chat?.id;
   const userId = ctx.from?.id;
 
-  // Check if error was already handled by an error boundary
   if (actualError instanceof HandledBotError) {
     // Error was handled at boundary level - user already notified
     logger.info(
@@ -57,11 +50,9 @@ export const globalErrorHandler = async (
       "Error already handled by boundary"
     );
 
-    // Don't send duplicate message to user
     return;
   }
 
-  // Unhandled error - log with full context and notify user
   logger.error(
     { err: actualError, chatId, userId },
     "Unhandled error in global handler"

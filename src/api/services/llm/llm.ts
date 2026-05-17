@@ -9,7 +9,6 @@ import {
 import logger from "../../../utils/logger.js";
 import { COURSES } from "../../../constants/courses.js";
 
-// Zod schemas for validation
 const GroqMessageSchema = z.object({
   role: z.enum(["system", "user", "assistant"]),
   content: z.string(),
@@ -83,7 +82,6 @@ export class LLMService {
   private async makeGroqRequest(
     request: z.infer<typeof GroqCompletionRequestSchema>
   ): Promise<z.infer<typeof GroqCompletionResponseSchema>> {
-    // Validate request
     const validatedRequestPayload = GroqCompletionRequestSchema.parse(request);
 
     const response = await got.post(GROQ_API.COMPLETION_ENDPOINT, {
@@ -101,7 +99,6 @@ export class LLMService {
       },
     });
 
-    // Validate response
     return GroqCompletionResponseSchema.parse(response.body);
   }
 
@@ -109,7 +106,6 @@ export class LLMService {
     announcementContent: string
   ): Promise<Set<string>> {
     try {
-      // Validate input
       z.string().min(1).parse(announcementContent);
 
       const prompt = buildCourseFindingPrompt(announcementContent);
@@ -128,7 +124,6 @@ export class LLMService {
 
       const response = await this.makeGroqRequest(request);
 
-      // Parse and validate JSON response
       return parseJsonResponse(
         AnnouncementRelevantCoursesResultSchema,
         response.choices[0]!.message.content
@@ -150,7 +145,6 @@ export class LLMService {
         );
       }
 
-      // Return empty set as fallback
       return new Set<string>();
     }
   }
@@ -159,7 +153,6 @@ export class LLMService {
     announcementContent: string
   ): Promise<AnnouncementRelevanceResult> {
     try {
-      // Validate input
       z.string().min(1).parse(announcementContent);
 
       const prompt = ANNOUNCEMENT_RELEVANCE_PROMPT.replace(
@@ -181,7 +174,6 @@ export class LLMService {
 
       const response = await this.makeGroqRequest(request);
 
-      // Parse and validate JSON response
       return parseJsonResponse(
         AnnouncementRelevanceResultSchema,
         response.choices[0]!.message.content
@@ -203,7 +195,6 @@ export class LLMService {
         );
       }
 
-      // Return true as fallback to ensure announcements are not missed
       return { is_relevant: true };
     }
   }

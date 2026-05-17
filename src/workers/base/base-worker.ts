@@ -12,10 +12,6 @@ import {
   type QueueHealthCheckOptions,
 } from "../shared/queue-health.js";
 
-/**
- * Base worker class that provides common lifecycle management for all BullMQ workers.
- * Handles initialization, job processing, error handling, and graceful shutdown.
- */
 export abstract class BaseWorker<TJobData = Record<string, unknown>> {
   protected worker: Worker | null = null;
   protected db!: NodePgDatabase<typeof schema>;
@@ -32,9 +28,6 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     }
   ) {}
 
-  /**
-   * Start the worker - initializes all resources and begins processing jobs
-   */
   async start(): Promise<void> {
     if (this.worker) {
       logger.warn({ workerName: this.workerName }, "Worker already running");
@@ -81,9 +74,6 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     );
   }
 
-  /**
-   * Stop the worker - gracefully closes all resources
-   */
   async stop(): Promise<void> {
     if (this.worker) {
       await this.worker.close();
@@ -98,18 +88,10 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     );
   }
 
-  /**
-   * Check if worker is currently running
-   */
   isRunning(): boolean {
     return this.worker !== null;
   }
 
-  /**
-   * Health check - returns whether worker is healthy
-   * Checks: worker running AND Redis connected
-   * Note: DB health is checked separately by setupHealthCheckEndpoint
-   */
   async getStatus(): Promise<boolean> {
     const isRunning = this.isRunning();
 
@@ -147,9 +129,6 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     }
   }
 
-  /**
-   * Default job completed handler
-   */
   protected onJobCompleted(job: Job<TJobData>): void {
     const jobId = job.id;
     const workerName = this.workerName;
@@ -159,9 +138,6 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     );
   }
 
-  /**
-   * Default job failed handler
-   */
   protected async onJobFailed(
     job: Job<TJobData> | undefined,
     error: Error
@@ -185,10 +161,6 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
 
   // ==================== Protected Helpers ====================
 
-  /**
-   * Safely access the bot instance.
-   * Throws if the bot has not been initialized via initializeWorkerSpecific().
-   */
   protected getBot(): Bot<BotContext> {
     if (!this.bot) {
       throw new Error(
@@ -198,27 +170,12 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     return this.bot;
   }
 
-  // ==================== Abstract Methods (must be implemented by subclasses) ====================
-
-  /**
-   * Process a single job - core business logic
-   */
   protected abstract processJob(job: Job<TJobData>): Promise<void>;
 
-  // ==================== Optional Hooks (can be overridden by subclasses) ====================
-
-  /**
-   * Worker-specific initialization (e.g., bot setup, additional connections)
-   * Override this to initialize bot or other worker-specific resources
-   */
   protected async initializeWorkerSpecific(): Promise<void> {
     // Default: no-op, override in subclass if needed
   }
 
-  /**
-   * Called after worker is fully started (e.g., schedule initial jobs, setup recurring jobs)
-   * Override this to perform post-startup tasks
-   */
   protected async onStartupComplete(): Promise<void> {
     // Default: no-op, override in subclass if needed
   }
