@@ -116,8 +116,8 @@ export class ExamTimetablesRepository {
   /**
    * Bulk insert/upsert exam timetables
    */
-  async bulkUpsert(timetableList: ExamTimetableInsert[]) {
-    if (timetableList.length === 0) return [];
+  async bulkUpsert(timetableList: ExamTimetableInsert[]): Promise<number> {
+    if (timetableList.length === 0) return 0;
 
     const values = timetableList.map(timetable => ({
       id: timetable.id,
@@ -127,7 +127,7 @@ export class ExamTimetablesRepository {
       updatedAt: new Date(),
     }));
 
-    return this.db
+    const result = await this.db
       .insert(examTimetables)
       .values(values)
       .onConflictDoUpdate({
@@ -140,6 +140,8 @@ export class ExamTimetablesRepository {
         },
       })
       .returning();
+
+    return result.length;
   }
 
   /**
