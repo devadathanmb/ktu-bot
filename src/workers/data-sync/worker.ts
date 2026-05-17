@@ -1,10 +1,8 @@
 import { Job } from "bullmq";
-import {
-  ResourceSyncer,
-  AnnouncementsSyncer,
-  CalendarsSyncer,
-  ExamTimetablesSyncer,
-} from "./syncers/index.js";
+import type { ResourceSyncer } from "./syncers/base.js";
+import { AnnouncementsSyncer } from "./syncers/announcements.js";
+import { AcademicCalendarsSyncer as CalendarsSyncer } from "./syncers/academic-calendars.js";
+import { ExamTimetablesSyncer } from "./syncers/exam-timetables.js";
 import {
   dataSyncQueue,
   setupRecurringSchedule,

@@ -28,10 +28,7 @@ const botConfigSchema = z
     ...config,
     IS_LONG_POLLING_DEPLOYMENT:
       config.BOT_DEPLOYMENT_TYPE === availableDeploymentTypes.LONG_POLLING,
-    IS_WEBHOOK_DEPLOYMENT:
-      config.BOT_DEPLOYMENT_TYPE === availableDeploymentTypes.WEBHOOK,
     UNKNOWN_COMMAND_STICKER_DELETION_TIMEOUT: 5 * 1000, // 5 seconds
-    IS_PRODUCTION_DEPLOYMENT: config.NODE_ENV === "production",
   }));
 
 export const BotConfig = botConfigSchema.parse({

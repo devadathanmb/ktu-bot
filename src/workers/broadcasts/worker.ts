@@ -41,6 +41,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
         );
       } else {
         TelegramErrorUtils.logUnhandledGenericError(job.id, error as Error);
+        throw error;
       }
     }
   }
@@ -48,9 +49,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   private async processBroadcastJob(job: Job<BroadcastJob>): Promise<void> {
     const { formattedText, attachments, chatId } = job.data;
 
-    // By the time the job has reached broadcasts worker, the user may have blocked the bot
-    // Hence, we should verify if the subscription still exists before sending
-    // Otherwise we are just wasting API calls and risking rate limits
+    // Skip if user unsubscribed while job was queued
     const subscriptionRepo = new AnnouncementSubscriptionRepository(this.db);
     const subscriptionExists = await subscriptionRepo.exists(chatId);
     if (!subscriptionExists) return;
@@ -107,7 +106,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
         });
       }
 
-      // One of fileId or fileUrl will be present
       return InputMediaBuilder.document(
         attachment.fileId! || attachment.fileUrl!,
         params
@@ -134,7 +132,6 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     }
 
     const documents = attachments.map(attachment => {
-      // One of fileId or fileUrl will be present
       return InputMediaBuilder.document(
         attachment.fileId! || attachment.fileUrl!
       );

@@ -3,7 +3,7 @@ import {
   REGEX_COURSE_FILTER_TO_COURSE_MAP,
 } from "../constants/courses.js";
 
-export const findCourseFiltersFromText = (text: string): Set<string> => {
+const findCourseFiltersFromText = (text: string): Set<string> => {
   if (!text) {
     return new Set([AnnouncementFilter.ALL]);
   }

@@ -29,4 +29,3 @@ const baseApiClient = got.extend(baseConfig);
 const cachedApiClient = createCachedApiClient(baseApiClient, CACHE_CONFIG);
 
 export { cachedApiClient, baseApiClient };
-export default cachedApiClient;

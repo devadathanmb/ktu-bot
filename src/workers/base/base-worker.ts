@@ -43,10 +43,8 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
     this.db = await initDB();
     logger.info("Database connection established");
 
-    // Allow worker-specific initialization (e.g., bot setup)
     await this.initializeWorkerSpecific();
 
-    // Create BullMQ worker instance
     this.worker = new Worker<TJobData>(
       this.queue.name,
       this.processJob.bind(this),
@@ -61,11 +59,9 @@ export abstract class BaseWorker<TJobData = Record<string, unknown>> {
       }
     );
 
-    // Setup event handlers
     this.worker.on("completed", this.onJobCompleted.bind(this));
     this.worker.on("failed", (job, error) => void this.onJobFailed(job, error));
 
-    // Allow worker to perform post-startup tasks (e.g., schedule initial jobs)
     await this.onStartupComplete();
 
     logger.info(

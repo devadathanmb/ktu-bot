@@ -116,46 +116,6 @@ export class AnnouncementsRepository {
   }
 
   /**
-   * Check if announcement exists
-   */
-  async exists(id: number): Promise<boolean> {
-    const result = await this.db
-      .select({ id: announcements.id })
-      .from(announcements)
-      .where(eq(announcements.id, id))
-      .limit(1);
-
-    return result.length > 0;
-  }
-
-  /**
-   * Insert a single announcement (upsert)
-   */
-  async upsert(announcement: AnnouncementInsert) {
-    return this.db
-      .insert(announcements)
-      .values({
-        id: announcement.id,
-        publishedAt: announcement.publishedAt,
-        subject: announcement.subject,
-        message: announcement.message,
-        attachments: announcement.attachments,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: announcements.id,
-        set: {
-          publishedAt: announcement.publishedAt,
-          subject: announcement.subject,
-          message: announcement.message,
-          attachments: announcement.attachments,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-  }
-
-  /**
    * Bulk insert/upsert announcements
    */
   async bulkUpsert(announcementList: AnnouncementInsert[]) {

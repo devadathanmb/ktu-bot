@@ -2,8 +2,6 @@ import { LRUCache } from "lru-cache";
 import type { CacheConfig, CachedEntry } from "./types.js";
 import logger from "../../utils/logger.js";
 
-// Thin wrapper around lru-cache that centralises cache operations
-// and emits structured debug logs for hit/miss diagnostics.
 export class APICache {
   private cache: LRUCache<string, CachedEntry>;
 

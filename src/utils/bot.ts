@@ -118,7 +118,7 @@ export const replyMessageSafely = async (
  * Set containing all media types supported by Telegram messages.
  * Used for efficient O(1) lookup when determining message media type.
  */
-export const TELEGRAM_MEDIA_TYPES = new Set<string>([
+const TELEGRAM_MEDIA_TYPES = new Set<string>([
   "photo",
   "video",
   "document",
@@ -130,24 +130,6 @@ export const TELEGRAM_MEDIA_TYPES = new Set<string>([
   "contact",
 ]);
 
-/**
- * Extract media type from a Telegram message
- *
- * Checks if a message contains any media type (photo, video, document, etc.)
- * and returns the media type if found. This is useful for logging, metrics,
- * and conditional handling based on message content type.
- *
- * @param message - Telegram message object (can be undefined)
- * @returns The media type string if media is present, undefined otherwise
- *
- * @example
- * ```typescript
- * const mediaType = getMediaType(ctx.message);
- * if (mediaType === "photo") {
- *   console.log("User sent a photo");
- * }
- * ```
- */
 export function getMediaType(message: object | undefined): string | undefined {
   if (!message) return undefined;
 
@@ -160,26 +142,6 @@ export function getMediaType(message: object | undefined): string | undefined {
   return undefined;
 }
 
-/**
- * Determine the complete message type including text and commands
- *
- * Provides a comprehensive classification of message types by first checking
- * for media (photo, video, etc.), then checking if it's a command, and finally
- * falling back to "text" for plain text messages.
- *
- * @param message - Telegram message object
- * @returns Message type: media type (photo, video, etc.), "command", or "text"
- *
- * @example
- * ```typescript
- * const messageType = getMessageType(ctx.message);
- * // Returns: "photo" | "video" | "document" | "command" | "text" | etc.
- *
- * if (messageType === "command") {
- *   // Handle bot command
- * }
- * ```
- */
 export function getMessageType(message: object): string {
   // Check for media first
   const mediaType = getMediaType(message);
@@ -194,23 +156,6 @@ export function getMessageType(message: object): string {
   return "text";
 }
 
-/**
- * Extract the update type from a Telegram update
- *
- * Telegram updates can be of various types (message, callback_query, inline_query, etc.).
- * This function identifies the type by examining the update object keys.
- *
- * @param update - Telegram update object
- * @returns The update type (message, callback_query, inline_query, etc.) or "unknown"
- *
- * @example
- * ```typescript
- * const updateType = getUpdateType(ctx.update);
- * // Returns: "message" | "callback_query" | "inline_query" | "edited_message" | etc.
- *
- * logger.info({ updateType }, "Processing update");
- * ```
- */
 export function getUpdateType(update: object): string {
   for (const key in update) {
     if (key !== "update_id") {
@@ -220,25 +165,6 @@ export function getUpdateType(update: object): string {
   return "unknown";
 }
 
-/**
- * Classify inline query type based on content
- *
- * Categorizes inline queries as either "empty" (no query text) or "search" (has query text).
- * Can be extended in the future with more sophisticated query classification logic.
- *
- * @param query - Inline query string (optional)
- * @returns Query classification: "empty" if query is empty/undefined, "search" otherwise
- *
- * @example
- * ```typescript
- * const queryType = getInlineQueryType(ctx.inlineQuery?.query);
- * if (queryType === "empty") {
- *   // Show default results
- * } else {
- *   // Show search results
- * }
- * ```
- */
 export function getInlineQueryType(query?: string): string {
   if (!query || query.trim() === "") {
     return "empty";

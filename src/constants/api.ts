@@ -46,6 +46,5 @@ export const BETTER_UPTIME_API = {
   BASE_URI: BETTER_UPTIME_BASE_URI,
   MONITORS_ENDPOINT: `${BETTER_UPTIME_BASE_URI}/monitors`,
   MONITOR_GROUPS_ENDPOINT: `${BETTER_UPTIME_BASE_URI}/monitor-groups`,
-  INCIDENTS_ENDPOINT: "https://uptime.betterstack.com/api/v3/incidents",
   STATS_PAGE: "https://ktu-bot.betteruptime.com/",
 } as const;

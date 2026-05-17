@@ -17,11 +17,11 @@ async function ensureTempDir(): Promise<string> {
   return ATTACHMENT_TEMP_DIR;
 }
 
-export function base64ToBuffer(base64Data: string): Buffer {
+function base64ToBuffer(base64Data: string): Buffer {
   return Buffer.from(base64Data, "base64");
 }
 
-export async function createTempFile(
+async function createTempFile(
   buffer: Buffer,
   fileName: string
 ): Promise<string> {
@@ -42,7 +42,7 @@ export async function readFileAsBuffer(filePath: string): Promise<Buffer> {
   return readFile(filePath);
 }
 
-export async function cleanupTempFile(filePath: string): Promise<void> {
+async function cleanupTempFile(filePath: string): Promise<void> {
   try {
     await unlink(filePath);
   } catch {
@@ -67,7 +67,7 @@ export interface DownloadedAttachment {
   fileSizeBytes: number;
 }
 
-export async function downloadAttachmentToTempFile(
+async function downloadAttachmentToTempFile(
   encryptId: string,
   fileName: string,
   source: AttachmentSource = "default"

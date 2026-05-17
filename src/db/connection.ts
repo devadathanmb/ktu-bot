@@ -9,7 +9,6 @@ let db: NodePgDatabase<typeof schema>;
 let pool: Pool;
 
 export async function initDB(): Promise<NodePgDatabase<typeof schema>> {
-  // Create pool with SSL config if present
   pool = new Pool({
     connectionString: DbConfig.DATABASE_URI,
     ssl: DbConfig.SSL_CONFIG,

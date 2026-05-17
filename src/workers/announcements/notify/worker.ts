@@ -103,8 +103,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     return newAnnouncements;
   }
 
-  // Method to completely resync the announcements buffer
-  // This will basically clear the buffer and re-add all current announcements
   private async resyncAnnouncementsBuffer(): Promise<void> {
     logger.info("Resyncing announcements buffer");
 
@@ -138,9 +136,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       "Regex extracted course filters from announcement"
     );
 
-    // If more than one filter is matched, then it's likely matching UG and PG courses
-    // But the announcement in itself may not be relevant to all those courses
-    // Hence, we need to rely on LLM to check the relevant courses for such announcements
+    // When broad match spans UG/PG, use LLM to filter specific courses
     if (
       filters.size == UNDERGRADUATE_COURSES.size ||
       filters.size == POSTGRADUATE_COURSES.size
@@ -170,18 +166,14 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
 
     // Check relevancy for general-only announcements using LLM
     if (filters.size === 1 && filters.has(AnnouncementFilter.ALL)) {
-      // We don't know how many notifications will never match any filters
-      // There can be a case where many such announcements come in a short span
-      // In such a case, lot of requests will be sent in a short burst
-      // Since this is anyways async, we can afford to add a small delay between requests
+      // Stagger LLM calls to avoid bursts
       await setTimeout(2 * 1000);
 
       logger.debug("No specific filters found, checking relevancy with LLM");
       const isRelevant =
         await this.llmService.isAnnouncementRelevant(contentText);
 
-      // If relevant, add all available filters to send to all subscribers
-      // If the announcement is relevant, then it should be sent to all subscribes no matter what filters they have subscribed to
+      // If relevant, add all available filters for all subscribers
       if (isRelevant) {
         logger.debug(
           "Announcement deemed relevant by LLM, adding all filters to reach all subscribers"
@@ -240,7 +232,6 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       );
     }
 
-    // Use the utility function to combine formatted strings properly
     return joinWithNewlines(parts, 2);
   }
 
@@ -281,17 +272,13 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       }
     }
 
-    // This is done to make this operation atomic and idempotent
-    // In case of a failure, everything fails so it will be retried in the next cron run
+    // Atomic + idempotent: buffer resync only after queue succeeds
     if (jobs.length > 0) {
       await addBroadcastJobs(jobs);
       const jobCount = jobs.length;
       logger.info({ jobCount }, "Added broadcast jobs to queue");
     }
 
-    // Resync the announcements buffer
-    // Must be done only after successfully adding all jobs to the queue
-    // This is because if the job queueing fails, we want to retry sending notifications in the next cron run
     await this.resyncAnnouncementsBuffer();
   }
 }
