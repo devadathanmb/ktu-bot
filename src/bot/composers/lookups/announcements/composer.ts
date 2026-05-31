@@ -8,6 +8,10 @@ import {
   parseSelectCallback,
   createViewAnotherKeyboard,
   findItemById,
+  fetchAndRenderApiPage,
+  handleApiNextPage,
+  handleApiPreviousPage,
+  startApiPaginatedLookup,
   storeCallbackMessageId,
 } from "../utils.js";
 import { LOOKUP_CONFIG } from "../constants.js";
@@ -126,30 +130,30 @@ async function handleAnnouncementAttachments(
   await addAttachmentDeliveryJob(jobData);
 }
 
+function createAnnouncementsLookupConfig() {
+  return {
+    messageIdSessionKey: "announcementsMessageId" as const,
+    getPage: (ctx: BotContext) => ctx.session.announcementsPage,
+    setPage: (ctx: BotContext, page: number | null) => {
+      ctx.session.announcementsPage = page;
+    },
+    getItems: (ctx: BotContext) => ctx.session.announcementsAnnouncements,
+    setItems: (ctx: BotContext, announcements: Announcement[]) => {
+      ctx.session.announcementsAnnouncements = announcements;
+    },
+    fetchPage: (pageNumber: number) =>
+      fetchAnnouncements({
+        pageNumber,
+        dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+      }),
+    buildKeyboard: generateAnnouncementsKeyboard,
+    buildText: generateAnnouncementsText,
+    loadingMessage: joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2),
+  };
+}
+
 async function fetchAndDisplayAnnouncements(ctx: BotContext): Promise<void> {
-  storeCallbackMessageId(ctx, "announcementsMessageId");
-
-  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2);
-  await ctx.editMessageText(loadingMsg.text, {
-    entities: loadingMsg.entities,
-  });
-
-  const announcements = await fetchAnnouncements({
-    pageNumber: ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE,
-    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-  });
-
-  ctx.session.announcementsAnnouncements = announcements;
-  const keyboard = generateAnnouncementsKeyboard(
-    announcements,
-    ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE
-  );
-  const messageText = generateAnnouncementsText(announcements);
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  await fetchAndRenderApiPage(ctx, createAnnouncementsLookupConfig());
 }
 
 const composer = new Composer<BotContext>();
@@ -172,26 +176,10 @@ const announcementsLookupCommand = new Command<BotContext>(
     });
     ctx.session.announcementsMessageId = loadingMessage.message_id;
 
-    const announcements = await fetchAnnouncements({
-      pageNumber: ctx.session.announcementsPage,
-      dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-    });
-    const keyboard = generateAnnouncementsKeyboard(
-      announcements,
-      ctx.session.announcementsPage
-    );
-    const messageText = generateAnnouncementsText(announcements);
-
-    ctx.session.announcementsAnnouncements = announcements;
-
-    await ctx.api.editMessageText(
-      ctx.chat.id,
-      loadingMessage.message_id,
-      messageText.text,
-      {
-        reply_markup: keyboard,
-        entities: messageText.entities,
-      }
+    await startApiPaginatedLookup(
+      ctx,
+      createAnnouncementsLookupConfig(),
+      loadingMessage.message_id
     );
   }
 );
@@ -246,52 +234,11 @@ protectedComposer.callbackQuery("announcement_page_info", async ctx => {
 });
 
 protectedComposer.callbackQuery("announcement_prev_page", async ctx => {
-  await ctx.answerCallbackQuery();
-
-  const currentPage =
-    ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
-  if (currentPage === LOOKUP_CONFIG.INITIAL_PAGE) {
-    await ctx.answerCallbackQuery("You are already on the first page.");
-    return;
-  }
-
-  ctx.session.announcementsPage = currentPage - 1;
-  await fetchAndDisplayAnnouncements(ctx);
+  await handleApiPreviousPage(ctx, createAnnouncementsLookupConfig());
 });
 
 protectedComposer.callbackQuery("announcement_next_page", async ctx => {
-  const currentPage =
-    ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
-
-  // If current page returned fewer items than PAGE_SIZE, we're on the last page
-  if (ctx.session.announcementsAnnouncements.length < LOOKUP_CONFIG.PAGE_SIZE) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
-    return;
-  }
-
-  const nextPage = currentPage + 1;
-  const announcements = await fetchAnnouncements({
-    pageNumber: nextPage,
-    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-  });
-
-  if (announcements.length === 0) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
-    return;
-  }
-
-  await ctx.answerCallbackQuery();
-  storeCallbackMessageId(ctx, "announcementsMessageId");
-  ctx.session.announcementsPage = nextPage;
-  ctx.session.announcementsAnnouncements = announcements;
-
-  const keyboard = generateAnnouncementsKeyboard(announcements, nextPage);
-  const messageText = generateAnnouncementsText(announcements);
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  await handleApiNextPage(ctx, createAnnouncementsLookupConfig());
 });
 
 const announcementsCommands = new CommandGroup<BotContext>();

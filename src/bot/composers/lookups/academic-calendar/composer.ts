@@ -8,8 +8,11 @@ import {
   generatePaginatedMessageText,
   PaginatedItem,
   parseSelectCallback,
-  createViewAnotherKeyboard,
   findItemById,
+  fetchAndRenderApiPage,
+  handleApiNextPage,
+  handleApiPreviousPage,
+  startApiPaginatedLookup,
   storeCallbackMessageId,
 } from "../utils.js";
 import { LOOKUP_CONFIG } from "../constants.js";
@@ -85,24 +88,6 @@ async function handleCalendarAttachment(
   ctx: BotContext,
   calendar: AcademicCalendar
 ): Promise<void> {
-  const keyboard = createViewAnotherKeyboard("calendar");
-
-  if (!calendar.attachmentId) {
-    const noAttachmentMsg = joinWithNewlines(
-      [
-        formatCalendarDetails(calendar),
-        fmt`${emoji("woman_shrugging")} No attachment found for this academic calendar.`,
-      ],
-      2
-    );
-
-    await ctx.editMessageText(noAttachmentMsg.text, {
-      reply_markup: keyboard,
-      entities: noAttachmentMsg.entities,
-    });
-    return;
-  }
-
   const statusMessage = await ctx.reply(
     `${emoji("hourglass_not_done")} Downloading your calendar in the background... This may take a moment!`
   );
@@ -127,30 +112,30 @@ async function handleCalendarAttachment(
   await addAttachmentDeliveryJob(jobData);
 }
 
+function createCalendarsLookupConfig() {
+  return {
+    messageIdSessionKey: "calendarMessageId" as const,
+    getPage: (ctx: BotContext) => ctx.session.calendarPage,
+    setPage: (ctx: BotContext, page: number | null) => {
+      ctx.session.calendarPage = page;
+    },
+    getItems: (ctx: BotContext) => ctx.session.calendarCalendars,
+    setItems: (ctx: BotContext, calendars: AcademicCalendar[]) => {
+      ctx.session.calendarCalendars = calendars;
+    },
+    fetchPage: (pageNumber: number) =>
+      fetchAcademicCalendars({
+        pageNumber,
+        dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+      }),
+    buildKeyboard: generateCalendarsKeyboard,
+    buildText: generateCalendarsText,
+    loadingMessage: joinWithNewlines(MESSAGES.FETCHING_CALENDARS, 2),
+  };
+}
+
 async function fetchAndDisplayCalendars(ctx: BotContext): Promise<void> {
-  storeCallbackMessageId(ctx, "calendarMessageId");
-
-  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_CALENDARS, 2);
-  await ctx.editMessageText(loadingMsg.text, {
-    entities: loadingMsg.entities,
-  });
-
-  const calendars = await fetchAcademicCalendars({
-    pageNumber: ctx.session.calendarPage ?? LOOKUP_CONFIG.INITIAL_PAGE,
-    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-  });
-
-  ctx.session.calendarCalendars = calendars;
-  const keyboard = generateCalendarsKeyboard(
-    calendars,
-    ctx.session.calendarPage ?? LOOKUP_CONFIG.INITIAL_PAGE
-  );
-  const messageText = generateCalendarsText(calendars);
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  await fetchAndRenderApiPage(ctx, createCalendarsLookupConfig());
 }
 
 const composer = new Composer<BotContext>();
@@ -171,26 +156,10 @@ const calendarLookupCommand = new Command<BotContext>(
 
     ctx.session.calendarMessageId = loadingMessage.message_id;
 
-    const calendars = await fetchAcademicCalendars({
-      pageNumber: ctx.session.calendarPage,
-      dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-    });
-    const keyboard = generateCalendarsKeyboard(
-      calendars,
-      ctx.session.calendarPage
-    );
-    const messageText = generateCalendarsText(calendars);
-
-    ctx.session.calendarCalendars = calendars;
-
-    await ctx.api.editMessageText(
-      ctx.chat!.id,
-      loadingMessage.message_id,
-      messageText.text,
-      {
-        reply_markup: keyboard,
-        entities: messageText.entities,
-      }
+    await startApiPaginatedLookup(
+      ctx,
+      createCalendarsLookupConfig(),
+      loadingMessage.message_id
     );
   }
 );
@@ -238,50 +207,11 @@ protectedComposer.callbackQuery("calendar_page_info", async ctx => {
 });
 
 protectedComposer.callbackQuery("calendar_prev_page", async ctx => {
-  await ctx.answerCallbackQuery();
-
-  const currentPage = ctx.session.calendarPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
-  if (currentPage === LOOKUP_CONFIG.INITIAL_PAGE) {
-    await ctx.answerCallbackQuery("You are already on the first page.");
-    return;
-  }
-
-  ctx.session.calendarPage = currentPage - 1;
-  await fetchAndDisplayCalendars(ctx);
+  await handleApiPreviousPage(ctx, createCalendarsLookupConfig());
 });
 
 protectedComposer.callbackQuery("calendar_next_page", async ctx => {
-  const currentPage = ctx.session.calendarPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
-
-  // If current page returned fewer items than PAGE_SIZE, we're on the last page
-  if (ctx.session.calendarCalendars.length < LOOKUP_CONFIG.PAGE_SIZE) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
-    return;
-  }
-
-  const nextPage = currentPage + 1;
-  const calendars = await fetchAcademicCalendars({
-    pageNumber: nextPage,
-    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-  });
-
-  if (calendars.length === 0) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
-    return;
-  }
-
-  await ctx.answerCallbackQuery();
-  storeCallbackMessageId(ctx, "calendarMessageId");
-  ctx.session.calendarPage = nextPage;
-  ctx.session.calendarCalendars = calendars;
-
-  const keyboard = generateCalendarsKeyboard(calendars, nextPage);
-  const messageText = generateCalendarsText(calendars);
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  await handleApiNextPage(ctx, createCalendarsLookupConfig());
 });
 
 const calendarCommands = new CommandGroup<BotContext>();

@@ -6,6 +6,119 @@ import { BotContext } from "../../../types/bot.types.js";
 import { SessionNotFoundError } from "../../../errors/index.js";
 import { LOOKUP_CONFIG } from "./constants.js";
 
+export type LookupMessageIdSessionKey =
+  | "announcementsMessageId"
+  | "calendarMessageId"
+  | "timetableMessageId"
+  | "syllabusMessageId";
+
+interface ApiPaginatedLookupConfig<TItem> {
+  messageIdSessionKey: LookupMessageIdSessionKey;
+  getPage(ctx: BotContext): number | null;
+  setPage(ctx: BotContext, page: number | null): void;
+  getItems(ctx: BotContext): TItem[];
+  setItems(ctx: BotContext, items: TItem[]): void;
+  fetchPage(page: number): Promise<TItem[]>;
+  buildKeyboard(items: TItem[], page: number): InlineKeyboard;
+  buildText(items: TItem[]): FormattedString;
+  loadingMessage: FormattedString;
+}
+
+async function renderApiPage<TItem>(
+  ctx: BotContext,
+  config: ApiPaginatedLookupConfig<TItem>,
+  page: number,
+  items: TItem[]
+): Promise<void> {
+  config.setPage(ctx, page);
+  config.setItems(ctx, items);
+
+  const keyboard = config.buildKeyboard(items, page);
+  const messageText = config.buildText(items);
+
+  await ctx.editMessageText(messageText.text, {
+    reply_markup: keyboard,
+    entities: messageText.entities,
+  });
+}
+
+export async function fetchAndRenderApiPage<TItem>(
+  ctx: BotContext,
+  config: ApiPaginatedLookupConfig<TItem>,
+  page = config.getPage(ctx) ?? LOOKUP_CONFIG.INITIAL_PAGE
+): Promise<void> {
+  storeCallbackMessageId(ctx, config.messageIdSessionKey);
+
+  await ctx.editMessageText(config.loadingMessage.text, {
+    entities: config.loadingMessage.entities,
+  });
+
+  const items = await config.fetchPage(page);
+  await renderApiPage(ctx, config, page, items);
+}
+
+export async function startApiPaginatedLookup<TItem>(
+  ctx: BotContext,
+  config: ApiPaginatedLookupConfig<TItem>,
+  initialMessageId: number
+): Promise<void> {
+  const page = config.getPage(ctx) ?? LOOKUP_CONFIG.INITIAL_PAGE;
+  const items = await config.fetchPage(page);
+  config.setPage(ctx, page);
+  config.setItems(ctx, items);
+
+  const keyboard = config.buildKeyboard(items, page);
+  const messageText = config.buildText(items);
+
+  await ctx.api.editMessageText(
+    ctx.chat!.id,
+    initialMessageId,
+    messageText.text,
+    {
+      reply_markup: keyboard,
+      entities: messageText.entities,
+    }
+  );
+}
+
+export async function handleApiPreviousPage<TItem>(
+  ctx: BotContext,
+  config: ApiPaginatedLookupConfig<TItem>
+): Promise<void> {
+  const currentPage = config.getPage(ctx) ?? LOOKUP_CONFIG.INITIAL_PAGE;
+  if (currentPage === LOOKUP_CONFIG.INITIAL_PAGE) {
+    await ctx.answerCallbackQuery("You are already on the first page.");
+    return;
+  }
+
+  await ctx.answerCallbackQuery();
+  await fetchAndRenderApiPage(ctx, config, currentPage - 1);
+}
+
+export async function handleApiNextPage<TItem>(
+  ctx: BotContext,
+  config: ApiPaginatedLookupConfig<TItem>
+): Promise<void> {
+  const currentPage = config.getPage(ctx) ?? LOOKUP_CONFIG.INITIAL_PAGE;
+
+  if (config.getItems(ctx).length < LOOKUP_CONFIG.PAGE_SIZE) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
+  }
+
+  const nextPage = currentPage + 1;
+  const items = await config.fetchPage(nextPage);
+
+  if (items.length === 0) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
+  }
+
+  await ctx.answerCallbackQuery();
+  storeCallbackMessageId(ctx, config.messageIdSessionKey);
+  await renderApiPage(ctx, config, nextPage, items);
+}
+
 export interface PaginatedItem {
   id: number;
   subject: string;
