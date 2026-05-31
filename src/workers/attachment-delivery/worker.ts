@@ -1,10 +1,12 @@
 import { Job } from "bullmq";
-import { GrammyError, InputMediaBuilder, InputFile } from "grammy";
+import { GrammyError, InputFile } from "grammy";
 import { AttachmentDeliveryJob, attachmentDeliveryQueue } from "./queue.js";
 import { Attachment } from "../../types/service.types.js";
 import {
-  withDownloadedAttachment,
+  cleanupDownloadedAttachment,
+  downloadAttachmentToTempFile,
   TELEGRAM_MAX_FILE_SIZE_BYTES,
+  type DownloadedAttachment,
 } from "../../utils/file-utils.js";
 import { BaseWorker } from "../base/base-worker.js";
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
@@ -65,47 +67,33 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       "Processing attachment delivery job"
     );
 
+    const downloadedAttachments: Array<{
+      attachment: Attachment;
+      downloaded: DownloadedAttachment;
+    }> = [];
+
     try {
+      // Download every attachment before sending anything. Telegram sends are not
+      // transactional, but this prevents partial deliveries caused by a later KTU
+      // download failure after earlier files were already sent.
       for (const attachment of attachments) {
-        await withDownloadedAttachment(
+        const downloaded = await downloadAttachmentToTempFile(
           attachment.encryptId,
           attachment.name,
-          attachment.source ?? "default",
-          async downloaded => {
-            if (downloaded.fileSizeBytes > TELEGRAM_MAX_FILE_SIZE_BYTES) {
-              await sendAsLink(this.getBot(), chatId, downloaded, {
-                contextLabel: getContextEmoji(context),
-                replyToMessageId,
-              });
-              return;
-            }
-
-            const caption = this.buildCaption(attachments, context);
-            const params: Record<string, unknown> = {};
-            if (caption) params.caption = caption;
-
-            const inputFile = new InputFile(
-              downloaded.tempFilePath,
-              downloaded.fileName
-            );
-            const mediaGroup = [InputMediaBuilder.document(inputFile, params)];
-
-            const replyParams = replyToMessageId
-              ? {
-                  reply_parameters: {
-                    message_id: replyToMessageId,
-                    allow_sending_without_reply: true,
-                  },
-                }
-              : undefined;
-
-            await this.getBot().api.sendMediaGroup(
-              chatId,
-              mediaGroup,
-              replyParams
-            );
-          }
+          attachment.source ?? "default"
         );
+        downloadedAttachments.push({ attachment, downloaded });
+      }
+
+      for (const [index, item] of downloadedAttachments.entries()) {
+        await this.sendDownloadedAttachment({
+          chatId,
+          downloaded: item.downloaded,
+          attachments,
+          context,
+          replyToMessageId,
+          includeCaption: index === 0,
+        });
       }
 
       if (statusMessageId !== undefined) {
@@ -125,7 +113,57 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
         await this.updateErrorMessage(chatId, statusMessageId);
       }
       throw error;
+    } finally {
+      await Promise.all(
+        downloadedAttachments.map(({ downloaded }) =>
+          cleanupDownloadedAttachment(downloaded)
+        )
+      );
     }
+  }
+
+  private async sendDownloadedAttachment(options: {
+    chatId: number;
+    downloaded: DownloadedAttachment;
+    attachments: Attachment[];
+    context: string;
+    replyToMessageId?: number | undefined;
+    includeCaption: boolean;
+  }): Promise<void> {
+    const {
+      chatId,
+      downloaded,
+      attachments,
+      context,
+      replyToMessageId,
+      includeCaption,
+    } = options;
+
+    if (downloaded.fileSizeBytes > TELEGRAM_MAX_FILE_SIZE_BYTES) {
+      await sendAsLink(this.getBot(), chatId, downloaded, {
+        contextLabel: getContextEmoji(context),
+        replyToMessageId,
+      });
+      return;
+    }
+
+    const inputFile = new InputFile(
+      downloaded.tempFilePath,
+      downloaded.fileName
+    );
+    const caption = includeCaption
+      ? this.buildCaption(attachments, context)
+      : "";
+
+    await this.getBot().api.sendDocument(chatId, inputFile, {
+      ...(caption && { caption }),
+      ...(replyToMessageId !== undefined && {
+        reply_parameters: {
+          message_id: replyToMessageId,
+          allow_sending_without_reply: true,
+        },
+      }),
+    });
   }
 
   private buildCaption(attachments: Attachment[], context: string): string {
