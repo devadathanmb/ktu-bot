@@ -9,6 +9,10 @@ import {
   parseSelectCallback,
   createViewAnotherKeyboard,
   findItemById,
+  fetchAndRenderApiPage,
+  handleApiNextPage,
+  handleApiPreviousPage,
+  startApiPaginatedLookup,
   storeCallbackMessageId,
 } from "../utils.js";
 import { LOOKUP_CONFIG } from "../constants.js";
@@ -137,30 +141,30 @@ async function handleTimetableAttachment(
   await addAttachmentDeliveryJob(jobData);
 }
 
+function createTimetablesLookupConfig() {
+  return {
+    messageIdSessionKey: "timetableMessageId" as const,
+    getPage: (ctx: BotContext) => ctx.session.timetablePage,
+    setPage: (ctx: BotContext, page: number | null) => {
+      ctx.session.timetablePage = page;
+    },
+    getItems: (ctx: BotContext) => ctx.session.timetableTimetables,
+    setItems: (ctx: BotContext, timetables: ExamTimeTable[]) => {
+      ctx.session.timetableTimetables = timetables;
+    },
+    fetchPage: (pageNumber: number) =>
+      fetchTimetables({
+        pageNumber,
+        dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+      }),
+    buildKeyboard: generateTimetablesKeyboard,
+    buildText: generateTimetablesText,
+    loadingMessage: joinWithNewlines(MESSAGES.FETCHING_TIMETABLES, 2),
+  };
+}
+
 async function fetchAndDisplayTimetables(ctx: BotContext): Promise<void> {
-  storeCallbackMessageId(ctx, "timetableMessageId");
-
-  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_TIMETABLES, 2);
-  await ctx.editMessageText(loadingMsg.text, {
-    entities: loadingMsg.entities,
-  });
-
-  const timetables = await fetchTimetables({
-    pageNumber: ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE,
-    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-  });
-
-  ctx.session.timetableTimetables = timetables;
-  const keyboard = generateTimetablesKeyboard(
-    timetables,
-    ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE
-  );
-  const messageText = generateTimetablesText(timetables);
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  await fetchAndRenderApiPage(ctx, createTimetablesLookupConfig());
 }
 
 const composer = new Composer<BotContext>();
@@ -184,28 +188,10 @@ const timetableLookupCommand = new Command<BotContext>(
 
     ctx.session.timetableMessageId = loadingMessage.message_id;
 
-    const timetables = await fetchTimetables({
-      pageNumber: ctx.session.timetablePage,
-      dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-    });
-
-    const keyboard = generateTimetablesKeyboard(
-      timetables,
-      ctx.session.timetablePage
-    );
-
-    const messageText = generateTimetablesText(timetables);
-
-    ctx.session.timetableTimetables = timetables;
-
-    await ctx.api.editMessageText(
-      ctx.chat!.id,
-      loadingMessage.message_id,
-      messageText.text,
-      {
-        reply_markup: keyboard,
-        entities: messageText.entities,
-      }
+    await startApiPaginatedLookup(
+      ctx,
+      createTimetablesLookupConfig(),
+      loadingMessage.message_id
     );
   }
 );
@@ -254,50 +240,11 @@ protectedComposer.callbackQuery("timetable_page_info", async ctx => {
 });
 
 protectedComposer.callbackQuery("timetable_prev_page", async ctx => {
-  await ctx.answerCallbackQuery();
-
-  const currentPage = ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE;
-  if (currentPage === LOOKUP_CONFIG.INITIAL_PAGE) {
-    await ctx.answerCallbackQuery("You are already on the first page.");
-    return;
-  }
-
-  ctx.session.timetablePage = currentPage - 1;
-  await fetchAndDisplayTimetables(ctx);
+  await handleApiPreviousPage(ctx, createTimetablesLookupConfig());
 });
 
 protectedComposer.callbackQuery("timetable_next_page", async ctx => {
-  const currentPage = ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE;
-
-  // If current page returned fewer items than PAGE_SIZE, we're on the last page
-  if (ctx.session.timetableTimetables.length < LOOKUP_CONFIG.PAGE_SIZE) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
-    return;
-  }
-
-  const nextPage = currentPage + 1;
-  const timetables = await fetchTimetables({
-    pageNumber: nextPage,
-    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
-  });
-
-  if (timetables.length === 0) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
-    return;
-  }
-
-  await ctx.answerCallbackQuery();
-  storeCallbackMessageId(ctx, "timetableMessageId");
-  ctx.session.timetablePage = nextPage;
-  ctx.session.timetableTimetables = timetables;
-
-  const keyboard = generateTimetablesKeyboard(timetables, nextPage);
-  const messageText = generateTimetablesText(timetables);
-
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  await handleApiNextPage(ctx, createTimetablesLookupConfig());
 });
 
 const timetableCommands = new CommandGroup<BotContext>();
