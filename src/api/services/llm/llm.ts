@@ -7,7 +7,11 @@ import {
   buildCourseFindingPrompt,
 } from "./prompts.js";
 import logger from "../../../utils/logger.js";
-import { COURSES } from "../../../constants/courses.js";
+import {
+  AnnouncementFilter,
+  COURSES,
+  type Course,
+} from "../../../constants/courses.js";
 
 const GroqMessageSchema = z.object({
   role: z.enum(["system", "user", "assistant"]),
@@ -52,15 +56,11 @@ const AnnouncementRelevantCoursesResultSchema = z
   })
   .transform(data => {
     // Filter to only include valid course codes
-    const validCourses = data.relevant_courses.filter(course =>
-      COURSES.has(course as never)
+    const validCourses = data.relevant_courses.filter(
+      (course): course is Course => COURSES.has(course as Course)
     );
-    return new Set(validCourses);
+    return new Set<AnnouncementFilter>(validCourses);
   });
-
-export type AnnouncementRelevanceResult = z.infer<
-  typeof AnnouncementRelevanceResultSchema
->;
 
 function parseJsonResponse<T>(schema: z.ZodSchema<T>, jsonString: string): T {
   let parsed: unknown;
@@ -104,7 +104,7 @@ export class LLMService {
 
   async findRelevantCoursesFromAnnouncement(
     announcementContent: string
-  ): Promise<Set<string>> {
+  ): Promise<Set<AnnouncementFilter>> {
     try {
       z.string().min(1).parse(announcementContent);
 
@@ -145,13 +145,11 @@ export class LLMService {
         );
       }
 
-      return new Set<string>();
+      return new Set<AnnouncementFilter>();
     }
   }
 
-  async isAnnouncementRelevant(
-    announcementContent: string
-  ): Promise<AnnouncementRelevanceResult> {
+  async isAnnouncementRelevant(announcementContent: string): Promise<boolean> {
     try {
       z.string().min(1).parse(announcementContent);
 
@@ -177,7 +175,7 @@ export class LLMService {
       return parseJsonResponse(
         AnnouncementRelevanceResultSchema,
         response.choices[0]!.message.content
-      );
+      ).is_relevant;
     } catch (error) {
       if (error instanceof z.ZodError) {
         const announcement = announcementContent.substring(0, 100) + "...";
@@ -195,7 +193,7 @@ export class LLMService {
         );
       }
 
-      return { is_relevant: true };
+      return true;
     }
   }
 }

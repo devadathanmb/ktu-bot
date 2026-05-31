@@ -7,17 +7,21 @@ import { Announcement } from "../../../types/service.types.js";
 import findCourseFiltersFromText from "../../../utils/find-course-filters-from-text.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
 import { BaseWorker } from "../../base/base-worker.js";
-import { addBroadcastJobs } from "../../broadcasts/queue.js";
+import {
+  addBroadcastJobs,
+  type BroadcastJobInput,
+} from "../../broadcasts/queue.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
-import { BroadcastJob } from "../../shared/types.js";
 import {
-  AnnouncementFilter,
-  POSTGRADUATE_COURSES,
-  UNDERGRADUATE_COURSES,
-} from "../../../constants/courses.js";
+  addAllStudentAudienceFilters,
+  addUniversalSubscriptionFilters,
+  hasSpecificAudienceFilters,
+  isOnlyAllAnnouncementsFilter,
+  shouldRefineBroadCourseMatch,
+} from "./audience.js";
 import { announcementsNotifyQueue, setupRecurringSchedule } from "./queue.js";
 import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
@@ -136,16 +140,15 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       "Regex extracted course filters from announcement"
     );
 
-    // When broad match spans UG/PG, use LLM to filter specific courses
-    if (
-      filters.size == UNDERGRADUATE_COURSES.size ||
-      filters.size == POSTGRADUATE_COURSES.size
-    ) {
-      // Find the filters using LLM
-      // If LLM finds any specific courses, we will override the filters found so far
-      // Otherwise, we will keep the existing filters
+    let isStudentRelevant = hasSpecificAudienceFilters(filters);
+
+    // Broad phrases like "UG" or "PG" expand to every course in that group.
+    // That is useful for reach, but too coarse for notifications, so we ask the
+    // LLM for a narrower course list only when the extracted set actually
+    // contains the whole UG/PG group instead of relying on set size alone.
+    if (shouldRefineBroadCourseMatch(filters)) {
       logger.debug(
-        "Multiple course filters found, using LLM to determine specific relevant courses"
+        "Broad course filters found, using LLM to determine specific relevant courses"
       );
       const llmMatchedCourses =
         await this.llmService.findRelevantCoursesFromAnnouncement(contentText);
@@ -159,13 +162,16 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       if (llmMatchedCourses.size > 0) {
         filters.clear();
         llmMatchedCourses.forEach(courseCode => {
-          filters.add(courseCode as AnnouncementFilter);
+          filters.add(courseCode);
         });
       }
+      isStudentRelevant = true;
     }
 
-    // Check relevancy for general-only announcements using LLM
-    if (filters.size === 1 && filters.has(AnnouncementFilter.ALL)) {
+    // General announcements with no course signal need an LLM relevance check.
+    // If relevant, we target every course filter plus `RELEVANT`; if not, only
+    // `ALL` subscribers receive it via addUniversalSubscriptionFilters below.
+    if (isOnlyAllAnnouncementsFilter(filters)) {
       // Stagger LLM calls to avoid bursts
       await setTimeout(2 * 1000);
 
@@ -173,19 +179,16 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
       const isRelevant =
         await this.llmService.isAnnouncementRelevant(contentText);
 
-      // If relevant, add all available filters for all subscribers
       if (isRelevant) {
         logger.debug(
-          "Announcement deemed relevant by LLM, adding all filters to reach all subscribers"
+          "Announcement deemed relevant by LLM, adding all student audience filters"
         );
-        Object.values(AnnouncementFilter).forEach(filter => {
-          filters.add(filter);
-        });
+        addAllStudentAudienceFilters(filters);
       }
+      isStudentRelevant = isRelevant;
     }
 
-    // Finally, add the "all" filter to send to announcement to subscribers who have subscribed to all announcements
-    filters.add(AnnouncementFilter.ALL);
+    addUniversalSubscriptionFilters(filters, { isStudentRelevant });
 
     // Find subscribers matching any of these filters
     const subscriptionRepo = new AnnouncementSubscriptionRepository(this.db);
@@ -240,7 +243,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     if (newAnnouncements.length === 0) return;
 
     // Create broadcast jobs for each announcement
-    const jobs: BroadcastJob[] = [];
+    const jobs: BroadcastJobInput[] = [];
 
     // For each announcement:
     // 1. Find relevant subscribers, if none, skip
@@ -265,9 +268,12 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
 
       for (const chatId of chatIds) {
         jobs.push({
-          formattedText: formattedText,
-          attachments: processedAttachments,
-          chatId: chatId,
+          data: {
+            formattedText: formattedText,
+            attachments: processedAttachments,
+            chatId: chatId,
+          },
+          jobId: `announcement:${announcement.id}:chat:${chatId}`,
         });
       }
     }

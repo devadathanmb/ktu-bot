@@ -10,4 +10,3 @@ export { fetchSyllabusAttachment } from "./ktu/fetch-syllabus-attachment.js";
 export { getApiStatus as getBetterUptimeApiStatus } from "./betteruptime/get-api-status.js";
 export { uploadTempFile } from "./file/catbox-upload.js";
 export { LLMService } from "./llm/index.js";
-export type { NotificationRelevanceResult } from "./llm/index.js";
