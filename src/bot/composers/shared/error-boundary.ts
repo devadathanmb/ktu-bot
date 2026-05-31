@@ -10,7 +10,9 @@ import { HandledBotError } from "../../../errors/handled-bot-error.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 
-type LoadingMessageKey = keyof SessionData;
+type LoadingMessageKey = {
+  [K in keyof SessionData]: SessionData[K] extends number | null ? K : never;
+}[keyof SessionData];
 
 export function createComposerErrorBoundary(
   loadingMessageKeys: LoadingMessageKey[],
@@ -57,8 +59,8 @@ export function createComposerErrorBoundary(
       const messageId = ctx.session[key];
       if (typeof messageId === "number") {
         await deleteMessageSafely(ctx, messageId);
-        // Clear the message ID from session since we deleted it
-        delete ctx.session[key];
+        // Keep the runtime session shape aligned with SessionData.
+        ctx.session[key] = null;
         cleanupActions.push(`deleted-loading-message-${String(key)}`);
       }
     }

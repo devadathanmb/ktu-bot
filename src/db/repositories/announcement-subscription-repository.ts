@@ -10,7 +10,7 @@ export class AnnouncementSubscriptionRepository {
     this.db = dbInstance;
   }
 
-  async getBychatId(chatId: number) {
+  async getByChatId(chatId: number) {
     return this.db.query.announcementSubscriptions.findFirst({
       where: eq(announcementSubscriptions.chatId, chatId),
     });

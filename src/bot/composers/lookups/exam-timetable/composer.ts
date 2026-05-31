@@ -267,8 +267,6 @@ protectedComposer.callbackQuery("timetable_prev_page", async ctx => {
 });
 
 protectedComposer.callbackQuery("timetable_next_page", async ctx => {
-  await ctx.answerCallbackQuery();
-
   const currentPage = ctx.session.timetablePage ?? LOOKUP_CONFIG.INITIAL_PAGE;
 
   // If current page returned fewer items than PAGE_SIZE, we're on the last page
@@ -277,16 +275,29 @@ protectedComposer.callbackQuery("timetable_next_page", async ctx => {
     return;
   }
 
-  ctx.session.timetablePage = currentPage + 1;
+  const nextPage = currentPage + 1;
+  const timetables = await fetchTimetables({
+    pageNumber: nextPage,
+    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+  });
 
-  await fetchAndDisplayTimetables(ctx);
-
-  if (ctx.session.timetableTimetables.length === 0) {
-    ctx.session.timetablePage = currentPage; // Revert
-    await ctx.editMessageText(
-      `${emoji("cross_mark")} No more timetables found.`
-    );
+  if (timetables.length === 0) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
   }
+
+  await ctx.answerCallbackQuery();
+  storeCallbackMessageId(ctx, "timetableMessageId");
+  ctx.session.timetablePage = nextPage;
+  ctx.session.timetableTimetables = timetables;
+
+  const keyboard = generateTimetablesKeyboard(timetables, nextPage);
+  const messageText = generateTimetablesText(timetables);
+
+  await ctx.editMessageText(messageText.text, {
+    reply_markup: keyboard,
+    entities: messageText.entities,
+  });
 });
 
 const timetableCommands = new CommandGroup<BotContext>();

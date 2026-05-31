@@ -24,7 +24,7 @@ import { calendarLookup } from "./composers/lookups/academic-calendar/composer.j
 import { syllabusLookup } from "./composers/lookups/syllabus/composer.js";
 import { inlineQuery } from "./composers/inline-query/composer.js";
 import { sequentialize } from "@grammyjs/runner";
-import { chatMemeberHandler } from "./handlers/chat-member.js";
+import { chatMemberHandler } from "./handlers/chat-member.js";
 import { DEPRECATED_COMMANDS_LIST } from "../constants/bot.js";
 import { deprecatedCommandHandler } from "./handlers/deprecated.js";
 import trackChatId from "./middlewares/track-chat-id.js";
@@ -99,7 +99,7 @@ function configureBot(bot: Bot<BotContext>): void {
   bot.use(inlineQuery);
 
   // Handle my_chat_member updates
-  bot.on("my_chat_member", chatMemeberHandler);
+  bot.on("my_chat_member", chatMemberHandler);
 
   // Deprecated features
   bot.command(DEPRECATED_COMMANDS_LIST, deprecatedCommandHandler);

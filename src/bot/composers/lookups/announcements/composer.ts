@@ -260,8 +260,6 @@ protectedComposer.callbackQuery("announcement_prev_page", async ctx => {
 });
 
 protectedComposer.callbackQuery("announcement_next_page", async ctx => {
-  await ctx.answerCallbackQuery();
-
   const currentPage =
     ctx.session.announcementsPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
 
@@ -271,16 +269,29 @@ protectedComposer.callbackQuery("announcement_next_page", async ctx => {
     return;
   }
 
-  ctx.session.announcementsPage = currentPage + 1;
+  const nextPage = currentPage + 1;
+  const announcements = await fetchAnnouncements({
+    pageNumber: nextPage,
+    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+  });
 
-  await fetchAndDisplayAnnouncements(ctx);
-
-  if (ctx.session.announcementsAnnouncements.length === 0) {
-    ctx.session.announcementsPage = currentPage; // Revert
-    await ctx.editMessageText(
-      `${emoji("cross_mark")} No more announcements found.`
-    );
+  if (announcements.length === 0) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
   }
+
+  await ctx.answerCallbackQuery();
+  storeCallbackMessageId(ctx, "announcementsMessageId");
+  ctx.session.announcementsPage = nextPage;
+  ctx.session.announcementsAnnouncements = announcements;
+
+  const keyboard = generateAnnouncementsKeyboard(announcements, nextPage);
+  const messageText = generateAnnouncementsText(announcements);
+
+  await ctx.editMessageText(messageText.text, {
+    reply_markup: keyboard,
+    entities: messageText.entities,
+  });
 });
 
 const announcementsCommands = new CommandGroup<BotContext>();
