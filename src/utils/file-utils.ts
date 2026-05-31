@@ -31,13 +31,6 @@ async function createTempFile(
   return tempFilePath;
 }
 
-export async function createTempFileFromBase64(
-  base64Data: string,
-  fileName: string
-): Promise<string> {
-  return createTempFile(base64ToBuffer(base64Data), fileName);
-}
-
 export async function readFileAsBuffer(filePath: string): Promise<Buffer> {
   return readFile(filePath);
 }
@@ -50,24 +43,13 @@ async function cleanupTempFile(filePath: string): Promise<void> {
   }
 }
 
-export async function withTempFileCleanup<T>(
-  tempFilePath: string,
-  operation: () => Promise<T>
-): Promise<T> {
-  try {
-    return await operation();
-  } finally {
-    await cleanupTempFile(tempFilePath);
-  }
-}
-
 export interface DownloadedAttachment {
   tempFilePath: string;
   fileName: string;
   fileSizeBytes: number;
 }
 
-async function downloadAttachmentToTempFile(
+export async function downloadAttachmentToTempFile(
   encryptId: string,
   fileName: string,
   source: AttachmentSource = "default"
@@ -99,6 +81,12 @@ async function downloadAttachmentToTempFile(
  * Download an attachment and run an operation with automatic temp file cleanup.
  * The temp file is always deleted, even if the operation throws.
  */
+export async function cleanupDownloadedAttachment(
+  downloaded: DownloadedAttachment
+): Promise<void> {
+  await cleanupTempFile(downloaded.tempFilePath);
+}
+
 export async function withDownloadedAttachment<T>(
   encryptId: string,
   fileName: string,
@@ -113,6 +101,6 @@ export async function withDownloadedAttachment<T>(
   try {
     return await operation(downloaded);
   } finally {
-    await cleanupTempFile(downloaded.tempFilePath);
+    await cleanupDownloadedAttachment(downloaded);
   }
 }

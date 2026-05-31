@@ -67,19 +67,18 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     }
 
     if (batches.length > 0) {
-      const message = await this.sendMessageWithAttachmentsAsMediaGroup(
+      const firstBatchMessage = await this.sendAttachmentsBatch(
         chatId,
-        formattedText,
-        batches[0]!
+        batches[0]!,
+        {
+          formattedText,
+        }
       );
 
-      // messages[0] will represent the first message in the media group so we can reply to it
       for (let i = 1; i < batches.length; i++) {
-        await this.sendAttachmentsAsMediaGroup(
-          chatId,
-          batches[i]!,
-          message[0]!.message_id
-        );
+        await this.sendAttachmentsBatch(chatId, batches[i]!, {
+          messageIdToReplyTo: firstBatchMessage.message_id,
+        });
       }
     }
   }
@@ -91,52 +90,72 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
     });
   }
 
-  private async sendMessageWithAttachmentsAsMediaGroup(
+  private async sendAttachmentsBatch(
     chatId: number,
-    formattedText: FormattedString,
-    attachments: ProcessedAttachment[]
+    attachments: ProcessedAttachment[],
+    options: {
+      formattedText?: FormattedString;
+      messageIdToReplyTo?: number;
+    } = {}
   ) {
-    const documents = attachments.map((attachment, index) => {
-      const params = {};
+    if (attachments.length === 1) {
+      return await this.sendSingleAttachment(chatId, attachments[0]!, options);
+    }
 
-      if (index === 0) {
-        Object.assign(params, {
-          caption: formattedText.rawText,
-          caption_entities: formattedText.rawEntities,
-        });
-      }
+    const documents = attachments.map((attachment, index) => {
+      const params =
+        index === 0 && options.formattedText
+          ? {
+              caption: options.formattedText.rawText,
+              caption_entities: options.formattedText.rawEntities,
+            }
+          : undefined;
 
       return InputMediaBuilder.document(
-        attachment.fileId! || attachment.fileUrl!,
+        this.getAttachmentReference(attachment),
         params
       );
     });
 
-    return await this.getBot().api.sendMediaGroup(chatId, documents);
-  }
-
-  private async sendAttachmentsAsMediaGroup(
-    chatId: number,
-    attachments: ProcessedAttachment[],
-    messageIdToReplyTo?: number
-  ) {
-    const params = {};
-
-    if (messageIdToReplyTo) {
-      Object.assign(params, {
+    const messages = await this.getBot().api.sendMediaGroup(chatId, documents, {
+      ...(options.messageIdToReplyTo !== undefined && {
         reply_parameters: {
-          message_id: messageIdToReplyTo,
+          message_id: options.messageIdToReplyTo,
           allow_sending_without_reply: true,
         },
-      });
-    }
-
-    const documents = attachments.map(attachment => {
-      return InputMediaBuilder.document(
-        attachment.fileId! || attachment.fileUrl!
-      );
+      }),
     });
 
-    return await this.getBot().api.sendMediaGroup(chatId, documents, params);
+    return messages[0]!;
+  }
+
+  private async sendSingleAttachment(
+    chatId: number,
+    attachment: ProcessedAttachment,
+    options: {
+      formattedText?: FormattedString;
+      messageIdToReplyTo?: number;
+    }
+  ) {
+    return await this.getBot().api.sendDocument(
+      chatId,
+      this.getAttachmentReference(attachment),
+      {
+        ...(options.formattedText && {
+          caption: options.formattedText.rawText,
+          caption_entities: options.formattedText.rawEntities,
+        }),
+        ...(options.messageIdToReplyTo !== undefined && {
+          reply_parameters: {
+            message_id: options.messageIdToReplyTo,
+            allow_sending_without_reply: true,
+          },
+        }),
+      }
+    );
+  }
+
+  private getAttachmentReference(attachment: ProcessedAttachment): string {
+    return "fileId" in attachment ? attachment.fileId : attachment.fileUrl;
   }
 }

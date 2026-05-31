@@ -82,7 +82,10 @@ export class TelegramErrorUtils {
     jobId: string | number | undefined,
     error: Error
   ): void {
-    logger.error({ jobId, error }, "Unhandled generic error in job processing");
+    logger.error(
+      { jobId, err: error },
+      "Unhandled generic error in job processing"
+    );
   }
 
   static async handleWorkerGrammyError(
@@ -116,6 +119,7 @@ export class TelegramErrorUtils {
       throw error;
     } else {
       this.logUnhandledTelegramError(chatId, errorCode, errorDescription);
+      throw error;
     }
   }
 }
