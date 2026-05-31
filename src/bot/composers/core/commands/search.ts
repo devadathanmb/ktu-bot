@@ -4,13 +4,15 @@ import { fmt, b, code } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { INLINE_SEARCH_HELP_KEYBOARD } from "../../inline-query/keyboards.js";
+import { BotConfig } from "../../../../configs/bot.js";
 
 export const searchCommand = new Command<BotContext>(
   "search",
   `${emoji("magnifying_glass_tilted_left")} Search KTU resources using inline queries`,
   async (ctx: BotContext) => {
     const title = fmt`${emoji("magnifying_glass_tilted_left")} ${b}Search KTU Resources${b}`;
-    const description = fmt`Use inline queries to search for KTU announcements, calendars, and timetables instantly! Just type ${code}@ktu_results_bot${code} followed by your search terms in any chat.`;
+    const botUsername = `@${BotConfig.BOT_USERNAME}`;
+    const description = fmt`Use inline queries to search for KTU announcements, calendars, and timetables instantly! Just type ${code}${botUsername}${code} followed by your search terms in any chat.`;
 
     const searchTypes = joinWithNewlines([
       fmt`${emoji("books")} ${b}Search Types${b}`,
@@ -26,7 +28,7 @@ export const searchCommand = new Command<BotContext>(
 
     const howToUse = joinWithNewlines([
       fmt`${emoji("light_bulb")} ${b}How to Use${b}`,
-      fmt`Type ${code}@ktu_results_bot prefix: query${code} in any chat, or use the buttons below to get started quickly.`,
+      fmt`Type ${code}${botUsername} prefix: query${code} in any chat, or use the buttons below to get started quickly.`,
     ]);
 
     const tips = joinWithNewlines([

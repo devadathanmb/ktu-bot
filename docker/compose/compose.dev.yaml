@@ -1,8 +1,14 @@
+x-dev-node-service: &dev-node-service
+  build:
+    context: ../..
+    dockerfile: docker/Dockerfile.dev
+  volumes:
+    - ../..:/app
+    - /app/node_modules
+
 services:
   ktu-bot-app:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.dev
+    <<: *dev-node-service
     container_name: ktu-bot-app
     env_file:
       - ../../env/dev/bot.env
@@ -12,9 +18,6 @@ services:
       - ../../env/dev/llm.env
       - ../../env/dev/logging.env
       - ../../env/dev/.env
-    volumes:
-      - ../..:/app
-      - /app/node_modules
     ports:
       - "3000:3000"
     depends_on:
@@ -48,16 +51,11 @@ services:
       start_period: 30s
 
   ktu-bot-db-migrations:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.dev
+    <<: *dev-node-service
     container_name: ktu-bot-db-migrations
     env_file:
       - ../../env/dev/db.env
       - ../../env/dev/.env
-    volumes:
-      - ../..:/app
-      - /app/node_modules
     depends_on:
       ktu-bot-postgres:
         condition: service_healthy
@@ -72,9 +70,7 @@ services:
     restart: "no"
 
   announcements-notify-worker:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.dev
+    <<: *dev-node-service
     container_name: announcements-notify-worker
     env_file:
       - ../../env/dev/bot.env
@@ -88,9 +84,6 @@ services:
       - ../../env/dev/.env
     ports:
       - "3001:3001"
-    volumes:
-      - ../..:/app
-      - /app/node_modules
     depends_on:
       ktu-bot-postgres:
         condition: service_healthy
@@ -122,9 +115,7 @@ services:
       start_period: 30s
 
   broadcasts-worker:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.dev
+    <<: *dev-node-service
     container_name: broadcasts-worker
     env_file:
       - ../../env/dev/bot.env
@@ -137,9 +128,6 @@ services:
       - ../../env/dev/.env
     ports:
       - "3002:3002"
-    volumes:
-      - ../..:/app
-      - /app/node_modules
     depends_on:
       ktu-bot-postgres:
         condition: service_healthy
@@ -171,9 +159,7 @@ services:
       start_period: 30s
 
   data-sync-worker:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.dev
+    <<: *dev-node-service
     container_name: data-sync-worker
     env_file:
       - ../../env/dev/bot.env
@@ -186,9 +172,6 @@ services:
       - ../../env/dev/.env
     ports:
       - "3003:3003"
-    volumes:
-      - ../..:/app
-      - /app/node_modules
     depends_on:
       ktu-bot-postgres:
         condition: service_healthy
@@ -220,9 +203,7 @@ services:
       start_period: 30s
 
   attachment-delivery-worker:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.dev
+    <<: *dev-node-service
     container_name: attachment-delivery-worker
     env_file:
       - ../../env/dev/bot.env
@@ -234,9 +215,6 @@ services:
       - ../../env/dev/.env
     ports:
       - "3004:3004"
-    volumes:
-      - ../..:/app
-      - /app/node_modules
     depends_on:
       ktu-bot-postgres:
         condition: service_healthy
@@ -268,9 +246,7 @@ services:
       start_period: 30s
 
   bull-board-service:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.dev
+    <<: *dev-node-service
     container_name: bull-board-service
     env_file:
       - ../../env/dev/redis.env
@@ -287,9 +263,6 @@ services:
       - ../../env/dev/.env
     ports:
       - "3010:3010"
-    volumes:
-      - ../..:/app
-      - /app/node_modules
     depends_on:
       ktu-bot-redis:
         condition: service_healthy

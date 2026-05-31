@@ -11,11 +11,12 @@ import { BotContext } from "../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { calendarLookupCommand } from "../bot/composers/lookups/academic-calendar/composer.js";
 import { timetableLookupCommand } from "../bot/composers/lookups/exam-timetable/composer.js";
+import { BotConfig } from "../configs/bot.js";
 
 const resultDeprecationReason: FormattedString[] = [
   fmt`${emoji("warning")} This feature has been deprecated.`,
   fmt`${emoji("disappointed_face")} KTU no longer provides public API access for results. You can only view your results through the official KTU student portal now.`,
-  fmt`For more details, refer to ${FormattedString.link("Why is results not working?", "https://github.com/devadathanmb/ktu-bot/blob/grammy-rewrite/docs/rewrite.md#results-not-working-")}`,
+  fmt`For more details, refer to ${FormattedString.link("Why is results not working?", BotConfig.BOT_REWRITE_DOC_URL)}`,
 ];
 
 const generateMigrationReason = (newCommand: Command<BotContext>) => {
