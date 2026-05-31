@@ -3,11 +3,7 @@ import got from "got";
 import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import { CATBOX_API } from "../../../constants/api.js";
 import type { TempFileUploadParams } from "../../../types/service.types.js";
-import {
-  readFileAsBuffer,
-  createTempFileFromBase64,
-  withTempFileCleanup,
-} from "../../../utils/file-utils.js";
+import { readFileAsBuffer } from "../../../utils/file-utils.js";
 
 const CatboxResponseSchema = z
   .url("Invalid URL returned from Catbox API")
@@ -33,27 +29,7 @@ async function _uploadTempFile(params: TempFileUploadParams): Promise<string> {
   return CatboxResponseSchema.parse(uri);
 }
 
-// Helper function to upload base64 data
-async function _uploadBase64Data(
-  base64Data: string,
-  fileName: string
-): Promise<string> {
-  const tempFilePath = await createTempFileFromBase64(base64Data, fileName);
-
-  return withTempFileCleanup(tempFilePath, async () => {
-    return _uploadTempFile({
-      filePath: tempFilePath,
-      fileName,
-    });
-  });
-}
-
 export const uploadTempFile = withServiceWrapper(
   "uploadTempFile",
   _uploadTempFile
-);
-
-export const uploadBase64File = withServiceWrapper(
-  "uploadBase64File",
-  _uploadBase64Data
 );
