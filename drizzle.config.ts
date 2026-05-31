@@ -8,6 +8,17 @@ function getCaCert(): string | undefined {
   return process.env.DATABASE_CA_CERTIFICATE || undefined;
 }
 
+function getSslConfig(): false | { rejectUnauthorized: boolean; ca?: string } {
+  const sslMode = process.env.PGSSLMODE;
+  if (sslMode === "disable") return false;
+
+  const ca = getCaCert();
+  return {
+    rejectUnauthorized: sslMode === "verify-full",
+    ...(ca !== undefined && { ca }),
+  };
+}
+
 export default defineConfig({
   dialect: "postgresql",
   schema: "./src/db/schema/*",
@@ -18,7 +29,7 @@ export default defineConfig({
     user: process.env.DATABASE_USER!,
     password: process.env.DATABASE_PASSWORD!,
     database: process.env.DATABASE_NAME!,
-    ssl: process.env.PGSSLMODE !== "disable" ? { ca: getCaCert() } : false,
+    ssl: getSslConfig(),
   },
 
   verbose: true,
