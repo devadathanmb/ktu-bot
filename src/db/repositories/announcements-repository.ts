@@ -1,18 +1,15 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
-import { db } from "../connection.js";
+import { getDb } from "../connection.js";
 import { announcements } from "../schema/announcements.js";
 import { DatabaseInstance } from "../types.js";
 import type { Announcement } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";
-
-// Interface for search options
-interface SearchOptions {
-  query?: string;
-  limit?: number;
-  offset?: number;
-  startDate?: Date;
-  endDate?: Date;
-}
+import {
+  buildDateRangeConditions,
+  buildFullTextSearchCondition,
+  normalizeSearchQuery,
+  type SearchOptions,
+} from "./search-utils.js";
 
 // Type for inserting announcements into the database
 type AnnouncementInsert = typeof announcements.$inferInsert;
@@ -20,7 +17,7 @@ type AnnouncementInsert = typeof announcements.$inferInsert;
 export class AnnouncementsRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = db) {
+  constructor(dbInstance: DatabaseInstance = getDb()) {
     this.db = dbInstance;
   }
 
@@ -30,15 +27,10 @@ export class AnnouncementsRepository {
   async getAll(options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
-    const conditions = [];
-
-    // Add date filtering if provided
-    if (startDate) {
-      conditions.push(sql`${announcements.publishedAt} >= ${startDate}`);
-    }
-    if (endDate) {
-      conditions.push(sql`${announcements.publishedAt} <= ${endDate}`);
-    }
+    const conditions = buildDateRangeConditions(announcements.publishedAt, {
+      startDate,
+      endDate,
+    });
 
     const baseQuery = this.db.select().from(announcements);
 
@@ -66,30 +58,19 @@ export class AnnouncementsRepository {
       return this.getAll(options);
     }
 
-    // Convert search query to tsquery format
-    // This handles basic search with AND logic between words
-    const tsquery = searchQuery
-      .trim()
-      .split(/\s+/)
-      .map(word => word.replace(/[^a-zA-Z0-9]/g, ""))
-      .filter(word => word.length > 0)
-      .join(" & ");
+    const tsquery = normalizeSearchQuery(searchQuery);
 
     if (!tsquery) {
       return this.getAll(options);
     }
 
     const conditions = [
-      sql`${announcements.searchVector} @@ to_tsquery('english', ${tsquery})`,
+      buildFullTextSearchCondition(announcements.searchVector, tsquery),
+      ...buildDateRangeConditions(announcements.publishedAt, {
+        startDate,
+        endDate,
+      }),
     ];
-
-    // Add date filtering if provided
-    if (startDate) {
-      conditions.push(sql`${announcements.publishedAt} >= ${startDate}`);
-    }
-    if (endDate) {
-      conditions.push(sql`${announcements.publishedAt} <= ${endDate}`);
-    }
 
     return this.db
       .select()
