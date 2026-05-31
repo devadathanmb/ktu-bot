@@ -9,6 +9,10 @@ import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
 import { AnnouncementSubscriptionRepository } from "../../db/repositories/announcement-subscription-repository.js";
 import { broadcastsQueue } from "./queue.js";
 import { BroadcastsWorkerConfig } from "../../configs/broadcasts-worker.js";
+import {
+  buildFormattedCaption,
+  buildReplyParameters,
+} from "../shared/utils/telegram-send.js";
 
 export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   constructor() {
@@ -104,12 +108,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
 
     const documents = attachments.map((attachment, index) => {
       const params =
-        index === 0 && options.formattedText
-          ? {
-              caption: options.formattedText.rawText,
-              caption_entities: options.formattedText.rawEntities,
-            }
-          : undefined;
+        index === 0 ? buildFormattedCaption(options.formattedText) : undefined;
 
       return InputMediaBuilder.document(
         this.getAttachmentReference(attachment),
@@ -117,14 +116,11 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       );
     });
 
-    const messages = await this.getBot().api.sendMediaGroup(chatId, documents, {
-      ...(options.messageIdToReplyTo !== undefined && {
-        reply_parameters: {
-          message_id: options.messageIdToReplyTo,
-          allow_sending_without_reply: true,
-        },
-      }),
-    });
+    const messages = await this.getBot().api.sendMediaGroup(
+      chatId,
+      documents,
+      buildReplyParameters(options)
+    );
 
     return messages[0]!;
   }
@@ -141,16 +137,8 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       chatId,
       this.getAttachmentReference(attachment),
       {
-        ...(options.formattedText && {
-          caption: options.formattedText.rawText,
-          caption_entities: options.formattedText.rawEntities,
-        }),
-        ...(options.messageIdToReplyTo !== undefined && {
-          reply_parameters: {
-            message_id: options.messageIdToReplyTo,
-            allow_sending_without_reply: true,
-          },
-        }),
+        ...buildFormattedCaption(options.formattedText),
+        ...buildReplyParameters(options),
       }
     );
   }
