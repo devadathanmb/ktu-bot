@@ -98,4 +98,5 @@ export {
   UNDERGRADUATE_COURSES,
   POSTGRADUATE_COURSES,
   COURSES,
+  type Course,
 };

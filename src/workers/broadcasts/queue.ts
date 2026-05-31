@@ -2,6 +2,11 @@ import { BroadcastJob } from "../shared/types.js";
 import logger from "../../utils/logger.js";
 import { createQueue } from "../shared/create-queue.js";
 
+export interface BroadcastJobInput {
+  data: BroadcastJob;
+  jobId?: string;
+}
+
 export const BROADCASTS_QUEUE = "BROADCASTS_QUEUE";
 
 export const broadcastsQueue = createQueue<BroadcastJob>({
@@ -11,10 +16,11 @@ export const broadcastsQueue = createQueue<BroadcastJob>({
   },
 });
 
-export async function addBroadcastJobs(jobsData: BroadcastJob[]) {
-  const jobs = jobsData.map(jobData => ({
+export async function addBroadcastJobs(jobsData: BroadcastJobInput[]) {
+  const jobs = jobsData.map(job => ({
     name: "broadcast:send",
-    data: jobData,
+    data: job.data,
+    ...(job.jobId !== undefined && { opts: { jobId: job.jobId } }),
   }));
 
   const results = await broadcastsQueue.addBulk(jobs);
