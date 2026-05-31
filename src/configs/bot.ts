@@ -15,10 +15,10 @@ const botConfigSchema = z
     BOT_DEPLOYMENT_TYPE: z
       .enum([...Object.values(availableDeploymentTypes)])
       .default(availableDeploymentTypes.LONG_POLLING),
-    BOT_SESSION_DATA_TTL: z
+    BOT_SESSION_DATA_TTL: z.coerce
       .number()
       .positive()
-      .default(30 * 60 * 1000), // 30 minutes
+      .default(10 * 60 * 1000), // 10 minutes
     ENABLE_PROMETHEUS_METRICS: z
       .enum(["true", "false"])
       .default("false")
@@ -39,7 +39,7 @@ export const BotConfig = botConfigSchema.parse({
     process.env.BOT_IMAGE_URL ||
     "https://raw.githubusercontent.com/devadathanmb/ktu-bot/refs/heads/grammy-rewrite/assets/bot-profile-pic.jpg",
   BOT_DEPLOYMENT_TYPE: process.env.BOT_DEPLOYMENT_TYPE,
-  BOT_SESSION_DATA_TTL: 1 * 60 * 1000, // 1 minute
+  BOT_SESSION_DATA_TTL: process.env.BOT_SESSION_DATA_TTL,
   BOT_HEALTH_CHECK_PORT: process.env.BOT_HEALTH_CHECK_PORT,
   ENABLE_PROMETHEUS_METRICS: process.env.ENABLE_PROMETHEUS_METRICS,
 });

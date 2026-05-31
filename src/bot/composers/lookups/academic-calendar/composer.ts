@@ -251,8 +251,6 @@ protectedComposer.callbackQuery("calendar_prev_page", async ctx => {
 });
 
 protectedComposer.callbackQuery("calendar_next_page", async ctx => {
-  await ctx.answerCallbackQuery();
-
   const currentPage = ctx.session.calendarPage ?? LOOKUP_CONFIG.INITIAL_PAGE;
 
   // If current page returned fewer items than PAGE_SIZE, we're on the last page
@@ -261,16 +259,29 @@ protectedComposer.callbackQuery("calendar_next_page", async ctx => {
     return;
   }
 
-  ctx.session.calendarPage = currentPage + 1;
+  const nextPage = currentPage + 1;
+  const calendars = await fetchAcademicCalendars({
+    pageNumber: nextPage,
+    dataSize: LOOKUP_CONFIG.PAGE_SIZE,
+  });
 
-  await fetchAndDisplayCalendars(ctx);
-
-  if (ctx.session.calendarCalendars.length === 0) {
-    ctx.session.calendarPage = currentPage; // Revert
-    await ctx.editMessageText(
-      `${emoji("cross_mark")} No more calendars found.`
-    );
+  if (calendars.length === 0) {
+    await ctx.answerCallbackQuery("You are already on the last page.");
+    return;
   }
+
+  await ctx.answerCallbackQuery();
+  storeCallbackMessageId(ctx, "calendarMessageId");
+  ctx.session.calendarPage = nextPage;
+  ctx.session.calendarCalendars = calendars;
+
+  const keyboard = generateCalendarsKeyboard(calendars, nextPage);
+  const messageText = generateCalendarsText(calendars);
+
+  await ctx.editMessageText(messageText.text, {
+    reply_markup: keyboard,
+    entities: messageText.entities,
+  });
 });
 
 const calendarCommands = new CommandGroup<BotContext>();

@@ -30,12 +30,10 @@ const MESSAGES: Record<string, Array<FormattedString>> = {
   ],
 } as const;
 
-export const announcementSubscriptions = new Composer<BotContext>();
-
-const protectedComposer = new Composer<BotContext>();
-protectedComposer.errorBoundary(createAnnouncementSubscriptionErrorBoundary());
-
-announcementSubscriptions.use(protectedComposer);
+const composer = new Composer<BotContext>();
+const protectedComposer = composer.errorBoundary(
+  createAnnouncementSubscriptionErrorBoundary()
+);
 
 const announcementsSubscribeCommand = new Command<BotContext>(
   "announcements_subscribe",
@@ -47,7 +45,7 @@ const announcementsSubscribeCommand = new Command<BotContext>(
         new AnnouncementSubscriptionRepository(tx);
 
       const announcementSubscription =
-        await announcementSubscriptionRepo.getBychatId(chatId);
+        await announcementSubscriptionRepo.getByChatId(chatId);
       if (announcementSubscription) {
         const formattedMsg = joinWithNewlines(MESSAGES.ALREADY_SUBSCRIBED!, 2);
         await ctx.reply(formattedMsg.text, {
@@ -121,7 +119,7 @@ protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
       tx
     );
     let announcementSubscription =
-      await announcementSubscriptionRepo.getBychatId(chatId);
+      await announcementSubscriptionRepo.getByChatId(chatId);
     if (announcementSubscription) {
       await announcementSubscriptionRepo.update(chatId, {
         filters: ctx.session.selectedFilters,
@@ -169,7 +167,7 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
         new AnnouncementSubscriptionRepository(tx);
 
       const announcementSubscription =
-        await announcementSubscriptionRepo.getBychatId(chatId);
+        await announcementSubscriptionRepo.getByChatId(chatId);
       if (!announcementSubscription) {
         const formattedMsg = joinWithNewlines(
           MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!,
@@ -198,7 +196,7 @@ const announcementsShowFilterCommand = new Command<BotContext>(
     const announcementSubscriptionRepo =
       new AnnouncementSubscriptionRepository();
     const announcementSubscription =
-      await announcementSubscriptionRepo.getBychatId(chatId);
+      await announcementSubscriptionRepo.getByChatId(chatId);
 
     if (!announcementSubscription) {
       const formattedMsg = joinWithNewlines(
@@ -258,7 +256,7 @@ const announcementsChangeFilterCommand = new Command<BotContext>(
         new AnnouncementSubscriptionRepository(tx);
 
       const existingSubscription =
-        await announcementSubscriptionRepo.getBychatId(chatId);
+        await announcementSubscriptionRepo.getByChatId(chatId);
       if (!existingSubscription) {
         const formattedMsg = joinWithNewlines(
           MESSAGES.NOT_SUBSCRIBED_CHANGE_FILTER!
@@ -297,6 +295,7 @@ announcementSubscriptionsCommands
 protectedComposer.use(announcementSubscriptionsCommands);
 
 export {
+  composer as announcementSubscriptions,
   announcementSubscriptionsCommands,
   announcementsSubscribeCommand,
   announcementsUnsubscribeCommand,

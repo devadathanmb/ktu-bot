@@ -9,7 +9,7 @@ import { emoji } from "@grammyjs/emoji";
 import logger from "../../utils/logger.js";
 import { announcementsSubscribeCommand } from "../composers/announcement-subscriptions/composer.js";
 
-export const chatMemeberHandler = async (
+export const chatMemberHandler = async (
   ctx: Filter<BotContext, "my_chat_member">
 ) => {
   await withTransaction(async tx => {
