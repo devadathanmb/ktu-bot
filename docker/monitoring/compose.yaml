@@ -4,17 +4,47 @@ services:
     container_name: prometheus
     labels:
       autoheal: "true"
+    env_file:
+      - path: ../../env/prod/prometheus.env
+        required: false
     volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus.yaml:/etc/prometheus/prometheus.base.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=30d"
-      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - |
+        set -eu
+
+        cp /etc/prometheus/prometheus.base.yml /tmp/prometheus.yml
+
+        if [ -n "$${PROMETHEUS_REMOTE_WRITE_URL:-}" ]; then
+          if [ -z "$${PROMETHEUS_REMOTE_WRITE_USERNAME:-}" ] || [ -z "$${PROMETHEUS_REMOTE_WRITE_PASSWORD:-}" ]; then
+            echo "PROMETHEUS_REMOTE_WRITE_USERNAME and PROMETHEUS_REMOTE_WRITE_PASSWORD are required when PROMETHEUS_REMOTE_WRITE_URL is set" >&2
+            exit 1
+          fi
+
+          yaml_quote() {
+            printf "%s" "$$1" | sed "s/'/''/g; s/^/'/; s/$$/'/"
+          }
+
+          {
+            echo ""
+            echo "remote_write:"
+            printf "  - url: %s\n" "$$(yaml_quote "$${PROMETHEUS_REMOTE_WRITE_URL}")"
+            echo "    basic_auth:"
+            printf "      username: %s\n" "$$(yaml_quote "$${PROMETHEUS_REMOTE_WRITE_USERNAME}")"
+            printf "      password: %s\n" "$$(yaml_quote "$${PROMETHEUS_REMOTE_WRITE_PASSWORD}")"
+          } >> /tmp/prometheus.yml
+        fi
+
+        exec /bin/prometheus \
+          --config.file=/tmp/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --storage.tsdb.retention.time=30d \
+          --web.console.libraries=/usr/share/prometheus/console_libraries \
+          --web.console.templates=/usr/share/prometheus/consoles
     restart: unless-stopped
     deploy:
       resources:
@@ -41,7 +71,7 @@ services:
 networks:
   ktu-bot-network:
     external: true
-    name: docker_ktu-bot-network
+    name: ktu-bot-network
 
 volumes:
   prometheus_data:

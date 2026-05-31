@@ -1,5 +1,6 @@
 networks:
   ktu-bot-network:
+    name: ktu-bot-network
     driver: bridge
 
 services:
