@@ -5,8 +5,8 @@ import * as schema from "./schema/index.js";
 import { DbConfig } from "../configs/db.js";
 import logger from "../utils/logger.js";
 
-let db: NodePgDatabase<typeof schema>;
-let pool: Pool;
+let db: NodePgDatabase<typeof schema> | undefined;
+let pool: Pool | undefined;
 
 export async function initDB(): Promise<NodePgDatabase<typeof schema>> {
   pool = new Pool({
@@ -29,6 +29,8 @@ export async function closeDB(): Promise<void> {
   try {
     if (pool) {
       await pool.end();
+      pool = undefined;
+      db = undefined;
       logger.info("Database connection closed");
     }
   } catch (error) {
@@ -36,4 +38,9 @@ export async function closeDB(): Promise<void> {
   }
 }
 
-export { db };
+export function getDb(): NodePgDatabase<typeof schema> {
+  if (!db) {
+    throw new Error("Database has not been initialized. Call initDB() first.");
+  }
+  return db;
+}

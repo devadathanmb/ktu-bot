@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../connection.js";
+import { getDb } from "../connection.js";
 import { chats } from "../schema/chats.js";
 import { DatabaseInstance } from "../types.js";
 import logger from "../../utils/logger.js";
@@ -7,17 +7,23 @@ import logger from "../../utils/logger.js";
 export class ChatRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = db) {
+  constructor(dbInstance: DatabaseInstance = getDb()) {
     this.db = dbInstance;
   }
 
   async createIfNotExists(chatId: number) {
-    let chat = await this.getById(chatId);
-    if (!chat) {
+    const [createdChat] = await this.db
+      .insert(chats)
+      .values({ id: chatId })
+      .onConflictDoNothing()
+      .returning();
+
+    if (createdChat) {
       logger.info({ chatId }, "Chat not found in DB, creating new record");
-      [chat] = await this.create({ id: chatId });
+      return createdChat;
     }
-    return chat;
+
+    return await this.getById(chatId);
   }
 
   async markActive(chatId: number) {

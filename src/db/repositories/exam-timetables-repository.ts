@@ -1,18 +1,15 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
-import { db } from "../connection.js";
+import { getDb } from "../connection.js";
 import { examTimetables } from "../schema/exam-timetables.js";
 import { DatabaseInstance } from "../types.js";
 import type { ExamTimeTable } from "../../types/service.types.js";
 import { formatDateToReadableString } from "../../utils/formatting.js";
-
-// Interface for search options
-interface SearchOptions {
-  query?: string;
-  limit?: number;
-  offset?: number;
-  startDate?: Date;
-  endDate?: Date;
-}
+import {
+  buildDateRangeConditions,
+  buildFullTextSearchCondition,
+  normalizeSearchQuery,
+  type SearchOptions,
+} from "./search-utils.js";
 
 // Type for inserting exam timetables into the database
 type ExamTimetableInsert = typeof examTimetables.$inferInsert;
@@ -20,7 +17,7 @@ type ExamTimetableInsert = typeof examTimetables.$inferInsert;
 export class ExamTimetablesRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = db) {
+  constructor(dbInstance: DatabaseInstance = getDb()) {
     this.db = dbInstance;
   }
 
@@ -30,15 +27,10 @@ export class ExamTimetablesRepository {
   async getAll(options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
-    const conditions = [];
-
-    // Add date filtering if provided
-    if (startDate) {
-      conditions.push(sql`${examTimetables.publishedAt} >= ${startDate}`);
-    }
-    if (endDate) {
-      conditions.push(sql`${examTimetables.publishedAt} <= ${endDate}`);
-    }
+    const conditions = buildDateRangeConditions(examTimetables.publishedAt, {
+      startDate,
+      endDate,
+    });
 
     const baseQuery = this.db.select().from(examTimetables);
 
@@ -66,30 +58,19 @@ export class ExamTimetablesRepository {
       return this.getAll(options);
     }
 
-    // Convert search query to tsquery format
-    // This handles basic search with AND logic between words
-    const tsquery = searchQuery
-      .trim()
-      .split(/\s+/)
-      .map(word => word.replace(/[^a-zA-Z0-9]/g, ""))
-      .filter(word => word.length > 0)
-      .join(" & ");
+    const tsquery = normalizeSearchQuery(searchQuery);
 
     if (!tsquery) {
       return this.getAll(options);
     }
 
     const conditions = [
-      sql`${examTimetables.searchVector} @@ to_tsquery('english', ${tsquery})`,
+      buildFullTextSearchCondition(examTimetables.searchVector, tsquery),
+      ...buildDateRangeConditions(examTimetables.publishedAt, {
+        startDate,
+        endDate,
+      }),
     ];
-
-    // Add date filtering if provided
-    if (startDate) {
-      conditions.push(sql`${examTimetables.publishedAt} >= ${startDate}`);
-    }
-    if (endDate) {
-      conditions.push(sql`${examTimetables.publishedAt} <= ${endDate}`);
-    }
 
     return this.db
       .select()
