@@ -4,14 +4,15 @@ import { z } from "zod";
 const dbConfigSchema = z
   .object({
     DATABASE_URI: z.string(),
-    PGSSLMODE: z.enum(["disable", "verify-full"]),
+    PGSSLMODE: z.enum(["disable", "require", "verify-full"]),
     DATABASE_CA_CERTIFICATE: z.string().optional(),
     DATABASE_CA_CERTIFICATE_PATH: z.string().optional(),
   })
   .superRefine((config, ctx) => {
-    if (config.PGSSLMODE === "disable") return;
+    if (config.PGSSLMODE !== "verify-full") return;
 
-    // At least one of cert or cert path must be provided
+    // Full verification needs a CA bundle. Use `require` when the deployment
+    // needs encrypted-but-unverified TLS for providers with mismatched certs.
     if (
       !config.DATABASE_CA_CERTIFICATE &&
       !config.DATABASE_CA_CERTIFICATE_PATH
@@ -20,7 +21,7 @@ const dbConfigSchema = z
         path: ["DATABASE_CA_CERTIFICATE"],
         code: "custom",
         message:
-          "DATABASE_CA_CERTIFICATE or DATABASE_CA_CERTIFICATE_PATH required when PGSSLMODE is not 'disable'",
+          "DATABASE_CA_CERTIFICATE or DATABASE_CA_CERTIFICATE_PATH required when PGSSLMODE is 'verify-full'",
       });
     }
 
@@ -49,7 +50,7 @@ const dbConfigSchema = z
     return {
       ...config,
       SSL_CONFIG: {
-        rejectUnauthorized: false,
+        rejectUnauthorized: config.PGSSLMODE === "verify-full",
         ca,
       },
     };

@@ -193,6 +193,9 @@ services:
       ktu-bot-postgres:
         condition: service_healthy
         restart: true
+      ktu-bot-redis:
+        condition: service_healthy
+        restart: true
       ktu-bot-db-migrations:
         condition: service_completed_successfully
     networks:
