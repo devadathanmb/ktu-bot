@@ -1,7 +1,8 @@
 import pino from "pino";
+import pinoPretty from "pino-pretty";
 import { LogConfig } from "../configs/logging.js";
 
-const logger = pino({
+const loggerOptions: pino.LoggerOptions = {
   level: LogConfig.LOG_LEVEL,
 
   serializers: {
@@ -20,15 +21,15 @@ const logger = pino({
     ],
     censor: "[REDACTED]",
   },
+};
 
-  transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "SYS:HH:MM:ss",
-      ignore: "pid,hostname",
-    },
-  },
-});
+const logger = pino(
+  loggerOptions,
+  pinoPretty({
+    colorize: true,
+    translateTime: "SYS:HH:MM:ss",
+    ignore: "pid,hostname",
+  })
+);
 
 export default logger;
