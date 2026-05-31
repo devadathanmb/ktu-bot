@@ -10,8 +10,14 @@ const botConfigSchema = z
     BOT_HEALTH_CHECK_PORT: z.coerce.number().positive(),
     BOT_FILE_UPLOAD_CHANNEL_ID: z.coerce.number().negative(),
     BOT_TOKEN: z.string(),
+    BOT_USERNAME: z.string().default("ktu_results_bot"),
     NODE_ENV: z.enum(["development", "production"]),
     BOT_IMAGE_URL: z.string(),
+    BOT_REWRITE_DOC_URL: z
+      .url()
+      .default(
+        "https://github.com/devadathanmb/ktu-bot/blob/grammy-rewrite/docs/rewrite.md#results-not-working-"
+      ),
     BOT_DEPLOYMENT_TYPE: z
       .enum([...Object.values(availableDeploymentTypes)])
       .default(availableDeploymentTypes.LONG_POLLING),
@@ -34,11 +40,13 @@ const botConfigSchema = z
 export const BotConfig = botConfigSchema.parse({
   BOT_FILE_UPLOAD_CHANNEL_ID: process.env.BOT_FILE_UPLOAD_CHANNEL_ID,
   BOT_TOKEN: process.env.BOT_TOKEN,
+  BOT_USERNAME: process.env.BOT_USERNAME,
   NODE_ENV: process.env.NODE_ENV || "development",
   BOT_IMAGE_URL:
     process.env.BOT_IMAGE_URL ||
     "https://raw.githubusercontent.com/devadathanmb/ktu-bot/refs/heads/grammy-rewrite/assets/bot-profile-pic.jpg",
   BOT_DEPLOYMENT_TYPE: process.env.BOT_DEPLOYMENT_TYPE,
+  BOT_REWRITE_DOC_URL: process.env.BOT_REWRITE_DOC_URL,
   BOT_SESSION_DATA_TTL: process.env.BOT_SESSION_DATA_TTL,
   BOT_HEALTH_CHECK_PORT: process.env.BOT_HEALTH_CHECK_PORT,
   ENABLE_PROMETHEUS_METRICS: process.env.ENABLE_PROMETHEUS_METRICS,

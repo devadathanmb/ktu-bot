@@ -9,6 +9,7 @@ import { syllabusCommands } from "../../lookups/syllabus/composer.js";
 import { announcementSubscriptionsCommands } from "../../announcement-subscriptions/composer.js";
 import { coreCommandsGroup } from "../composer.js";
 import { emoji } from "@grammyjs/emoji";
+import { BotConfig } from "../../../../configs/bot.js";
 
 export const helpCommand = new Command<BotContext>(
   "help",
@@ -30,7 +31,7 @@ ${allLookupCommands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n
     const subscriptionCommands = fmt`${emoji("bell")} ${b}Notification Commands${b}
 ${allNotificationCommands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;
     const inlineInfo = fmt`${emoji("light_bulb")} ${b}Pro Tip${b}
-Type ${b}@ktu_results_bot${b} followed by keywords in any chat to search any announcements, exam timetables or academic calendars instantly without opening the bot!`;
+Type ${b}@${BotConfig.BOT_USERNAME}${b} followed by keywords in any chat to search any announcements, exam timetables or academic calendars instantly without opening the bot!`;
 
     const fullHelpMessage = joinWithNewlines(
       [
