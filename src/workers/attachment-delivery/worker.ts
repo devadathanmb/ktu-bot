@@ -17,6 +17,7 @@ import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
 import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
 import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
+import { buildReplyParameters } from "../shared/utils/telegram-send.js";
 
 export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> {
   constructor() {
@@ -157,12 +158,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
 
     await this.getBot().api.sendDocument(chatId, inputFile, {
       ...(caption && { caption }),
-      ...(replyToMessageId !== undefined && {
-        reply_parameters: {
-          message_id: replyToMessageId,
-          allow_sending_without_reply: true,
-        },
-      }),
+      ...buildReplyParameters({ messageIdToReplyTo: replyToMessageId }),
     });
   }
 
