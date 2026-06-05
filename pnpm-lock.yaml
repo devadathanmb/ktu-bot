@@ -17,7 +17,7 @@ importers:
         version: 6.20.3(@bull-board/ui@6.20.3)
       '@bull-board/hono':
         specifier: ^6.20.3
-        version: 6.20.3(hono@4.12.18)
+        version: 6.20.3(hono@4.12.21)
       '@grammyjs/auto-retry':
         specifier: ^2.0.2
         version: 2.0.2(grammy@1.41.1)
@@ -44,7 +44,7 @@ importers:
         version: 1.2.1(grammy@1.41.1)
       '@hono/node-server':
         specifier: ^1.19.13
-        version: 1.19.13(hono@4.12.18)
+        version: 1.19.13(hono@4.12.21)
       bullmq:
         specifier: ^5.70.4
         version: 5.70.4
@@ -61,8 +61,8 @@ importers:
         specifier: ^1.41.1
         version: 1.41.1
       hono:
-        specifier: ^4.12.18
-        version: 4.12.18
+        specifier: ^4.12.21
+        version: 4.12.21
       ioredis:
         specifier: ^5.10.0
         version: 5.10.0
@@ -1303,8 +1303,8 @@ packages:
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
-  hono@4.12.18:
-    resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
+  hono@4.12.21:
+    resolution: {integrity: sha512-uV63apnb0kyPtAUwoWgaGh9HyIFcv8lgmzPZSiTBQAFOFGIzka5EZ1dZocmGnn0XdX0+XTqJ6Tqv7selMuGLRQ==}
     engines: {node: '>=16.9.0'}
 
   html-entities@2.6.0:
@@ -1920,12 +1920,12 @@ snapshots:
       '@bull-board/ui': 6.20.3
       redis-info: 3.1.0
 
-  '@bull-board/hono@6.20.3(hono@4.12.18)':
+  '@bull-board/hono@6.20.3(hono@4.12.21)':
     dependencies:
       '@bull-board/api': 6.20.3(@bull-board/ui@6.20.3)
       '@bull-board/ui': 6.20.3
       ejs: 3.1.10
-      hono: 4.12.18
+      hono: 4.12.21
 
   '@bull-board/ui@6.20.3':
     dependencies:
@@ -2256,9 +2256,9 @@ snapshots:
 
   '@grammyjs/types@3.25.0': {}
 
-  '@hono/node-server@1.19.13(hono@4.12.18)':
+  '@hono/node-server@1.19.13(hono@4.12.21)':
     dependencies:
-      hono: 4.12.18
+      hono: 4.12.21
 
   '@humanfs/core@0.19.1': {}
 
@@ -2852,7 +2852,7 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono@4.12.18: {}
+  hono@4.12.21: {}
 
   html-entities@2.6.0: {}
 
