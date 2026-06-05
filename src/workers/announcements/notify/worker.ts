@@ -273,7 +273,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
             attachments: processedAttachments,
             chatId: chatId,
           },
-          jobId: `announcement:${announcement.id}:chat:${chatId}`,
+          jobId: `announcement-${announcement.id}-chat-${chatId}`,
         });
       }
     }
