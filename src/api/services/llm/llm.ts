@@ -1,4 +1,4 @@
-import got from "got";
+import got, { HTTPError } from "got";
 import { z } from "zod";
 import { LLMConfigSchema } from "../../../configs/llm.js";
 import { GROQ_API } from "../../../constants/llm.js";
@@ -72,6 +72,22 @@ function parseJsonResponse<T>(schema: z.ZodSchema<T>, jsonString: string): T {
   return schema.parse(parsed);
 }
 
+function isRateLimitError(error: unknown): error is HTTPError {
+  return error instanceof HTTPError && error.response.statusCode === 429;
+}
+
+function logRateLimit(error: HTTPError, operation: string): void {
+  logger.warn(
+    {
+      service: "groq",
+      operation,
+      statusCode: error.response.statusCode,
+      retryAfter: error.response.headers["retry-after"],
+    },
+    "LLM service rate limited"
+  );
+}
+
 export class LLMService {
   private config: typeof LLMConfigSchema;
 
@@ -96,6 +112,7 @@ export class LLMService {
       },
       retry: {
         limit: this.config.MAX_RETRIES,
+        methods: ["POST"],
       },
     });
 
@@ -138,6 +155,8 @@ export class LLMService {
           },
           "Validation error in LLM course finding service"
         );
+      } else if (isRateLimitError(error)) {
+        logRateLimit(error, "course-finding");
       } else {
         logger.error(
           { err: error as Error },
@@ -186,6 +205,9 @@ export class LLMService {
           },
           "Validation error in LLM service"
         );
+      } else if (isRateLimitError(error)) {
+        logRateLimit(error, "announcement-relevance");
+        return false;
       } else {
         logger.error(
           { err: error as Error },
