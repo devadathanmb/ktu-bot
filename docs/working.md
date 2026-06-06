@@ -27,22 +27,26 @@ graph TB
     TG[Telegram API]
     Bot[🤖 Bot Service]
     DB[(PostgreSQL Database)]
-    Redis[(Redis Cache)]
+    ApiCache[(In-memory API Cache)]
+    Queue[BullMQ Queues]
+    Redis[(Redis)]
     KTU[KTU APIs]
 
     User -->|Commands/Queries| TG
-    TG -->|Webhook/Long Polling| Bot
+    TG -->|Long Polling| Bot
     Bot -->|Fetch Data| KTU
     Bot -->|Store/Retrieve| DB
-    Bot -->|In-memory cache| Bot
-    Bot -->|Cache| Redis
+    Bot -->|API response cache| ApiCache
     Bot -->|Queue Attachments| Queue
     Bot -->|Response| TG
     TG -->|Messages| User
+    Queue -.->|Queue state| Redis
 
     style User fill:#4a90e2,stroke:#2e5c8a,color:#fff
     style Bot fill:#e74c3c,stroke:#c0392b,color:#fff
     style DB fill:#27ae60,stroke:#1e8449,color:#fff
+    style ApiCache fill:#f1c40f,stroke:#b7950b,color:#000
+    style Queue fill:#34495e,stroke:#2c3e50,color:#fff
     style Redis fill:#f39c12,stroke:#d68910,color:#fff
     style KTU fill:#9b59b6,stroke:#7d3c98,color:#fff
 ```
@@ -72,6 +76,7 @@ graph TB
 
         subgraph "Message Queue"
             Queue[BullMQ Queues]
+            ApiCache[In-memory API Cache]
         end
     end
 
@@ -85,17 +90,18 @@ graph TB
     TG <-->|Bot API| Bot
 
     Bot -->|Query/Store| DB
-    Bot -->|Cache| Redis
+    Bot -->|API response cache| ApiCache
     Bot -->|Fetch Data| KTU
 
     NotifyWorker -->|Poll| KTU
     NotifyWorker -->|Check State| DB
     NotifyWorker -->|AI Filter| LLM
-    NotifyWorker -->|Upload Files| FileHost
+    NotifyWorker -->|Upload small files for file_id reuse| TG
+    NotifyWorker -->|Upload oversized/fallback files| FileHost
     NotifyWorker -->|Add Jobs| Queue
 
-    Queue -->|Process Jobs| BroadcastWorker
-    Queue -->|Process Attachments| AttachmentWorker
+    Queue -->|Process Broadcast Jobs| BroadcastWorker
+    Queue -->|Process Attachment Jobs| AttachmentWorker
     BroadcastWorker -->|Send Messages| TG
     BroadcastWorker -->|Update Status| DB
 
@@ -112,6 +118,7 @@ graph TB
     style Bot fill:#e74c3c,stroke:#c0392b,color:#fff
     style DB fill:#27ae60,stroke:#1e8449,color:#fff
     style Redis fill:#f39c12,stroke:#d68910,color:#fff
+    style ApiCache fill:#f1c40f,stroke:#b7950b,color:#000
     style NotifyWorker fill:#e67e22,stroke:#ca6f1e,color:#fff
     style BroadcastWorker fill:#9b59b6,stroke:#7d3c98,color:#fff
     style SyncWorker fill:#16a085,stroke:#138d75,color:#fff
@@ -135,12 +142,12 @@ The bot uses a [composers pattern](https://grammy.dev/plugins/composer.html) to 
 
 All KTU API calls go through a shared Got HTTP client in `src/api/client.ts`, which has two variants:
 
-- **`cachedApiClient`** — The default, cached client. Wraps the base client with an in-memory LRU cache via `beforeRequest`/`afterResponse` hooks. Responses are cached by URL + request body hash, with configurable per-endpoint TTLs (e.g., 1 hour for programs/schemes, 5 minutes for announcements). Only 200 responses are cached.
+- **`cachedApiClient`** — The default, cached client. Wraps the base client with an in-memory LRU cache via `beforeRequest`/`afterResponse` hooks. Responses are cached by URL + request body hash, with configurable per-endpoint TTLs (e.g., 1 hour for programs/schemes, 30 seconds for announcements). Only 200 responses are cached.
 - **`baseApiClient`** — The uncached client. Used by workers that need fresh data (data-sync, notification checks).
 
-Service functions (like `fetchPrograms`, `fetchAnnouncements`) accept an optional `apiClient?: Got` parameter. When omitted, the cached client is used. Workers pass `baseApiClient` when they need fresh data.
+KTU service functions use the cached client by default. Services that need cache control (like `fetchPrograms`, `fetchAnnouncements`) accept an optional `apiClient?: Got` parameter, and workers pass `baseApiClient` when they need fresh data. Attachment download services use the cached client directly, but the attachment endpoints are excluded by cache config.
 
-The cache configuration lives in `src/api/cache/config.ts`. Attachment endpoints (`/getAttachments`, `/getAttachment`) are excluded from caching because they return large base64 payloads that would bloat memory.
+The cache configuration lives in `src/api/cache/config.ts`. Attachment endpoints (`/getAttachments`, `/getAttachment`) are excluded from caching because they return large base64 payloads that would bloat memory. Non-data probe endpoints are also excluded so request hooks always see fresh upstream behavior.
 
 ### PostgreSQL Database
 
@@ -169,14 +176,15 @@ This worker uses **BullMQ repeatable jobs** to continuously monitor for new anno
 3. Extracts course filters from each new announcement to determine who it's relevant for (like "B.Tech", "MBA", etc.)
    - If filter extraction fails or is unclear, it uses an LLM service to determine if the announcement is actually relevant to students
    - This filters out unwanted trash announcements (which a lot of them are)
-4. Handles file attachments by uploading them to a dedicated Telegram channel first to get a `file_id`
-   - The bot can then reuse this `file_id` when sending to users instead of downloading and re-uploading hundreds of times
+4. Handles file attachments before broadcasting:
+   - Small files are uploaded to a dedicated Telegram channel first to get a reusable `file_id`
+   - Oversized files, or files that fail Telegram upload, are uploaded to a temporary file host and sent as links
 5. Finds matching users by querying the database for users subscribed to the announcement's course filters
 6. Creates broadcast jobs with payloads for each user and adds them to the broadcasts queue
    - It doesn't send messages itself, just prepares the jobs
 7. Updates the local buffer in the database to mark these announcements as processed
 
-BullMQ automatically handles retries if a job fails (with exponential backoff), making this more resilient than traditional cron. All this logic lives in [`src/workers/announcements/notify/`](../src/workers//announcements/notify/)
+BullMQ automatically handles retries if a job fails (with exponential backoff), making this more resilient than traditional cron. All this logic lives in [`src/workers/announcements/notify/`](../src/workers/announcements/notify/)
 
 ### Broadcasts Worker
 
@@ -226,9 +234,10 @@ This worker handles file downloads and deliveries asynchronously, preventing the
 2. **Background Processing**: The worker picks up jobs from the queue and downloads all attachments
    - Uses **all-or-nothing delivery** - if any file fails to download, nothing is sent to ensure users get complete data
    - Downloads happen asynchronously without blocking other users
-3. **Media Group Delivery**: Once all files are ready, sends them as media groups (batches of up to 10 files per Telegram API call)
-   - Much faster than individual file delivery
-   - Single caption listing all attachment names for clarity
+3. **Document Delivery**: Once all files are downloaded, sends them as Telegram documents one by one
+   - Downloads are completed before sending starts, which avoids partial delivery caused by a later KTU download failure
+   - The first document includes a caption listing all attachment names for clarity
+   - Files above Telegram's upload limit are uploaded to the temporary file host and sent as links
 4. **Graceful Error Handling**: Handles various failure scenarios without crashing
    - If user blocks the bot, marks their chat as kicked and removes subscriptions
    - If user deactivates account, cleans up their data from the database
@@ -241,11 +250,15 @@ This worker has a `concurrency` of `2` to prevent overwhelming Telegram's rate l
 
 ## Health Checks and Monitoring
 
-Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3004`) that verifies the service is running and can connect to its dependencies like the database and Redis. This enables zero-downtime deployments and automatic restarts if something goes wrong. The health check utility is in [`src/utils/healthCheck.ts`](../src/utils//healthCheck.ts) if you want to see how it works.
+Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3004`, Bull Board on `3010`) that verifies the service is running and can connect to PostgreSQL. Queue-related health is checked through worker status and queue metrics rather than a generic Redis ping. This enables zero-downtime deployments and automatic restarts if something goes wrong. The health check utility is in [`src/monitoring/health-check.ts`](../src/monitoring/health-check.ts) if you want to see how it works.
 
 ### Queue Monitoring with Bull Board
 
 There's a dedicated [**Bull Board**](https://github.com/felixmosh/bull-board) service running on port `3010` that provides a web dashboard for monitoring all BullMQ queues in real-time. Access it at `http://localhost:3010` to view job states, retry failed jobs, and monitor queue health across all workers.
+
+### Prometheus Metrics
+
+The bot and worker monitoring servers can expose Prometheus metrics. Metrics are served from each service's monitoring port when enabled/configured, and `docker/monitoring/compose.yaml` runs a self-contained Prometheus instance on port `9090`. Optional remote-write credentials can be supplied through `env/prod/prometheus.env`.
 
 ## Tech Stack
 
