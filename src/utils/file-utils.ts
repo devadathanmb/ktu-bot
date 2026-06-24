@@ -69,9 +69,10 @@ export async function downloadAttachmentToTempFile(
   // Write to disk so the base64 string can be GC'd before we use the file.
   // Keeps peak memory at ~decodedSize rather than ~3x decodedSize
   // (base64 string + decoded buffer could be held simultaneously otherwise).
+  const safeEncryptId = encryptId.replace(/[^a-zA-Z0-9_-]/g, "_");
   const tempFilePath = await createTempFile(
     base64ToBuffer(base64Data),
-    `${encryptId}_${fileName}`
+    `${safeEncryptId}_${fileName}`
   );
 
   return { tempFilePath, fileName, fileSizeBytes: decodedSize };
