@@ -1,46 +1,20 @@
 import pino from "pino";
 import { LogConfig } from "../configs/logging.js";
-
-const REDACTED = "[REDACTED]";
-const SENSITIVE_KEYS = new Set([
-  "authorization",
-  "cookie",
-  "set-cookie",
-  "password",
-  "token",
-  "apikey",
-  "api_key",
-]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function sanitizeLogValue(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(item => sanitizeLogValue(item));
-  }
-
-  if (!isRecord(value)) {
-    return value;
-  }
-
-  return Object.fromEntries(
-    Object.entries(value).map(([key, nestedValue]) => [
-      key,
-      SENSITIVE_KEYS.has(key.toLowerCase())
-        ? REDACTED
-        : sanitizeLogValue(nestedValue),
-    ])
-  );
-}
-
-function serializeError(error: Error): unknown {
-  return sanitizeLogValue(pino.stdSerializers.err(error));
-}
+import {
+  LOG_REDACT_PATHS,
+  REDACTED,
+  sanitizeLogArguments,
+  serializeError,
+} from "./log-sanitizer.js";
 
 const loggerOptions: pino.LoggerOptions = {
   level: LogConfig.LOG_LEVEL,
+
+  hooks: {
+    logMethod(inputArgs, method) {
+      method.apply(this, sanitizeLogArguments(inputArgs));
+    },
+  },
 
   serializers: {
     err: serializeError,
@@ -48,31 +22,7 @@ const loggerOptions: pino.LoggerOptions = {
   },
 
   redact: {
-    paths: [
-      "password",
-      "token",
-      "apiKey",
-      "api_key",
-      "authorization",
-      "cookie",
-      "*.password",
-      "*.token",
-      "*.apiKey",
-      "*.api_key",
-      "*.authorization",
-      "*.cookie",
-      "*.headers.authorization",
-      "*.headers.cookie",
-      "*.options.body",
-      "*.options.headers.authorization",
-      "*.options.headers.cookie",
-      "err.options.body",
-      "err.options.headers.authorization",
-      "err.options.headers.cookie",
-      "error.options.body",
-      "error.options.headers.authorization",
-      "error.options.headers.cookie",
-    ],
+    paths: LOG_REDACT_PATHS,
     censor: REDACTED,
   },
 };
