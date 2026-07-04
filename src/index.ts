@@ -36,7 +36,15 @@ async function startBotInLongPolling() {
 
     await bot.api.deleteWebhook({ drop_pending_updates: false });
 
-    const runner = run(bot);
+    const runner = run(bot, { runner: { silent: true } });
+    const runnerTask = runner.task();
+
+    if (runnerTask) {
+      void runnerTask.catch(error => {
+        logger.error({ err: error }, "Bot runner stopped unexpectedly");
+        void onShutdown();
+      });
+    }
 
     const monitoringApp = new Hono();
 

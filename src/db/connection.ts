@@ -9,12 +9,25 @@ let db: NodePgDatabase<typeof schema> | undefined;
 let pool: Pool | undefined;
 
 export async function initDB(): Promise<NodePgDatabase<typeof schema>> {
-  pool = new Pool({
+  const dbPool = new Pool({
     connectionString: DbConfig.DATABASE_URI,
     ssl: DbConfig.SSL_CONFIG,
   });
 
-  db = drizzle({ client: pool, schema, logger: false });
+  dbPool.on("error", error => {
+    logger.error(
+      {
+        err: error,
+        totalCount: dbPool.totalCount,
+        idleCount: dbPool.idleCount,
+        waitingCount: dbPool.waitingCount,
+      },
+      "Idle database client error"
+    );
+  });
+
+  pool = dbPool;
+  db = drizzle({ client: dbPool, schema, logger: false });
 
   const now = await db.execute("SELECT NOW()");
   logger.info(
