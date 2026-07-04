@@ -84,10 +84,15 @@ const ERROR_FIELD_ALLOWLIST = [
   "code",
   "errno",
   "syscall",
+  "address",
+  "port",
   "status",
   "statusCode",
   "method",
   "url",
+  "cause",
+  "error",
+  "errors",
 ] as const;
 
 const SENSITIVE_STRING_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
