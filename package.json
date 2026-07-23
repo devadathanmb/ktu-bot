@@ -87,7 +87,7 @@
     "@grammyjs/ratelimiter": "^1.2.1",
     "@grammyjs/runner": "^2.0.3",
     "@grammyjs/transformer-throttler": "^1.2.1",
-    "@hono/node-server": "^1.19.13",
+    "@hono/node-server": "^2.0.10",
     "bullmq": "^5.70.4",
     "drizzle-kit": "^0.31.9",
     "drizzle-orm": "^0.45.2",
