@@ -22,6 +22,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Do not use `npx` in this repository.
 - Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm exec eslint src/**/*.ts` when lint-sensitive code changed.
 - For syllabus lookup changes, run `node --import tsx --test tests/syllabus-views.test.mjs` to check page rendering and attachment selection IDs offline.
+- For timetable lookup changes, run `node --import tsx --test tests/exam-timetable.test.mjs`. Timetable API pages are already paginated; do not slice them again locally.
 
 ## TypeScript and Style
 
@@ -45,6 +46,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - In bot/composer code, use `ctx.api`. In worker processors, use the injected bot's raw `bot.api`.
 - Callback-query composers should use `createComposerErrorBoundary([...sessionKeys])`. Capture the returned protected composer and register handlers on it; middleware registered on the original composer is not protected.
 - Syllabus entry callback IDs are indices in the original API response, not the filtered or paginated list. Preserve that mapping and existing callback prefixes during refactors.
+- Timetable `attachmentId` alone does not guarantee a download: require nonblank `fileName` and `encryptId` too, and preserve valid strings verbatim in queued jobs.
 - Telegram rate limits are undocumented. Broadcast processing intentionally uses low concurrency; on `retry_after`, pause the queue and re-throw so BullMQ retries.
 
 ## Workers

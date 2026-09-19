@@ -140,6 +140,8 @@ The bot uses a [composers pattern](https://grammy.dev/plugins/composer.html) to 
 
 The syllabus lookup is a program → scheme → branch → syllabus flow under `src/bot/composers/lookups/syllabus/`. Its `composer.ts` registers commands and callbacks on the protected composer, `flow.ts` handles API calls, session updates, pagination and download enqueueing, and `views.ts` builds page text and keyboards. Callback prefixes live in `constants.ts`. Pagination uses arrays already stored in the session. Downloadable entries retain their original API-response indices in callback data, even after filtering and pagination. A single downloadable entry is queued immediately; multiple entries show a chooser. Downloads use the attachment-delivery worker with `source: "syllabus"`.
 
+The exam-timetable lookup keeps callback routing and API pagination in `exam-timetable/composer.ts`, with pure message and keyboard rendering in `views.ts` and attachment metadata validation in `attachments.ts`. API pages are rendered as received. Selecting a timetable renders details once; missing or incomplete attachment metadata adds the no-attachment notice and a view-another keyboard. Valid downloads require an attachment ID, filename, and encrypted ID, and continue through the attachment-delivery worker.
+
 ### API Layer and Caching
 
 All KTU API calls go through a shared Got HTTP client in `src/api/client.ts`, which has two variants:

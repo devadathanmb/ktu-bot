@@ -1,11 +1,8 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer } from "grammy";
 import { ExamTimeTable } from "../../../../types/service.types.js";
 import {
-  generatePaginatedKeyboard,
-  generatePaginatedMessageText,
-  PaginatedItem,
   parseSelectCallback,
   createViewAnotherKeyboard,
   findItemById,
@@ -16,7 +13,7 @@ import {
   storeCallbackMessageId,
 } from "../utils.js";
 import { LOOKUP_CONFIG } from "../constants.js";
-import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
+import { fmt } from "@grammyjs/parse-mode";
 import {
   joinWithNewlines,
   formatCommand,
@@ -25,83 +22,26 @@ import { createTimetableErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 import { fetchTimetables } from "../../../../api/services/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
+import { getTimetableAttachment } from "./attachments.js";
+import {
+  formatTimetableDetails,
+  generateTimetablesKeyboard,
+  generateTimetablesText,
+} from "./views.js";
 
 const MESSAGES = {
   FETCHING_TIMETABLES: [
     fmt`${emoji("hourglass_not_done")} Fetching timetables... Please wait...`,
   ],
-  FETCHING_DETAILS: [
-    fmt`${emoji("hourglass_not_done")} Fetching timetable details... Please wait...`,
-  ],
 };
-
-function generateTimetablesKeyboard(
-  timetables: ExamTimeTable[],
-  currentPage: number
-): InlineKeyboard {
-  const paginatedItems: PaginatedItem[] = timetables.map(timetable => ({
-    id: timetable.id,
-    subject: timetable.title,
-    formattedPublishedDate: timetable.formattedPublishedDate,
-  }));
-  return generatePaginatedKeyboard(paginatedItems, currentPage, "timetable", 5);
-}
-
-function generateTimetablesText(timetables: ExamTimeTable[]): FormattedString {
-  const paginatedItems: PaginatedItem[] = timetables.map(timetable => ({
-    id: timetable.id,
-    subject: timetable.title,
-    formattedPublishedDate: timetable.formattedPublishedDate,
-  }));
-  return generatePaginatedMessageText(
-    paginatedItems,
-    `${emoji("books")} Exam Timetables`,
-    "timetable"
-  );
-}
-
-function formatTimetableDetails(timetable: ExamTimeTable): FormattedString {
-  const parts: FormattedString[] = [];
-
-  if (timetable.title) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("glowing_star")} Title:${b}`,
-        fmt`${timetable.title}`,
-      ])
-    );
-  }
-  if (timetable.formattedPublishedDate) {
-    parts.push(
-      fmt`${b}${emoji("calendar")} Date:${b} ${timetable.formattedPublishedDate}`
-    );
-  }
-
-  return joinWithNewlines(parts, 2);
-}
 
 async function handleTimetableSelection(
   ctx: BotContext,
   timetable: ExamTimeTable
 ): Promise<void> {
-  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
-  await ctx.editMessageText(loadingMsg.text, {
-    entities: loadingMsg.entities,
-  });
+  const attachment = getTimetableAttachment(timetable);
 
-  const detailsMsg = formatTimetableDetails(timetable);
-  await ctx.editMessageText(detailsMsg.text, {
-    entities: detailsMsg.entities,
-  });
-}
-
-async function handleTimetableAttachment(
-  ctx: BotContext,
-  timetable: ExamTimeTable
-): Promise<void> {
-  const keyboard = createViewAnotherKeyboard("timetable");
-
-  if (!timetable.attachmentId) {
+  if (!attachment) {
     const noAttachmentMsg = joinWithNewlines(
       [
         formatTimetableDetails(timetable),
@@ -111,11 +51,16 @@ async function handleTimetableAttachment(
     );
 
     await ctx.editMessageText(noAttachmentMsg.text, {
-      reply_markup: keyboard,
+      reply_markup: createViewAnotherKeyboard("timetable"),
       entities: noAttachmentMsg.entities,
     });
     return;
   }
+
+  const detailsMsg = formatTimetableDetails(timetable);
+  await ctx.editMessageText(detailsMsg.text, {
+    entities: detailsMsg.entities,
+  });
 
   const statusMessage = await ctx.reply(
     `${emoji("hourglass_not_done")} Downloading your timetable in the background... This may take a moment!`
@@ -123,12 +68,7 @@ async function handleTimetableAttachment(
 
   const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
     chatId: ctx.chat!.id,
-    attachments: [
-      {
-        name: timetable.fileName!,
-        encryptId: timetable.encryptId!,
-      },
-    ],
+    attachments: [attachment],
     statusMessageId: statusMessage.message_id,
     context: "timetable",
     sendViewAnotherMessage: true,
@@ -212,7 +152,6 @@ protectedComposer.callbackQuery(/^timetable_select_/, async ctx => {
   const timetable = findItemById(ctx.session.timetableTimetables, parsed.id);
 
   await handleTimetableSelection(ctx, timetable);
-  await handleTimetableAttachment(ctx, timetable);
 });
 
 protectedComposer.callbackQuery("timetable_view_another_true", async ctx => {
