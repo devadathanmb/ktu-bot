@@ -11,15 +11,31 @@ import { CACHE_CONFIG } from "./cache/config.js";
 const baseConfig: ExtendOptions = {
   ...API_CLIENT_OPTIONS,
   hooks: {
-    beforeRequest: [addKtuHeaders, addXTokenHeader],
+    beforeRequest: [addKtuHeaders],
     beforeError: [cleanGotError],
     afterResponse: [],
   },
   responseType: "json" as const,
 };
 
-const baseApiClient = got.extend(baseConfig);
+// Header-only client. The token hook is attached after the cache hook so a
+// cached response short-circuits before a single-use Turnstile token is spent.
+const headersApiClient = got.extend(baseConfig);
 
-const cachedApiClient = createCachedApiClient(baseApiClient, CACHE_CONFIG);
+// Uncached client for workers that need fresh KTU data: mints a token per call.
+const baseApiClient = headersApiClient.extend({
+  hooks: {
+    beforeRequest: [addXTokenHeader],
+  },
+});
+
+const cachedApiClient = createCachedApiClient(
+  headersApiClient,
+  CACHE_CONFIG
+).extend({
+  hooks: {
+    beforeRequest: [addXTokenHeader],
+  },
+});
 
 export { cachedApiClient, baseApiClient };
