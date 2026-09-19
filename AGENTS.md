@@ -9,6 +9,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Docker Compose files live under `docker/compose/`.
 - When changing architecture or development workflows, review this file and `docs/working.md` and update affected guidance in the same change.
 - For delegated implementation, prefer Terra medium or Luna high; keep assignments narrow and review their changes in the main agent.
+- Antigravity CLI is also available for delegation: use `agy --help` and `agy models` to check invocation and model options, then `agy --print` for a bounded task. Review its output and changes in the main agent.
 
 ## Commands
 
@@ -20,6 +21,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Use `pnpm exec <command>` for project-local binaries, for example `pnpm exec tsc --noEmit`.
 - Do not use `npx` in this repository.
 - Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm exec eslint src/**/*.ts` when lint-sensitive code changed.
+- For syllabus lookup changes, run `node --import tsx --test tests/syllabus-views.test.mjs` to check page rendering and attachment selection IDs offline.
 
 ## TypeScript and Style
 
@@ -42,6 +44,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Main bot composition lives in `src/bot/bot.ts`. Broadcast and attachment workers use `src/bot/utils/create-worker-bot.ts`; announcement startup currently uses `createBot()` with throttler and auto-retry API transformers.
 - In bot/composer code, use `ctx.api`. In worker processors, use the injected bot's raw `bot.api`.
 - Callback-query composers should use `createComposerErrorBoundary([...sessionKeys])`. Capture the returned protected composer and register handlers on it; middleware registered on the original composer is not protected.
+- Syllabus entry callback IDs are indices in the original API response, not the filtered or paginated list. Preserve that mapping and existing callback prefixes during refactors.
 - Telegram rate limits are undocumented. Broadcast processing intentionally uses low concurrency; on `retry_after`, pause the queue and re-throw so BullMQ retries.
 
 ## Workers

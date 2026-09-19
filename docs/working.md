@@ -138,6 +138,8 @@ This is the main service that users interact with. It handles all commands, inli
 
 The bot uses a [composers pattern](https://grammy.dev/plugins/composer.html) to organize different features - each feature gets its own composer that handles related functionality. This keeps the code clean and maintainable. All the core bot logic lives in the `src/bot/` directory. The bot also uses GrammY's plugin ecosystem extensively - for things like auto-retry, rate limiting, hydration, emoji parsing, and more. You can see the full list of plugins in [`package.json`](../package.json) or check how they're wired up in the middleware section of [`src/bot/bot.ts`](../src/bot/bot.ts)
 
+The syllabus lookup is a program → scheme → branch → syllabus flow under `src/bot/composers/lookups/syllabus/`. Its `composer.ts` registers commands and callbacks on the protected composer, `flow.ts` handles API calls, session updates, pagination and download enqueueing, and `views.ts` builds page text and keyboards. Callback prefixes live in `constants.ts`. Pagination uses arrays already stored in the session. Downloadable entries retain their original API-response indices in callback data, even after filtering and pagination. A single downloadable entry is queued immediately; multiple entries show a chooser. Downloads use the attachment-delivery worker with `source: "syllabus"`.
+
 ### API Layer and Caching
 
 All KTU API calls go through a shared Got HTTP client in `src/api/client.ts`, which has two variants:
