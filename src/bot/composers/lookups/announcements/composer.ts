@@ -1,10 +1,8 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer } from "grammy";
 import { Announcement } from "../../../../types/service.types.js";
 import {
-  generatePaginatedKeyboard,
-  generatePaginatedMessageText,
   parseSelectCallback,
   createViewAnotherKeyboard,
   findItemById,
@@ -15,7 +13,7 @@ import {
   storeCallbackMessageId,
 } from "../utils.js";
 import { LOOKUP_CONFIG } from "../constants.js";
-import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
+import { fmt } from "@grammyjs/parse-mode";
 import {
   joinWithNewlines,
   formatCommand,
@@ -24,72 +22,22 @@ import { createAnnouncementsErrorBoundary } from "../../shared/error-boundary.js
 import { emoji } from "@grammyjs/emoji";
 import { fetchAnnouncements } from "../../../../api/services/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
+import {
+  formatAnnouncementDetails,
+  generateAnnouncementsKeyboard,
+  generateAnnouncementsText,
+} from "./views.js";
 
 const MESSAGES = {
   FETCHING_ANNOUNCEMENTS: [
     fmt`${emoji("hourglass_not_done")} Fetching announcements... Please wait...`,
   ],
-  FETCHING_DETAILS: [
-    fmt`${emoji("hourglass_not_done")} Fetching announcement details... Please wait...`,
-  ],
 };
-
-function generateAnnouncementsKeyboard(
-  announcements: Announcement[],
-  currentPage: number
-): InlineKeyboard {
-  return generatePaginatedKeyboard(announcements, currentPage, "announcement");
-}
-
-function generateAnnouncementsText(
-  announcements: Announcement[]
-): FormattedString {
-  return generatePaginatedMessageText(
-    announcements,
-    `${emoji("loudspeaker")} Announcements`,
-    "announcement"
-  );
-}
-
-function formatAnnouncementDetails(
-  announcement: Announcement
-): FormattedString {
-  const parts: FormattedString[] = [];
-
-  if (announcement.subject) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("open_book")} Subject:${b}`,
-        fmt`${announcement.subject}`,
-      ])
-    );
-  }
-  if (announcement.message) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("memo")} Message:${b}`,
-        fmt`${announcement.message}`,
-      ])
-    );
-  }
-  if (announcement.formattedPublishedDate) {
-    parts.push(
-      fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`
-    );
-  }
-
-  return joinWithNewlines(parts, 2);
-}
 
 async function handleAnnouncementSelection(
   ctx: BotContext,
   announcement: Announcement
 ): Promise<void> {
-  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
-  await ctx.editMessageText(loadingMsg.text, {
-    entities: loadingMsg.entities,
-  });
-
   const detailsMsg = formatAnnouncementDetails(announcement);
   await ctx.editMessageText(detailsMsg.text, {
     entities: detailsMsg.entities,

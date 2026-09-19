@@ -10,6 +10,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - When changing architecture or development workflows, review this file and `docs/working.md` and update affected guidance in the same change.
 - For delegated implementation, prefer Terra medium or Luna high; keep assignments narrow and review their changes in the main agent.
 - Antigravity CLI is also available for delegation: use `agy --help` and `agy models` to check invocation and model options, then `agy --print` for a bounded task. Review its output and changes in the main agent.
+- Prefer a Medium reasoning model for routine `agy` implementation tasks to control credit use; batch closely related changes and avoid duplicate global checks.
 
 ## Commands
 
@@ -23,6 +24,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm exec eslint src/**/*.ts` when lint-sensitive code changed.
 - For syllabus lookup changes, run `node --import tsx --test tests/syllabus-views.test.mjs` to check page rendering and attachment selection IDs offline.
 - For timetable lookup changes, run `node --import tsx --test tests/exam-timetable.test.mjs`. Timetable API pages are already paginated; do not slice them again locally.
+- For calendar or announcement lookup changes, run `node --import tsx --test tests/calendar-announcement-views.test.mjs`; these API pages also must not be sliced locally.
 
 ## TypeScript and Style
 

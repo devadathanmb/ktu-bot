@@ -142,6 +142,8 @@ The syllabus lookup is a program → scheme → branch → syllabus flow under `
 
 The exam-timetable lookup keeps callback routing and API pagination in `exam-timetable/composer.ts`, with pure message and keyboard rendering in `views.ts` and attachment metadata validation in `attachments.ts`. API pages are rendered as received. Selecting a timetable renders details once; missing or incomplete attachment metadata adds the no-attachment notice and a view-another keyboard. Valid downloads require an attachment ID, filename, and encrypted ID, and continue through the attachment-delivery worker.
 
+Calendar and announcement lookups likewise keep routing, session handling, API pagination, and attachment enqueueing in their composers, with pure rendering in each feature's `views.ts`. Selecting an item renders its cached details once. Download status messages and payload construction remain local to each feature; announcements without attachments still offer the view-another prompt without queueing a download.
+
 ### API Layer and Caching
 
 All KTU API calls go through a shared Got HTTP client in `src/api/client.ts`, which has two variants:

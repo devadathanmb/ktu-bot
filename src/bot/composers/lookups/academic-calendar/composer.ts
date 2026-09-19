@@ -1,12 +1,9 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
-import { Composer, InlineKeyboard } from "grammy";
+import { Composer } from "grammy";
 import { fetchAcademicCalendars } from "../../../../api/services/index.js";
 import { AcademicCalendar } from "../../../../types/service.types.js";
 import {
-  generatePaginatedKeyboard,
-  generatePaginatedMessageText,
-  PaginatedItem,
   parseSelectCallback,
   findItemById,
   fetchAndRenderApiPage,
@@ -16,7 +13,7 @@ import {
   storeCallbackMessageId,
 } from "../utils.js";
 import { LOOKUP_CONFIG } from "../constants.js";
-import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
+import { fmt } from "@grammyjs/parse-mode";
 import {
   formatCommand,
   joinWithNewlines,
@@ -24,60 +21,22 @@ import {
 import { createCalendarErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
+import {
+  formatCalendarDetails,
+  generateCalendarsKeyboard,
+  generateCalendarsText,
+} from "./views.js";
 
 const MESSAGES = {
   FETCHING_CALENDARS: [
     fmt`${emoji("hourglass_not_done")} Fetching academic calendars... Please wait...`,
   ],
-  FETCHING_DETAILS: [
-    fmt`${emoji("hourglass_not_done")} Fetching calendar details... Please wait...`,
-  ],
 };
-
-function generateCalendarsKeyboard(
-  calendars: AcademicCalendar[],
-  currentPage: number
-): InlineKeyboard {
-  const paginatedItems: PaginatedItem[] = calendars.map(calendar => ({
-    id: calendar.id,
-    subject: calendar.title,
-    formattedPublishedDate: calendar.formattedPublishedDate,
-  }));
-  return generatePaginatedKeyboard(paginatedItems, currentPage, "calendar", 5);
-}
-
-function generateCalendarsText(calendars: AcademicCalendar[]): FormattedString {
-  const paginatedItems: PaginatedItem[] = calendars.map(calendar => ({
-    id: calendar.id,
-    subject: calendar.title,
-    formattedPublishedDate: calendar.formattedPublishedDate,
-  }));
-  return generatePaginatedMessageText(
-    paginatedItems,
-    `${emoji("graduation_cap")} Academic Calendars`,
-    "calendar"
-  );
-}
-
-function formatCalendarDetails(calendar: AcademicCalendar): FormattedString {
-  return joinWithNewlines(
-    [
-      fmt`${emoji("glowing_star")} ${b}Title:${b} ${calendar.title}`,
-      fmt`${emoji("calendar")} ${b}Date:${b} ${calendar.formattedPublishedDate}`,
-    ],
-    2
-  );
-}
 
 async function handleCalendarSelection(
   ctx: BotContext,
   calendar: AcademicCalendar
 ): Promise<void> {
-  const loadingMsg = joinWithNewlines(MESSAGES.FETCHING_DETAILS, 2);
-  await ctx.editMessageText(loadingMsg.text, {
-    entities: loadingMsg.entities,
-  });
-
   const detailsMsg = formatCalendarDetails(calendar);
   await ctx.editMessageText(detailsMsg.text, {
     entities: detailsMsg.entities,
