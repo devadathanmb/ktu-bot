@@ -1,18 +1,16 @@
-import { Job } from "bullmq";
+import type { Job } from "bullmq";
 import { fetchAnnouncements, LLMService } from "../../../api/services/index.js";
 import { baseApiClient } from "../../../api/client.js";
 import { AnnouncementsBufferRepository } from "../../../db/repositories/announcements-buffer-repository.js";
 import { AnnouncementSubscriptionRepository } from "../../../db/repositories/announcement-subscription-repository.js";
-import { Announcement } from "../../../types/service.types.js";
+import type { Announcement } from "../../../types/service.types.js";
 import findCourseFiltersFromText from "../../../utils/find-course-filters-from-text.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
-import { BaseWorker } from "../../base/base-worker.js";
 import {
   addBroadcastJobs,
   type BroadcastJobInput,
 } from "../../broadcasts/queue.js";
-import { fmt, b } from "@grammyjs/parse-mode";
-import { FormattedString } from "@grammyjs/parse-mode";
+import { fmt, b, type FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import {
@@ -22,74 +20,84 @@ import {
   isOnlyAllAnnouncementsFilter,
   shouldRefineBroadCourseMatch,
 } from "./audience.js";
-import { announcementsNotifyQueue, setupRecurringSchedule } from "./queue.js";
 import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
-import { createBot } from "../../../bot/bot.js";
-import { apiThrottler } from "@grammyjs/transformer-throttler";
-import { autoRetry } from "@grammyjs/auto-retry";
 import { processAttachments } from "../../shared/utils/attachment-processor.js";
 import { setTimeout } from "node:timers/promises";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type * as schema from "../../../db/schema/index.js";
+import type { Bot } from "grammy";
+import type { BotContext } from "../../../types/bot.types.js";
 
-export class AnnouncementsNotifyWorker extends BaseWorker<
-  Record<string, never>
-> {
-  private fetchedAnnouncements: Announcement[] = [];
-  private llmService = new LLMService();
+export class AnnouncementsNotifyProcessor {
+  private readonly llmService = new LLMService();
 
-  constructor() {
-    super("announcements-notify-worker", announcementsNotifyQueue, {
-      concurrency: 1,
-      healthCheck: {
-        maxFailedJobs: AnnouncementsNotifyWorkerConfig.MAX_FAILED_JOBS,
-        maxBacklogJobs: AnnouncementsNotifyWorkerConfig.MAX_BACKLOG_JOBS,
-        failedJobsLookbackMinutes:
-          AnnouncementsNotifyWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
-      },
-    });
-  }
+  constructor(
+    private readonly db: NodePgDatabase<typeof schema>,
+    private readonly bot: Bot<BotContext>
+  ) {}
 
-  protected override initializeWorkerSpecific(): Promise<void> {
-    const bot = createBot();
-    bot.api.config.use(apiThrottler());
-    bot.api.config.use(autoRetry({ maxRetryAttempts: 5 }));
-    this.bot = bot;
-    logger.info("Bot instance created with throttler and auto-retry");
-    return Promise.resolve();
-  }
-
-  protected override async onStartupComplete(): Promise<void> {
-    await this.scheduleInitialNotificationCheck();
-
-    await setupRecurringSchedule();
-  }
-
-  protected async processJob(job: Job<Record<string, never>>): Promise<void> {
+  async process(job: Job<Record<string, never>>): Promise<void> {
     logger.info({ jobId: job.id }, "Processing announcement notification job");
     await this.processNewAnnouncements();
     logger.info({ jobId: job.id }, "Completed announcement notification job");
   }
 
-  private async scheduleInitialNotificationCheck(): Promise<void> {
-    logger.info("Scheduling initial announcement notification check");
-    await announcementsNotifyQueue.add(
-      "announcements-notify:initial",
-      {},
-      {
-        jobId: `announcement-notify-initial-${Date.now()}`,
-      }
-    );
-  }
-
-  private async getNewAnnouncements(): Promise<Announcement[]> {
-    logger.info("Checking for new announcements");
-
-    const announcements = await fetchAnnouncements({
+  private async processNewAnnouncements(): Promise<void> {
+    const fetchedAnnouncements = await fetchAnnouncements({
       pageNumber: 0,
       dataSize: AnnouncementsNotifyWorkerConfig.DATA_LOOKUP_LIMIT,
       apiClient: baseApiClient,
     });
-    this.fetchedAnnouncements = announcements;
+    const newAnnouncements =
+      await this.getNewAnnouncements(fetchedAnnouncements);
+    if (newAnnouncements.length === 0) return;
+
+    const jobs: BroadcastJobInput[] = [];
+
+    for (const announcement of newAnnouncements) {
+      const chatIds = await this.findRelevantSubscribers(announcement);
+      if (chatIds.length === 0) {
+        const announcementId = announcement.id;
+        logger.debug(
+          { announcementId },
+          "No relevant subscribers for announcement"
+        );
+        continue;
+      }
+
+      const formattedText = this.prepareFormattedMessage(announcement);
+      const processedAttachments = announcement.attachments
+        ? await processAttachments(this.bot, announcement.attachments)
+        : [];
+
+      for (const chatId of chatIds) {
+        jobs.push({
+          data: {
+            formattedText: formattedText,
+            attachments: processedAttachments,
+            chatId: chatId,
+          },
+          jobId: `announcement-${announcement.id}-chat-${chatId}`,
+        });
+      }
+    }
+
+    // Redis queue writes and the database buffer replacement are not atomic.
+    // Replace the buffer only after all queue writes succeed.
+    if (jobs.length > 0) {
+      await addBroadcastJobs(jobs);
+      const jobCount = jobs.length;
+      logger.info({ jobCount }, "Added broadcast jobs to queue");
+    }
+
+    await this.resyncAnnouncementsBuffer(fetchedAnnouncements.map(a => a.id));
+  }
+
+  private async getNewAnnouncements(
+    announcements: Announcement[]
+  ): Promise<Announcement[]> {
+    logger.info("Checking for new announcements");
 
     const latestIds = announcements.map(a => a.id).sort((a, b) => b - a);
     const announcementsBufferRepo = new AnnouncementsBufferRepository(this.db);
@@ -107,13 +115,15 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     return newAnnouncements;
   }
 
-  private async resyncAnnouncementsBuffer(): Promise<void> {
+  private async resyncAnnouncementsBuffer(
+    announcementIds: number[]
+  ): Promise<void> {
     logger.info("Resyncing announcements buffer");
 
     await withTransaction(async tx => {
       const bufferRepo = new AnnouncementsBufferRepository(tx);
       await bufferRepo.clear();
-      await bufferRepo.addAll(this.fetchedAnnouncements.map(a => a.id));
+      await bufferRepo.addAll(announcementIds);
     });
 
     logger.info("Announcements buffer resynced");
@@ -198,9 +208,7 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     return subscribers.map(sub => sub.chatId);
   }
 
-  protected prepareFormattedMessage(
-    announcement: Announcement
-  ): FormattedString {
+  private prepareFormattedMessage(announcement: Announcement): FormattedString {
     const parts: FormattedString[] = [];
 
     // Add the header
@@ -236,55 +244,5 @@ export class AnnouncementsNotifyWorker extends BaseWorker<
     }
 
     return joinWithNewlines(parts, 2);
-  }
-
-  private async processNewAnnouncements() {
-    const newAnnouncements = await this.getNewAnnouncements();
-    if (newAnnouncements.length === 0) return;
-
-    // Create broadcast jobs for each announcement
-    const jobs: BroadcastJobInput[] = [];
-
-    // For each announcement:
-    // 1. Find relevant subscribers, if none, skip
-    // 2. Format the announcement message
-    // 3. Process attachments to get file IDs/URLs
-    // 4. Create one job per subscriber and push to jobs array
-    for (const announcement of newAnnouncements) {
-      const chatIds = await this.findRelevantSubscribers(announcement);
-      if (chatIds.length === 0) {
-        const announcementId = announcement.id;
-        logger.debug(
-          { announcementId },
-          "No relevant subscribers for announcement"
-        );
-        continue;
-      }
-
-      const formattedText = this.prepareFormattedMessage(announcement);
-      const processedAttachments = announcement.attachments
-        ? await processAttachments(this.getBot(), announcement.attachments)
-        : [];
-
-      for (const chatId of chatIds) {
-        jobs.push({
-          data: {
-            formattedText: formattedText,
-            attachments: processedAttachments,
-            chatId: chatId,
-          },
-          jobId: `announcement-${announcement.id}-chat-${chatId}`,
-        });
-      }
-    }
-
-    // Atomic + idempotent: buffer resync only after queue succeeds
-    if (jobs.length > 0) {
-      await addBroadcastJobs(jobs);
-      const jobCount = jobs.length;
-      logger.info({ jobCount }, "Added broadcast jobs to queue");
-    }
-
-    await this.resyncAnnouncementsBuffer();
   }
 }

@@ -5,40 +5,37 @@ import {
   createMonitoringServer,
 } from "../../monitoring/index.js";
 import { setupGracefulShutdown } from "./shutdown.js";
-import type { BaseWorker } from "../base/base-worker.js";
 import type { Queue } from "bullmq";
 import logger from "../../utils/logger.js";
+import type { WorkerControl } from "./worker-runtime.js";
 
-interface StartWorkerConfig<T> {
-  WorkerClass: new () => BaseWorker<T>;
+interface StartWorkerMonitoringConfig<T> {
+  worker: WorkerControl;
   queue: Queue<T>;
   serviceName: string;
   port: number;
+  stop: () => Promise<void>;
 }
 
-export async function startWorkerService<T>(config: StartWorkerConfig<T>) {
-  try {
-    const worker = new config.WorkerClass();
-    await worker.start();
+export function startWorkerMonitoring<T>(
+  config: StartWorkerMonitoringConfig<T>
+): void {
+  const monitoringApp = new Hono();
 
-    const monitoringApp = new Hono();
+  setupHealthCheckEndpoint(monitoringApp, config.serviceName, () =>
+    config.worker.getStatus()
+  );
 
-    setupHealthCheckEndpoint(monitoringApp, config.serviceName, () =>
-      worker.getStatus()
-    );
+  setupMetricsEndpoint(monitoringApp, config.queue);
 
-    setupMetricsEndpoint(monitoringApp, config.queue);
+  createMonitoringServer(monitoringApp, {
+    serviceName: config.serviceName,
+    port: config.port,
+  });
 
-    createMonitoringServer(monitoringApp, {
-      serviceName: config.serviceName,
-      port: config.port,
-    });
-
-    setupGracefulShutdown(worker);
-
-    logger.info(`${config.serviceName} worker service started`);
-  } catch (error) {
-    logger.error(error, `Failed to start ${config.serviceName} worker service`);
-    process.exit(1);
-  }
+  setupGracefulShutdown(config.stop);
+  logger.info(
+    { serviceName: config.serviceName, queueName: config.queue.name },
+    "Worker service started"
+  );
 }

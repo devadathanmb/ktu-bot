@@ -1,14 +1,10 @@
 import logger from "../../utils/logger.js";
 
-interface ShutdownHandler {
-  stop(): Promise<void>;
-}
-
-export function setupGracefulShutdown(handler: ShutdownHandler) {
+export function setupGracefulShutdown(stop: () => Promise<void>) {
   const onShutdown = async (signal: string) => {
     logger.info({ signal }, "Shutting down");
     try {
-      await handler.stop();
+      await stop();
       process.exit(0);
     } catch {
       process.exit(1);

@@ -7,6 +7,8 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - GrammY Telegram bot with BullMQ background workers.
 - PostgreSQL via Drizzle ORM for persistence; Redis powers BullMQ queues.
 - Docker Compose files live under `docker/compose/`.
+- When changing architecture or development workflows, review this file and `docs/working.md` and update affected guidance in the same change.
+- For delegated implementation, prefer Terra medium or Luna high; keep assignments narrow and review their changes in the main agent.
 
 ## Commands
 
@@ -37,10 +39,17 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 ## Bot and GrammY
 
 - Before changing GrammY APIs, plugins, middleware ordering, or callback-query handling, check the GrammY docs first.
-- Main bot composition lives in `src/bot/bot.ts`; worker bot creation lives in `src/bot/utils/create-worker-bot.ts`.
-- In bot/composer code, use `ctx.api`. In workers, use the worker bot's raw `bot.api`/`this.getBot().api` unless middleware is intentionally configured.
+- Main bot composition lives in `src/bot/bot.ts`. Broadcast and attachment workers use `src/bot/utils/create-worker-bot.ts`; announcement startup currently uses `createBot()` with throttler and auto-retry API transformers.
+- In bot/composer code, use `ctx.api`. In worker processors, use the injected bot's raw `bot.api`.
 - Callback-query composers should use `createComposerErrorBoundary([...sessionKeys])`. Capture the returned protected composer and register handlers on it; middleware registered on the original composer is not protected.
 - Telegram rate limits are undocumented. Broadcast processing intentionally uses low concurrency; on `retry_after`, pause the queue and re-throw so BullMQ retries.
+
+## Workers
+
+- Keep dependency initialization and initial/recurring scheduling explicit in each worker's `startup.ts`; processors in `worker.ts` do not inherit a lifecycle base class.
+- Reuse `shared/worker-runtime.ts` for BullMQ lifecycle and `shared/start-worker.ts` for monitoring/shutdown wiring. Close the worker and queue before the database.
+- Attachment-delivery startup still needs `initDB()`: Telegram error recovery updates chat and subscription records.
+- Preserve queue names, job IDs, payloads, concurrency, and retry behavior during structural refactors. Keep announcement fetch results local to a job and enqueue broadcasts before replacing the buffer.
 
 ## Errors and Logging
 

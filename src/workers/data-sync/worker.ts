@@ -3,46 +3,20 @@ import type { ResourceSyncer } from "./syncers/base.js";
 import { AnnouncementsSyncer } from "./syncers/announcements.js";
 import { AcademicCalendarsSyncer as CalendarsSyncer } from "./syncers/academic-calendars.js";
 import { ExamTimetablesSyncer } from "./syncers/exam-timetables.js";
-import {
-  dataSyncQueue,
-  setupRecurringSchedule,
-  SyncJobData,
-  SyncJobType,
-} from "./queue.js";
+import { dataSyncQueue, SyncJobData, SyncJobType } from "./queue.js";
 import logger from "../../utils/logger.js";
-import { BaseWorker } from "../base/base-worker.js";
-import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
 import { baseApiClient } from "../../api/client.js";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type * as schema from "../../db/schema/index.js";
 
-export class DataSyncWorker extends BaseWorker<SyncJobData> {
-  private syncers!: Record<SyncJobType, ResourceSyncer>;
+export class DataSyncProcessor {
+  private readonly syncers: Record<SyncJobType, ResourceSyncer>;
 
-  constructor() {
-    super("data-sync-worker", dataSyncQueue, {
-      concurrency: 3,
-      healthCheck: {
-        maxFailedJobs: DataSyncWorkerConfig.MAX_FAILED_JOBS,
-        maxBacklogJobs: DataSyncWorkerConfig.MAX_BACKLOG_JOBS,
-        failedJobsLookbackMinutes:
-          DataSyncWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
-      },
-    });
-  }
-
-  protected override initializeWorkerSpecific(): Promise<void> {
+  constructor(db: NodePgDatabase<typeof schema>) {
     this.syncers = {
-      "data-sync:announcements": new AnnouncementsSyncer(
-        this.db,
-        baseApiClient
-      ),
-      "data-sync:academic-calendars": new CalendarsSyncer(
-        this.db,
-        baseApiClient
-      ),
-      "data-sync:exam-timetables": new ExamTimetablesSyncer(
-        this.db,
-        baseApiClient
-      ),
+      "data-sync:announcements": new AnnouncementsSyncer(db, baseApiClient),
+      "data-sync:academic-calendars": new CalendarsSyncer(db, baseApiClient),
+      "data-sync:exam-timetables": new ExamTimetablesSyncer(db, baseApiClient),
     };
 
     const syncerNames = Object.values(this.syncers)
@@ -55,11 +29,9 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
       },
       "Initialized syncers"
     );
-
-    return Promise.resolve();
   }
 
-  protected override async onStartupComplete(): Promise<void> {
+  async scheduleInitialSync(): Promise<void> {
     const syncTypesNeedingInitialSync = await this.checkNeedsInitialSync();
     if (syncTypesNeedingInitialSync.length > 0) {
       logger.info(
@@ -68,11 +40,9 @@ export class DataSyncWorker extends BaseWorker<SyncJobData> {
       );
       await this.scheduleInitialSyncJobs(syncTypesNeedingInitialSync);
     }
-
-    await setupRecurringSchedule();
   }
 
-  protected async processJob(job: Job<SyncJobData>): Promise<void> {
+  async process(job: Job<SyncJobData>): Promise<void> {
     const { syncType } = job.data;
     const syncer = this.syncers[syncType];
 

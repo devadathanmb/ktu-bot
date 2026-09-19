@@ -6,120 +6,57 @@ import { withTransaction } from "../../../db/transactions.js";
 import { setTimeout } from "node:timers/promises";
 import logger from "../../../utils/logger.js";
 
-export class TelegramErrorUtils {
-  static isUserBlockedError(errorCode: number, description: string): boolean {
-    return (
-      errorCode === 403 ||
-      (errorCode === 400 && description.includes("USER_IS_BLOCKED"))
+export async function handleWorkerGrammyError(
+  chatId: number,
+  error: GrammyError,
+  queue: Queue
+): Promise<void> {
+  const { error_code: errorCode, description } = error;
+
+  if (
+    errorCode === 403 ||
+    (errorCode === 400 && description.includes("USER_IS_BLOCKED"))
+  ) {
+    logger.warn(
+      { chatId, err: error },
+      "User blocked the bot, updating status"
     );
-  }
-
-  static isUserDeactivatedError(
-    errorCode: number,
-    description: string
-  ): boolean {
-    return (
-      (errorCode === 403 && description.includes("deactivated")) ||
-      (errorCode === 400 && description.includes("USER_DEACTIVATED"))
-    );
-  }
-
-  static isRateLimitError(errorCode: number): boolean {
-    return errorCode === 429;
-  }
-
-  static async handleBlockedUser(chatId: number): Promise<void> {
     await withTransaction(async tx => {
       const subscriptionRepo = new AnnouncementSubscriptionRepository(tx);
       const chatRepo = new ChatRepository(tx);
-
       await subscriptionRepo.delete(chatId);
       await chatRepo.createIfNotExists(chatId);
       await chatRepo.markKicked(chatId);
     });
+    return;
   }
 
-  static async handleDeactivatedUser(chatId: number): Promise<void> {
+  if (
+    (errorCode === 403 && description.includes("deactivated")) ||
+    (errorCode === 400 && description.includes("USER_DEACTIVATED"))
+  ) {
+    logger.warn(
+      { chatId, err: error },
+      "User deactivated their account, removing chat"
+    );
     await withTransaction(async tx => {
-      const chatRepo = new ChatRepository(tx);
-      await chatRepo.delete(chatId);
+      await new ChatRepository(tx).delete(chatId);
     });
+    return;
   }
 
-  static async handleRateLimitWithQueuePause(
-    queue: Queue,
-    retryAfterSeconds: number
-  ): Promise<void> {
-    const duration = retryAfterSeconds * 1000 + 1000; // Add 1 second buffer
-    const pauseDuration = duration;
-    const queueName = queue.name;
+  if (errorCode === 429) {
+    const pauseDuration = (error.parameters?.retry_after || 30) * 1000 + 1000;
     logger.info(
-      { pauseDuration, queueName },
+      { chatId, pauseDuration, queueName: queue.name },
       "Pausing queue due to rate limit"
     );
-
     await queue.pause();
-    await setTimeout(duration);
+    await setTimeout(pauseDuration);
     await queue.resume();
   }
 
-  static getRateLimitDuration(error: GrammyError): number {
-    return error.parameters?.retry_after || 30;
-  }
-
-  static logUnhandledTelegramError(
-    chatId: number,
-    errorCode: number,
-    errorDescription: string
-  ): void {
-    logger.error(
-      { chatId, errorCode, errorDescription },
-      "Unhandled Telegram error"
-    );
-  }
-
-  static logUnhandledGenericError(
-    jobId: string | number | undefined,
-    error: Error
-  ): void {
-    logger.error(
-      { jobId, err: error },
-      "Unhandled generic error in job processing"
-    );
-  }
-
-  static async handleWorkerGrammyError(
-    chatId: number,
-    error: GrammyError,
-    queue: Queue
-  ): Promise<void> {
-    const errorCode = error.error_code;
-    const errorDescription = error.description;
-
-    if (this.isUserBlockedError(errorCode, errorDescription)) {
-      logger.warn(
-        { chatId, errorCode, errorDescription },
-        "User blocked the bot, updating status"
-      );
-      await this.handleBlockedUser(chatId);
-    } else if (this.isUserDeactivatedError(errorCode, errorDescription)) {
-      logger.warn(
-        { chatId, errorCode, errorDescription },
-        "User deactivated their account, removing chat"
-      );
-      await this.handleDeactivatedUser(chatId);
-    } else if (this.isRateLimitError(errorCode)) {
-      const retryAfter = this.getRateLimitDuration(error);
-      await this.handleRateLimitWithQueuePause(queue, retryAfter);
-      // Re-throw so BullMQ marks the job as failed and retries it later.
-      // Without this, the job is silently completed and the message to
-      // this chatId is dropped forever. The queue pause protects future
-      // jobs from hitting the same rate limit; the retry ensures this
-      // specific delivery is eventually completed.
-      throw error;
-    } else {
-      this.logUnhandledTelegramError(chatId, errorCode, errorDescription);
-      throw error;
-    }
-  }
+  // A rate-limited delivery must retry as well as pausing future jobs.
+  // Other unrecovered failures are logged once at the worker boundary.
+  throw error;
 }

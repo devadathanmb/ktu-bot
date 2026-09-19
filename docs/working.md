@@ -165,6 +165,10 @@ You can read more about the different background workers the bot uses in the bel
 
 ## Background Workers
 
+Each worker's `startup.ts` initializes its database and bot dependencies, constructs a processor, and starts BullMQ. Initial and recurring schedules are called explicitly there. The concrete processors in `worker.ts` handle jobs without a shared base class. `shared/worker-runtime.ts` handles common BullMQ options, job logging, health checks, and worker/queue closure; `shared/start-worker.ts` wires monitoring and shutdown. Shutdown drains the worker before closing its queue and the database. Data-sync resource syncers still share their pagination and persistence algorithm through `BaseResourceSyncer`.
+
+Broadcast and attachment delivery use `createWorkerBot()`. Announcement notification currently uses the main `createBot()` factory with throttler and auto-retry API transformers; data sync needs no bot. Attachment delivery still initializes the database because Telegram error recovery updates chat and subscription records. Announcement fetch results belong to the current job, and the buffer is replaced only after broadcast jobs are enqueued. Queue insertion and buffer replacement use separate Redis and PostgreSQL operations, so they are not atomic.
+
 These are independent services that handle specific tasks in the background. Unlike the main bot that responds to user interactions, workers run on schedules or process queued jobs without direct user involvement. They're crucial because they handle time-consuming or periodic tasks without blocking the bot - if a worker crashes, the bot keeps running, and vice versa. This separation also makes the system more scalable since you can run multiple instances of workers independently.
 
 ### Announcements Notify Worker
@@ -250,7 +254,7 @@ This worker has a `concurrency` of `2` to prevent overwhelming Telegram's rate l
 
 ## Health Checks and Monitoring
 
-Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3004`, Bull Board on `3010`) that verifies the service is running and can connect to PostgreSQL. Queue-related health is checked through worker status and queue metrics rather than a generic Redis ping. This enables zero-downtime deployments and automatic restarts if something goes wrong. The health check utility is in [`src/monitoring/health-check.ts`](../src/monitoring/health-check.ts) if you want to see how it works.
+Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3004`, Bull Board on `3010`) that verifies service health and PostgreSQL connectivity. Workers additionally check BullMQ's running state, ping the queue's Redis connection, and check configured failure/backlog thresholds. These endpoints support deployment health checks and restart policies. The health check utility is in [`src/monitoring/health-check.ts`](../src/monitoring/health-check.ts).
 
 ### Queue Monitoring with Bull Board
 

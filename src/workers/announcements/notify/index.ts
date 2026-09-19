@@ -1,1 +1,1 @@
-export { AnnouncementsNotifyWorker } from "./worker.js";
+export { AnnouncementsNotifyProcessor } from "./worker.js";

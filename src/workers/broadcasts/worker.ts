@@ -1,52 +1,34 @@
-import { Job } from "bullmq";
-import { GrammyError, InputMediaBuilder } from "grammy";
-import { BroadcastJob, ProcessedAttachment } from "../shared/types.js";
-import { FormattedString } from "@grammyjs/parse-mode";
-import logger from "../../utils/logger.js";
-import { BaseWorker } from "../base/base-worker.js";
-import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
-import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
+import type { FormattedString } from "@grammyjs/parse-mode";
+import type { Job, Queue } from "bullmq";
+import { GrammyError, InputMediaBuilder, type Bot } from "grammy";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type * as schema from "../../db/schema/index.js";
+import type { BotContext } from "../../types/bot.types.js";
+import type { BroadcastJob, ProcessedAttachment } from "../shared/types.js";
+import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";
 import { AnnouncementSubscriptionRepository } from "../../db/repositories/announcement-subscription-repository.js";
-import { broadcastsQueue } from "./queue.js";
-import { BroadcastsWorkerConfig } from "../../configs/broadcasts-worker.js";
 import {
   buildFormattedCaption,
   buildReplyParameters,
 } from "../shared/utils/telegram-send.js";
 
-export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
-  constructor() {
-    super("broadcasts-worker", broadcastsQueue, {
-      concurrency: 1,
-      healthCheck: {
-        maxFailedJobs: BroadcastsWorkerConfig.MAX_FAILED_JOBS,
-        maxBacklogJobs: BroadcastsWorkerConfig.MAX_BACKLOG_JOBS,
-        failedJobsLookbackMinutes:
-          BroadcastsWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
-      },
-    });
-  }
+export class BroadcastProcessor {
+  constructor(
+    private readonly db: NodePgDatabase<typeof schema>,
+    private readonly bot: Bot<BotContext>,
+    private readonly queue: Queue<BroadcastJob>
+  ) {}
 
-  protected override initializeWorkerSpecific(): Promise<void> {
-    this.bot = createWorkerBot();
-    logger.info("Bot instance created");
-    return Promise.resolve();
-  }
-
-  protected override async processJob(job: Job<BroadcastJob>): Promise<void> {
+  async process(job: Job<BroadcastJob>): Promise<void> {
     try {
       await this.processBroadcastJob(job);
     } catch (error) {
       if (error instanceof GrammyError) {
-        await TelegramErrorUtils.handleWorkerGrammyError(
-          job.data.chatId,
-          error,
-          this.queue
-        );
-      } else {
-        TelegramErrorUtils.logUnhandledGenericError(job.id, error as Error);
-        throw error;
+        await handleWorkerGrammyError(job.data.chatId, error, this.queue);
+        return;
       }
+
+      throw error;
     }
   }
 
@@ -88,7 +70,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
   }
 
   private async sendMessage(chatId: number, formattedText: FormattedString) {
-    return await this.getBot().api.sendMessage(chatId, formattedText.rawText, {
+    return await this.bot.api.sendMessage(chatId, formattedText.rawText, {
       entities: formattedText.rawEntities,
       link_preview_options: { is_disabled: true },
     });
@@ -116,7 +98,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       );
     });
 
-    const messages = await this.getBot().api.sendMediaGroup(
+    const messages = await this.bot.api.sendMediaGroup(
       chatId,
       documents,
       buildReplyParameters(options)
@@ -133,7 +115,7 @@ export class BroadcastsWorker extends BaseWorker<BroadcastJob> {
       messageIdToReplyTo?: number;
     }
   ) {
-    return await this.getBot().api.sendDocument(
+    return await this.bot.api.sendDocument(
       chatId,
       this.getAttachmentReference(attachment),
       {

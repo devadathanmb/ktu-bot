@@ -1,59 +1,38 @@
-import { Job } from "bullmq";
-import { GrammyError, InputFile } from "grammy";
-import { AttachmentDeliveryJob, attachmentDeliveryQueue } from "./queue.js";
+import type { Job, Queue } from "bullmq";
+import { GrammyError, InputFile, type Bot } from "grammy";
+import type { AttachmentDeliveryJob } from "./queue.js";
 import { Attachment } from "../../types/service.types.js";
+import type { BotContext } from "../../types/bot.types.js";
 import {
   cleanupDownloadedAttachment,
   downloadAttachmentToTempFile,
   TELEGRAM_MAX_FILE_SIZE_BYTES,
   type DownloadedAttachment,
 } from "../../utils/file-utils.js";
-import { BaseWorker } from "../base/base-worker.js";
-import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
-import { TelegramErrorUtils } from "../shared/utils/telegram-error-utils.js";
+import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";
 import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
 import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
-import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
 import { buildReplyParameters } from "../shared/utils/telegram-send.js";
 
-export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> {
-  constructor() {
-    super("attachment-delivery-worker", attachmentDeliveryQueue, {
-      concurrency: 2,
-      healthCheck: {
-        maxFailedJobs: AttachmentDeliveryWorkerConfig.MAX_FAILED_JOBS,
-        maxBacklogJobs: AttachmentDeliveryWorkerConfig.MAX_BACKLOG_JOBS,
-        failedJobsLookbackMinutes:
-          AttachmentDeliveryWorkerConfig.FAILED_JOBS_WINDOW_MINUTES,
-      },
-    });
-  }
+export class AttachmentDeliveryProcessor {
+  constructor(
+    private readonly bot: Bot<BotContext>,
+    private readonly queue: Queue<AttachmentDeliveryJob>
+  ) {}
 
-  protected override initializeWorkerSpecific(): Promise<void> {
-    this.bot = createWorkerBot();
-    logger.info("Bot instance created");
-    return Promise.resolve();
-  }
-
-  protected override async processJob(
-    job: Job<AttachmentDeliveryJob>
-  ): Promise<void> {
+  async process(job: Job<AttachmentDeliveryJob>): Promise<void> {
     try {
       await this.processAttachmentDeliveryJob(job);
     } catch (error) {
       if (error instanceof GrammyError) {
-        await TelegramErrorUtils.handleWorkerGrammyError(
-          job.data.chatId,
-          error,
-          this.queue
-        );
-      } else {
-        TelegramErrorUtils.logUnhandledGenericError(job.id, error as Error);
-        throw error;
+        await handleWorkerGrammyError(job.data.chatId, error, this.queue);
+        return;
       }
+
+      throw error;
     }
   }
 
@@ -68,10 +47,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       "Processing attachment delivery job"
     );
 
-    const downloadedAttachments: Array<{
-      attachment: Attachment;
-      downloaded: DownloadedAttachment;
-    }> = [];
+    const downloadedAttachments: DownloadedAttachment[] = [];
 
     try {
       // Download every attachment before sending anything. Telegram sends are not
@@ -83,13 +59,13 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
           attachment.name,
           attachment.source ?? "default"
         );
-        downloadedAttachments.push({ attachment, downloaded });
+        downloadedAttachments.push(downloaded);
       }
 
-      for (const [index, item] of downloadedAttachments.entries()) {
+      for (const [index, downloaded] of downloadedAttachments.entries()) {
         await this.sendDownloadedAttachment({
           chatId,
-          downloaded: item.downloaded,
+          downloaded,
           attachments,
           context,
           replyToMessageId,
@@ -116,7 +92,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       throw error;
     } finally {
       await Promise.all(
-        downloadedAttachments.map(({ downloaded }) =>
+        downloadedAttachments.map(downloaded =>
           cleanupDownloadedAttachment(downloaded)
         )
       );
@@ -141,7 +117,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     } = options;
 
     if (downloaded.fileSizeBytes > TELEGRAM_MAX_FILE_SIZE_BYTES) {
-      await sendAsLink(this.getBot(), chatId, downloaded, {
+      await sendAsLink(this.bot, chatId, downloaded, {
         contextLabel: getContextEmoji(context),
         replyToMessageId,
       });
@@ -156,7 +132,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
       ? this.buildCaption(attachments, context)
       : "";
 
-    await this.getBot().api.sendDocument(chatId, inputFile, {
+    await this.bot.api.sendDocument(chatId, inputFile, {
       ...(caption && { caption }),
       ...buildReplyParameters({ messageIdToReplyTo: replyToMessageId }),
     });
@@ -177,7 +153,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
   ): Promise<void> {
     const keyboard = createViewAnotherKeyboard(context);
     const contextEmoji = getContextEmoji(context);
-    await this.getBot().api.sendMessage(
+    await this.bot.api.sendMessage(
       chatId,
       `${contextEmoji} View another ${context}?`,
       { reply_markup: keyboard }
@@ -189,7 +165,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     messageId: number
   ): Promise<void> {
     try {
-      await this.getBot().api.deleteMessage(chatId, messageId);
+      await this.bot.api.deleteMessage(chatId, messageId);
     } catch (error) {
       if (error instanceof GrammyError && error.error_code === 400) {
         // Already deleted
@@ -204,7 +180,7 @@ export class AttachmentDeliveryWorker extends BaseWorker<AttachmentDeliveryJob> 
     messageId: number
   ): Promise<void> {
     try {
-      await this.getBot().api.editMessageText(
+      await this.bot.api.editMessageText(
         chatId,
         messageId,
         `${emoji("crying_cat")} Oops! Something went wrong. Please try again.`
