@@ -13,8 +13,10 @@ import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
 import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";
 import { sendAsLink } from "../shared/utils/attachment-delivery.js";
-import { createViewAnotherKeyboard } from "../../bot/composers/lookups/utils.js";
-import { getContextEmoji } from "../../bot/composers/lookups/constants.js";
+import {
+  createViewAnotherKeyboard,
+  getContextEmoji,
+} from "../../bot/utils/presentation.js";
 import { buildReplyParameters } from "../shared/utils/telegram-send.js";
 
 export class AttachmentDeliveryProcessor {

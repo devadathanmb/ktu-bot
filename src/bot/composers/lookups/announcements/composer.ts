@@ -4,7 +4,6 @@ import { Composer } from "grammy";
 import { Announcement } from "../../../../types/service.types.js";
 import {
   parseSelectCallback,
-  createViewAnotherKeyboard,
   findItemById,
   fetchAndRenderApiPage,
   handleApiNextPage,
@@ -12,6 +11,7 @@ import {
   startApiPaginatedLookup,
   storeCallbackMessageId,
 } from "../utils.js";
+import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { LOOKUP_CONFIG } from "../constants.js";
 import { fmt } from "@grammyjs/parse-mode";
 import {

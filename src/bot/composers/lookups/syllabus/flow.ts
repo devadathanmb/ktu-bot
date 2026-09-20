@@ -19,12 +19,12 @@ import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { LOOKUP_CONFIG } from "../constants.js";
 import {
-  createViewAnotherKeyboard,
   findItemById,
   parseSelectCallback,
   storeCallbackMessageId,
   totalPages,
 } from "../utils.js";
+import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { CB } from "./constants.js";
 import {
   buildBranchesPage,

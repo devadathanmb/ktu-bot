@@ -226,17 +226,6 @@ export function parseSelectCallback(
   return { isValid: true, id };
 }
 
-export function createViewAnotherKeyboard(
-  callbackPrefix: string
-): InlineKeyboard {
-  return new InlineKeyboard()
-    .text(
-      `${emoji("check_mark_button")} Yes`,
-      `${callbackPrefix}_view_another_true`
-    )
-    .text(`${emoji("cross_mark")} No`, `${callbackPrefix}_view_another_false`);
-}
-
 export function findItemById<T extends { id: number }>(
   items: T[],
   id: number

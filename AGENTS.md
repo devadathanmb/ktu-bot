@@ -50,7 +50,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 ## Bot and GrammY
 
 - Before changing GrammY APIs, plugins, middleware ordering, or callback-query handling, check the GrammY docs first.
-- Main bot composition lives in `src/bot/bot.ts`. Broadcast and attachment workers use `src/bot/utils/create-worker-bot.ts`; announcement startup currently uses `createBot()` with throttler and auto-retry API transformers.
+- Main bot composition lives in `src/bot/bot.ts`. Broadcast, attachment-delivery, and announcement workers use the minimal `src/bot/utils/create-worker-bot.ts`; announcement startup installs `apiThrottler()` then `autoRetry({ maxRetryAttempts: 5 })` explicitly.
 - In bot/composer code, use `ctx.api`. In worker processors, use the injected bot's raw `bot.api`.
 - Callback-query composers should use `createComposerErrorBoundary([...sessionKeys])`. Capture the returned protected composer and register handlers on it; middleware registered on the original composer is not protected.
 - Syllabus entry callback IDs are indices in the original API response, not the filtered or paginated list. Preserve that mapping and existing callback prefixes during refactors.
