@@ -7,6 +7,9 @@
 # Build output
 /dist
 
+# Coverage reports
+/coverage
+
 # Env files
 # New structure: env/prod/, env/staging/, env/dev/
 # Dev env files are tracked (contain default configs)

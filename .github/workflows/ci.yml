@@ -20,7 +20,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Aligned with docker/Dockerfile (node:24-alpine); 22+ is also
+          # required for the --experimental-test-coverage check below.
+          node-version: 24
           cache: "pnpm"
 
       - name: Install dependencies
@@ -34,6 +36,9 @@ jobs:
 
       - name: Type check
         run: pnpm typecheck
+
+      - name: Test with coverage floor
+        run: pnpm test:coverage:check
 
       - name: Build project
         run: pnpm build
