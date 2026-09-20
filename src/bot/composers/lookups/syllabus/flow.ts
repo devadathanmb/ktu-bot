@@ -52,6 +52,38 @@ const MESSAGES = {
 type CallbackContext = CallbackQueryContext<BotContext>;
 type Step = "program" | "scheme" | "branch" | "entry";
 
+// Optional seams for offline testing. Production callers omit `deps` and
+// get the live KTU fetchers and the real attachment-delivery queue.
+export interface SyllabusFlowDeps {
+  fetchPrograms?: () => Promise<Program[]>;
+  fetchSchemes?: (params: { programId: number }) => Promise<Scheme[]>;
+  fetchBranches?: (params: { schemeId: number }) => Promise<Branch[]>;
+  fetchSyllabus?: (params: {
+    curriculumId: number;
+  }) => Promise<SyllabusEntry[]>;
+  queueDownload?: (
+    job: Parameters<typeof addAttachmentDeliveryJob>[0]
+  ) => Promise<unknown>;
+}
+
+interface ResolvedFlowDeps {
+  fetchPrograms: NonNullable<SyllabusFlowDeps["fetchPrograms"]>;
+  fetchSchemes: NonNullable<SyllabusFlowDeps["fetchSchemes"]>;
+  fetchBranches: NonNullable<SyllabusFlowDeps["fetchBranches"]>;
+  fetchSyllabus: NonNullable<SyllabusFlowDeps["fetchSyllabus"]>;
+  queueDownload: NonNullable<SyllabusFlowDeps["queueDownload"]>;
+}
+
+function resolveDeps(deps: SyllabusFlowDeps): ResolvedFlowDeps {
+  return {
+    fetchPrograms: deps.fetchPrograms ?? fetchPrograms,
+    fetchSchemes: deps.fetchSchemes ?? fetchSchemes,
+    fetchBranches: deps.fetchBranches ?? fetchBranches,
+    fetchSyllabus: deps.fetchSyllabus ?? fetchSyllabus,
+    queueDownload: deps.queueDownload ?? addAttachmentDeliveryJob,
+  };
+}
+
 async function renderPrograms(
   ctx: BotContext,
   programs: Program[],
@@ -146,15 +178,14 @@ function buildDownloadJob(
 
 async function enqueueDownload(
   ctx: CallbackContext,
-  entry: SyllabusEntry
+  entry: SyllabusEntry,
+  deps: ResolvedFlowDeps
 ): Promise<void> {
   await deleteMessageSafely(ctx, ctx.callbackQuery.message?.message_id);
   const status = await ctx.reply(
     `${emoji("hourglass_not_done")} Downloading syllabus in the background... This may take a moment!`
   );
-  await addAttachmentDeliveryJob(
-    buildDownloadJob(ctx, entry, status.message_id)
-  );
+  await deps.queueDownload(buildDownloadJob(ctx, entry, status.message_id));
 }
 
 async function showLoading(
@@ -171,7 +202,11 @@ async function showInvalidSelection(ctx: CallbackContext): Promise<void> {
   );
 }
 
-export async function start(ctx: BotContext): Promise<void> {
+export async function start(
+  ctx: BotContext,
+  deps: SyllabusFlowDeps = {}
+): Promise<void> {
+  const impl = resolveDeps(deps);
   clearSyllabusSession(ctx);
   ctx.session.syllabusProgramPage = LOOKUP_CONFIG.INITIAL_PAGE;
   const loadingMessage = joinWithNewlines(MESSAGES.FETCHING_PROGRAMS, 2);
@@ -179,7 +214,7 @@ export async function start(ctx: BotContext): Promise<void> {
     entities: loadingMessage.entities,
   });
   ctx.session.syllabusMessageId = status.message_id;
-  const programs = await fetchPrograms();
+  const programs = await impl.fetchPrograms();
   const { text, keyboard } = buildProgramsPage(
     programs,
     LOOKUP_CONFIG.INITIAL_PAGE
@@ -191,7 +226,11 @@ export async function start(ctx: BotContext): Promise<void> {
   });
 }
 
-export async function selectProgram(ctx: CallbackContext): Promise<void> {
+export async function selectProgram(
+  ctx: CallbackContext,
+  deps: SyllabusFlowDeps = {}
+): Promise<void> {
+  const impl = resolveDeps(deps);
   await ctx.answerCallbackQuery();
   storeCallbackMessageId(ctx, "syllabusMessageId");
   const parsed = parseSelectCallback(ctx.callbackQuery.data, CB.PROGRAM);
@@ -199,7 +238,7 @@ export async function selectProgram(ctx: CallbackContext): Promise<void> {
   const program = findItemById(ctx.session.syllabusPrograms, parsed.id);
   ctx.session.syllabusSelectedProgramId = program.id;
   await showLoading(ctx, MESSAGES.FETCHING_SCHEMES);
-  const schemes = await fetchSchemes({ programId: program.id });
+  const schemes = await impl.fetchSchemes({ programId: program.id });
   if (schemes.length === 0) {
     await ctx.editMessageText(
       joinWithNewlines([
@@ -212,7 +251,11 @@ export async function selectProgram(ctx: CallbackContext): Promise<void> {
   await renderSchemes(ctx, schemes, LOOKUP_CONFIG.INITIAL_PAGE);
 }
 
-export async function selectScheme(ctx: CallbackContext): Promise<void> {
+export async function selectScheme(
+  ctx: CallbackContext,
+  deps: SyllabusFlowDeps = {}
+): Promise<void> {
+  const impl = resolveDeps(deps);
   await ctx.answerCallbackQuery();
   storeCallbackMessageId(ctx, "syllabusMessageId");
   const parsed = parseSelectCallback(ctx.callbackQuery.data, CB.SCHEME);
@@ -220,7 +263,7 @@ export async function selectScheme(ctx: CallbackContext): Promise<void> {
   const scheme = findItemById(ctx.session.syllabusSchemes, parsed.id);
   ctx.session.syllabusSelectedSchemeId = scheme.id;
   await showLoading(ctx, MESSAGES.FETCHING_BRANCHES);
-  const branches = await fetchBranches({ schemeId: scheme.id });
+  const branches = await impl.fetchBranches({ schemeId: scheme.id });
   if (branches.length === 0) {
     await ctx.editMessageText(
       joinWithNewlines([
@@ -233,14 +276,18 @@ export async function selectScheme(ctx: CallbackContext): Promise<void> {
   await renderBranches(ctx, branches, LOOKUP_CONFIG.INITIAL_PAGE);
 }
 
-export async function selectBranch(ctx: CallbackContext): Promise<void> {
+export async function selectBranch(
+  ctx: CallbackContext,
+  deps: SyllabusFlowDeps = {}
+): Promise<void> {
+  const impl = resolveDeps(deps);
   await ctx.answerCallbackQuery();
   storeCallbackMessageId(ctx, "syllabusMessageId");
   const parsed = parseSelectCallback(ctx.callbackQuery.data, CB.BRANCH);
   if (!parsed.isValid) return showInvalidSelection(ctx);
   const branch = findItemById(ctx.session.syllabusBranches, parsed.id);
   await showLoading(ctx, MESSAGES.FETCHING_SYLLABUS);
-  const entries = await fetchSyllabus({ curriculumId: branch.id });
+  const entries = await impl.fetchSyllabus({ curriculumId: branch.id });
   const { entries: downloadable } = getDownloadableEntries(entries);
   if (downloadable.length === 0) {
     const text = joinWithNewlines(
@@ -256,11 +303,16 @@ export async function selectBranch(ctx: CallbackContext): Promise<void> {
     });
     return;
   }
-  if (downloadable.length === 1) return enqueueDownload(ctx, downloadable[0]!);
+  if (downloadable.length === 1)
+    return enqueueDownload(ctx, downloadable[0]!, impl);
   await renderEntries(ctx, entries, LOOKUP_CONFIG.INITIAL_PAGE);
 }
 
-export async function selectEntry(ctx: CallbackContext): Promise<void> {
+export async function selectEntry(
+  ctx: CallbackContext,
+  deps: SyllabusFlowDeps = {}
+): Promise<void> {
+  const impl = resolveDeps(deps);
   await ctx.answerCallbackQuery();
   storeCallbackMessageId(ctx, "syllabusMessageId");
   const parsed = parseSelectCallback(ctx.callbackQuery.data, CB.SYLLABUS);
@@ -272,7 +324,7 @@ export async function selectEntry(ctx: CallbackContext): Promise<void> {
     entry.attachmentName === null
   )
     return showInvalidSelection(ctx);
-  await enqueueDownload(ctx, entry);
+  await enqueueDownload(ctx, entry, impl);
 }
 
 export async function previousPage(
@@ -350,12 +402,16 @@ function pageState(
   }
 }
 
-export async function restart(ctx: CallbackContext): Promise<void> {
+export async function restart(
+  ctx: CallbackContext,
+  deps: SyllabusFlowDeps = {}
+): Promise<void> {
+  const impl = resolveDeps(deps);
   await ctx.answerCallbackQuery();
   storeCallbackMessageId(ctx, "syllabusMessageId");
   clearSyllabusSession(ctx);
   ctx.session.syllabusProgramPage = LOOKUP_CONFIG.INITIAL_PAGE;
   await showLoading(ctx, MESSAGES.FETCHING_PROGRAMS);
-  const programs = await fetchPrograms();
+  const programs = await impl.fetchPrograms();
   await renderPrograms(ctx, programs, LOOKUP_CONFIG.INITIAL_PAGE);
 }

@@ -22,12 +22,16 @@ const protectedComposer = composer.errorBoundary(createSyllabusErrorBoundary());
 const syllabusLookupCommand = new Command<BotContext>(
   "syllabus",
   `${emoji("scroll")} Browse and download KTU syllabi by program and branch`,
-  start
+  async ctx => {
+    await start(ctx);
+  }
 );
 
 protectedComposer.callbackQuery(
   new RegExp(`^${CB.PROGRAM}_select_\\d+$`),
-  selectProgram
+  async ctx => {
+    await selectProgram(ctx);
+  }
 );
 protectedComposer.callbackQuery(`${CB.PROGRAM}_page_info`, async ctx => {
   await ctx.answerCallbackQuery();
@@ -41,7 +45,9 @@ protectedComposer.callbackQuery(`${CB.PROGRAM}_next_page`, async ctx => {
 
 protectedComposer.callbackQuery(
   new RegExp(`^${CB.SCHEME}_select_\\d+$`),
-  selectScheme
+  async ctx => {
+    await selectScheme(ctx);
+  }
 );
 protectedComposer.callbackQuery(`${CB.SCHEME}_page_info`, async ctx => {
   await ctx.answerCallbackQuery();
@@ -55,7 +61,9 @@ protectedComposer.callbackQuery(`${CB.SCHEME}_next_page`, async ctx => {
 
 protectedComposer.callbackQuery(
   new RegExp(`^${CB.BRANCH}_select_\\d+$`),
-  selectBranch
+  async ctx => {
+    await selectBranch(ctx);
+  }
 );
 protectedComposer.callbackQuery(`${CB.BRANCH}_page_info`, async ctx => {
   await ctx.answerCallbackQuery();
@@ -69,7 +77,9 @@ protectedComposer.callbackQuery(`${CB.BRANCH}_next_page`, async ctx => {
 
 protectedComposer.callbackQuery(
   new RegExp(`^${CB.SYLLABUS}_select_\\d+$`),
-  selectEntry
+  async ctx => {
+    await selectEntry(ctx);
+  }
 );
 protectedComposer.callbackQuery(`${CB.SYLLABUS}_page_info`, async ctx => {
   await ctx.answerCallbackQuery();
@@ -83,7 +93,9 @@ protectedComposer.callbackQuery(`${CB.SYLLABUS}_next_page`, async ctx => {
 
 protectedComposer.callbackQuery(
   `${CB.VIEW_ANOTHER}_view_another_true`,
-  restart
+  async ctx => {
+    await restart(ctx);
+  }
 );
 protectedComposer.callbackQuery(
   `${CB.VIEW_ANOTHER}_view_another_false`,
