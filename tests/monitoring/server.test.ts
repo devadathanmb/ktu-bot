@@ -5,7 +5,7 @@ import type { ServerType } from "@hono/node-server";
 import { Hono } from "hono";
 import test from "node:test";
 import logger from "../../src/utils/logger.js";
-import { createMonitoringServerWithStarter } from "../../src/monitoring/index.js";
+import { createMonitoringServer } from "../../src/monitoring/index.js";
 
 type Serve = typeof serve;
 
@@ -50,11 +50,7 @@ test("monitoring server keeps the root redirect and logs the listening port", as
     port: 4321,
   });
 
-  createMonitoringServerWithStarter(
-    app,
-    { serviceName: "bot", port: 3000 },
-    serveFn
-  );
+  createMonitoringServer(app, { serviceName: "bot", port: 3000 }, serveFn);
 
   assert.deepEqual(state.requestedPorts, [3000]);
   assert.deepEqual(infoLog.mock.calls[0]!.arguments, [
@@ -70,7 +66,7 @@ test("monitoring server keeps the root redirect and logs the listening port", as
 test("monitoring server close resolves once and is idempotent", async () => {
   const app = new Hono();
   const { serveFn, state } = createFakeServe();
-  const server = createMonitoringServerWithStarter(
+  const server = createMonitoringServer(
     app,
     { serviceName: "bot", port: 3000 },
     serveFn
@@ -86,7 +82,7 @@ test("monitoring server close rejects with the underlying close error", async ()
   const app = new Hono();
   const { serveFn, state } = createFakeServe();
   state.closeError = new Error("server close failed");
-  const server = createMonitoringServerWithStarter(
+  const server = createMonitoringServer(
     app,
     { serviceName: "bot", port: 3000 },
     serveFn

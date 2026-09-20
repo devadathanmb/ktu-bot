@@ -17,31 +17,23 @@ export interface MonitoringServer {
 }
 
 /**
+ * Narrow seam for starting the HTTP server. Production passes the
+ * `@hono/node-server` `serve` implementation; tests inject a fake.
+ */
+type ServerStarter = typeof serve;
+
+/**
  * Creates and starts a monitoring server with the provided Hono app
  * The app should have endpoints configured via setupHealthCheckEndpoint, setupMetricsEndpoint, etc.
  *
  * @param app - Hono application with configured endpoints
  * @param options - Server configuration options
+ * @param startServer - Server starter, defaults to `serve` from `@hono/node-server`
  */
 export function createMonitoringServer(
   app: Hono,
-  options: MonitoringServerOptions
-): MonitoringServer {
-  return createMonitoringServerWithStarter(app, options, serve);
-}
-
-/**
- * Core factory for callers that provide their own server starter, primarily
- * tests. Production callers use `createMonitoringServer`, which passes `serve`.
- *
- * @param app - Hono application with configured endpoints
- * @param options - Server configuration options
- * @param startServer - Required server starter
- */
-export function createMonitoringServerWithStarter(
-  app: Hono,
   options: MonitoringServerOptions,
-  startServer: typeof serve
+  startServer: ServerStarter = serve
 ): MonitoringServer {
   const { serviceName, port } = options;
 

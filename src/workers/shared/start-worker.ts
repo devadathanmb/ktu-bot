@@ -2,13 +2,13 @@ import { Hono } from "hono";
 import {
   setupHealthCheckEndpoint,
   setupMetricsEndpoint,
-  createMonitoringServer as createProductionMonitoringServer,
+  createMonitoringServer,
 } from "../../monitoring/index.js";
 import type {
   MonitoringServer,
   MonitoringServerOptions,
 } from "../../monitoring/index.js";
-import { setupGracefulShutdown as setupProductionGracefulShutdown } from "./shutdown.js";
+import { setupGracefulShutdown } from "./shutdown.js";
 import type { Queue } from "bullmq";
 import logger from "../../utils/logger.js";
 import type { WorkerControl } from "./worker-runtime.js";
@@ -30,26 +30,19 @@ export interface StartWorkerMonitoringDeps {
   setupGracefulShutdown: (stop: () => Promise<void>) => void;
 }
 
-/**
- * Starts a worker service with its monitoring server and graceful shutdown
- * wiring. Production callers get the production dependencies here; tests use
- * `startWorkerMonitoringWithDeps` to inject fakes.
- */
-export function startWorkerMonitoring<T>(
-  config: StartWorkerMonitoringConfig<T>
-): void {
-  startWorkerMonitoringWithDeps(config, {
-    createMonitoringServer: createProductionMonitoringServer,
-    setupGracefulShutdown: setupProductionGracefulShutdown,
-  });
-}
+const defaultDeps: StartWorkerMonitoringDeps = {
+  createMonitoringServer,
+  setupGracefulShutdown,
+};
 
 /**
- * Core implementation requiring explicit dependencies.
+ * Starts a worker service with its monitoring server and graceful shutdown
+ * wiring. Dependencies default to the production monitoring server and signal
+ * handlers; tests inject fakes.
  */
-export function startWorkerMonitoringWithDeps<T>(
+export function startWorkerMonitoring<T>(
   config: StartWorkerMonitoringConfig<T>,
-  deps: StartWorkerMonitoringDeps
+  deps: StartWorkerMonitoringDeps = defaultDeps
 ): void {
   const monitoringApp = new Hono();
 
