@@ -1,29 +1,10 @@
 import { BotContext } from "../../../types/bot.types.js";
-import { CommandGroup } from "@grammyjs/commands";
 import { Composer } from "grammy";
-import { startCommand } from "./commands/start.js";
-import { helpCommand } from "./commands/help.js";
-import { codeCommand } from "./commands/code.js";
-import { searchCommand } from "./commands/search.js";
-import { ktuAPIStatusCommand } from "./commands/api-status.js";
-
-export const coreCommandsGroup = new CommandGroup<BotContext>();
-
-coreCommandsGroup
-  .add(startCommand)
-  .add(helpCommand)
-  .add(searchCommand)
-  .add(codeCommand)
-  .add(ktuAPIStatusCommand);
+import { coreCommandsGroup } from "./commands/group.js";
 
 export const core = new Composer<BotContext>();
 
 core.use(coreCommandsGroup);
 
-export {
-  startCommand,
-  helpCommand,
-  searchCommand,
-  codeCommand,
-  ktuAPIStatusCommand,
-};
+export { coreCommandsGroup };
+export { helpCommand } from "./commands/help.js";

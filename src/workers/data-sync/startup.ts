@@ -1,10 +1,11 @@
 import { DataSyncProcessor } from "./worker.js";
 import { dataSyncQueue, setupRecurringSchedule } from "./queue.js";
 import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
-import { closeDB, initDB } from "../../db/connection.js";
+import { initDB } from "../../db/connection.js";
 import logger from "../../utils/logger.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
+import { createWorkerShutdown } from "../shared/worker-shutdown.js";
 
 const serviceName = "data-sync-worker";
 
@@ -33,10 +34,7 @@ async function start(): Promise<void> {
       queue: dataSyncQueue,
       serviceName,
       port: DataSyncWorkerConfig.HEALTHCHECK_PORT,
-      stop: async () => {
-        await worker.close();
-        await closeDB();
-      },
+      stop: createWorkerShutdown(worker),
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");

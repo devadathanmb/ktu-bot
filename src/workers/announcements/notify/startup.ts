@@ -3,9 +3,10 @@ import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { LLMService } from "../../../api/services/llm/index.js";
 import { createWorkerBot } from "../../../bot/utils/create-worker-bot.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
-import { closeDB, initDB } from "../../../db/connection.js";
+import { initDB } from "../../../db/connection.js";
 import logger from "../../../utils/logger.js";
 import { createWorker } from "../../shared/worker-runtime.js";
+import { createWorkerShutdown } from "../../shared/worker-shutdown.js";
 import { startWorkerMonitoring } from "../../shared/start-worker.js";
 import { announcementsNotifyQueue, setupRecurringSchedule } from "./queue.js";
 import { AnnouncementsNotifyProcessor } from "./worker.js";
@@ -50,10 +51,7 @@ async function start(): Promise<void> {
       queue: announcementsNotifyQueue,
       serviceName,
       port: AnnouncementsNotifyWorkerConfig.HEALTHCHECK_PORT,
-      stop: async () => {
-        await worker.close();
-        await closeDB();
-      },
+      stop: createWorkerShutdown(worker),
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");

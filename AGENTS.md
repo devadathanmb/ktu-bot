@@ -63,7 +63,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 
 - Keep dependency initialization and initial/recurring scheduling explicit in each worker's `startup.ts`; processors in `worker.ts` do not inherit a lifecycle base class.
 - Register recurring jobs with `upsertJobScheduler` through `shared/recurring-schedules.ts`. Scheduler IDs are stable and never encode the cron pattern, so a changed schedule updates the existing entry. Do not use `queue.add(..., { repeat })`: it accumulates definitions and BullMQ later converts them into schedulers keyed by legacy hashes. Setup removes legacy repeat definitions for the same logical job names only.
-- Reuse `shared/worker-runtime.ts` for BullMQ lifecycle and `shared/start-worker.ts` for monitoring/shutdown wiring. Close the worker and queue before the database.
+- Reuse `shared/worker-runtime.ts` for BullMQ lifecycle, `shared/worker-shutdown.ts` for the standard worker-then-database shutdown, and `shared/start-worker.ts` for monitoring/shutdown wiring. Close the worker and queue before the database.
 - Attachment-delivery startup still needs `initDB()`: Telegram error recovery updates chat and subscription records.
 - Attachment retrieval and its temp-file lifecycle live in `src/utils/attachment-download.ts`. Keep `src/utils/file-utils.ts` to generic filesystem helpers that know nothing about KTU endpoints or `AttachmentSource`.
 - Preserve queue names, job IDs, payloads, concurrency, and retry behavior during structural refactors. Keep announcement fetch results local to a job and enqueue broadcasts before replacing the buffer.

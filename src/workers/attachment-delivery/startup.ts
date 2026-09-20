@@ -1,11 +1,12 @@
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
-import { closeDB, initDB } from "../../db/connection.js";
+import { initDB } from "../../db/connection.js";
 import logger from "../../utils/logger.js";
 import { AttachmentDeliveryProcessor } from "./worker.js";
 import { attachmentDeliveryQueue } from "./queue.js";
 import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
+import { createWorkerShutdown } from "../shared/worker-shutdown.js";
 
 const serviceName = "attachment-delivery-worker";
 
@@ -38,10 +39,7 @@ async function start(): Promise<void> {
       queue: attachmentDeliveryQueue,
       serviceName,
       port: AttachmentDeliveryWorkerConfig.ATTACHMENT_DELIVERY_WORKER_HEALTHCHECK_PORT,
-      stop: async () => {
-        await worker.close();
-        await closeDB();
-      },
+      stop: createWorkerShutdown(worker),
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");
