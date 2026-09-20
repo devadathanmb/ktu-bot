@@ -7,7 +7,6 @@ import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-
 import { closeDB, initDB } from "../../../db/connection.js";
 import logger from "../../../utils/logger.js";
 import { createWorker } from "../../shared/worker-runtime.js";
-import { createWorkerShutdown } from "../../shared/worker-shutdown.js";
 import { startWorkerMonitoring } from "../../shared/start-worker.js";
 import { createAnnouncementAudienceResolver } from "./audience.js";
 import { announcementsNotifyQueue, setupRecurringSchedule } from "./queue.js";
@@ -61,7 +60,7 @@ async function start(): Promise<void> {
       queue: announcementsNotifyQueue,
       serviceName,
       port: AnnouncementsNotifyWorkerConfig.HEALTHCHECK_PORT,
-      stop: createWorkerShutdown(worker, { closeDB }),
+      closeDB,
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");

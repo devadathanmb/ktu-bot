@@ -10,7 +10,6 @@ import { withTransaction } from "../../db/transactions.js";
 import logger from "../../utils/logger.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
-import { createWorkerShutdown } from "../shared/worker-shutdown.js";
 
 const serviceName = "data-sync-worker";
 
@@ -58,7 +57,7 @@ async function start(): Promise<void> {
       queue: dataSyncQueue,
       serviceName,
       port: DataSyncWorkerConfig.HEALTHCHECK_PORT,
-      stop: createWorkerShutdown(worker, { closeDB }),
+      closeDB,
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");

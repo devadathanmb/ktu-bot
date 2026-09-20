@@ -6,7 +6,6 @@ import { broadcastsQueue } from "./queue.js";
 import { BroadcastProcessor } from "./worker.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
-import { createWorkerShutdown } from "../shared/worker-shutdown.js";
 
 const serviceName = "broadcasts-worker";
 
@@ -35,7 +34,7 @@ async function start(): Promise<void> {
       queue: broadcastsQueue,
       serviceName,
       port: BroadcastsWorkerConfig.HEALTHCHECK_PORT,
-      stop: createWorkerShutdown(worker, { closeDB }),
+      closeDB,
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");

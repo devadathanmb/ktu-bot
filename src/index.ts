@@ -10,10 +10,28 @@ import {
   setupMetricsEndpoint,
   createMonitoringServer,
 } from "./monitoring/index.js";
+import type { MonitoringServer } from "./monitoring/index.js";
 import { createMetricsRegistry } from "./metrics/registry.js";
 import { createBotMetrics } from "./metrics/definitions.js";
+import { attachmentDeliveryQueue } from "./workers/attachment-delivery/queue.js";
+import { createBotShutdown } from "./lifecycle.js";
 
 async function startBotInLongPolling() {
+  let runner: RunnerHandle | undefined;
+  let monitoringServer: MonitoringServer | undefined;
+
+  const shutdown = createBotShutdown({
+    closeMonitoringServer: async () => {
+      await monitoringServer?.close();
+    },
+    closeRunner: async () => {
+      await runner?.stop();
+    },
+    closeAttachmentDeliveryQueue: () => attachmentDeliveryQueue.close(),
+    closeDB,
+    exit: code => process.exit(code),
+  });
+
   try {
     await initDB();
 
@@ -36,13 +54,14 @@ async function startBotInLongPolling() {
 
     await bot.api.deleteWebhook({ drop_pending_updates: false });
 
-    const runner = run(bot, { runner: { silent: true } });
-    const runnerTask = runner.task();
+    const botRunner = run(bot, { runner: { silent: true } });
+    runner = botRunner;
+    const runnerTask = botRunner.task();
 
     if (runnerTask) {
       void runnerTask.catch(error => {
         logger.error({ err: error }, "Bot runner stopped unexpectedly");
-        void onShutdown();
+        void shutdown({ type: "failure", source: "runner" });
       });
     }
 
@@ -52,7 +71,7 @@ async function startBotInLongPolling() {
       monitoringApp,
       "bot",
       async () =>
-        runner.isRunning() &&
+        botRunner.isRunning() &&
         (await bot.api
           .getMe()
           .then(() => true)
@@ -63,30 +82,25 @@ async function startBotInLongPolling() {
       setupMetricsEndpoint(monitoringApp, metricsRegistry);
     }
 
-    createMonitoringServer(monitoringApp, {
+    monitoringServer = createMonitoringServer(monitoringApp, {
       serviceName: "bot",
       port: BotConfig.BOT_HEALTH_CHECK_PORT,
     });
 
     logger.info("🚀 KTU Bot started successfully");
 
-    process.on("SIGINT", () => void onShutdown(runner, "SIGINT"));
-    process.on("SIGTERM", () => void onShutdown(runner, "SIGTERM"));
+    process.on(
+      "SIGINT",
+      () => void shutdown({ type: "signal", name: "SIGINT" })
+    );
+    process.on(
+      "SIGTERM",
+      () => void shutdown({ type: "signal", name: "SIGTERM" })
+    );
   } catch (error) {
     logger.error({ err: error }, "Failed to start bot");
-    await onShutdown();
+    await shutdown({ type: "failure", source: "startup" });
   }
-}
-
-async function onShutdown(runner?: RunnerHandle, signal?: string) {
-  if (signal) {
-    logger.info({ signal }, "Shutting down gracefully");
-  }
-  if (runner) {
-    await runner.stop();
-  }
-  await closeDB();
-  process.exit(signal ? 0 : 1);
 }
 
 await startBotInLongPolling();

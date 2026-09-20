@@ -11,7 +11,6 @@ import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-deliver
 import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
-import { createWorkerShutdown } from "../shared/worker-shutdown.js";
 
 const serviceName = "attachment-delivery-worker";
 
@@ -49,7 +48,7 @@ async function start(): Promise<void> {
       queue: attachmentDeliveryQueue,
       serviceName,
       port: AttachmentDeliveryWorkerConfig.ATTACHMENT_DELIVERY_WORKER_HEALTHCHECK_PORT,
-      stop: createWorkerShutdown(worker, { closeDB }),
+      closeDB,
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");
