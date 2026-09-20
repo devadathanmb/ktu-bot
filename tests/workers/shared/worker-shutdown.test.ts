@@ -2,21 +2,26 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createWorkerShutdown } from "../../../src/workers/shared/worker-shutdown.js";
 
-test("worker shutdown closes the worker and resolves", async () => {
-  let closeCalls = 0;
+test("worker shutdown closes the worker before the database", async () => {
+  const calls: string[] = [];
   const worker = {
     getStatus: async () => true,
     close: async () => {
-      closeCalls += 1;
+      calls.push("worker");
     },
   };
 
-  await createWorkerShutdown(worker)();
+  await createWorkerShutdown(worker, {
+    closeDB: async () => {
+      calls.push("database");
+    },
+  })();
 
-  assert.equal(closeCalls, 1);
+  assert.deepEqual(calls, ["worker", "database"]);
 });
 
-test("worker shutdown propagates a close failure", async () => {
+test("worker shutdown propagates a worker close failure", async () => {
+  let closeDBCalls = 0;
   const worker = {
     getStatus: async () => true,
     close: async () => {
@@ -24,5 +29,29 @@ test("worker shutdown propagates a close failure", async () => {
     },
   };
 
-  await assert.rejects(createWorkerShutdown(worker)(), /worker close failed/);
+  await assert.rejects(
+    createWorkerShutdown(worker, {
+      closeDB: async () => {
+        closeDBCalls += 1;
+      },
+    })(),
+    /worker close failed/
+  );
+  assert.equal(closeDBCalls, 0);
+});
+
+test("worker shutdown propagates a database close failure", async () => {
+  const worker = {
+    getStatus: async () => true,
+    close: async () => {},
+  };
+
+  await assert.rejects(
+    createWorkerShutdown(worker, {
+      closeDB: async () => {
+        throw new Error("database close failed");
+      },
+    })(),
+    /database close failed/
+  );
 });

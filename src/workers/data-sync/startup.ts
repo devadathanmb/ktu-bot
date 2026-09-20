@@ -5,7 +5,7 @@ import { AcademicCalendarsSyncer as CalendarsSyncer } from "./syncers/academic-c
 import { ExamTimetablesSyncer } from "./syncers/exam-timetables.js";
 import { baseApiClient } from "../../api/client.js";
 import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
-import { initDB } from "../../db/connection.js";
+import { closeDB, initDB } from "../../db/connection.js";
 import logger from "../../utils/logger.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
@@ -48,7 +48,7 @@ async function start(): Promise<void> {
       queue: dataSyncQueue,
       serviceName,
       port: DataSyncWorkerConfig.HEALTHCHECK_PORT,
-      stop: createWorkerShutdown(worker),
+      stop: createWorkerShutdown(worker, { closeDB }),
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");

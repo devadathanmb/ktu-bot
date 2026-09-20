@@ -1,6 +1,6 @@
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
 import { BroadcastsWorkerConfig } from "../../configs/broadcasts-worker.js";
-import { initDB } from "../../db/connection.js";
+import { closeDB, initDB } from "../../db/connection.js";
 import logger from "../../utils/logger.js";
 import { broadcastsQueue } from "./queue.js";
 import { BroadcastProcessor } from "./worker.js";
@@ -35,7 +35,7 @@ async function start(): Promise<void> {
       queue: broadcastsQueue,
       serviceName,
       port: BroadcastsWorkerConfig.HEALTHCHECK_PORT,
-      stop: createWorkerShutdown(worker),
+      stop: createWorkerShutdown(worker, { closeDB }),
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");

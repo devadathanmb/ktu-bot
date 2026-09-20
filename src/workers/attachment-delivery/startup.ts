@@ -1,5 +1,5 @@
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
-import { initDB } from "../../db/connection.js";
+import { closeDB, initDB } from "../../db/connection.js";
 import logger from "../../utils/logger.js";
 import {
   cleanupDownloadedAttachment,
@@ -49,7 +49,7 @@ async function start(): Promise<void> {
       queue: attachmentDeliveryQueue,
       serviceName,
       port: AttachmentDeliveryWorkerConfig.ATTACHMENT_DELIVERY_WORKER_HEALTHCHECK_PORT,
-      stop: createWorkerShutdown(worker),
+      stop: createWorkerShutdown(worker, { closeDB }),
     });
   } catch (error) {
     logger.error({ err: error, serviceName }, "Failed to start worker service");
