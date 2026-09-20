@@ -1,6 +1,10 @@
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
 import logger from "../../../utils/logger.js";
 import { createQueue } from "../../shared/create-queue.js";
+import {
+  setupRecurringSchedules,
+  type RecurringJobSchedule,
+} from "../../shared/recurring-schedules.js";
 
 export const ANNOUNCEMENTS_NOTIFY_QUEUE = "ANNOUNCEMENTS_NOTIFY_QUEUE";
 
@@ -12,22 +16,31 @@ export const announcementsNotifyQueue = createQueue<Record<string, never>>({
   },
 });
 
-export async function setupRecurringSchedule() {
-  await announcementsNotifyQueue.add(
-    "announcements-notify:recurring",
-    {},
-    {
-      repeat: {
-        pattern: AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE,
-      },
-      jobId: "recurring-announcements-notify",
-    }
+const RECURRING_NOTIFICATIONS: readonly RecurringJobSchedule<
+  Record<string, never>
+>[] = [
+  {
+    schedulerId: "recurring-announcements-notify",
+    jobName: "announcements-notify:recurring",
+    data: {},
+  },
+];
+
+export async function setupRecurringSchedule(): Promise<void> {
+  const { removedLegacySchedulerIds } = await setupRecurringSchedules(
+    announcementsNotifyQueue,
+    RECURRING_NOTIFICATIONS,
+    AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE
   );
 
   logger.info(
     {
       queueName: ANNOUNCEMENTS_NOTIFY_QUEUE,
+      schedulerIds: RECURRING_NOTIFICATIONS.map(
+        schedule => schedule.schedulerId
+      ),
       schedule: AnnouncementsNotifyWorkerConfig.CRON_SCHEDULE,
+      removedLegacySchedulerIds,
     },
     "Set up recurring announcement notifications"
   );

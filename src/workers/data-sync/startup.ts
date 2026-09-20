@@ -16,7 +16,7 @@ async function start(): Promise<void> {
       workerName: serviceName,
       queue: dataSyncQueue,
       processor: job => processor.process(job),
-      concurrency: 3,
+      concurrency: 1,
       healthCheck: {
         maxFailedJobs: DataSyncWorkerConfig.MAX_FAILED_JOBS,
         maxBacklogJobs: DataSyncWorkerConfig.MAX_BACKLOG_JOBS,
