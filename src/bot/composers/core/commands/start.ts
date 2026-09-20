@@ -8,10 +8,13 @@ import {
 import { BotConfig } from "../../../../configs/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import { helpCommand } from "./help.js";
+import { coreCommand } from "./registry.js";
+
+const metadata = coreCommand("start");
 
 export const startCommand = new Command<BotContext>(
-  "start",
-  `${emoji("high_voltage")} Start the bot and explore features`,
+  metadata.name,
+  metadata.description,
   async ctx => {
     const userName = ctx.from?.first_name || ctx.from?.username;
     const greeting = userName ? `Hello ${userName}!` : "Hello there!";

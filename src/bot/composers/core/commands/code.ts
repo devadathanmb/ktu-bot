@@ -4,10 +4,13 @@ import { fmt } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { InlineKeyboard } from "grammy";
+import { coreCommand } from "./registry.js";
+
+const metadata = coreCommand("code");
 
 export const codeCommand = new Command<BotContext>(
-  "code",
-  `${emoji("laptop")} View the bot source code and license information`,
+  metadata.name,
+  metadata.description,
   async ctx => {
     const license = fmt`This bot is fully open source under AGPL 3.0 ${emoji("high_voltage")}`;
     const repository = fmt`Check out the source code on GitHub`;

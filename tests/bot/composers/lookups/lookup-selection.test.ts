@@ -1,20 +1,9 @@
 import assert from "node:assert/strict";
-import test, { after } from "node:test";
-import {
-  endTimetableLookup,
-  handleTimetableSelection,
-} from "../../../../src/bot/composers/lookups/exam-timetable/composer.js";
-import {
-  endCalendarLookup,
-  handleCalendarAttachment,
-  handleCalendarSelection,
-} from "../../../../src/bot/composers/lookups/academic-calendar/composer.js";
-import {
-  endAnnouncementsLookup,
-  handleAnnouncementAttachments,
-  handleAnnouncementSelection,
-} from "../../../../src/bot/composers/lookups/announcements/composer.js";
-import { attachmentDeliveryQueue } from "../../../../src/workers/attachment-delivery/queue.js";
+import test from "node:test";
+import { createTimetableFlow } from "../../../../src/bot/composers/lookups/exam-timetable/flow.js";
+import { createCalendarFlow } from "../../../../src/bot/composers/lookups/academic-calendar/flow.js";
+import { createAnnouncementsFlow } from "../../../../src/bot/composers/lookups/announcements/flow.js";
+import type { AttachmentDeliveryJob } from "../../../../src/workers/attachment-delivery/queue.js";
 import type {
   AcademicCalendar,
   Announcement,
@@ -25,30 +14,40 @@ import { baseSession, createFakeCtx, ctxCalls } from "../../fakes.js";
 import { callbackData } from "../../../helpers.js";
 import type { InlineKeyboard } from "grammy";
 
-type QueuedJob = {
-  chatId: number;
-  attachments: Attachment[];
-  statusMessageId?: number;
-  replyToMessageId?: number;
-  context: string;
-  sendViewAnotherMessage?: boolean;
-};
+type QueueDownload = (job: AttachmentDeliveryJob) => Promise<unknown>;
 
-// Composer modules import the real attachment-delivery queue, whose Redis
-// connection would keep the test process alive. Selection tests inject
-// their own queue function instead.
-after(async () => {
-  await attachmentDeliveryQueue.close();
-});
-
-function queueStub() {
-  const queued: QueuedJob[] = [];
+function queueStub(): {
+  queued: AttachmentDeliveryJob[];
+  queueDownload: QueueDownload;
+} {
+  const queued: AttachmentDeliveryJob[] = [];
   return {
     queued,
-    queueDownload: async (job: QueuedJob) => {
+    queueDownload: async (job: AttachmentDeliveryJob) => {
       queued.push(job);
     },
   };
+}
+
+function createTimetable(queueDownload: QueueDownload) {
+  return createTimetableFlow({
+    fetchTimetables: async () => [],
+    queueDownload,
+  });
+}
+
+function createCalendar(queueDownload: QueueDownload) {
+  return createCalendarFlow({
+    fetchCalendars: async () => [],
+    queueDownload,
+  });
+}
+
+function createAnnouncements(queueDownload: QueueDownload) {
+  return createAnnouncementsFlow({
+    fetchAnnouncements: async () => [],
+    queueDownload,
+  });
 }
 
 const timetable: ExamTimeTable = {
@@ -84,13 +83,15 @@ function announcement(attachments: Attachment[]): Announcement {
 
 test("timetables without attachments explain instead of queueing", async () => {
   const { queued, queueDownload } = queueStub();
-  const { ctx, calls } = createFakeCtx();
+  const flow = createTimetable(queueDownload);
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({
+      timetableTimetables: [{ ...timetable, attachmentId: null }],
+    }),
+    callbackData: "timetable_select_91",
+  });
 
-  await handleTimetableSelection(
-    ctx,
-    { ...timetable, attachmentId: null },
-    queueDownload
-  );
+  await flow.select(ctx);
 
   assert.deepEqual(queued, []);
   const edits = ctxCalls(calls, "ctx.editMessageText");
@@ -105,9 +106,14 @@ test("timetables without attachments explain instead of queueing", async () => {
 
 test("timetables with attachments queue a background download", async () => {
   const { queued, queueDownload } = queueStub();
-  const { ctx, calls } = createFakeCtx({ msgId: 8 });
+  const flow = createTimetable(queueDownload);
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({ timetableTimetables: [timetable] }),
+    msgId: 8,
+    callbackData: "timetable_select_91",
+  });
 
-  await handleTimetableSelection(ctx, timetable, queueDownload);
+  await flow.select(ctx);
 
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(edits[0]?.[0] as string, /B\.Tech S1 Exams/);
@@ -125,15 +131,18 @@ test("timetables with attachments queue a background download", async () => {
 
 test("calendar selection renders details and queues its attachment", async () => {
   const { queued, queueDownload } = queueStub();
-  const details = createFakeCtx();
-  await handleCalendarSelection(details.ctx, calendar);
+  const flow = createCalendar(queueDownload);
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({ calendarCalendars: [calendar] }),
+    callbackData: "calendar_select_41",
+  });
+
+  await flow.select(ctx);
+
   assert.match(
-    ctxCalls(details.calls, "ctx.editMessageText")[0]?.[0] as string,
+    ctxCalls(calls, "ctx.editMessageText")[0]?.[0] as string,
     /Calendar 2026/
   );
-
-  const { ctx } = createFakeCtx();
-  await handleCalendarAttachment(ctx, calendar, queueDownload);
   assert.deepEqual(queued, [
     {
       chatId: 7,
@@ -146,12 +155,17 @@ test("calendar selection renders details and queues its attachment", async () =>
 });
 
 test("announcement selection renders the full message", async () => {
-  const { ctx, calls } = createFakeCtx();
+  const flow = createAnnouncements(async () => {});
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({
+      announcementsAnnouncements: [
+        announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
+      ],
+    }),
+    callbackData: "announcement_select_81",
+  });
 
-  await handleAnnouncementSelection(
-    ctx,
-    announcement([{ name: "a.pdf", encryptId: "enc-a" }])
-  );
+  await flow.select(ctx);
 
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(edits[0]?.[0] as string, /Fee notice/);
@@ -160,12 +174,15 @@ test("announcement selection renders the full message", async () => {
 
 test("announcements without attachments only offer to view another", async () => {
   const { queued, queueDownload } = queueStub();
+  const flow = createAnnouncements(queueDownload);
   const { ctx, calls } = createFakeCtx({
-    session: baseSession(),
+    session: baseSession({
+      announcementsAnnouncements: [announcement([])],
+    }),
     callbackData: "announcement_select_81",
   });
 
-  await handleAnnouncementAttachments(ctx, announcement([]), queueDownload);
+  await flow.select(ctx);
 
   assert.deepEqual(queued, []);
   const replies = ctxCalls(calls, "ctx.reply");
@@ -186,7 +203,7 @@ test("ending a lookup clears its session state", async () => {
       timetableMessageId: 9,
     }),
   });
-  await endTimetableLookup(endedTimetable.ctx);
+  await createTimetable(async () => {}).end(endedTimetable.ctx);
   assert.equal(endedTimetable.ctx.session.timetablePage, null);
   assert.deepEqual(endedTimetable.ctx.session.timetableTimetables, []);
   assert.equal(endedTimetable.ctx.session.timetableMessageId, null);
@@ -202,7 +219,7 @@ test("ending a lookup clears its session state", async () => {
       calendarMessageId: 9,
     }),
   });
-  await endCalendarLookup(endedCalendar.ctx);
+  await createCalendar(async () => {}).end(endedCalendar.ctx);
   assert.equal(endedCalendar.ctx.session.calendarPage, null);
   assert.deepEqual(endedCalendar.ctx.session.calendarCalendars, []);
   assert.equal(endedCalendar.ctx.session.calendarMessageId, null);
@@ -214,7 +231,7 @@ test("ending a lookup clears its session state", async () => {
       announcementsMessageId: 9,
     }),
   });
-  await endAnnouncementsLookup(endedAnnouncements.ctx);
+  await createAnnouncements(async () => {}).end(endedAnnouncements.ctx);
   assert.equal(endedAnnouncements.ctx.session.announcementsPage, null);
   assert.deepEqual(
     endedAnnouncements.ctx.session.announcementsAnnouncements,
@@ -225,12 +242,16 @@ test("ending a lookup clears its session state", async () => {
 
 test("announcement downloads use singular and plural correctly", async () => {
   const single = queueStub();
-  const singleCtx = createFakeCtx();
-  await handleAnnouncementAttachments(
-    singleCtx.ctx,
-    announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
-    single.queueDownload
-  );
+  const singleFlow = createAnnouncements(single.queueDownload);
+  const singleCtx = createFakeCtx({
+    session: baseSession({
+      announcementsAnnouncements: [
+        announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
+      ],
+    }),
+    callbackData: "announcement_select_81",
+  });
+  await singleFlow.select(singleCtx.ctx);
   assert.match(
     ctxCalls(singleCtx.calls, "ctx.reply")[0]?.[0] as string,
     /Downloading your file in the background/
@@ -241,15 +262,19 @@ test("announcement downloads use singular and plural correctly", async () => {
   assert.equal(single.queued[0]?.context, "announcement");
 
   const double = queueStub();
-  const doubleCtx = createFakeCtx();
-  await handleAnnouncementAttachments(
-    doubleCtx.ctx,
-    announcement([
-      { name: "a.pdf", encryptId: "enc-a" },
-      { name: "b.pdf", encryptId: "enc-b" },
-    ]),
-    double.queueDownload
-  );
+  const doubleFlow = createAnnouncements(double.queueDownload);
+  const doubleCtx = createFakeCtx({
+    session: baseSession({
+      announcementsAnnouncements: [
+        announcement([
+          { name: "a.pdf", encryptId: "enc-a" },
+          { name: "b.pdf", encryptId: "enc-b" },
+        ]),
+      ],
+    }),
+    callbackData: "announcement_select_81",
+  });
+  await doubleFlow.select(doubleCtx.ctx);
   assert.match(
     ctxCalls(doubleCtx.calls, "ctx.reply")[0]?.[0] as string,
     /Downloading your files in the background/
@@ -258,4 +283,49 @@ test("announcement downloads use singular and plural correctly", async () => {
     double.queued[0]?.attachments.map(entry => entry.name),
     ["a.pdf", "b.pdf"]
   );
+});
+
+test("flow start fetches the first page and renders it in place", async () => {
+  const fetched: number[] = [];
+  const flow = createTimetableFlow({
+    fetchTimetables: async ({ pageNumber }) => {
+      fetched.push(pageNumber);
+      return [timetable];
+    },
+    queueDownload: async () => {},
+  });
+  const { ctx, calls } = createFakeCtx();
+
+  await flow.start(ctx);
+
+  assert.deepEqual(fetched, [0]);
+  assert.equal(ctx.session.timetablePage, 0);
+  assert.deepEqual(ctx.session.timetableTimetables, [timetable]);
+  const loading = ctxCalls(calls, "ctx.reply")[0];
+  assert.match(loading?.[0] as string, /Fetching timetables/);
+  const apiEdits = ctxCalls(calls, "api.editMessageText");
+  assert.deepEqual(apiEdits[0]?.slice(0, 2), [7, 40]);
+  assert.match(apiEdits[0]?.[2] as string, /B\.Tech S1 Exams/);
+});
+
+test("view-another resets to the first page and refetches", async () => {
+  const fetched: number[] = [];
+  const flow = createCalendarFlow({
+    fetchCalendars: async ({ pageNumber }) => {
+      fetched.push(pageNumber);
+      return [calendar];
+    },
+    queueDownload: async () => {},
+  });
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({ calendarPage: 3 }),
+    callbackData: "calendar_view_another_true",
+  });
+
+  await flow.viewAnother(ctx);
+
+  assert.deepEqual(fetched, [0]);
+  assert.equal(ctx.session.calendarPage, 0);
+  const edits = ctxCalls(calls, "ctx.editMessageText");
+  assert.match(edits.at(-1)?.[0] as string, /Calendar 2026/);
 });

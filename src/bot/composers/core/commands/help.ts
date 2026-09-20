@@ -2,29 +2,23 @@ import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
-import { announcementsCommands } from "../../lookups/announcements/composer.js";
-import { calendarCommands } from "../../lookups/academic-calendar/composer.js";
-import { timetableCommands } from "../../lookups/exam-timetable/composer.js";
-import { syllabusCommands } from "../../lookups/syllabus/composer.js";
+import { lookupCommandInfos } from "../../lookups/command-info.js";
 import { announcementSubscriptionsCommands } from "../../announcement-subscriptions/composer.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../../../configs/bot.js";
-import { getCoreCommands } from "./registry.js";
+import { coreCommand, coreCommands } from "./registry.js";
+
+const metadata = coreCommand("help");
 
 export const helpCommand = new Command<BotContext>(
-  "help",
-  `${emoji("red_question_mark")} Show comprehensive help with all available commands`,
+  metadata.name,
+  metadata.description,
   async ctx => {
     const helpTitle = fmt`${b}Available Commands${b}`;
-    const commands = getCoreCommands();
-    const coreCommands = fmt`${emoji("gear")} ${b}Core Commands${b}
+    const commands = coreCommands;
+    const coreCommandsMessage = fmt`${emoji("gear")} ${b}Core Commands${b}
 ${commands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;
-    const allLookupCommands = [
-      ...announcementsCommands.commands,
-      ...calendarCommands.commands,
-      ...timetableCommands.commands,
-      ...syllabusCommands.commands,
-    ];
+    const allLookupCommands = lookupCommandInfos;
     const lookupCommands = fmt`${emoji("magnifying_glass_tilted_left")} ${b}Lookup Commands${b}
 ${allLookupCommands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;
     const allNotificationCommands = announcementSubscriptionsCommands.commands;
@@ -36,7 +30,7 @@ Type ${b}@${BotConfig.BOT_USERNAME}${b} followed by keywords in any chat to sear
     const fullHelpMessage = joinWithNewlines(
       [
         helpTitle,
-        coreCommands,
+        coreCommandsMessage,
         lookupCommands,
         subscriptionCommands,
         inlineInfo,

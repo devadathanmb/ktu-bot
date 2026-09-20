@@ -37,7 +37,7 @@ export type ChosenResultResolution =
 
 export async function resolveChosenResultAttachments(
   resultId: string,
-  repos?: ChosenResultRepos
+  repos: ChosenResultRepos
 ): Promise<ChosenResultResolution> {
   // help items already have keyboards
   if (
@@ -46,12 +46,6 @@ export async function resolveChosenResultAttachments(
   ) {
     return { status: "ignored" };
   }
-
-  const stores: ChosenResultRepos = repos ?? {
-    announcements: new AnnouncementsRepository(),
-    calendars: new AcademicCalendarsRepository(),
-    timetables: new ExamTimetablesRepository(),
-  };
 
   const [prefix, id] = resultId.split("_");
 
@@ -73,7 +67,7 @@ export async function resolveChosenResultAttachments(
 
   switch (searchType) {
     case SearchType.ANNOUNCEMENTS: {
-      const dbAnnouncement = await stores.announcements.getById(Number(id));
+      const dbAnnouncement = await repos.announcements.getById(Number(id));
 
       if (!dbAnnouncement) {
         return {
@@ -97,7 +91,7 @@ export async function resolveChosenResultAttachments(
       };
     }
     case SearchType.CALENDARS: {
-      const dbCalendar = await stores.calendars.getById(Number(id));
+      const dbCalendar = await repos.calendars.getById(Number(id));
 
       if (!dbCalendar) {
         return {
@@ -116,7 +110,7 @@ export async function resolveChosenResultAttachments(
       };
     }
     case SearchType.TIMETABLES: {
-      const dbTimetable = await stores.timetables.getById(Number(id));
+      const dbTimetable = await repos.timetables.getById(Number(id));
 
       if (!dbTimetable) {
         return {

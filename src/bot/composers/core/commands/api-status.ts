@@ -11,10 +11,13 @@ import { fmt, b } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { HandledBotError } from "../../../../errors/handled-bot-error.js";
+import { coreCommand } from "./registry.js";
+
+const metadata = coreCommand("serverstatus");
 
 export const ktuAPIStatusCommand = new Command<BotContext>(
-  "serverstatus",
-  `${emoji("globe_showing_asia_australia")} Check the KTU services status`,
+  metadata.name,
+  metadata.description,
   async ctx => {
     const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU services status...`;
 

@@ -1,5 +1,4 @@
 import { Command, CommandGroup } from "@grammyjs/commands";
-import { emoji } from "@grammyjs/emoji";
 import { Composer } from "grammy";
 import {
   fetchBranches,
@@ -11,6 +10,7 @@ import { BotContext } from "../../../../types/bot.types.js";
 import { formatCommand } from "../../../../utils/formatting.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createSyllabusErrorBoundary } from "../../shared/error-boundary.js";
+import { syllabusCommandInfo } from "../command-info.js";
 import { CB } from "./constants.js";
 import {
   clearSyllabusSession,
@@ -29,8 +29,8 @@ const syllabusFlow = createSyllabusFlow({
   queueDownload: addAttachmentDeliveryJob,
 });
 const syllabusLookupCommand = new Command<BotContext>(
-  "syllabus",
-  `${emoji("scroll")} Browse and download KTU syllabi by program and branch`,
+  syllabusCommandInfo.name,
+  syllabusCommandInfo.description,
   async ctx => {
     await syllabusFlow.start(ctx);
   }

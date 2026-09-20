@@ -9,12 +9,24 @@ import {
   renderTimetableResults,
 } from "./results.js";
 
+export type AnnouncementsSearchRepository = Pick<
+  AnnouncementsRepository,
+  "search" | "getAll"
+>;
+
+export type CalendarsSearchRepository = Pick<
+  AcademicCalendarsRepository,
+  "search" | "getAll"
+>;
+
+export type TimetablesSearchRepository = Pick<
+  ExamTimetablesRepository,
+  "search" | "getAll"
+>;
+
 export async function searchAnnouncements(
   searchTerm: string,
-  repo: Pick<
-    AnnouncementsRepository,
-    "search" | "getAll"
-  > = new AnnouncementsRepository()
+  repo: AnnouncementsSearchRepository
 ): Promise<InlineQueryResult[]> {
   logger.debug({ searchTerm }, "Searching announcements");
 
@@ -31,10 +43,7 @@ export async function searchAnnouncements(
 
 export async function searchCalendars(
   searchTerm: string,
-  repo: Pick<
-    AcademicCalendarsRepository,
-    "search" | "getAll"
-  > = new AcademicCalendarsRepository()
+  repo: CalendarsSearchRepository
 ): Promise<InlineQueryResult[]> {
   const dbCalendars = searchTerm.trim()
     ? await repo.search(searchTerm, { limit: 50 })
@@ -49,10 +58,7 @@ export async function searchCalendars(
 
 export async function searchTimetables(
   searchTerm: string,
-  repo: Pick<
-    ExamTimetablesRepository,
-    "search" | "getAll"
-  > = new ExamTimetablesRepository()
+  repo: TimetablesSearchRepository
 ): Promise<InlineQueryResult[]> {
   const dbTimetables = searchTerm.trim()
     ? await repo.search(searchTerm, { limit: 50 })

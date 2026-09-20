@@ -332,11 +332,17 @@ test("help and no-results IDs resolve to ignored", async () => {
 });
 
 test("ignored IDs resolve without touching repositories", async () => {
-  // No repos passed: must return before any repository construction,
-  // which would throw without an initialized database.
-  assert.deepEqual(await resolveChosenResultAttachments("help_announcements"), {
-    status: "ignored",
-  });
+  const unreachable = () => {
+    throw new Error("repository must not be used");
+  };
+  assert.deepEqual(
+    await resolveChosenResultAttachments("help_announcements", {
+      announcements: { getById: unreachable },
+      calendars: { getById: unreachable },
+      timetables: { getById: unreachable },
+    }),
+    { status: "ignored" }
+  );
 });
 
 test("malformed and unknown result IDs explain the problem", async () => {

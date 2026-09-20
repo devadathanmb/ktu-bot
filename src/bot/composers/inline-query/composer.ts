@@ -7,6 +7,9 @@ import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 import type { InlineQueryResult } from "grammy/types";
 import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/queue.js";
+import { AcademicCalendarsRepository } from "../../../db/repositories/academic-calendars-repository.js";
+import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
+import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
 import { parseQuery } from "./query.js";
 import { addSearchAgainButton, buildHelpResults } from "./results.js";
 import {
@@ -38,13 +41,22 @@ inlineQuery.on("inline_query", async ctx => {
     } else {
       switch (type) {
         case SearchType.ANNOUNCEMENTS:
-          results = await searchAnnouncements(searchTerm);
+          results = await searchAnnouncements(
+            searchTerm,
+            new AnnouncementsRepository()
+          );
           break;
         case SearchType.CALENDARS:
-          results = await searchCalendars(searchTerm);
+          results = await searchCalendars(
+            searchTerm,
+            new AcademicCalendarsRepository()
+          );
           break;
         case SearchType.TIMETABLES:
-          results = await searchTimetables(searchTerm);
+          results = await searchTimetables(
+            searchTerm,
+            new ExamTimetablesRepository()
+          );
           break;
       }
 
@@ -79,7 +91,11 @@ inlineQuery.on("chosen_inline_result", async ctx => {
   const chatId = chosenResult.from.id;
 
   try {
-    const resolution = await resolveChosenResultAttachments(resultId);
+    const resolution = await resolveChosenResultAttachments(resultId, {
+      announcements: new AnnouncementsRepository(),
+      calendars: new AcademicCalendarsRepository(),
+      timetables: new ExamTimetablesRepository(),
+    });
 
     if (resolution.status === "ignored") return;
 

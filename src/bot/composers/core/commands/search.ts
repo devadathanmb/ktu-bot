@@ -5,10 +5,13 @@ import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { INLINE_SEARCH_HELP_KEYBOARD } from "../../inline-query/keyboards.js";
 import { BotConfig } from "../../../../configs/bot.js";
+import { coreCommand } from "./registry.js";
+
+const metadata = coreCommand("search");
 
 export const searchCommand = new Command<BotContext>(
-  "search",
-  `${emoji("magnifying_glass_tilted_left")} Search KTU resources using inline queries`,
+  metadata.name,
+  metadata.description,
   async (ctx: BotContext) => {
     const title = fmt`${emoji("magnifying_glass_tilted_left")} ${b}Search KTU Resources${b}`;
     const botUsername = `@${BotConfig.BOT_USERNAME}`;

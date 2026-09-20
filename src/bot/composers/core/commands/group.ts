@@ -5,12 +5,10 @@ import { helpCommand } from "./help.js";
 import { codeCommand } from "./code.js";
 import { searchCommand } from "./search.js";
 import { ktuAPIStatusCommand } from "./api-status.js";
-import { registerCoreCommands } from "./registry.js";
 
 /**
- * Command registry shared by the core composer and the help command.
- * Lives outside `composer.ts` so `help.ts` can read the group without
- * importing back into the composer that registers it.
+ * Command group for the core commands. Kept outside `composer.ts` so it can
+ * be imported and mounted without pulling in the composer itself.
  */
 export const coreCommandsGroup = new CommandGroup<BotContext>();
 
@@ -20,10 +18,3 @@ coreCommandsGroup
   .add(searchCommand)
   .add(codeCommand)
   .add(ktuAPIStatusCommand);
-
-registerCoreCommands(
-  coreCommandsGroup.commands.map(({ name, description }) => ({
-    name,
-    description,
-  }))
-);

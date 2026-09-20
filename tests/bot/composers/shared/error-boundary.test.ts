@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test, { after } from "node:test";
+import test from "node:test";
 import { BotError as GrammyBotError, type NextFunction } from "grammy";
 import {
   createComposerErrorBoundary,
@@ -17,13 +17,6 @@ import {
   ctxCalls,
   type FakeCtx,
 } from "../../fakes.js";
-import { attachmentDeliveryQueue } from "../../../../src/workers/attachment-delivery/queue.js";
-
-// The flow module imports the real attachment-delivery queue, whose Redis
-// connection would keep the test process alive. It is never used here.
-after(async () => {
-  await attachmentDeliveryQueue.close();
-});
 
 const next = (async () => {}) as unknown as NextFunction;
 
