@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { setupRecurringSchedules } from "../src/workers/shared/recurring-schedules.ts";
+import {
+  setupRecurringSchedules,
+  type RecurringJobSchedule,
+  type SchedulerQueue,
+} from "../src/workers/shared/recurring-schedules.js";
 
-const SYNC_SCHEDULES = [
+interface SyncData {
+  syncType: string;
+}
+
+const SYNC_SCHEDULES: Array<RecurringJobSchedule<SyncData>> = [
   {
     schedulerId: "recurring-sync-announcements",
     jobName: "data-sync:announcements",
@@ -15,25 +23,43 @@ const SYNC_SCHEDULES = [
   },
 ];
 
-function createFakeQueue(schedulers = []) {
-  const store = new Map(
+interface FakeSchedulerEntry {
+  key: string;
+  name: string;
+  pattern?: string;
+  template?: { data: SyncData };
+}
+
+// Minimal double for the BullMQ queue surface that setupRecurringSchedules
+// touches. The cast at the call site keeps the fake small instead of
+// implementing the full Queue class.
+function createFakeQueue(schedulers: FakeSchedulerEntry[] = []) {
+  const store = new Map<string, FakeSchedulerEntry>(
     schedulers.map(scheduler => [scheduler.key, scheduler])
   );
-  const removed = [];
-  const upserted = [];
+  const removed: string[] = [];
+  const upserted: Array<{
+    schedulerId: string;
+    repeatOpts: { pattern: string };
+    jobTemplate: { name: string; data: SyncData };
+  }> = [];
 
   return {
     store,
     removed,
     upserted,
-    async getJobSchedulers() {
+    async getJobSchedulers(): Promise<FakeSchedulerEntry[]> {
       return [...store.values()];
     },
-    async removeJobScheduler(schedulerId) {
+    async removeJobScheduler(schedulerId: string): Promise<boolean> {
       removed.push(schedulerId);
       return store.delete(schedulerId);
     },
-    async upsertJobScheduler(schedulerId, repeatOpts, jobTemplate) {
+    async upsertJobScheduler(
+      schedulerId: string,
+      repeatOpts: { pattern: string },
+      jobTemplate: { name: string; data: SyncData }
+    ): Promise<void> {
       upserted.push({ schedulerId, repeatOpts, jobTemplate });
       store.set(schedulerId, {
         key: schedulerId,
@@ -45,11 +71,25 @@ function createFakeQueue(schedulers = []) {
   };
 }
 
+function asSchedulerQueue(
+  queue: ReturnType<typeof createFakeQueue>
+): SchedulerQueue<SyncData> {
+  return queue as unknown as SchedulerQueue<SyncData>;
+}
+
 test("keeps one stable scheduler per job when the cron pattern changes", async () => {
   const queue = createFakeQueue();
 
-  await setupRecurringSchedules(queue, SYNC_SCHEDULES, "*/30 * * * *");
-  await setupRecurringSchedules(queue, SYNC_SCHEDULES, "0 * * * *");
+  await setupRecurringSchedules(
+    asSchedulerQueue(queue),
+    SYNC_SCHEDULES,
+    "*/30 * * * *"
+  );
+  await setupRecurringSchedules(
+    asSchedulerQueue(queue),
+    SYNC_SCHEDULES,
+    "0 * * * *"
+  );
 
   assert.deepEqual([...queue.store.keys()].sort(), [
     "recurring-sync-announcements",
@@ -58,9 +98,9 @@ test("keeps one stable scheduler per job when the cron pattern changes", async (
 
   for (const schedule of SYNC_SCHEDULES) {
     const stored = queue.store.get(schedule.schedulerId);
-    assert.equal(stored.name, schedule.jobName);
-    assert.equal(stored.pattern, "0 * * * *");
-    assert.deepEqual(stored.template.data, schedule.data);
+    assert.equal(stored?.name, schedule.jobName);
+    assert.equal(stored?.pattern, "0 * * * *");
+    assert.deepEqual(stored?.template?.data, schedule.data);
   }
 
   assert.deepEqual(
@@ -101,7 +141,7 @@ test("removes legacy repeat definitions for its jobs only", async () => {
   ]);
 
   const result = await setupRecurringSchedules(
-    queue,
+    asSchedulerQueue(queue),
     SYNC_SCHEDULES,
     "*/30 * * * *"
   );
@@ -110,12 +150,15 @@ test("removes legacy repeat definitions for its jobs only", async () => {
   assert.deepEqual(result.removedLegacySchedulerIds.sort(), expectedRemovals);
   assert.deepEqual(queue.removed.sort(), expectedRemovals);
   assert.ok(queue.store.has("unrelated-scheduler"));
-  assert.equal(queue.store.get("unrelated-scheduler").pattern, "*/30 * * * *");
+  assert.equal(queue.store.get("unrelated-scheduler")?.pattern, "*/30 * * * *");
   assert.equal(
-    queue.store.get("recurring-sync-announcements").name,
+    queue.store.get("recurring-sync-announcements")?.name,
     "data-sync:announcements"
   );
-  assert.deepEqual(queue.store.get("recurring-sync-calendars").template.data, {
-    syncType: "data-sync:academic-calendars",
-  });
+  assert.deepEqual(
+    queue.store.get("recurring-sync-calendars")?.template?.data,
+    {
+      syncType: "data-sync:academic-calendars",
+    }
+  );
 });

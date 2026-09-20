@@ -1,17 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { FormattedString } from "@grammyjs/parse-mode";
+import type { InlineKeyboard } from "grammy";
 import {
+  formatCalendarDetails,
   generateCalendarsKeyboard,
   generateCalendarsText,
-  formatCalendarDetails,
-} from "../src/bot/composers/lookups/academic-calendar/views.ts";
+} from "../src/bot/composers/lookups/academic-calendar/views.js";
 import {
+  formatAnnouncementDetails,
   generateAnnouncementsKeyboard,
   generateAnnouncementsText,
-  formatAnnouncementDetails,
-} from "../src/bot/composers/lookups/announcements/views.ts";
+} from "../src/bot/composers/lookups/announcements/views.js";
+import type {
+  AcademicCalendar,
+  Announcement,
+} from "../src/types/service.types.js";
+import { callbackData } from "./helpers.js";
 
-const calendar = {
+const calendar: AcademicCalendar = {
   id: 41,
   title: "Calendar <Revised> & Final",
   attachmentId: 3,
@@ -20,7 +27,7 @@ const calendar = {
   publishedAt: null,
   formattedPublishedDate: "20 September 2026",
 };
-const announcement = {
+const announcement: Announcement = {
   id: 81,
   subject: "Exams <Revised> & Final",
   message: "Read <carefully> & prepare.",
@@ -29,22 +36,18 @@ const announcement = {
   attachments: [],
 };
 
-for (const [label, fixture, keyboardBuilder, textBuilder, prefix] of [
-  [
-    "calendar",
-    calendar,
-    generateCalendarsKeyboard,
-    generateCalendarsText,
-    "calendar",
-  ],
-  [
-    "announcement",
-    announcement,
-    generateAnnouncementsKeyboard,
-    generateAnnouncementsText,
-    "announcement",
-  ],
-]) {
+interface LookupCase<Item> {
+  label: string;
+  fixture: Item;
+  title: string;
+  keyboardBuilder: (items: Item[], page: number) => InlineKeyboard;
+  textBuilder: (items: Item[]) => FormattedString;
+  prefix: string;
+}
+
+function runLookupCase<Item>(lookupCase: LookupCase<Item>): void {
+  const { label, fixture, title, keyboardBuilder, textBuilder, prefix } =
+    lookupCase;
   test(`${label} API pages retain all items, selection IDs and row layout`, () => {
     const items = Array.from({ length: 6 }, (_, index) => ({
       ...fixture,
@@ -55,24 +58,39 @@ for (const [label, fixture, keyboardBuilder, textBuilder, prefix] of [
       keyboard.inline_keyboard.map(row => row.length),
       [5, 1, 3]
     );
-    assert.deepEqual(
-      keyboard.inline_keyboard.flat().map(button => button.callback_data),
-      [
-        ...[101, 102, 103, 104, 105, 106].map(id => `${prefix}_select_${id}`),
-        `${prefix}_prev_page`,
-        `${prefix}_page_info`,
-        `${prefix}_next_page`,
-      ]
-    );
-    assert.equal(keyboard.inline_keyboard[2][1].text, "Page: 4");
+    assert.deepEqual(callbackData(keyboard), [
+      ...[101, 102, 103, 104, 105, 106].map(id => `${prefix}_select_${id}`),
+      `${prefix}_prev_page`,
+      `${prefix}_page_info`,
+      `${prefix}_next_page`,
+    ]);
+    assert.equal(keyboard.inline_keyboard[2]?.[1]?.text, "Page: 4");
     const text = textBuilder(items);
-    assert.ok(text.text.includes(`6) ${fixture.title ?? fixture.subject}`));
+    assert.ok(text.text.includes(`6) ${title}`));
     assert.match(text.text, /Published date: 20 September 2026/);
     assert.ok(text.entities.some(entity => entity.type === "bold"));
   });
 }
 
-function boldText(message) {
+runLookupCase({
+  label: "calendar",
+  fixture: calendar,
+  title: calendar.title,
+  keyboardBuilder: generateCalendarsKeyboard,
+  textBuilder: generateCalendarsText,
+  prefix: "calendar",
+});
+
+runLookupCase({
+  label: "announcement",
+  fixture: announcement,
+  title: announcement.subject,
+  keyboardBuilder: generateAnnouncementsKeyboard,
+  textBuilder: generateAnnouncementsText,
+  prefix: "announcement",
+});
+
+function boldText(message: FormattedString): string[] {
   return message.entities
     .filter(entity => entity.type === "bold")
     .map(entity =>

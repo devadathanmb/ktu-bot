@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { FormattedString } from "@grammyjs/parse-mode";
 import {
   AnnouncementFilter,
   UNDERGRADUATE_COURSES,
-} from "../src/constants/courses.ts";
-import { resolveAnnouncementAudience } from "../src/workers/announcements/notify/audience.ts";
-import { enqueueNewAnnouncementBroadcasts } from "../src/workers/announcements/notify/orchestration.ts";
+} from "../src/constants/courses.js";
+import {
+  resolveAnnouncementAudience,
+  type AnnouncementClassifier,
+} from "../src/workers/announcements/notify/audience.js";
+import {
+  enqueueNewAnnouncementBroadcasts,
+  type AnnouncementNotificationDeps,
+} from "../src/workers/announcements/notify/orchestration.js";
+import type { Announcement, Attachment } from "../src/types/service.types.js";
+import type { BroadcastJobInput } from "../src/workers/broadcasts/queue.js";
 
 const ALL_ANNOUNCEMENT_FILTERS = new Set(Object.values(AnnouncementFilter));
 
@@ -19,7 +28,11 @@ const BROAD_UG_ANNOUNCEMENT_CONTENT = JSON.stringify({
   message: "Apply before the deadline",
 });
 
-function createAnnouncement(overrides = {}) {
+const FORMATTED_TEXT = new FormattedString("formatted announcement");
+
+function createAnnouncement(
+  overrides: Partial<Announcement> = {}
+): Announcement {
   return {
     id: 1,
     subject: "Fee payment notice",
@@ -31,18 +44,18 @@ function createAnnouncement(overrides = {}) {
   };
 }
 
-function createHarness(overrides = {}) {
-  const events = [];
-  const enqueued = [];
-  const replaced = [];
-  const deps = {
+function createHarness(overrides: Partial<AnnouncementNotificationDeps> = {}) {
+  const events: string[] = [];
+  const enqueued: BroadcastJobInput[] = [];
+  const replaced: number[][] = [];
+  const deps: AnnouncementNotificationDeps = {
     findSubscriberChatIds: async () => [],
     processAttachments: async attachments =>
       attachments.map(attachment => ({
         fileName: attachment.name,
         fileId: `file-${attachment.name}`,
       })),
-    prepareFormattedText: () => "formatted announcement",
+    prepareFormattedText: () => FORMATTED_TEXT,
     enqueueBroadcasts: async jobs => {
       events.push("enqueue");
       enqueued.push(...jobs);
@@ -105,9 +118,7 @@ test("matching subscribers produce deterministic broadcast jobs", async () => {
     enqueued.map(job => job.data.chatId),
     [100, 200, 300]
   );
-  assert.ok(
-    enqueued.every(job => job.data.formattedText === "formatted announcement")
-  );
+  assert.ok(enqueued.every(job => job.data.formattedText === FORMATTED_TEXT));
 });
 
 test("broadcasts are enqueued before the buffer is replaced", async () => {
@@ -166,12 +177,12 @@ test("announcements without subscribers are buffered without broadcasts", async 
 });
 
 test("attachment processing preserves announcement attachment order", async () => {
-  const attachments = [
+  const attachments: Attachment[] = [
     { name: "first.pdf", encryptId: "enc-1" },
     { name: "second.pdf", encryptId: "enc-2" },
     { name: "third.pdf", encryptId: "enc-3" },
   ];
-  const attachmentBatches = [];
+  const attachmentBatches: string[][] = [];
   const { deps, enqueued } = createHarness({
     findSubscriberChatIds: async () => [1, 2],
     processAttachments: async incoming => {
@@ -204,10 +215,10 @@ test("attachment processing preserves announcement attachment order", async () =
 test("course-specific announcements skip the LLM and keep their filters", async () => {
   let courseLookups = 0;
   let relevanceChecks = 0;
-  const classifier = {
+  const classifier: AnnouncementClassifier = {
     async findRelevantCoursesFromAnnouncement() {
       courseLookups += 1;
-      return new Set();
+      return new Set<AnnouncementFilter>();
     },
     async isAnnouncementRelevant() {
       relevanceChecks += 1;
@@ -239,7 +250,7 @@ test("course-specific announcements skip the LLM and keep their filters", async 
 
 test("broad UG filters are narrowed by the LLM course list", async () => {
   let courseLookups = 0;
-  const classifier = {
+  const classifier: AnnouncementClassifier = {
     async findRelevantCoursesFromAnnouncement() {
       courseLookups += 1;
       return new Set([AnnouncementFilter.BTECH, AnnouncementFilter.MCA]);
@@ -269,9 +280,9 @@ test("broad UG filters are narrowed by the LLM course list", async () => {
 });
 
 test("a failed LLM course lookup keeps the broad course filters", async () => {
-  const classifier = {
+  const classifier: AnnouncementClassifier = {
     async findRelevantCoursesFromAnnouncement() {
-      return new Set();
+      return new Set<AnnouncementFilter>();
     },
     async isAnnouncementRelevant() {
       throw new Error("relevance check should not run");
@@ -296,9 +307,9 @@ test("a failed LLM course lookup keeps the broad course filters", async () => {
 });
 
 test("general announcements use the LLM relevance result for the audience", async () => {
-  const sleeps = [];
+  const sleeps: number[] = [];
   let relevanceChecks = 0;
-  const classifier = {
+  const classifier: AnnouncementClassifier = {
     async findRelevantCoursesFromAnnouncement() {
       throw new Error("course lookup should not run");
     },
@@ -323,7 +334,7 @@ test("general announcements use the LLM relevance result for the audience", asyn
 });
 
 test("general announcements the LLM rejects only reach ALL subscribers", async () => {
-  const classifier = {
+  const classifier: AnnouncementClassifier = {
     async findRelevantCoursesFromAnnouncement() {
       throw new Error("course lookup should not run");
     },

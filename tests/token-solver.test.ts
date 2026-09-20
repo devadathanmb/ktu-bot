@@ -1,73 +1,70 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import got, { RequestError } from "got";
-import { TokenSolverConfig } from "../src/configs/token-solver.ts";
-import { fetchToken } from "../src/api/token-solver.ts";
+import got, { RequestError, type NormalizedOptions } from "got";
+import { TokenSolverConfig } from "../src/configs/token-solver.js";
+import { fetchToken } from "../src/api/token-solver.js";
 import {
   addXTokenHeader,
   createAddXTokenHeader,
-} from "../src/api/hooks/before/add-x-token-header.ts";
-import { addKtuHeaders } from "../src/api/hooks/before/add-ktu-headers.ts";
-import { baseApiClient, cachedApiClient } from "../src/api/client.ts";
+} from "../src/api/hooks/before/add-x-token-header.js";
+import { addKtuHeaders } from "../src/api/hooks/before/add-ktu-headers.js";
+import { baseApiClient, cachedApiClient } from "../src/api/client.js";
 
 const tokenUrl = `${TokenSolverConfig.URL}/token`;
 const ktuUrl = "https://api.ktu.edu.in/ktu-web-portal-api/anon/announcemnts";
 
-function solverResponse(body, status = 200) {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => body,
-  };
-}
+type FetchArgs = Parameters<typeof fetch>;
 
-function createFetchStub(respond) {
-  const calls = [];
-  const fetchImpl = async (url, init) => {
-    calls.push({ url, init });
-    return respond(url, init);
+function createFetchStub(respond: (...args: FetchArgs) => Promise<Response>): {
+  fetchImpl: typeof fetch;
+  calls: FetchArgs[];
+} {
+  const calls: FetchArgs[] = [];
+  const fetchImpl = async (...args: FetchArgs): Promise<Response> => {
+    calls.push(args);
+    return respond(...args);
   };
   return { fetchImpl, calls };
 }
 
 test("fetchToken returns the solver token and calls it once", async () => {
   const { fetchImpl, calls } = createFetchStub(async () =>
-    solverResponse({ token: "turnstile-token" })
+    Response.json({ token: "turnstile-token" })
   );
 
   assert.equal(await fetchToken(fetchImpl), "turnstile-token");
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].url, tokenUrl);
-  assert.ok(calls[0].init.signal instanceof AbortSignal);
+  const firstCall = calls[0];
+  assert.ok(firstCall);
+  assert.equal(firstCall[0], tokenUrl);
+  assert.ok(firstCall[1]?.signal instanceof AbortSignal);
 });
 
 test("fetchToken rejects on a non-2xx solver response", async () => {
-  const { fetchImpl } = createFetchStub(async () => solverResponse({}, 503));
+  const { fetchImpl } = createFetchStub(
+    async () => new Response("{}", { status: 503 })
+  );
 
   await assert.rejects(fetchToken(fetchImpl), /status 503/);
 });
 
 test("fetchToken rejects on malformed solver JSON", async () => {
-  const { fetchImpl } = createFetchStub(async () => ({
-    ok: true,
-    status: 200,
-    json: async () => {
-      throw new SyntaxError("Unexpected token < in JSON");
-    },
-  }));
+  const { fetchImpl } = createFetchStub(
+    async () => new Response("<html>not json</html>")
+  );
 
   await assert.rejects(fetchToken(fetchImpl), /malformed JSON/);
 });
 
 test("fetchToken rejects on an absent or blank token", async () => {
   for (const body of [{}, { token: "" }, { token: "   " }, "token"]) {
-    const { fetchImpl } = createFetchStub(async () => solverResponse(body));
+    const { fetchImpl } = createFetchStub(async () => Response.json(body));
     await assert.rejects(fetchToken(fetchImpl), /blank token/);
   }
 });
 
 test("fetchToken propagates solver network and timeout failures", async () => {
-  for (const [error, pattern] of [
+  const cases: Array<[unknown, RegExp]> = [
     [new Error("connect ECONNREFUSED 172.17.0.1:5001"), /ECONNREFUSED/],
     [
       new DOMException(
@@ -76,7 +73,8 @@ test("fetchToken propagates solver network and timeout failures", async () => {
       ),
       /aborted due to timeout/,
     ],
-  ]) {
+  ];
+  for (const [error, pattern] of cases) {
     const { fetchImpl } = createFetchStub(async () => {
       throw error;
     });
@@ -95,11 +93,15 @@ test("token hook ignores non-KTU requests", async () => {
     "https://uptime.betterstack.com/api/v2/monitors",
     undefined,
   ]) {
-    const options = { url: url && new URL(url), headers: { accept: "*/*" } };
-    await hook(options, { retryCount: 0 });
+    const headers: Record<string, string | undefined> = { accept: "*/*" };
+    const options = {
+      url: url === undefined ? undefined : new URL(url),
+      headers,
+    };
+    await hook(options as unknown as NormalizedOptions, { retryCount: 0 });
 
     assert.equal(mintCalls, 0);
-    assert.deepEqual(options.headers, { accept: "*/*" });
+    assert.deepEqual(headers, { accept: "*/*" });
   }
 });
 
@@ -110,11 +112,11 @@ test("token hook attaches one fresh token per KTU request", async () => {
     return `fresh-token-${mintCalls}`;
   });
 
-  const options = {
-    url: new URL(ktuUrl),
-    headers: { "Content-Type": "application/json" },
+  const headers: Record<string, string | undefined> = {
+    "Content-Type": "application/json",
   };
-  await hook(options, { retryCount: 0 });
+  const options = { url: new URL(ktuUrl), headers };
+  await hook(options as unknown as NormalizedOptions, { retryCount: 0 });
 
   assert.equal(mintCalls, 1);
   assert.equal(options.headers["X-Token"], "fresh-token-1");
@@ -126,9 +128,12 @@ test("token hook fails the request when minting fails", async () => {
     throw new Error("Token solver responded with status 500");
   });
 
-  const options = { url: new URL(ktuUrl), headers: {} };
-  await assert.rejects(hook(options, { retryCount: 0 }), /status 500/);
-  assert.equal("X-Token" in options.headers, false);
+  const headers: Record<string, string | undefined> = {};
+  const options = { url: new URL(ktuUrl), headers };
+  await assert.rejects(async () => {
+    await hook(options as unknown as NormalizedOptions, { retryCount: 0 });
+  }, /status 500/);
+  assert.equal("X-Token" in headers, false);
 });
 
 test("token hook runs after the cache hook so cache hits skip minting", () => {
@@ -160,7 +165,8 @@ test("a failing token hook rejects the KTU request before it is sent", async () 
   // request through instead of failing it.
   await assert.rejects(
     client.get("https://api.ktu.edu.in.invalid/ktu-web-portal-api/anon/x"),
-    error => error instanceof RequestError && /status 500/.test(error.message)
+    (error: unknown) =>
+      error instanceof RequestError && /status 500/.test(error.message)
   );
   assert.equal(mintCalls, 1);
 });

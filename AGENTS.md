@@ -21,13 +21,14 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Use `pnpm` for project scripts and dependency operations.
 - Use `pnpm exec <command>` for project-local binaries, for example `pnpm exec tsc --noEmit`.
 - Do not use `npx` in this repository.
-- Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm exec eslint src/**/*.ts` when lint-sensitive code changed.
-- For token-solver or X-Token hook changes, run `node --import tsx --test tests/token-solver.test.mjs` (offline, stub fetch).
-- For syllabus lookup changes, run `node --import tsx --test tests/syllabus-views.test.mjs` to check page rendering and attachment selection IDs offline.
-- For timetable lookup changes, run `node --import tsx --test tests/exam-timetable.test.mjs`. Timetable API pages are already paginated; do not slice them again locally.
-- For calendar or announcement lookup changes, run `node --import tsx --test tests/calendar-announcement-views.test.mjs`; these API pages also must not be sliced locally.
-- For worker recurring-schedule changes, run `node --import tsx --test tests/recurring-schedules.test.mjs`; a real Redis check must call setup twice with different patterns and leave one scheduler per logical job.
-- For announcement notification orchestration changes, run `node --import tsx --test tests/announcements-notify-orchestration.test.mjs` (offline, injects fake subscriber/attachment/queue/buffer functions).
+- Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm lint` when lint-sensitive code changed.
+- Tests live in `tests/*.test.ts` on Node's built-in runner: run `pnpm test`. While iterating, target one file, for example `node --import tsx --test tests/token-solver.test.ts`.
+- For token-solver or X-Token hook changes, run the token-solver suite (offline, stub fetch).
+- For syllabus lookup changes, run the syllabus-views suite to check page rendering and attachment selection IDs offline.
+- For timetable lookup changes, run the exam-timetable suite. Timetable API pages are already paginated; do not slice them again locally.
+- For calendar or announcement lookup changes, run the calendar-announcement-views suite; these API pages also must not be sliced locally.
+- For worker recurring-schedule changes, run the recurring-schedules suite; a real Redis check must call setup twice with different patterns and leave one scheduler per logical job.
+- For announcement notification orchestration changes, run the announcements-notify-orchestration suite (offline, injects fake subscriber/attachment/queue/buffer functions).
 
 ## TypeScript and Style
 

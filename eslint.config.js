@@ -30,6 +30,15 @@ export default defineConfig(
     },
   },
   {
+    // Test doubles routinely return promises without awaiting, and the
+    // node:test runner tracks top-level test() promises itself.
+    files: ["tests/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/require-await": "off",
+    },
+  },
+  {
     ignores: [
       "dist/**",
       "node_modules/**",
