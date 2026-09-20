@@ -37,7 +37,10 @@ const MESSAGES = {
 
 async function handleTimetableSelection(
   ctx: BotContext,
-  timetable: ExamTimeTable
+  timetable: ExamTimeTable,
+  queueDownload: (
+    job: Parameters<typeof addAttachmentDeliveryJob>[0]
+  ) => Promise<unknown> = addAttachmentDeliveryJob
 ): Promise<void> {
   const attachment = getTimetableAttachment(timetable);
 
@@ -78,7 +81,21 @@ async function handleTimetableSelection(
     jobData.replyToMessageId = ctx.msgId;
   }
 
-  await addAttachmentDeliveryJob(jobData);
+  await queueDownload(jobData);
+}
+
+export { handleTimetableSelection };
+
+export async function endTimetableLookup(ctx: BotContext): Promise<void> {
+  await ctx.answerCallbackQuery();
+
+  await ctx.editMessageText(
+    `Timetable lookup ended. Use ${formatCommand(timetableLookupCommand)} to start again.`
+  );
+
+  ctx.session.timetablePage = null;
+  ctx.session.timetableTimetables = [];
+  ctx.session.timetableMessageId = null;
 }
 
 function createTimetablesLookupConfig() {
@@ -163,15 +180,7 @@ protectedComposer.callbackQuery("timetable_view_another_true", async ctx => {
 });
 
 protectedComposer.callbackQuery("timetable_view_another_false", async ctx => {
-  await ctx.answerCallbackQuery();
-
-  await ctx.editMessageText(
-    `Timetable lookup ended. Use ${formatCommand(timetableLookupCommand)} to start again.`
-  );
-
-  ctx.session.timetablePage = null;
-  ctx.session.timetableTimetables = [];
-  ctx.session.timetableMessageId = null;
+  await endTimetableLookup(ctx);
 });
 
 protectedComposer.callbackQuery("timetable_page_info", async ctx => {

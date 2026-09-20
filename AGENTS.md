@@ -22,7 +22,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Use `pnpm exec <command>` for project-local binaries, for example `pnpm exec tsc --noEmit`.
 - Do not use `npx` in this repository.
 - Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm lint` when lint-sensitive code changed.
-- Tests live in `tests/**/*.test.ts`, mirroring `src/` domains (`tests/api/`, `tests/bot/`, `tests/workers/`, `tests/utils/`; shared `tests/helpers.ts` and `tests/setup.ts` stay at the root). Run `pnpm test`. While iterating, target one file, for example `node --import tsx --test tests/api/token-solver.test.ts`. Keep filenames stable and put new suites in the folder matching their `src/` domain.
+- Tests live in `tests/**/*.test.ts`, mirroring `src/` domains (`tests/api/`, `tests/bot/`, `tests/workers/`, `tests/utils/`; shared `tests/helpers.ts` and `tests/setup.ts` stay at the root). Run `pnpm test`. While iterating, target one file, for example `node --import tsx --import ./tests/setup.ts --test tests/api/token-solver.test.ts` (`setup.ts` provides the dummy env some suites need). Keep filenames stable and put new suites in the folder matching their `src/` domain.
 - For token-solver or X-Token hook changes, run the token-solver suite (offline, stub fetch).
 - For syllabus lookup changes, run the syllabus-views suite to check page rendering and attachment selection IDs offline.
 - For timetable lookup changes, run the exam-timetable suite. Timetable API pages are already paginated; do not slice them again locally.

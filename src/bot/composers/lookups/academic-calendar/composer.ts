@@ -45,7 +45,10 @@ async function handleCalendarSelection(
 
 async function handleCalendarAttachment(
   ctx: BotContext,
-  calendar: AcademicCalendar
+  calendar: AcademicCalendar,
+  queueDownload: (
+    job: Parameters<typeof addAttachmentDeliveryJob>[0]
+  ) => Promise<unknown> = addAttachmentDeliveryJob
 ): Promise<void> {
   const statusMessage = await ctx.reply(
     `${emoji("hourglass_not_done")} Downloading your calendar in the background... This may take a moment!`
@@ -68,7 +71,20 @@ async function handleCalendarAttachment(
     jobData.replyToMessageId = ctx.msgId;
   }
 
-  await addAttachmentDeliveryJob(jobData);
+  await queueDownload(jobData);
+}
+
+export { handleCalendarSelection, handleCalendarAttachment };
+
+export async function endCalendarLookup(ctx: BotContext): Promise<void> {
+  await ctx.answerCallbackQuery();
+  await ctx.editMessageText(
+    `Academic calendar lookup ended. Use ${formatCommand(calendarLookupCommand)} to start again.`
+  );
+
+  ctx.session.calendarPage = null;
+  ctx.session.calendarCalendars = [];
+  ctx.session.calendarMessageId = null;
 }
 
 function createCalendarsLookupConfig() {
@@ -151,14 +167,7 @@ protectedComposer.callbackQuery("calendar_view_another_true", async ctx => {
 });
 
 protectedComposer.callbackQuery("calendar_view_another_false", async ctx => {
-  await ctx.answerCallbackQuery();
-  await ctx.editMessageText(
-    `Academic calendar lookup ended. Use ${formatCommand(calendarLookupCommand)} to start again.`
-  );
-
-  ctx.session.calendarPage = null;
-  ctx.session.calendarCalendars = [];
-  ctx.session.calendarMessageId = null;
+  await endCalendarLookup(ctx);
 });
 
 protectedComposer.callbackQuery("calendar_page_info", async ctx => {

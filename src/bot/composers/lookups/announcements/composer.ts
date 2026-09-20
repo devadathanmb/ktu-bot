@@ -46,7 +46,10 @@ async function handleAnnouncementSelection(
 
 async function handleAnnouncementAttachments(
   ctx: BotContext,
-  announcement: Announcement
+  announcement: Announcement,
+  queueDownload: (
+    job: Parameters<typeof addAttachmentDeliveryJob>[0]
+  ) => Promise<unknown> = addAttachmentDeliveryJob
 ): Promise<void> {
   const attachments = announcement.attachments || [];
   const keyboard = createViewAnotherKeyboard("announcement");
@@ -75,7 +78,21 @@ async function handleAnnouncementAttachments(
     jobData.replyToMessageId = ctx.msgId;
   }
 
-  await addAttachmentDeliveryJob(jobData);
+  await queueDownload(jobData);
+}
+
+export { handleAnnouncementSelection, handleAnnouncementAttachments };
+
+export async function endAnnouncementsLookup(ctx: BotContext): Promise<void> {
+  await ctx.answerCallbackQuery();
+
+  await ctx.editMessageText(
+    `Announcements lookup ended. Use ${formatCommand(announcementsLookupCommand)} to start again.`
+  );
+
+  ctx.session.announcementsPage = null;
+  ctx.session.announcementsAnnouncements = [];
+  ctx.session.announcementsMessageId = null;
 }
 
 function createAnnouncementsLookupConfig() {
@@ -165,15 +182,7 @@ protectedComposer.callbackQuery("announcement_view_another_true", async ctx => {
 protectedComposer.callbackQuery(
   "announcement_view_another_false",
   async ctx => {
-    await ctx.answerCallbackQuery();
-
-    await ctx.editMessageText(
-      `Announcements lookup ended. Use ${formatCommand(announcementsLookupCommand)} to start again.`
-    );
-
-    ctx.session.announcementsPage = null;
-    ctx.session.announcementsAnnouncements = [];
-    ctx.session.announcementsMessageId = null;
+    await endAnnouncementsLookup(ctx);
   }
 );
 
