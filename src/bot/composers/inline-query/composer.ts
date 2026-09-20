@@ -25,8 +25,28 @@ import {
 import {
   buildAttachmentDeliveryJob,
   resolveChosenResultAttachments,
+  type ChosenResultDeps,
 } from "./chosen-result.js";
 import { SearchType } from "./search-types.js";
+
+// Production wiring: the selected lookup constructs and uses its repository
+// only when invoked; ignored and malformed result IDs perform no record lookup.
+const chosenResultDeps: ChosenResultDeps = {
+  getAnnouncementById: async id => {
+    const record = await new AnnouncementsRepository(getDb()).getById(id);
+    return record ? AnnouncementsRepository.transformToApi(record) : undefined;
+  },
+  getCalendarById: async id => {
+    const record = await new AcademicCalendarsRepository(getDb()).getById(id);
+    return record
+      ? AcademicCalendarsRepository.transformToApi(record)
+      : undefined;
+  },
+  getTimetableById: async id => {
+    const record = await new ExamTimetablesRepository(getDb()).getById(id);
+    return record ? ExamTimetablesRepository.transformToApi(record) : undefined;
+  },
+};
 
 const _inlineQuery = new Composer<BotContext>();
 
@@ -95,11 +115,10 @@ inlineQuery.on("chosen_inline_result", async ctx => {
   const chatId = chosenResult.from.id;
 
   try {
-    const resolution = await resolveChosenResultAttachments(resultId, {
-      createAnnouncementsRepository: () => new AnnouncementsRepository(getDb()),
-      createCalendarsRepository: () => new AcademicCalendarsRepository(getDb()),
-      createTimetablesRepository: () => new ExamTimetablesRepository(getDb()),
-    });
+    const resolution = await resolveChosenResultAttachments(
+      resultId,
+      chosenResultDeps
+    );
 
     if (resolution.status === "ignored") return;
 

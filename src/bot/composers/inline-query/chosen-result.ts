@@ -1,7 +1,9 @@
 import { emoji } from "@grammyjs/emoji";
-import { AcademicCalendarsRepository } from "../../../db/repositories/academic-calendars-repository.js";
-import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
-import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
+import type {
+  AcademicCalendar,
+  Announcement,
+  ExamTimeTable,
+} from "../../../types/service.types.js";
 import type { AttachmentDeliveryJob } from "../../../workers/attachment-delivery/queue.js";
 import { getSearchTypeFromPrefix } from "./query.js";
 import {
@@ -10,27 +12,12 @@ import {
   SearchType,
 } from "./search-types.js";
 
-export type ChosenResultAnnouncementsRepository = Pick<
-  AnnouncementsRepository,
-  "getById"
->;
-
-export type ChosenResultCalendarsRepository = Pick<
-  AcademicCalendarsRepository,
-  "getById"
->;
-
-export type ChosenResultTimetablesRepository = Pick<
-  ExamTimetablesRepository,
-  "getById"
->;
-
-// Factories, not live instances: ignored/special IDs resolve without opening a
-// database session, and only the selected resource builds its repository.
-export interface ChosenResultRepositoryFactories {
-  createAnnouncementsRepository: () => ChosenResultAnnouncementsRepository;
-  createCalendarsRepository: () => ChosenResultCalendarsRepository;
-  createTimetablesRepository: () => ChosenResultTimetablesRepository;
+// Narrow record lookups, not repositories or factories: the caller decides
+// how and when a record is loaded, and the resolver never constructs anything.
+export interface ChosenResultDeps {
+  getAnnouncementById: (id: number) => Promise<Announcement | undefined>;
+  getCalendarById: (id: number) => Promise<AcademicCalendar | undefined>;
+  getTimetableById: (id: number) => Promise<ExamTimeTable | undefined>;
 }
 
 export type ChosenResultResource =
@@ -42,19 +29,34 @@ export type ChosenResultResource =
 // stays in one testable place; the composer only performs the send.
 export type ChosenResultResolution =
   | { status: "ignored" }
-  | { status: "invalid-format"; message: string }
-  | { status: "unknown-type"; message: string }
-  | { status: "not-found"; message: string }
-  | { status: "no-attachments"; message: string }
+  | { status: "error"; message: string }
   | {
       status: "ready";
       attachments: AttachmentInfo[];
       resource: ChosenResultResource;
     };
 
+// Result IDs are `<prefix>_<id>`; the id must be the complete, nonnegative,
+// safe integer that a repository accepts, so malformed ids never reach a
+// lookup.
+function parseResultId(
+  resultId: string
+): { prefix: string; id: number } | null {
+  const match = /^([^_]+)_(\d+)$/.exec(resultId);
+  if (!match) return null;
+
+  const [, prefix, rawId] = match;
+  if (!prefix || !rawId) return null;
+
+  const id = Number(rawId);
+  if (!Number.isSafeInteger(id)) return null;
+
+  return { prefix, id };
+}
+
 export async function resolveChosenResultAttachments(
   resultId: string,
-  factories: ChosenResultRepositoryFactories
+  deps: ChosenResultDeps
 ): Promise<ChosenResultResolution> {
   // help items already have keyboards
   if (
@@ -64,45 +66,41 @@ export async function resolveChosenResultAttachments(
     return { status: "ignored" };
   }
 
-  const [prefix, id] = resultId.split("_");
-
-  if (!prefix || !id) {
+  const parsed = parseResultId(resultId);
+  if (!parsed) {
     return {
-      status: "invalid-format",
+      status: "error",
       message: `${emoji("cross_mark")} Invalid result format.`,
     };
   }
 
-  const searchType = getSearchTypeFromPrefix(prefix);
+  const searchType = getSearchTypeFromPrefix(parsed.prefix);
 
   if (!searchType) {
     return {
-      status: "unknown-type",
+      status: "error",
       message: `${emoji("cross_mark")} Unknown resource type.`,
     };
   }
 
   switch (searchType) {
     case SearchType.ANNOUNCEMENTS: {
-      const dbAnnouncement = await factories
-        .createAnnouncementsRepository()
-        .getById(Number(id));
+      const announcement = await deps.getAnnouncementById(parsed.id);
 
-      if (!dbAnnouncement) {
+      if (!announcement) {
         return {
-          status: "not-found",
+          status: "error",
           message: `${emoji("cross_mark")} Announcement not found.`,
         };
       }
 
-      const announcement =
-        AnnouncementsRepository.transformToApi(dbAnnouncement);
       if (announcement.attachments.length === 0) {
         return {
-          status: "no-attachments",
+          status: "error",
           message: `${emoji("information")} No attachments found for this announcement.`,
         };
       }
+
       return {
         status: "ready",
         attachments: announcement.attachments,
@@ -110,18 +108,15 @@ export async function resolveChosenResultAttachments(
       };
     }
     case SearchType.CALENDARS: {
-      const dbCalendar = await factories
-        .createCalendarsRepository()
-        .getById(Number(id));
+      const calendar = await deps.getCalendarById(parsed.id);
 
-      if (!dbCalendar) {
+      if (!calendar) {
         return {
-          status: "not-found",
+          status: "error",
           message: `${emoji("cross_mark")} Academic calendar not found.`,
         };
       }
 
-      const calendar = AcademicCalendarsRepository.transformToApi(dbCalendar);
       return {
         status: "ready",
         attachments: [
@@ -131,18 +126,15 @@ export async function resolveChosenResultAttachments(
       };
     }
     case SearchType.TIMETABLES: {
-      const dbTimetable = await factories
-        .createTimetablesRepository()
-        .getById(Number(id));
+      const timetable = await deps.getTimetableById(parsed.id);
 
-      if (!dbTimetable) {
+      if (!timetable) {
         return {
-          status: "not-found",
+          status: "error",
           message: `${emoji("cross_mark")} Exam timetable not found.`,
         };
       }
 
-      const timetable = ExamTimetablesRepository.transformToApi(dbTimetable);
       if (timetable.fileName && timetable.encryptId) {
         return {
           status: "ready",
@@ -152,8 +144,9 @@ export async function resolveChosenResultAttachments(
           resource: "exam timetable",
         };
       }
+
       return {
-        status: "no-attachments",
+        status: "error",
         message: `${emoji("information")} No attachments found for this exam timetable.`,
       };
     }
