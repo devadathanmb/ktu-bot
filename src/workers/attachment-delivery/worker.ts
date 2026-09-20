@@ -20,9 +20,9 @@ import {
 import { buildReplyParameters } from "../shared/utils/telegram-send.js";
 
 export interface AttachmentDeliveryDeps {
-  downloadAttachment?: typeof downloadAttachmentToTempFile;
-  cleanupAttachment?: typeof cleanupDownloadedAttachment;
-  sendOversizedAsLink?: typeof sendAsLink;
+  downloadAttachment: typeof downloadAttachmentToTempFile;
+  cleanupAttachment: typeof cleanupDownloadedAttachment;
+  sendOversizedAsLink: typeof sendAsLink;
 }
 
 export class AttachmentDeliveryProcessor {
@@ -33,13 +33,11 @@ export class AttachmentDeliveryProcessor {
   constructor(
     private readonly bot: Bot<BotContext>,
     private readonly queue: Queue<AttachmentDeliveryJob>,
-    deps: AttachmentDeliveryDeps = {}
+    deps: AttachmentDeliveryDeps
   ) {
-    this.downloadAttachment =
-      deps.downloadAttachment ?? downloadAttachmentToTempFile;
-    this.cleanupAttachment =
-      deps.cleanupAttachment ?? cleanupDownloadedAttachment;
-    this.sendOversizedAsLink = deps.sendOversizedAsLink ?? sendAsLink;
+    this.downloadAttachment = deps.downloadAttachment;
+    this.cleanupAttachment = deps.cleanupAttachment;
+    this.sendOversizedAsLink = deps.sendOversizedAsLink;
   }
 
   async process(job: Job<AttachmentDeliveryJob>): Promise<void> {

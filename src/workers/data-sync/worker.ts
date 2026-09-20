@@ -1,40 +1,25 @@
-import { Job } from "bullmq";
+import type { Job } from "bullmq";
 import type { ResourceSyncer } from "./syncers/base.js";
-import { AnnouncementsSyncer } from "./syncers/announcements.js";
-import { AcademicCalendarsSyncer as CalendarsSyncer } from "./syncers/academic-calendars.js";
-import { ExamTimetablesSyncer } from "./syncers/exam-timetables.js";
-import { dataSyncQueue, SyncJobData, SyncJobType } from "./queue.js";
+import type { SyncJobData, SyncJobType } from "./queue.js";
 import logger from "../../utils/logger.js";
-import { baseApiClient } from "../../api/client.js";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type * as schema from "../../db/schema/index.js";
 
 export interface InitialSyncJob {
   name: SyncJobType;
   data: SyncJobData;
 }
 
-export interface DataSyncProcessorOverrides {
-  syncers?: Record<SyncJobType, ResourceSyncer>;
-  enqueueSyncJob?: (job: InitialSyncJob) => Promise<unknown>;
+export interface DataSyncProcessorDeps {
+  syncers: Record<SyncJobType, ResourceSyncer>;
+  enqueueSyncJob: (job: InitialSyncJob) => Promise<unknown>;
 }
 
 export class DataSyncProcessor {
   private readonly syncers: Record<SyncJobType, ResourceSyncer>;
   private readonly enqueueSyncJob: (job: InitialSyncJob) => Promise<unknown>;
 
-  constructor(
-    db: NodePgDatabase<typeof schema>,
-    overrides: DataSyncProcessorOverrides = {}
-  ) {
-    this.syncers = overrides.syncers ?? {
-      "data-sync:announcements": new AnnouncementsSyncer(db, baseApiClient),
-      "data-sync:academic-calendars": new CalendarsSyncer(db, baseApiClient),
-      "data-sync:exam-timetables": new ExamTimetablesSyncer(db, baseApiClient),
-    };
-    this.enqueueSyncJob =
-      overrides.enqueueSyncJob ??
-      (job => dataSyncQueue.add(job.name, job.data));
+  constructor(deps: DataSyncProcessorDeps) {
+    this.syncers = deps.syncers;
+    this.enqueueSyncJob = deps.enqueueSyncJob;
 
     const syncerNames = Object.values(this.syncers)
       .map(s => s.name)

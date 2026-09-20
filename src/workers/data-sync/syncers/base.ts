@@ -148,12 +148,7 @@ export abstract class BaseResourceSyncer<
       const transformedItems = recentItems.map(item =>
         this.transformFromApi(item)
       );
-      const upserted = await repo.bulkUpsert(transformedItems);
-
-      logger.info(
-        { syncer: this.name, processedCount: upserted },
-        "Periodic sync completed"
-      );
+      await repo.bulkUpsert(transformedItems);
     });
 
     logger.info(

@@ -1,9 +1,14 @@
 import { createWorkerBot } from "../../bot/utils/create-worker-bot.js";
 import { initDB } from "../../db/connection.js";
 import logger from "../../utils/logger.js";
+import {
+  cleanupDownloadedAttachment,
+  downloadAttachmentToTempFile,
+} from "../../utils/attachment-download.js";
 import { AttachmentDeliveryProcessor } from "./worker.js";
 import { attachmentDeliveryQueue } from "./queue.js";
 import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
+import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
 import { createWorkerShutdown } from "../shared/worker-shutdown.js";
@@ -19,7 +24,12 @@ async function start(): Promise<void> {
 
     const processor = new AttachmentDeliveryProcessor(
       bot,
-      attachmentDeliveryQueue
+      attachmentDeliveryQueue,
+      {
+        downloadAttachment: downloadAttachmentToTempFile,
+        cleanupAttachment: cleanupDownloadedAttachment,
+        sendOversizedAsLink: sendAsLink,
+      }
     );
     const worker = await createWorker({
       workerName: serviceName,

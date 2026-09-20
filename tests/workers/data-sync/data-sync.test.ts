@@ -1,12 +1,7 @@
 import assert from "node:assert/strict";
-import test, { after } from "node:test";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type * as schema from "../../../src/db/schema/index.js";
+import test from "node:test";
 import type { ResourceSyncer } from "../../../src/workers/data-sync/syncers/base.js";
-import {
-  dataSyncQueue,
-  type SyncJobType,
-} from "../../../src/workers/data-sync/queue.js";
+import type { SyncJobType } from "../../../src/workers/data-sync/queue.js";
 import {
   DataSyncProcessor,
   type InitialSyncJob,
@@ -17,13 +12,6 @@ const SYNC_TYPES: SyncJobType[] = [
   "data-sync:academic-calendars",
   "data-sync:exam-timetables",
 ];
-
-// The imported worker module constructs the real queue, whose Redis
-// connection would keep the test process alive. It is never used here:
-// scheduling goes through the injected enqueueSyncJob seam.
-after(async () => {
-  await dataSyncQueue.close();
-});
 
 function fakeSyncer(
   name: string,
@@ -50,29 +38,33 @@ function createProcessor(needs: Record<SyncJobType, boolean | Error>): {
   enqueued: InitialSyncJob[];
 } {
   const enqueued: InitialSyncJob[] = [];
-  const processor = new DataSyncProcessor(
-    null as unknown as NodePgDatabase<typeof schema>,
+  const processor = createProcessorWithSyncers(
     {
-      syncers: {
-        "data-sync:announcements": fakeSyncer(
-          "announcements",
-          needs["data-sync:announcements"]
-        ),
-        "data-sync:academic-calendars": fakeSyncer(
-          "academic-calendars",
-          needs["data-sync:academic-calendars"]
-        ),
-        "data-sync:exam-timetables": fakeSyncer(
-          "exam-timetables",
-          needs["data-sync:exam-timetables"]
-        ),
-      },
-      enqueueSyncJob: async job => {
-        enqueued.push(job);
-      },
+      "data-sync:announcements": fakeSyncer(
+        "announcements",
+        needs["data-sync:announcements"]
+      ),
+      "data-sync:academic-calendars": fakeSyncer(
+        "academic-calendars",
+        needs["data-sync:academic-calendars"]
+      ),
+      "data-sync:exam-timetables": fakeSyncer(
+        "exam-timetables",
+        needs["data-sync:exam-timetables"]
+      ),
+    },
+    async job => {
+      enqueued.push(job);
     }
   );
   return { processor, enqueued };
+}
+
+function createProcessorWithSyncers(
+  syncers: Record<SyncJobType, ResourceSyncer>,
+  enqueueSyncJob: (job: InitialSyncJob) => Promise<unknown> = async () => {}
+): DataSyncProcessor {
+  return new DataSyncProcessor({ syncers, enqueueSyncJob });
 }
 
 function noSyncNeeded(): Record<SyncJobType, boolean | Error> {
@@ -145,16 +137,11 @@ function syncJob(syncType: SyncJobType) {
 
 test("process routes to initial sync when the store is empty", async () => {
   const calls = { initial: 0, periodic: 0 };
-  const processor = new DataSyncProcessor(
-    null as unknown as NodePgDatabase<typeof schema>,
-    {
-      syncers: {
-        "data-sync:announcements": fakeSyncer("announcements", true, calls),
-        "data-sync:academic-calendars": fakeSyncer("academic-calendars", false),
-        "data-sync:exam-timetables": fakeSyncer("exam-timetables", false),
-      },
-    }
-  );
+  const processor = createProcessorWithSyncers({
+    "data-sync:announcements": fakeSyncer("announcements", true, calls),
+    "data-sync:academic-calendars": fakeSyncer("academic-calendars", false),
+    "data-sync:exam-timetables": fakeSyncer("exam-timetables", false),
+  });
 
   await processor.process(syncJob("data-sync:announcements"));
 
@@ -163,16 +150,11 @@ test("process routes to initial sync when the store is empty", async () => {
 
 test("process routes to periodic sync when the store is seeded", async () => {
   const calls = { initial: 0, periodic: 0 };
-  const processor = new DataSyncProcessor(
-    null as unknown as NodePgDatabase<typeof schema>,
-    {
-      syncers: {
-        "data-sync:announcements": fakeSyncer("announcements", false, calls),
-        "data-sync:academic-calendars": fakeSyncer("academic-calendars", false),
-        "data-sync:exam-timetables": fakeSyncer("exam-timetables", false),
-      },
-    }
-  );
+  const processor = createProcessorWithSyncers({
+    "data-sync:announcements": fakeSyncer("announcements", false, calls),
+    "data-sync:academic-calendars": fakeSyncer("academic-calendars", false),
+    "data-sync:exam-timetables": fakeSyncer("exam-timetables", false),
+  });
 
   await processor.process(syncJob("data-sync:announcements"));
 
@@ -190,23 +172,18 @@ test("process rejects unknown sync types", async () => {
 
 test("process propagates syncer failures", async () => {
   const failure = new Error("periodic sync failed");
-  const processor = new DataSyncProcessor(
-    null as unknown as NodePgDatabase<typeof schema>,
-    {
-      syncers: {
-        "data-sync:announcements": {
-          name: "announcements",
-          needsInitialSync: async () => false,
-          performInitialSync: async () => {},
-          performPeriodicSync: async () => {
-            throw failure;
-          },
-        },
-        "data-sync:academic-calendars": fakeSyncer("academic-calendars", false),
-        "data-sync:exam-timetables": fakeSyncer("exam-timetables", false),
+  const processor = createProcessorWithSyncers({
+    "data-sync:announcements": {
+      name: "announcements",
+      needsInitialSync: async () => false,
+      performInitialSync: async () => {},
+      performPeriodicSync: async () => {
+        throw failure;
       },
-    }
-  );
+    },
+    "data-sync:academic-calendars": fakeSyncer("academic-calendars", false),
+    "data-sync:exam-timetables": fakeSyncer("exam-timetables", false),
+  });
 
   await assert.rejects(
     processor.process(syncJob("data-sync:announcements")),

@@ -6,7 +6,10 @@ import type { BotContext } from "../../../src/types/bot.types.js";
 import type { Attachment } from "../../../src/types/service.types.js";
 import type { DownloadedAttachment } from "../../../src/utils/attachment-download.js";
 import { TELEGRAM_MAX_FILE_SIZE_BYTES } from "../../../src/utils/attachment-download.js";
-import { AttachmentDeliveryProcessor } from "../../../src/workers/attachment-delivery/worker.js";
+import {
+  AttachmentDeliveryProcessor,
+  type AttachmentDeliveryDeps,
+} from "../../../src/workers/attachment-delivery/worker.js";
 import type { AttachmentDeliveryJob } from "../../../src/workers/attachment-delivery/queue.js";
 
 interface ApiCall {
@@ -48,30 +51,31 @@ function createHarness(
       return { message_id: 21 };
     },
   };
+  const deps: AttachmentDeliveryDeps = {
+    downloadAttachment: async (encryptId, fileName, source = "default") => {
+      downloads.push({ encryptId, fileName, source });
+      if (options.failOnDownload === encryptId) {
+        throw new Error("ktu download failed");
+      }
+      const downloaded: DownloadedAttachment = {
+        tempFilePath: `/tmp/${encryptId}.pdf`,
+        fileName,
+        fileSizeBytes: options.sizes?.[encryptId] ?? 1024,
+      };
+      return downloaded;
+    },
+    cleanupAttachment: async downloaded => {
+      cleaned.push(downloaded.tempFilePath);
+    },
+    sendOversizedAsLink: async (_bot, chatId, downloaded) => {
+      links.push({ chatId, fileName: downloaded.fileName });
+      return "https://files/large.pdf";
+    },
+  };
   const processor = new AttachmentDeliveryProcessor(
     { api } as unknown as Bot<BotContext>,
     {} as unknown as Queue<AttachmentDeliveryJob>,
-    {
-      downloadAttachment: async (encryptId, fileName, source = "default") => {
-        downloads.push({ encryptId, fileName, source });
-        if (options.failOnDownload === encryptId) {
-          throw new Error("ktu download failed");
-        }
-        const downloaded: DownloadedAttachment = {
-          tempFilePath: `/tmp/${encryptId}.pdf`,
-          fileName,
-          fileSizeBytes: options.sizes?.[encryptId] ?? 1024,
-        };
-        return downloaded;
-      },
-      cleanupAttachment: async downloaded => {
-        cleaned.push(downloaded.tempFilePath);
-      },
-      sendOversizedAsLink: async (_bot, chatId, downloaded) => {
-        links.push({ chatId, fileName: downloaded.fileName });
-        return "https://files/large.pdf";
-      },
-    }
+    deps
   );
   return { api, calls, downloads, cleaned, links, processor };
 }
