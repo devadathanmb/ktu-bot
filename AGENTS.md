@@ -22,9 +22,12 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - Use `pnpm exec <command>` for project-local binaries, for example `pnpm exec tsc --noEmit`.
 - Do not use `npx` in this repository.
 - Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm exec eslint src/**/*.ts` when lint-sensitive code changed.
+- For token-solver or X-Token hook changes, run `node --import tsx --test tests/token-solver.test.mjs` (offline, stub fetch).
 - For syllabus lookup changes, run `node --import tsx --test tests/syllabus-views.test.mjs` to check page rendering and attachment selection IDs offline.
 - For timetable lookup changes, run `node --import tsx --test tests/exam-timetable.test.mjs`. Timetable API pages are already paginated; do not slice them again locally.
 - For calendar or announcement lookup changes, run `node --import tsx --test tests/calendar-announcement-views.test.mjs`; these API pages also must not be sliced locally.
+- For worker recurring-schedule changes, run `node --import tsx --test tests/recurring-schedules.test.mjs`; a real Redis check must call setup twice with different patterns and leave one scheduler per logical job.
+- For announcement notification orchestration changes, run `node --import tsx --test tests/announcements-notify-orchestration.test.mjs` (offline, injects fake subscriber/attachment/queue/buffer functions).
 
 ## TypeScript and Style
 
@@ -37,8 +40,10 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 ## API and Caching
 
 - KTU services use the shared Got clients from `src/api/client.ts`.
+- Import services through their domain entry point under `src/api/services/` (`ktu`, `file`, `llm`, `betteruptime`); do not recreate a mixed root barrel. Only the announcement notification worker may import the LLM domain.
 - KTU services default to `cachedApiClient`. Workers that need fresh KTU data should pass `baseApiClient` through supported service params.
 - Never pass `cache: false` to Got. Use the service `apiClient` dependency-injection parameter instead.
+- `src/api/hooks/before/add-x-token-header.ts` only gates on the KTU base URL and attaches `X-Token`; solver HTTP communication and response validation live in `src/api/token-solver.ts`. Keep the token hook after the cache hook so cache hits never mint a single-use Turnstile token. Solver timeout, network, non-2xx, malformed JSON, or blank-token failures throw instead of sending a KTU request without a token.
 - Large attachment endpoints are intentionally excluded from the in-memory cache; do not bypass this by adding ad-hoc caching around attachment downloads.
 
 ## Bot and GrammY
@@ -54,9 +59,12 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 ## Workers
 
 - Keep dependency initialization and initial/recurring scheduling explicit in each worker's `startup.ts`; processors in `worker.ts` do not inherit a lifecycle base class.
+- Register recurring jobs with `upsertJobScheduler` through `shared/recurring-schedules.ts`. Scheduler IDs are stable and never encode the cron pattern, so a changed schedule updates the existing entry. Do not use `queue.add(..., { repeat })`: it accumulates definitions and BullMQ later converts them into schedulers keyed by legacy hashes. Setup removes legacy repeat definitions for the same logical job names only.
 - Reuse `shared/worker-runtime.ts` for BullMQ lifecycle and `shared/start-worker.ts` for monitoring/shutdown wiring. Close the worker and queue before the database.
 - Attachment-delivery startup still needs `initDB()`: Telegram error recovery updates chat and subscription records.
+- Attachment retrieval and its temp-file lifecycle live in `src/utils/attachment-download.ts`. Keep `src/utils/file-utils.ts` to generic filesystem helpers that know nothing about KTU endpoints or `AttachmentSource`.
 - Preserve queue names, job IDs, payloads, concurrency, and retry behavior during structural refactors. Keep announcement fetch results local to a job and enqueue broadcasts before replacing the buffer.
+- Announcements notify `startup.ts` constructs `LLMService` and passes it to `AnnouncementsNotifyProcessor` as an `AnnouncementClassifier`; the processor must not construct it. `notify/orchestration.ts` owns job building and the enqueue-before-buffer-replacement ordering and takes its database, bot, and queue behavior as narrow functions.
 
 ## Errors and Logging
 

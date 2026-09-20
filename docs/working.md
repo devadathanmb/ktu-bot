@@ -153,6 +153,10 @@ All KTU API calls go through a shared Got HTTP client in `src/api/client.ts`, wh
 
 KTU service functions use the cached client by default. Services that need cache control (like `fetchPrograms`, `fetchAnnouncements`) accept an optional `apiClient?: Got` parameter, and workers pass `baseApiClient` when they need fresh data. Attachment download services use the cached client directly, but the attachment endpoints are excluded by cache config.
 
+Service modules are grouped into domain entry points under `src/api/services/`: `ktu/index.ts`, `file/index.ts`, `llm/index.ts`, and `betteruptime/index.ts`. Callers import the domain entry point rather than implementation files or a mixed root barrel, so importing KTU, file-host, or status services never loads LLM configuration. The announcement notification worker is the only consumer of the LLM domain.
+
+KTU requests also need a single-use Cloudflare Turnstile `X-Token`. `src/api/token-solver.ts` owns the solver HTTP call and response validation, while the Got `addXTokenHeader` hook only gates on the KTU base URL and attaches the returned token. The token hook is registered after the cache hook on both clients, so cache hits short-circuit before a token is minted and every uncached KTU request mints exactly once. Solver timeouts, network failures, non-2xx responses, malformed JSON, and blank tokens fail the request immediately instead of sending it without a token.
+
 The cache configuration lives in `src/api/cache/config.ts`. Attachment endpoints (`/getAttachments`, `/getAttachment`) are excluded from caching because they return large base64 payloads that would bloat memory. Non-data probe endpoints are also excluded so request hooks always see fresh upstream behavior.
 
 ### PostgreSQL Database
@@ -173,13 +177,15 @@ You can read more about the different background workers the bot uses in the bel
 
 Each worker's `startup.ts` initializes its database and bot dependencies, constructs a processor, and starts BullMQ. Initial and recurring schedules are called explicitly there. The concrete processors in `worker.ts` handle jobs without a shared base class. `shared/worker-runtime.ts` handles common BullMQ options, job logging, health checks, and worker/queue closure; `shared/start-worker.ts` wires monitoring and shutdown. Shutdown drains the worker before closing its queue and the database. Data-sync resource syncers still share their pagination and persistence algorithm through `BaseResourceSyncer`.
 
+Recurring jobs are registered through `shared/recurring-schedules.ts`, which upserts BullMQ job schedulers with stable IDs that never include the cron pattern. Changing a schedule updates the existing scheduler instead of adding another, and setup removes legacy `queue.add(..., { repeat })` definitions for the same logical job names only.
+
 Broadcast and attachment delivery use `createWorkerBot()`. Announcement notification currently uses the main `createBot()` factory with throttler and auto-retry API transformers; data sync needs no bot. Attachment delivery still initializes the database because Telegram error recovery updates chat and subscription records. Announcement fetch results belong to the current job, and the buffer is replaced only after broadcast jobs are enqueued. Queue insertion and buffer replacement use separate Redis and PostgreSQL operations, so they are not atomic.
 
 These are independent services that handle specific tasks in the background. Unlike the main bot that responds to user interactions, workers run on schedules or process queued jobs without direct user involvement. They're crucial because they handle time-consuming or periodic tasks without blocking the bot - if a worker crashes, the bot keeps running, and vice versa. This separation also makes the system more scalable since you can run multiple instances of workers independently.
 
 ### Announcements Notify Worker
 
-This worker uses **BullMQ repeatable jobs** to continuously monitor for new announcements. Here's what it does:
+This worker uses a **BullMQ job scheduler** to continuously monitor for new announcements. Here's what it does:
 
 1. A recurring BullMQ job runs at the specified interval (configurable, usually every few minutes) to fetch the latest announcements from KTU's API
 2. Compares with local state in the database to identify any new announcements that haven't been processed yet
@@ -194,7 +200,9 @@ This worker uses **BullMQ repeatable jobs** to continuously monitor for new anno
    - It doesn't send messages itself, just prepares the jobs
 7. Updates the local buffer in the database to mark these announcements as processed
 
-BullMQ automatically handles retries if a job fails (with exponential backoff), making this more resilient than traditional cron. All this logic lives in [`src/workers/announcements/notify/`](../src/workers/announcements/notify/)
+BullMQ automatically handles retries if a job fails (with exponential backoff) and schedules the next run from the stable job scheduler, making this more resilient than traditional cron. All this logic lives in [`src/workers/announcements/notify/`](../src/workers/announcements/notify/)
+
+Its `startup.ts` constructs `LLMService` and injects it into `AnnouncementsNotifyProcessor` as an `AnnouncementClassifier`, so the processor itself only wires together database, bot, and queue behavior. Those narrow functions feed `orchestration.ts`, which owns new-announcement selection, deterministic `announcement-<announcementId>-chat-<chatId>` broadcast job IDs, attachment processing order, and the rule that broadcasts are enqueued before the buffer is replaced. The audience rules (regex extraction, LLM course narrowing, and the relevance fallback) live in `audience.ts` and are unit-tested offline.
 
 ### Broadcasts Worker
 
@@ -217,7 +225,7 @@ The code and the entire logic lives in [`src/workers/broadcasts/`](../src/worker
 
 ### Data Sync Worker
 
-Here's a frustrating thing about KTU's APIs - their APIs don't expose any text search functionality. You can't search for _"examination results 2025"_ anywhere on their website and get filtered results (this used to be there if I recall correctly but not anymore). It's honestly poor design for such a basic feature, but the bot needs this capability for inline search. The solution? Maintain a local, searchable copy of their data. This worker uses **BullMQ for scheduling** and handles syncing in three separate jobs:
+Here's a frustrating thing about KTU's APIs - their APIs don't expose any text search functionality. You can't search for _"examination results 2025"_ anywhere on their website and get filtered results (this used to be there if I recall correctly but not anymore). It's honestly poor design for such a basic feature, but the bot needs this capability for inline search. The solution? Maintain a local, searchable copy of their data. This worker uses **BullMQ job schedulers** and handles syncing in three separate jobs:
 
 1. **On startup**: Checks if the database needs initial syncing - if yes, performs a full sync by fetching all paginated data from KTU's APIs (announcements, timetables, calendars)
 2. **Periodic jobs**: Three individual BullMQ jobs run periodically (once or a few times per day) for each data type:
@@ -256,7 +264,7 @@ This worker handles file downloads and deliveries asynchronously, preventing the
    - No chat pollution - the status message disappears after completion
    - User receives their files cleanly without extra messages
 
-This worker has a `concurrency` of `2` to prevent overwhelming Telegram's rate limits while still processing requests efficiently. All implementation lives in [`src/workers/attachment-delivery/`](../src/workers/attachment-delivery/)
+This worker has a `concurrency` of `2` to prevent overwhelming Telegram's rate limits while still processing requests efficiently. The worker implementation lives in [`src/workers/attachment-delivery/`](../src/workers/attachment-delivery/), with shared attachment helpers under [`src/workers/shared/utils/`](../src/workers/shared/utils/). KTU attachment retrieval and the temp-file lifecycle live in [`src/utils/attachment-download.ts`](../src/utils/attachment-download.ts); [`src/utils/file-utils.ts`](../src/utils/file-utils.ts) keeps generic temp-file helpers that know nothing about KTU endpoints or attachment sources.
 
 ## Health Checks and Monitoring
 
