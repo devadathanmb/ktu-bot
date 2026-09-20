@@ -2,34 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createWorkerShutdown } from "../../../src/workers/shared/worker-shutdown.js";
 
-test("worker shutdown closes the worker before the database", async () => {
+const worker = {
+  getStatus: async () => true,
+  close: async () => {},
+};
+
+test("worker shutdown stops monitoring, then the worker, then the database", async () => {
   const calls: string[] = [];
-  const worker = {
+  const closeWorker = {
     getStatus: async () => true,
     close: async () => {
       calls.push("worker");
     },
   };
 
-  await createWorkerShutdown(worker, {
-    closeDB: async () => {
-      calls.push("database");
-    },
-  })();
-
-  assert.deepEqual(calls, ["worker", "database"]);
-});
-
-test("worker shutdown stops monitoring before the worker and database", async () => {
-  const calls: string[] = [];
-  const worker = {
-    getStatus: async () => true,
-    close: async () => {
-      calls.push("worker");
-    },
-  };
-
-  await createWorkerShutdown(worker, {
+  await createWorkerShutdown(closeWorker, {
     closeMonitoringServer: async () => {
       calls.push("monitoring");
     },
@@ -44,7 +31,7 @@ test("worker shutdown stops monitoring before the worker and database", async ()
 test("worker shutdown attempts every close when the worker close fails", async () => {
   let closeDBCalls = 0;
   let monitoringCloseCalls = 0;
-  const worker = {
+  const failingWorker = {
     getStatus: async () => true,
     close: async () => {
       throw new Error("worker close failed");
@@ -52,7 +39,7 @@ test("worker shutdown attempts every close when the worker close fails", async (
   };
 
   await assert.rejects(
-    createWorkerShutdown(worker, {
+    createWorkerShutdown(failingWorker, {
       closeMonitoringServer: async () => {
         monitoringCloseCalls += 1;
       },
@@ -67,13 +54,9 @@ test("worker shutdown attempts every close when the worker close fails", async (
 });
 
 test("worker shutdown propagates a database close failure", async () => {
-  const worker = {
-    getStatus: async () => true,
-    close: async () => {},
-  };
-
   await assert.rejects(
     createWorkerShutdown(worker, {
+      closeMonitoringServer: async () => {},
       closeDB: async () => {
         throw new Error("database close failed");
       },
@@ -87,14 +70,14 @@ test("worker shutdown aggregates failures from several closes", async () => {
   const workerError = new Error("worker close failed");
   const databaseError = new Error("database close failed");
   let closeDBCalls = 0;
-  const worker = {
+  const failingWorker = {
     getStatus: async () => true,
     close: async () => {
       throw workerError;
     },
   };
 
-  const failure: unknown = await createWorkerShutdown(worker, {
+  const failure: unknown = await createWorkerShutdown(failingWorker, {
     closeMonitoringServer: async () => {
       throw monitoringError;
     },

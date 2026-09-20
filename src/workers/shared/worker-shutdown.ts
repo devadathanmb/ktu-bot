@@ -1,8 +1,8 @@
 import type { WorkerControl } from "./worker-runtime.js";
 
 export interface WorkerShutdownDeps {
+  closeMonitoringServer: () => Promise<void>;
   closeDB: () => Promise<void>;
-  closeMonitoringServer?: () => Promise<void>;
 }
 
 function toError(failure: unknown): Error {
@@ -30,9 +30,7 @@ export function createWorkerShutdown(
       }
     };
 
-    if (deps.closeMonitoringServer) {
-      await attempt(deps.closeMonitoringServer);
-    }
+    await attempt(deps.closeMonitoringServer);
     await attempt(() => worker.close());
     await attempt(deps.closeDB);
 

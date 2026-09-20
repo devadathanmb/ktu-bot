@@ -41,11 +41,9 @@ export async function initDB(): Promise<NodePgDatabase<typeof schema>> {
 export async function closeDB(): Promise<void> {
   if (!pool) return;
 
-  const activePool = pool;
+  await pool.end();
   pool = undefined;
   db = undefined;
-
-  await activePool.end();
   logger.info("Database connection closed");
 }
 

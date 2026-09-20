@@ -30,14 +30,26 @@ export interface StartWorkerMonitoringDeps {
   setupGracefulShutdown: (stop: () => Promise<void>) => void;
 }
 
-const productionDeps: StartWorkerMonitoringDeps = {
-  createMonitoringServer: createProductionMonitoringServer,
-  setupGracefulShutdown: setupProductionGracefulShutdown,
-};
-
+/**
+ * Starts a worker service with its monitoring server and graceful shutdown
+ * wiring. Production callers get the production dependencies here; tests use
+ * `startWorkerMonitoringWithDeps` to inject fakes.
+ */
 export function startWorkerMonitoring<T>(
+  config: StartWorkerMonitoringConfig<T>
+): void {
+  startWorkerMonitoringWithDeps(config, {
+    createMonitoringServer: createProductionMonitoringServer,
+    setupGracefulShutdown: setupProductionGracefulShutdown,
+  });
+}
+
+/**
+ * Core implementation requiring explicit dependencies.
+ */
+export function startWorkerMonitoringWithDeps<T>(
   config: StartWorkerMonitoringConfig<T>,
-  deps: StartWorkerMonitoringDeps = productionDeps
+  deps: StartWorkerMonitoringDeps
 ): void {
   const monitoringApp = new Hono();
 
@@ -54,8 +66,8 @@ export function startWorkerMonitoring<T>(
 
   deps.setupGracefulShutdown(
     createWorkerShutdown(config.worker, {
-      closeDB: config.closeDB,
       closeMonitoringServer: () => monitoringServer.close(),
+      closeDB: config.closeDB,
     })
   );
 

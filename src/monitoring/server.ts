@@ -22,12 +22,26 @@ export interface MonitoringServer {
  *
  * @param app - Hono application with configured endpoints
  * @param options - Server configuration options
- * @param startServer - Server factory, injectable for tests
  */
 export function createMonitoringServer(
   app: Hono,
+  options: MonitoringServerOptions
+): MonitoringServer {
+  return createMonitoringServerWithStarter(app, options, serve);
+}
+
+/**
+ * Core factory for callers that provide their own server starter, primarily
+ * tests. Production callers use `createMonitoringServer`, which passes `serve`.
+ *
+ * @param app - Hono application with configured endpoints
+ * @param options - Server configuration options
+ * @param startServer - Required server starter
+ */
+export function createMonitoringServerWithStarter(
+  app: Hono,
   options: MonitoringServerOptions,
-  startServer: typeof serve = serve
+  startServer: typeof serve
 ): MonitoringServer {
   const { serviceName, port } = options;
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { Queue } from "bullmq";
 import logger from "../../../src/utils/logger.js";
-import { startWorkerMonitoring } from "../../../src/workers/shared/start-worker.js";
+import { startWorkerMonitoringWithDeps } from "../../../src/workers/shared/start-worker.js";
 import type { MonitoringServer } from "../../../src/monitoring/index.js";
 
 test("worker monitoring shutdown closes monitoring, worker and database", async t => {
@@ -19,7 +19,7 @@ test("worker monitoring shutdown closes monitoring, worker and database", async 
   const monitoringOptions: Array<{ serviceName: string; port: number }> = [];
   let stop: (() => Promise<void>) | undefined;
 
-  startWorkerMonitoring(
+  startWorkerMonitoringWithDeps(
     {
       worker,
       queue,
