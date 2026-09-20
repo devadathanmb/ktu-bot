@@ -89,7 +89,6 @@ export class AnnouncementsNotifyProcessor {
 
     const filters = await this.resolveAudience(JSON.stringify(content));
 
-    // Find subscribers matching any of these filters
     const subscriptionRepo = new AnnouncementSubscriptionRepository(this.db);
     const subscribers = await subscriptionRepo.getMatchingSubscriptions(
       Array.from(filters)
@@ -100,12 +99,10 @@ export class AnnouncementsNotifyProcessor {
   private prepareFormattedMessage(announcement: Announcement): FormattedString {
     const parts: FormattedString[] = [];
 
-    // Add the header
     parts.push(
       fmt`${b}${emoji("loudspeaker")} New KTU Announcement ${emoji("loudspeaker")}${b}`
     );
 
-    // Add subject if present
     if (announcement.subject) {
       parts.push(
         joinWithNewlines([
@@ -115,7 +112,6 @@ export class AnnouncementsNotifyProcessor {
       );
     }
 
-    // Add message if present
     if (announcement.message) {
       parts.push(
         joinWithNewlines([
@@ -125,7 +121,6 @@ export class AnnouncementsNotifyProcessor {
       );
     }
 
-    // Add date if present
     if (announcement.formattedPublishedDate) {
       parts.push(
         fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`

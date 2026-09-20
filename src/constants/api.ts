@@ -1,9 +1,7 @@
-// KTU API constants
 export const KTU_API_ORIGIN_URL = "https://ktu.edu.in";
 export const KTU_API_REFERER_URL = "https://ktu.edu.in/";
 export const KTU_API_BASE_URI = "https://api.ktu.edu.in";
 
-// KTU Web Portal API (for announcements, timetables, etc.)
 export const KTU_API_WEBPORTAL_API_URI =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon";
 
@@ -25,7 +23,6 @@ export const KTU_API_ENDPOINTS = {
   ACADEMIC_CALENDAR: `${KTU_API_WEBPORTAL_API_URI}/academicCalendar`,
 } as const;
 
-// Uptime Robot API
 const UPTIME_ROBOT_BASE_URI = "https://api.uptimerobot.com/v2";
 export const UPTIME_ROBOT_API = {
   BASE_URI: UPTIME_ROBOT_BASE_URI,
@@ -40,7 +37,6 @@ export const CATBOX_API = {
   UPLOAD_ENDPOINT: `${CATBOX_BASE_URI}/user/api.php`,
 } as const;
 
-// Better Uptime API for uptime monitoring
 const BETTER_UPTIME_BASE_URI = "https://uptime.betterstack.com/api/v2";
 export const BETTER_UPTIME_API = {
   BASE_URI: BETTER_UPTIME_BASE_URI,

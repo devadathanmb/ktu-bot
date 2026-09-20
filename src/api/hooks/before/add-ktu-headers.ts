@@ -4,7 +4,6 @@ import generateRandomUserAgent from "../../utils/user-agent.js";
 import { KTU_API_BASE_URI } from "../../../constants/api.js";
 import { ktuHttpsAgent } from "../../agents.js";
 
-// Hook to add KTU-specific headers to requests
 export const addKtuHeaders: BeforeRequestHook = options => {
   if (options.url && options.url.toString().includes(KTU_API_BASE_URI)) {
     options.headers = {

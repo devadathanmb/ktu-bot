@@ -1,37 +1,21 @@
 import { Counter, Histogram, Registry } from "prom-client";
 
-/**
- * Bot-specific Prometheus metrics definitions
- * Centralized location for all bot metrics to ensure consistency
- */
-
 export interface BotMetrics {
-  // Message processing metrics
   messagesReceivedTotal: Counter;
   messagesProcessedTotal: Counter;
   messageProcessingDuration: Histogram;
 
-  // Command metrics
   commandsTotal: Counter;
   commandDuration: Histogram;
 
-  // Inline query metrics
   inlineQueriesTotal: Counter;
   inlineQueryDuration: Histogram;
 
-  // Error metrics
   botErrorsTotal: Counter;
 }
 
-/**
- * Creates all bot-specific metrics and registers them
- *
- * @param registry - Prometheus registry to register metrics with
- * @returns Object containing all bot metrics
- */
 export function createBotMetrics(registry: Registry): BotMetrics {
   return {
-    // Message processing metrics
     messagesReceivedTotal: new Counter({
       name: "telegram_bot_messages_received_total",
       help: "Total number of messages received by the bot",
@@ -54,7 +38,6 @@ export function createBotMetrics(registry: Registry): BotMetrics {
       registers: [registry],
     }),
 
-    // Command metrics
     commandsTotal: new Counter({
       name: "telegram_bot_commands_total",
       help: "Total number of commands executed",
@@ -70,7 +53,6 @@ export function createBotMetrics(registry: Registry): BotMetrics {
       registers: [registry],
     }),
 
-    // Inline query metrics
     inlineQueriesTotal: new Counter({
       name: "telegram_bot_inline_queries_total",
       help: "Total number of inline queries received",
@@ -86,7 +68,6 @@ export function createBotMetrics(registry: Registry): BotMetrics {
       registers: [registry],
     }),
 
-    // Error metrics
     botErrorsTotal: new Counter({
       name: "telegram_bot_errors_total",
       help: "Total bot errors",

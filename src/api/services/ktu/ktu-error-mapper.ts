@@ -31,12 +31,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
     } catch (error: unknown) {
       if (isTokenSolverFailure(error)) throw error;
 
-      // Handle HTTP errors from got
       if (error instanceof HTTPError) {
         const statusCode = error.response.statusCode;
         const url = error.response.requestUrl?.toString();
 
-        // Throw KTUAPIError with specific user messages for different status codes
         switch (statusCode) {
           case 429:
             throw new KTUAPIError(
@@ -86,7 +84,6 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
         }
       }
 
-      // Handle request errors from got (network issues, timeouts, etc.)
       if (error instanceof RequestError) {
         const url = error.request?.requestUrl?.toString();
 
@@ -100,7 +97,6 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
         );
       }
 
-      // Handle Zod validation errors (invalid API response format)
       if (error instanceof ZodError) {
         throw new KTUAPIError(
           serviceName,
@@ -112,7 +108,6 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
         );
       }
 
-      // If the error is not handled above, re-throw
       throw error;
     }
   };

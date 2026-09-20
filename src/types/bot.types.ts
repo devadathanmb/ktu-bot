@@ -15,19 +15,15 @@ import {
 interface SessionData {
   announcementSubscriptionMessageId: number | null;
   selectedFilters: string[];
-  // Announcements lookup session data
   announcementsPage: number | null;
   announcementsAnnouncements: Announcement[];
   announcementsMessageId: number | null;
-  // Timetable lookup session data
   timetablePage: number | null;
   timetableTimetables: ExamTimeTable[];
   timetableMessageId: number | null;
-  // Calendar lookup session data
   calendarPage: number | null;
   calendarCalendars: AcademicCalendar[];
   calendarMessageId: number | null;
-  // Syllabus lookup session data
   syllabusProgramPage: number | null;
   syllabusSchemePage: number | null;
   syllabusBranchPage: number | null;

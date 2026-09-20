@@ -10,14 +10,6 @@ export interface HealthCheckResult {
   isRunning: boolean;
 }
 
-/**
- * Creates a standardized health check response
- *
- * @param serviceName - Name of the service being checked
- * @param isRunning - Whether the service is running
- * @param isDatabaseHealthy - Whether the database connection is healthy
- * @returns Standardized health check result
- */
 export function createHealthCheckResponse(
   serviceName: string,
   isRunning: boolean,
@@ -34,14 +26,6 @@ export function createHealthCheckResponse(
   };
 }
 
-/**
- * Adds a /health endpoint to the provided Hono app
- * Pure utility with no coupling to metrics or other concerns
- *
- * @param app - Hono application instance
- * @param serviceName - Name of the service
- * @param getServiceHealth - Function that returns whether the service is healthy
- */
 export function setupHealthCheckEndpoint(
   app: Hono,
   serviceName: string,

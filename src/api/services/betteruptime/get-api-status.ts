@@ -91,7 +91,6 @@ export async function getApiStatus(): Promise<ApiStatusResponse> {
         const firstRegion = responseTimesData.data.attributes.regions[0];
         const firstResponseTime = firstRegion?.response_times[0];
         if (firstResponseTime) {
-          // Convert from seconds to milliseconds
           responseTime = firstResponseTime.response_time * 1000;
         }
       } catch (error) {

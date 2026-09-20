@@ -45,7 +45,6 @@ announcement: {announcement_content}
 `;
 
 export function buildCourseFindingPrompt(announcementContent: string): string {
-  // Build course list dynamically from constants
   const courseEntries = (
     Object.entries(ANNOUNCEMENT_FILTER_MAP) as [string, string][]
   )

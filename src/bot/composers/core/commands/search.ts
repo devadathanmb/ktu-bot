@@ -44,7 +44,6 @@ export const searchCommand = new Command<BotContext>(
       2
     );
 
-    // Create inline keyboard with three search type buttons (one per row)
     const keyboard = INLINE_SEARCH_HELP_KEYBOARD;
 
     await ctx.reply(fullMessage.text, {

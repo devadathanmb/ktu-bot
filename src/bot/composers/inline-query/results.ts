@@ -221,7 +221,6 @@ export function addSearchAgainButton(
   );
 
   return results.map(result => {
-    // Skip help and no-results items
     if (
       result.id?.startsWith(SPECIAL_RESULT_PREFIXES.HELP) ||
       result.id?.startsWith(SPECIAL_RESULT_PREFIXES.NO_RESULTS)
@@ -229,7 +228,6 @@ export function addSearchAgainButton(
       return result;
     }
 
-    // Add the keyboard to article results
     if (result.type === "article") {
       return {
         ...result,

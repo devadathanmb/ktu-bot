@@ -46,7 +46,7 @@ const GroqCompletionResponseSchema = z.object({
         finish_reason: z.string(),
       })
     )
-    .min(1), // Ensure at least one choice
+    .min(1),
   usage: z
     .object({
       prompt_tokens: z.number(),
@@ -65,7 +65,6 @@ const AnnouncementRelevantCoursesResultSchema = z
     relevant_courses: z.array(z.string()),
   })
   .transform(data => {
-    // Filter to only include valid course codes
     const validCourses = data.relevant_courses.filter(
       (course): course is Course => COURSES.has(course as Course)
     );
@@ -164,10 +163,6 @@ function logRateLimit(error: HTTPError, operation: string): void {
   );
 }
 
-/**
- * LLM classification service with an injectable requester dependency so unit
- * tests can exercise the fallback policy without network access.
- */
 export class LLMService {
   constructor(
     private readonly requestCompletion: GroqCompletionRequester = createGroqCompletionRequester()

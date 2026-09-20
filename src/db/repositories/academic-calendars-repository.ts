@@ -10,7 +10,6 @@ import {
   type SearchOptions,
 } from "./search-utils.js";
 
-// Type for inserting academic calendars into the database
 type AcademicCalendarInsert = typeof academicCalendars.$inferInsert;
 
 export class AcademicCalendarsRepository {
@@ -20,9 +19,6 @@ export class AcademicCalendarsRepository {
     this.db = dbInstance;
   }
 
-  /**
-   * Get all academic calendars with optional pagination and date filtering
-   */
   async getAll(options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
@@ -47,9 +43,6 @@ export class AcademicCalendarsRepository {
       .offset(offset);
   }
 
-  /**
-   * Search academic calendars using PostgreSQL full-text search
-   */
   async search(searchQuery: string, options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
@@ -80,9 +73,6 @@ export class AcademicCalendarsRepository {
       .offset(offset);
   }
 
-  /**
-   * Get academic calendar by ID
-   */
   async getById(id: number) {
     const result = await this.db
       .select()
@@ -93,9 +83,6 @@ export class AcademicCalendarsRepository {
     return result[0];
   }
 
-  /**
-   * Bulk insert/upsert academic calendars
-   */
   async bulkUpsert(calendarList: AcademicCalendarInsert[]): Promise<number> {
     if (calendarList.length === 0) return 0;
 
@@ -124,9 +111,6 @@ export class AcademicCalendarsRepository {
     return result.length;
   }
 
-  /**
-   * Get count of all academic calendars
-   */
   async getCount(): Promise<number> {
     const result = await this.db
       .select({ count: count() })
@@ -135,9 +119,6 @@ export class AcademicCalendarsRepository {
     return Number(result[0]?.count || 0);
   }
 
-  /**
-   * Transform API academic calendar to database format
-   */
   static transformFromApi(
     apiCalendar: AcademicCalendar
   ): AcademicCalendarInsert {
@@ -153,9 +134,6 @@ export class AcademicCalendarsRepository {
     };
   }
 
-  /**
-   * Transform database academic calendar to API format
-   */
   static transformToApi(
     dbCalendar: typeof academicCalendars.$inferSelect
   ): AcademicCalendar {

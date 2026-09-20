@@ -16,20 +16,8 @@ export interface MonitoringServer {
   close(): Promise<void>;
 }
 
-/**
- * Narrow seam for starting the HTTP server. Production passes the
- * `@hono/node-server` `serve` implementation; tests inject a fake.
- */
 type ServerStarter = typeof serve;
 
-/**
- * Creates and starts a monitoring server with the provided Hono app
- * The app should have endpoints configured via setupHealthCheckEndpoint, setupMetricsEndpoint, etc.
- *
- * @param app - Hono application with configured endpoints
- * @param options - Server configuration options
- * @param startServer - Server starter, defaults to `serve` from `@hono/node-server`
- */
 export function createMonitoringServer(
   app: Hono,
   options: MonitoringServerOptions,
@@ -37,7 +25,6 @@ export function createMonitoringServer(
 ): MonitoringServer {
   const { serviceName, port } = options;
 
-  // Add root redirect to /health by default
   app.get("/", c => c.redirect("/health"));
 
   const server: ServerType = startServer({ fetch: app.fetch, port }, info => {

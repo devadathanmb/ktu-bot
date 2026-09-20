@@ -39,7 +39,6 @@ export interface AcademicCalendar {
   encryptId: string;
 }
 
-// UptimeRobot API Status Service Types
 export interface ApiStatusLog {
   type: string;
   timestamp: string;
@@ -59,13 +58,11 @@ export interface ApiStatusResponse {
   monitors: ApiStatus[];
 }
 
-// Temporary File Upload Service Types
 export interface TempFileUploadParams {
   filePath: string;
   fileName?: string;
 }
 
-// Syllabus Lookup Service Types
 export interface Program {
   id: number;
   name: string;

@@ -10,7 +10,6 @@ import {
   type SearchOptions,
 } from "./search-utils.js";
 
-// Type for inserting announcements into the database
 type AnnouncementInsert = typeof announcements.$inferInsert;
 
 export class AnnouncementsRepository {
@@ -20,9 +19,6 @@ export class AnnouncementsRepository {
     this.db = dbInstance;
   }
 
-  /**
-   * Get all announcements with optional pagination and date filtering
-   */
   async getAll(options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
@@ -47,9 +43,6 @@ export class AnnouncementsRepository {
       .offset(offset);
   }
 
-  /**
-   * Search announcements using PostgreSQL full-text search
-   */
   async search(searchQuery: string, options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
@@ -80,9 +73,6 @@ export class AnnouncementsRepository {
       .offset(offset);
   }
 
-  /**
-   * Get announcement by ID
-   */
   async getById(id: number) {
     const result = await this.db
       .select()
@@ -93,9 +83,6 @@ export class AnnouncementsRepository {
     return result[0];
   }
 
-  /**
-   * Bulk insert/upsert announcements
-   */
   async bulkUpsert(announcementList: AnnouncementInsert[]): Promise<number> {
     if (announcementList.length === 0) return 0;
 
@@ -126,18 +113,12 @@ export class AnnouncementsRepository {
     return result.length;
   }
 
-  /**
-   * Get count of all announcements
-   */
   async getCount(): Promise<number> {
     const result = await this.db.select({ count: count() }).from(announcements);
 
     return Number(result[0]?.count || 0);
   }
 
-  /**
-   * Transform API announcement to database format
-   */
   static transformFromApi(apiAnnouncement: Announcement): AnnouncementInsert {
     return {
       id: apiAnnouncement.id,
@@ -151,9 +132,6 @@ export class AnnouncementsRepository {
     };
   }
 
-  /**
-   * Transform database announcement to API format
-   */
   static transformToApi(
     dbAnnouncement: typeof announcements.$inferSelect
   ): Announcement {

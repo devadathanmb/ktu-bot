@@ -26,7 +26,7 @@ export type ChosenResultResource =
   | "exam timetable";
 
 // Terminal messages travel with the outcome so the exact user-facing text
-// stays in one testable place; the composer only performs the send.
+// stays in one place; the composer only performs the send.
 export type ChosenResultResolution =
   | { status: "ignored" }
   | { status: "error"; message: string }

@@ -10,7 +10,6 @@ import {
   type SearchOptions,
 } from "./search-utils.js";
 
-// Type for inserting exam timetables into the database
 type ExamTimetableInsert = typeof examTimetables.$inferInsert;
 
 export class ExamTimetablesRepository {
@@ -20,9 +19,6 @@ export class ExamTimetablesRepository {
     this.db = dbInstance;
   }
 
-  /**
-   * Get all exam timetables with optional pagination and date filtering
-   */
   async getAll(options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
@@ -47,9 +43,6 @@ export class ExamTimetablesRepository {
       .offset(offset);
   }
 
-  /**
-   * Search exam timetables using PostgreSQL full-text search
-   */
   async search(searchQuery: string, options: SearchOptions = {}) {
     const { limit = 50, offset = 0, startDate, endDate } = options;
 
@@ -80,9 +73,6 @@ export class ExamTimetablesRepository {
       .offset(offset);
   }
 
-  /**
-   * Get exam timetable by ID
-   */
   async getById(id: number) {
     const result = await this.db
       .select()
@@ -93,9 +83,6 @@ export class ExamTimetablesRepository {
     return result[0];
   }
 
-  /**
-   * Bulk insert/upsert exam timetables
-   */
   async bulkUpsert(timetableList: ExamTimetableInsert[]): Promise<number> {
     if (timetableList.length === 0) return 0;
 
@@ -124,9 +111,6 @@ export class ExamTimetablesRepository {
     return result.length;
   }
 
-  /**
-   * Get count of all exam timetables
-   */
   async getCount(): Promise<number> {
     const result = await this.db
       .select({ count: count() })
@@ -135,9 +119,6 @@ export class ExamTimetablesRepository {
     return Number(result[0]?.count || 0);
   }
 
-  /**
-   * Transform API timetable to database format
-   */
   static transformFromApi(apiTimetable: ExamTimeTable): ExamTimetableInsert {
     return {
       id: apiTimetable.id,
@@ -151,9 +132,6 @@ export class ExamTimetablesRepository {
     };
   }
 
-  /**
-   * Transform database exam timetable to API format
-   */
   static transformToApi(
     dbTimetable: typeof examTimetables.$inferSelect
   ): ExamTimeTable {

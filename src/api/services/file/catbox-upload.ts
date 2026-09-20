@@ -25,7 +25,6 @@ export async function uploadTempFile(
     responseType: "text", // Catbox returns plain text URI
   });
 
-  // Validate and return the URI using Zod
   const uri = response.body.trim();
   return CatboxResponseSchema.parse(uri);
 }

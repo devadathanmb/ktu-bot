@@ -21,22 +21,18 @@ export function createComposerErrorBoundary(
   return async (error: BotError<BotContext>, _next: NextFunction) => {
     const ctx = error.ctx;
 
-    // Extract the actual error message from KTUAPIError or use fallback
     let userErrorMessage: string;
 
     if (
       error.error instanceof KTUAPIError ||
       error.error instanceof SessionNotFoundError
     ) {
-      // Use the specific user message from the API error
       userErrorMessage = error.error.userMessage;
     } else {
-      // Use fallback message for other errors
       userErrorMessage =
         fallbackErrorMessage ||
         `${emoji("slightly_frowning_face")} Sorry, something went wrong on my end. Please try again.`;
 
-      // Log the general error
       const chatId = ctx.chat?.id;
       const userId = ctx.from?.id;
       const username = ctx.from?.username;
@@ -51,10 +47,8 @@ export function createComposerErrorBoundary(
       );
     }
 
-    // Track cleanup actions for metadata
     const cleanupActions: string[] = [];
 
-    // Clean up any loading messages stored in session
     for (const key of loadingMessageKeys) {
       const messageId = ctx.session[key];
       if (typeof messageId === "number") {
@@ -65,14 +59,12 @@ export function createComposerErrorBoundary(
       }
     }
 
-    // Send the actual error message to the user
     await replyMessageSafely(ctx, userErrorMessage);
     await deleteMessageSafely(
       ctx,
       ctx.update?.callback_query?.message?.message_id
     );
 
-    // Wrap the original error to indicate it was handled by this boundary
     const originalError =
       error.error instanceof Error
         ? error.error

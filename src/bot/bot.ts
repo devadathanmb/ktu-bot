@@ -31,7 +31,6 @@ import trackChatId from "./middlewares/track-chat-id.js";
 import { createMetricsMiddleware } from "./middlewares/metrics.js";
 import type { BotMetrics } from "../metrics/definitions.js";
 
-// Session key generator function
 function getSessionKey(ctx: Omit<Context, "session">) {
   return ctx.chat?.id.toString();
 }
@@ -59,9 +58,6 @@ export function createBotWithMetrics(metrics: BotMetrics): Bot<BotContext> {
   return bot;
 }
 
-/**
- * Internal: Configures common bot middleware and handlers.
- */
 function configureBot(bot: Bot<BotContext>): void {
   // Logging should be the first middleware in the stack
   // This is to track response times and other useful info
@@ -98,10 +94,8 @@ function configureBot(bot: Bot<BotContext>): void {
   // Handle inline queries first, before other composers with chat requirements
   bot.use(inlineQuery);
 
-  // Handle my_chat_member updates
   bot.on("my_chat_member", chatMemberHandler);
 
-  // Deprecated features
   bot.command(DEPRECATED_COMMANDS_LIST, deprecatedCommandHandler);
 
   // Composer middlewares that require chat context
@@ -111,10 +105,8 @@ function configureBot(bot: Bot<BotContext>): void {
   bot.use(calendarLookup);
   bot.use(syllabusLookup);
 
-  // Command group middleware
   bot.use(botCommands);
 
-  // Handle unknown commands
   bot.filter(commandNotFound(botCommands)).use(unknownCommandHandler);
 
   // Unhandled stuff — Should remain at the end

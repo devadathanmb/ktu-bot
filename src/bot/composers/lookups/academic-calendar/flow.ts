@@ -154,7 +154,6 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
   async function viewAnother(ctx: CallbackContext): Promise<void> {
     await ctx.answerCallbackQuery();
 
-    // Reset to first page and refetch
     ctx.session.calendarPage = LOOKUP_CONFIG.INITIAL_PAGE;
     await fetchAndDisplay(ctx);
   }

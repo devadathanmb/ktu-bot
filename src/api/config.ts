@@ -1,6 +1,5 @@
 import { KTU_API_ORIGIN_URL, KTU_API_REFERER_URL } from "../constants/api.js";
 
-// API headers
 const KTU_API_HEADERS = {
   "Content-Type": "application/json",
   "Accept": "application/json, text/plain, */*",
@@ -15,7 +14,6 @@ const KTU_API_HEADERS = {
   "Referer": KTU_API_REFERER_URL,
 };
 
-// API Client options
 const API_CLIENT_OPTIONS = {
   timeout: { request: 20 * 1000 },
   retry: { limit: 2 },

@@ -11,7 +11,6 @@ function startBullBoard() {
   try {
     const app = new Hono();
 
-    // Setup Bull Board with Hono adapter
     const serverAdapter = new HonoAdapter(serveStatic);
     serverAdapter.setBasePath("/");
 
@@ -28,7 +27,6 @@ function startBullBoard() {
       },
     });
 
-    // Request logging middleware for Bull Board routes
     app.use("/*", async (c, next) => {
       logger.info(
         { method: c.req.method, path: c.req.path },
@@ -37,10 +35,8 @@ function startBullBoard() {
       await next();
     });
 
-    // Mount Bull Board routes
     app.route("/", serverAdapter.registerPlugin());
 
-    // Health check endpoint for the monitoring service itself
     app.get("/health", c => {
       return c.json({
         status: "ok",
@@ -50,7 +46,6 @@ function startBullBoard() {
       });
     });
 
-    // Start server
     serve({ fetch: app.fetch, port: BullBoardServiceConfig.PORT }, info => {
       logger.info(
         { port: info.port, queues: queueAdapters.length },

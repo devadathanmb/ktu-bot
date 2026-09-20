@@ -15,7 +15,6 @@ export type ProcessedAttachment =
       fileId?: never;
     };
 
-// Generic broadcast job that any service can use
 export interface BroadcastJob {
   formattedText: FormattedString;
   attachments: ProcessedAttachment[];

@@ -1,7 +1,3 @@
-/**
- * Monitoring utilities for health checks and metrics
- */
-
 export {
   setupHealthCheckEndpoint,
   createHealthCheckResponse,

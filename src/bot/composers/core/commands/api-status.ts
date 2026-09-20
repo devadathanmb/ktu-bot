@@ -21,7 +21,6 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
   async ctx => {
     const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU services status...`;
 
-    // Keyboard with monitor page links
     const keyboard = new InlineKeyboard()
       .url(
         `${emoji("bar_chart")} View Monitor Page (Uptimerobot)`,
@@ -46,7 +45,6 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
     try {
       const apiStatusResponse = await getApiStatus();
 
-      // Build status message for all monitors
       const title = fmt`${emoji("globe_with_meridians")} ${b}KTU Services Status${b}`;
 
       const monitorMessages = apiStatusResponse.monitors.map(monitor => {
@@ -69,7 +67,6 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
         link_preview_options: { is_disabled: true },
       });
     } catch (error) {
-      // Send error message to user
       const errorDescription = fmt`${emoji("frowning_face")} Failed to fetch API status. Please try again later.`;
       const errorMessage = joinWithNewlines([errorDescription], 2);
 

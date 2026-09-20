@@ -35,11 +35,6 @@ const defaultDeps: StartWorkerMonitoringDeps = {
   setupGracefulShutdown,
 };
 
-/**
- * Starts a worker service with its monitoring server and graceful shutdown
- * wiring. Dependencies default to the production monitoring server and signal
- * handlers; tests inject fakes.
- */
 export function startWorkerMonitoring<T>(
   config: StartWorkerMonitoringConfig<T>,
   deps: StartWorkerMonitoringDeps = defaultDeps

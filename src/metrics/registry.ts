@@ -1,13 +1,5 @@
 import { Registry, collectDefaultMetrics } from "prom-client";
 
-/**
- * Creates a Prometheus metrics registry with default configuration
- * Follows the existing config pattern used throughout the codebase
- *
- * @param serviceName - Name of the service (used as default label)
- * @param options - Optional configuration
- * @returns Configured Prometheus Registry
- */
 export function createMetricsRegistry(
   serviceName: string,
   options: {
