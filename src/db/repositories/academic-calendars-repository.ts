@@ -1,5 +1,4 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
-import { getDb } from "../connection.js";
 import { academicCalendars } from "../schema/academic-calendars.js";
 import { DatabaseInstance } from "../types.js";
 import type { AcademicCalendar } from "../../types/service.types.js";
@@ -17,7 +16,7 @@ type AcademicCalendarInsert = typeof academicCalendars.$inferInsert;
 export class AcademicCalendarsRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = getDb()) {
+  constructor(dbInstance: DatabaseInstance) {
     this.db = dbInstance;
   }
 

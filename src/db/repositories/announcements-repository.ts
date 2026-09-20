@@ -1,5 +1,4 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
-import { getDb } from "../connection.js";
 import { announcements } from "../schema/announcements.js";
 import { DatabaseInstance } from "../types.js";
 import type { Announcement } from "../../types/service.types.js";
@@ -17,7 +16,7 @@ type AnnouncementInsert = typeof announcements.$inferInsert;
 export class AnnouncementsRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = getDb()) {
+  constructor(dbInstance: DatabaseInstance) {
     this.db = dbInstance;
   }
 

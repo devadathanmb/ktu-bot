@@ -1,12 +1,11 @@
 import { eq, desc } from "drizzle-orm";
-import { getDb } from "../connection.js";
 import { announcementsBuffer } from "../schema/announcements-buffer.js";
 import { DatabaseInstance } from "../types.js";
 
 export class AnnouncementsBufferRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = getDb()) {
+  constructor(dbInstance: DatabaseInstance) {
     this.db = dbInstance;
   }
 

@@ -1,12 +1,11 @@
 import { eq, arrayOverlaps } from "drizzle-orm";
-import { getDb } from "../connection.js";
 import { announcementSubscriptions } from "../schema/announcement-subscriptions.js";
 import { DatabaseInstance } from "../types.js";
 
 export class AnnouncementSubscriptionRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = getDb()) {
+  constructor(dbInstance: DatabaseInstance) {
     this.db = dbInstance;
   }
 

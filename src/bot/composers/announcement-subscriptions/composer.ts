@@ -1,5 +1,5 @@
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
-import { withTransaction } from "../../../db/index.js";
+import { getDb, withTransaction } from "../../../db/index.js";
 import { AnnouncementSubscriptionRepository } from "../../../db/repositories/announcement-subscription-repository.js";
 import { SessionNotFoundError } from "../../../errors/index.js";
 import { BotContext } from "../../../types/bot.types.js";
@@ -193,8 +193,9 @@ const announcementsShowFilterCommand = new Command<BotContext>(
   `${emoji("clipboard")} Show current announcement subscription status`,
   async ctx => {
     const chatId = ctx.chatId;
-    const announcementSubscriptionRepo =
-      new AnnouncementSubscriptionRepository();
+    const announcementSubscriptionRepo = new AnnouncementSubscriptionRepository(
+      getDb()
+    );
     const announcementSubscription =
       await announcementSubscriptionRepo.getByChatId(chatId);
 

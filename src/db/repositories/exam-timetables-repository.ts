@@ -1,5 +1,4 @@
 import { eq, desc, sql, and, count } from "drizzle-orm";
-import { getDb } from "../connection.js";
 import { examTimetables } from "../schema/exam-timetables.js";
 import { DatabaseInstance } from "../types.js";
 import type { ExamTimeTable } from "../../types/service.types.js";
@@ -17,7 +16,7 @@ type ExamTimetableInsert = typeof examTimetables.$inferInsert;
 export class ExamTimetablesRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = getDb()) {
+  constructor(dbInstance: DatabaseInstance) {
     this.db = dbInstance;
   }
 

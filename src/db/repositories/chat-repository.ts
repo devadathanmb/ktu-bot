@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { getDb } from "../connection.js";
 import { chats } from "../schema/chats.js";
 import { DatabaseInstance } from "../types.js";
 import logger from "../../utils/logger.js";
@@ -7,7 +6,7 @@ import logger from "../../utils/logger.js";
 export class ChatRepository {
   private db: DatabaseInstance;
 
-  constructor(dbInstance: DatabaseInstance = getDb()) {
+  constructor(dbInstance: DatabaseInstance) {
     this.db = dbInstance;
   }
 

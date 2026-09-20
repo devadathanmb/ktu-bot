@@ -7,6 +7,7 @@ import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 import type { InlineQueryResult } from "grammy/types";
 import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/queue.js";
+import { getDb } from "../../../db/index.js";
 import { AcademicCalendarsRepository } from "../../../db/repositories/academic-calendars-repository.js";
 import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
 import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
@@ -48,19 +49,19 @@ inlineQuery.on("inline_query", async ctx => {
         case SearchType.ANNOUNCEMENTS:
           results = await searchAnnouncements(
             searchTerm,
-            new AnnouncementsRepository()
+            new AnnouncementsRepository(getDb())
           );
           break;
         case SearchType.CALENDARS:
           results = await searchCalendars(
             searchTerm,
-            new AcademicCalendarsRepository()
+            new AcademicCalendarsRepository(getDb())
           );
           break;
         case SearchType.TIMETABLES:
           results = await searchTimetables(
             searchTerm,
-            new ExamTimetablesRepository()
+            new ExamTimetablesRepository(getDb())
           );
           break;
       }
@@ -95,9 +96,9 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
   try {
     const resolution = await resolveChosenResultAttachments(resultId, {
-      createAnnouncementsRepository: () => new AnnouncementsRepository(),
-      createCalendarsRepository: () => new AcademicCalendarsRepository(),
-      createTimetablesRepository: () => new ExamTimetablesRepository(),
+      createAnnouncementsRepository: () => new AnnouncementsRepository(getDb()),
+      createCalendarsRepository: () => new AcademicCalendarsRepository(getDb()),
+      createTimetablesRepository: () => new ExamTimetablesRepository(getDb()),
     });
 
     if (resolution.status === "ignored") return;
