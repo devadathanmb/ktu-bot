@@ -9,15 +9,32 @@ import { baseApiClient } from "../../api/client.js";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "../../db/schema/index.js";
 
+export interface InitialSyncJob {
+  name: SyncJobType;
+  data: SyncJobData;
+}
+
+export interface DataSyncProcessorOverrides {
+  syncers?: Record<SyncJobType, ResourceSyncer>;
+  enqueueSyncJob?: (job: InitialSyncJob) => Promise<unknown>;
+}
+
 export class DataSyncProcessor {
   private readonly syncers: Record<SyncJobType, ResourceSyncer>;
+  private readonly enqueueSyncJob: (job: InitialSyncJob) => Promise<unknown>;
 
-  constructor(db: NodePgDatabase<typeof schema>) {
-    this.syncers = {
+  constructor(
+    db: NodePgDatabase<typeof schema>,
+    overrides: DataSyncProcessorOverrides = {}
+  ) {
+    this.syncers = overrides.syncers ?? {
       "data-sync:announcements": new AnnouncementsSyncer(db, baseApiClient),
       "data-sync:academic-calendars": new CalendarsSyncer(db, baseApiClient),
       "data-sync:exam-timetables": new ExamTimetablesSyncer(db, baseApiClient),
     };
+    this.enqueueSyncJob =
+      overrides.enqueueSyncJob ??
+      (job => dataSyncQueue.add(job.name, job.data));
 
     const syncerNames = Object.values(this.syncers)
       .map(s => s.name)
@@ -81,23 +98,22 @@ export class DataSyncProcessor {
       ResourceSyncer,
     ][];
 
-    const results = await Promise.allSettled(
+    // A rejected check must fail startup visibly instead of being mistaken
+    // for a resource that needs no initial sync.
+    const needs = await Promise.all(
       entries.map(async ([syncType, syncer]) => {
-        const needs = await syncer.needsInitialSync();
+        const needsSync = await syncer.needsInitialSync();
         logger.info(
-          { syncer: syncer.name, needsInitialSync: needs },
+          { syncer: syncer.name, needsInitialSync: needsSync },
           "Checked initial sync need"
         );
-        return needs ? syncType : null;
+        return needsSync ? syncType : null;
       })
     );
 
-    return results
-      .filter(
-        (result): result is PromiseFulfilledResult<SyncJobType> =>
-          result.status === "fulfilled" && result.value !== null
-      )
-      .map(result => result.value);
+    return needs.filter(
+      (syncType): syncType is SyncJobType => syncType !== null
+    );
   }
 
   private async scheduleInitialSyncJobs(
@@ -111,7 +127,7 @@ export class DataSyncProcessor {
         { syncer: syncer.name },
         "Needs initial sync, scheduling job"
       );
-      return dataSyncQueue.add(syncType, { syncType });
+      return this.enqueueSyncJob({ name: syncType, data: { syncType } });
     });
 
     if (jobs.length > 0) {

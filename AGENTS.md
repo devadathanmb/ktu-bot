@@ -30,6 +30,7 @@ Project-specific rules for coding agents. Keep this file focused on instructions
 - For worker recurring-schedule changes, run the recurring-schedules suite; a real Redis check must call setup twice with different patterns and leave one scheduler per logical job.
 - For announcement notification orchestration changes, run the announcements-notify-orchestration suite (offline, injects fake subscriber/attachment/queue/buffer functions).
 - For inline-query changes, run the inline-query suite (offline, injects fake repositories). Result ID prefixes (`ann:`, `cal:`, `tt:`) and queued attachment payloads must stay stable.
+- For data-sync processor changes, run the data-sync suite (offline, injects fake syncers and a recording enqueue function). Initial-sync check failures must propagate instead of scheduling nothing.
 
 ## TypeScript and Style
 
