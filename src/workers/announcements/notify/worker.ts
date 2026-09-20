@@ -1,40 +1,32 @@
 import type { Job } from "bullmq";
-import { fetchAnnouncements, LLMService } from "../../../api/services/index.js";
+import { fetchAnnouncements } from "../../../api/services/ktu/index.js";
 import { baseApiClient } from "../../../api/client.js";
 import { AnnouncementsBufferRepository } from "../../../db/repositories/announcements-buffer-repository.js";
 import { AnnouncementSubscriptionRepository } from "../../../db/repositories/announcement-subscription-repository.js";
 import type { Announcement } from "../../../types/service.types.js";
-import findCourseFiltersFromText from "../../../utils/find-course-filters-from-text.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
-import {
-  addBroadcastJobs,
-  type BroadcastJobInput,
-} from "../../broadcasts/queue.js";
+import { addBroadcastJobs } from "../../broadcasts/queue.js";
 import { fmt, b, type FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import {
-  addAllStudentAudienceFilters,
-  addUniversalSubscriptionFilters,
-  hasSpecificAudienceFilters,
-  isOnlyAllAnnouncementsFilter,
-  shouldRefineBroadCourseMatch,
+  resolveAnnouncementAudience,
+  type AnnouncementClassifier,
 } from "./audience.js";
+import { enqueueNewAnnouncementBroadcasts } from "./orchestration.js";
 import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
 import { processAttachments } from "../../shared/utils/attachment-processor.js";
-import { setTimeout } from "node:timers/promises";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "../../../db/schema/index.js";
 import type { Bot } from "grammy";
 import type { BotContext } from "../../../types/bot.types.js";
 
 export class AnnouncementsNotifyProcessor {
-  private readonly llmService = new LLMService();
-
   constructor(
     private readonly db: NodePgDatabase<typeof schema>,
-    private readonly bot: Bot<BotContext>
+    private readonly bot: Bot<BotContext>,
+    private readonly classifier: AnnouncementClassifier
   ) {}
 
   async process(job: Job<Record<string, never>>): Promise<void> {
@@ -49,70 +41,31 @@ export class AnnouncementsNotifyProcessor {
       dataSize: AnnouncementsNotifyWorkerConfig.DATA_LOOKUP_LIMIT,
       apiClient: baseApiClient,
     });
-    const newAnnouncements =
-      await this.getNewAnnouncements(fetchedAnnouncements);
-    if (newAnnouncements.length === 0) return;
 
-    const jobs: BroadcastJobInput[] = [];
+    const bufferedAnnouncementIds = await this.getBufferedAnnouncementIds();
 
-    for (const announcement of newAnnouncements) {
-      const chatIds = await this.findRelevantSubscribers(announcement);
-      if (chatIds.length === 0) {
-        const announcementId = announcement.id;
-        logger.debug(
-          { announcementId },
-          "No relevant subscribers for announcement"
-        );
-        continue;
+    await enqueueNewAnnouncementBroadcasts(
+      fetchedAnnouncements,
+      bufferedAnnouncementIds,
+      {
+        findSubscriberChatIds: announcement =>
+          this.findRelevantSubscribers(announcement),
+        processAttachments: attachments =>
+          processAttachments(this.bot, attachments),
+        prepareFormattedText: announcement =>
+          this.prepareFormattedMessage(announcement),
+        enqueueBroadcasts: addBroadcastJobs,
+        replaceBuffer: announcementIds =>
+          this.resyncAnnouncementsBuffer(announcementIds),
       }
-
-      const formattedText = this.prepareFormattedMessage(announcement);
-      const processedAttachments = announcement.attachments
-        ? await processAttachments(this.bot, announcement.attachments)
-        : [];
-
-      for (const chatId of chatIds) {
-        jobs.push({
-          data: {
-            formattedText: formattedText,
-            attachments: processedAttachments,
-            chatId: chatId,
-          },
-          jobId: `announcement-${announcement.id}-chat-${chatId}`,
-        });
-      }
-    }
-
-    // Redis queue writes and the database buffer replacement are not atomic.
-    // Replace the buffer only after all queue writes succeed.
-    if (jobs.length > 0) {
-      await addBroadcastJobs(jobs);
-      const jobCount = jobs.length;
-      logger.info({ jobCount }, "Added broadcast jobs to queue");
-    }
-
-    await this.resyncAnnouncementsBuffer(fetchedAnnouncements.map(a => a.id));
+    );
   }
 
-  private async getNewAnnouncements(
-    announcements: Announcement[]
-  ): Promise<Announcement[]> {
+  private async getBufferedAnnouncementIds(): Promise<number[]> {
     logger.info("Checking for new announcements");
 
-    const latestIds = announcements.map(a => a.id).sort((a, b) => b - a);
     const announcementsBufferRepo = new AnnouncementsBufferRepository(this.db);
-    const existingIds = await announcementsBufferRepo.getAllAnnouncementIds();
-
-    const newIds = latestIds.filter(id => !existingIds.includes(id));
-    if (newIds.length === 0) {
-      logger.info("No new announcements found");
-      return [];
-    }
-
-    const newAnnouncements = announcements.filter(a => newIds.includes(a.id));
-    const count = newAnnouncements.length;
-    logger.info({ count }, "Found new announcements");
-    return newAnnouncements;
+    return announcementsBufferRepo.getAllAnnouncementIds();
   }
 
   private async resyncAnnouncementsBuffer(
@@ -136,69 +89,11 @@ export class AnnouncementsNotifyProcessor {
       subject: announcement.subject || "",
       message: announcement.message || "",
     };
-    const contentText = JSON.stringify(content);
 
-    const filters = findCourseFiltersFromText(contentText);
-    const announcementContent = content;
-    const extractedFilters = Array.from(filters);
-
-    logger.debug(
-      {
-        announcement: announcementContent,
-        filters: extractedFilters,
-      },
-      "Regex extracted course filters from announcement"
+    const { filters } = await resolveAnnouncementAudience(
+      JSON.stringify(content),
+      this.classifier
     );
-
-    let isStudentRelevant = hasSpecificAudienceFilters(filters);
-
-    // Broad phrases like "UG" or "PG" expand to every course in that group.
-    // That is useful for reach, but too coarse for notifications, so we ask the
-    // LLM for a narrower course list only when the extracted set actually
-    // contains the whole UG/PG group instead of relying on set size alone.
-    if (shouldRefineBroadCourseMatch(filters)) {
-      logger.debug(
-        "Broad course filters found, using LLM to determine specific relevant courses"
-      );
-      const llmMatchedCourses =
-        await this.llmService.findRelevantCoursesFromAnnouncement(contentText);
-      logger.debug(
-        {
-          llmMatchedCourses: Array.from(llmMatchedCourses),
-          announcement: announcementContent,
-        },
-        "LLM matched courses from announcement"
-      );
-      if (llmMatchedCourses.size > 0) {
-        filters.clear();
-        llmMatchedCourses.forEach(courseCode => {
-          filters.add(courseCode);
-        });
-      }
-      isStudentRelevant = true;
-    }
-
-    // General announcements with no course signal need an LLM relevance check.
-    // If relevant, we target every course filter plus `RELEVANT`; if not, only
-    // `ALL` subscribers receive it via addUniversalSubscriptionFilters below.
-    if (isOnlyAllAnnouncementsFilter(filters)) {
-      // Stagger LLM calls to avoid bursts
-      await setTimeout(2 * 1000);
-
-      logger.debug("No specific filters found, checking relevancy with LLM");
-      const isRelevant =
-        await this.llmService.isAnnouncementRelevant(contentText);
-
-      if (isRelevant) {
-        logger.debug(
-          "Announcement deemed relevant by LLM, adding all student audience filters"
-        );
-        addAllStudentAudienceFilters(filters);
-      }
-      isStudentRelevant = isRelevant;
-    }
-
-    addUniversalSubscriptionFilters(filters, { isStudentRelevant });
 
     // Find subscribers matching any of these filters
     const subscriptionRepo = new AnnouncementSubscriptionRepository(this.db);

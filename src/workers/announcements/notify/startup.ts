@@ -1,5 +1,6 @@
 import { autoRetry } from "@grammyjs/auto-retry";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
+import { LLMService } from "../../../api/services/llm/index.js";
 import { createBot } from "../../../bot/bot.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
 import { closeDB, initDB } from "../../../db/connection.js";
@@ -19,7 +20,8 @@ async function start(): Promise<void> {
     bot.api.config.use(autoRetry({ maxRetryAttempts: 5 }));
     logger.info("Bot instance created with throttler and auto-retry");
 
-    const processor = new AnnouncementsNotifyProcessor(db, bot);
+    const classifier = new LLMService();
+    const processor = new AnnouncementsNotifyProcessor(db, bot, classifier);
     const worker = await createWorker({
       workerName: serviceName,
       queue: announcementsNotifyQueue,
