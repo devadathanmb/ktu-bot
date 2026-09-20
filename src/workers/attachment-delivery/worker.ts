@@ -57,22 +57,45 @@ export class AttachmentDeliveryProcessor {
         throw error;
       }
 
+      let recoveryError: unknown;
+      let recoveryFailed = false;
       try {
         await this.handleGrammyError(job.data.chatId, primary, this.queue);
-      } catch {
-        // Rate-limited and unhandled recovery failures must retry with the
-        // combined Telegram and cleanup failures intact.
+      } catch (thrown) {
+        recoveryError = thrown;
+        recoveryFailed = true;
+      }
+
+      if (!recoveryFailed) {
+        if (additional.length > 0) {
+          // Recovery handled the Telegram failure, but the cleanup failures
+          // are still unhandled and must stay observable.
+          throw new AggregateError(
+            additional,
+            "Temp file cleanup failed after handling a Telegram error"
+          );
+        }
+        return;
+      }
+
+      if (recoveryError === primary) {
+        // Normal unhandled/rate-limited rethrow: keep the original failure,
+        // including any cleanup aggregate.
         throw error;
       }
 
-      if (additional.length > 0) {
-        // Recovery handled the Telegram failure, but the cleanup failures are
-        // still unhandled and must stay observable.
-        throw new AggregateError(
-          additional,
-          "Temp file cleanup failed after handling a Telegram error"
-        );
+      if (additional.length === 0) {
+        // A distinct recovery failure replaces a lone GrammyError, as before.
+        throw recoveryError;
       }
+
+      // Expose the Telegram failure, every cleanup failure, and the recovery
+      // failure in one deterministic aggregate.
+      throw new AggregateError(
+        [primary, ...additional, recoveryError],
+        "Telegram error recovery failed after attachment delivery and cleanup failures",
+        { cause: primary }
+      );
     }
   }
 

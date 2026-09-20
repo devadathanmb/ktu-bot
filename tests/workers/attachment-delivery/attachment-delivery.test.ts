@@ -381,6 +381,77 @@ test("cleanup failures stay visible after Telegram recovery handles the error", 
   );
 });
 
+test("a distinct recovery failure propagates for a lone GrammyError", async () => {
+  const grammyFailure = new GrammyError(
+    "blocked",
+    {
+      ok: false,
+      error_code: 403,
+      description: "Forbidden: bot was blocked by the user",
+    },
+    "sendDocument",
+    {}
+  );
+  const recoveryFailure = new Error("chat repository failed");
+  const { api, grammyRecovery, processor } = createHarness({
+    grammyErrorHandler: async () => {
+      throw recoveryFailure;
+    },
+  });
+  api.sendDocument = async () => {
+    throw grammyFailure;
+  };
+
+  const caught = await processor
+    .process(deliveryJob([attachment("a.pdf")]))
+    .catch((error: unknown) => error);
+
+  assert.equal(grammyRecovery.length, 1);
+  assert.strictEqual(grammyRecovery[0]?.error, grammyFailure);
+  assert.strictEqual(caught, recoveryFailure);
+});
+
+test("a distinct recovery failure joins the combined failure", async () => {
+  const grammyFailure = new GrammyError(
+    "blocked",
+    {
+      ok: false,
+      error_code: 403,
+      description: "Forbidden: bot was blocked by the user",
+    },
+    "sendDocument",
+    {}
+  );
+  const cleanupFailure = new Error("cleanup a failed");
+  const recoveryFailure = new Error("chat repository failed");
+  const { api, grammyRecovery, processor } = createHarness({
+    cleanupFailures: { "/tmp/enc-a.pdf.pdf": cleanupFailure },
+    grammyErrorHandler: async () => {
+      throw recoveryFailure;
+    },
+  });
+  api.sendDocument = async () => {
+    throw grammyFailure;
+  };
+
+  const caught = await processor
+    .process(deliveryJob([attachment("a.pdf")]))
+    .catch((error: unknown) => error);
+
+  assert.equal(grammyRecovery.length, 1);
+  assert.strictEqual(grammyRecovery[0]?.error, grammyFailure);
+  assert.ok(caught instanceof AggregateError);
+  assert.equal(caught.errors.length, 3);
+  assert.strictEqual(caught.errors[0], grammyFailure);
+  assert.strictEqual(caught.errors[1], cleanupFailure);
+  assert.strictEqual(caught.errors[2], recoveryFailure);
+  assert.strictEqual(caught.cause, grammyFailure);
+  assert.match(
+    caught.message,
+    /recovery failed after attachment delivery and cleanup failures/
+  );
+});
+
 test("a handled GrammyError without cleanup failures does not fail the job", async () => {
   const grammyFailure = new GrammyError(
     "blocked",

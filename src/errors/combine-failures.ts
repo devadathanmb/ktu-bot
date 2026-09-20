@@ -20,19 +20,22 @@ export function combineFailures(
 
 /**
  * Split an error produced by `combineFailures` back into its primary failure
- * and its additional failures. Any other error is a lone primary failure.
+ * and its additional failures. Only the exact ordered shape `combineFailures`
+ * creates is split: the cause must be the first `errors` entry. Any other
+ * error, including an unrelated AggregateError, is a lone primary failure.
  */
 export function splitCombinedFailure(error: unknown): {
   primary: unknown;
   additional: unknown[];
 } {
-  if (!(error instanceof AggregateError) || error.cause === undefined) {
+  if (
+    !(error instanceof AggregateError) ||
+    error.errors.length === 0 ||
+    error.cause === undefined ||
+    error.errors[0] !== error.cause
+  ) {
     return { primary: error, additional: [] };
   }
 
-  const additional: unknown[] = error.errors.filter(
-    failure => failure !== error.cause
-  );
-
-  return { primary: error.cause, additional };
+  return { primary: error.cause, additional: error.errors.slice(1) };
 }
