@@ -11,7 +11,10 @@ import {
 } from "../../utils/attachment-download.js";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
-import { combineFailures } from "../../errors/combine-failures.js";
+import {
+  combineFailures,
+  splitCombinedFailure,
+} from "../../errors/combine-failures.js";
 import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";
 import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import {
@@ -24,12 +27,14 @@ export interface AttachmentDeliveryDeps {
   downloadAttachment: typeof downloadAttachmentToTempFile;
   cleanupAttachment: typeof cleanupDownloadedAttachment;
   sendOversizedAsLink: typeof sendAsLink;
+  handleGrammyError: typeof handleWorkerGrammyError;
 }
 
 export class AttachmentDeliveryProcessor {
   private readonly downloadAttachment: typeof downloadAttachmentToTempFile;
   private readonly cleanupAttachment: typeof cleanupDownloadedAttachment;
   private readonly sendOversizedAsLink: typeof sendAsLink;
+  private readonly handleGrammyError: typeof handleWorkerGrammyError;
 
   constructor(
     private readonly bot: Bot<BotContext>,
@@ -39,18 +44,35 @@ export class AttachmentDeliveryProcessor {
     this.downloadAttachment = deps.downloadAttachment;
     this.cleanupAttachment = deps.cleanupAttachment;
     this.sendOversizedAsLink = deps.sendOversizedAsLink;
+    this.handleGrammyError = deps.handleGrammyError;
   }
 
   async process(job: Job<AttachmentDeliveryJob>): Promise<void> {
     try {
       await this.processAttachmentDeliveryJob(job);
     } catch (error) {
-      if (error instanceof GrammyError) {
-        await handleWorkerGrammyError(job.data.chatId, error, this.queue);
-        return;
+      const { primary, additional } = splitCombinedFailure(error);
+
+      if (!(primary instanceof GrammyError)) {
+        throw error;
       }
 
-      throw error;
+      try {
+        await this.handleGrammyError(job.data.chatId, primary, this.queue);
+      } catch {
+        // Rate-limited and unhandled recovery failures must retry with the
+        // combined Telegram and cleanup failures intact.
+        throw error;
+      }
+
+      if (additional.length > 0) {
+        // Recovery handled the Telegram failure, but the cleanup failures are
+        // still unhandled and must stay observable.
+        throw new AggregateError(
+          additional,
+          "Temp file cleanup failed after handling a Telegram error"
+        );
+      }
     }
   }
 

@@ -9,6 +9,7 @@ import { AttachmentDeliveryProcessor } from "./worker.js";
 import { attachmentDeliveryQueue } from "./queue.js";
 import { AttachmentDeliveryWorkerConfig } from "../../configs/attachment-delivery-worker.js";
 import { sendAsLink } from "../shared/utils/attachment-delivery.js";
+import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
 
@@ -28,6 +29,7 @@ async function start(): Promise<void> {
         downloadAttachment: downloadAttachmentToTempFile,
         cleanupAttachment: cleanupDownloadedAttachment,
         sendOversizedAsLink: sendAsLink,
+        handleGrammyError: handleWorkerGrammyError,
       }
     );
     const worker = await createWorker({

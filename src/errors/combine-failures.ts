@@ -17,3 +17,22 @@ export function combineFailures(
     cause: primary,
   });
 }
+
+/**
+ * Split an error produced by `combineFailures` back into its primary failure
+ * and its additional failures. Any other error is a lone primary failure.
+ */
+export function splitCombinedFailure(error: unknown): {
+  primary: unknown;
+  additional: unknown[];
+} {
+  if (!(error instanceof AggregateError) || error.cause === undefined) {
+    return { primary: error, additional: [] };
+  }
+
+  const additional: unknown[] = error.errors.filter(
+    failure => failure !== error.cause
+  );
+
+  return { primary: error.cause, additional };
+}

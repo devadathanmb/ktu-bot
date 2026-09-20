@@ -28,12 +28,14 @@ function createHarness(
     sizes?: Record<string, number>;
     failOnDownload?: string;
     cleanupFailures?: Record<string, Error>;
+    grammyErrorHandler?: AttachmentDeliveryDeps["handleGrammyError"];
   } = {}
 ) {
   const calls: ApiCall[] = [];
   const downloads: DownloadCall[] = [];
   const cleaned: string[] = [];
   const links: Array<{ chatId: number; fileName: string }> = [];
+  const grammyRecovery: Array<{ chatId: number; error: GrammyError }> = [];
   const api = {
     sendDocument: async (...args: unknown[]) => {
       calls.push({ method: "sendDocument", args });
@@ -76,13 +78,30 @@ function createHarness(
       links.push({ chatId, fileName: downloaded.fileName });
       return "https://files/large.pdf";
     },
+    handleGrammyError: async (chatId, error, queue) => {
+      grammyRecovery.push({ chatId, error });
+      if (options.grammyErrorHandler) {
+        await options.grammyErrorHandler(chatId, error, queue);
+        return;
+      }
+      // Mimics the unrecognized/rate-limited recovery path.
+      throw error;
+    },
   };
   const processor = new AttachmentDeliveryProcessor(
     { api } as unknown as Bot<BotContext>,
     {} as unknown as Queue<AttachmentDeliveryJob>,
     deps
   );
-  return { api, calls, downloads, cleaned, links, processor };
+  return {
+    api,
+    calls,
+    downloads,
+    cleaned,
+    links,
+    grammyRecovery,
+    processor,
+  };
 }
 
 function deliveryJob(
@@ -284,6 +303,108 @@ test("send and cleanup failures are both preserved", async () => {
   assert.deepEqual(edit?.args.slice(0, 2), [7, 9]);
   assert.match(edit?.args[2] as string, /Something went wrong/);
   assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf"]);
+});
+
+test("GrammyError with cleanup failure reaches Telegram recovery", async () => {
+  const grammyFailure = new GrammyError(
+    "blocked",
+    {
+      ok: false,
+      error_code: 403,
+      description: "Forbidden: bot was blocked by the user",
+    },
+    "sendDocument",
+    {}
+  );
+  const cleanupFailure = new Error("cleanup a failed");
+  const { api, grammyRecovery, processor } = createHarness({
+    cleanupFailures: { "/tmp/enc-a.pdf.pdf": cleanupFailure },
+  });
+  api.sendDocument = async () => {
+    throw grammyFailure;
+  };
+
+  const caught = await processor
+    .process(deliveryJob([attachment("a.pdf")]))
+    .catch((error: unknown) => error);
+
+  assert.equal(grammyRecovery.length, 1);
+  assert.equal(grammyRecovery[0]?.chatId, 7);
+  assert.strictEqual(grammyRecovery[0]?.error, grammyFailure);
+  // Recovery rethrows, so the original combined failure is preserved.
+  assert.ok(caught instanceof AggregateError);
+  assert.equal(caught.errors.length, 2);
+  assert.strictEqual(caught.errors[0], grammyFailure);
+  assert.strictEqual(caught.errors[1], cleanupFailure);
+  assert.strictEqual(caught.cause, grammyFailure);
+});
+
+test("cleanup failures stay visible after Telegram recovery handles the error", async () => {
+  const grammyFailure = new GrammyError(
+    "blocked",
+    {
+      ok: false,
+      error_code: 403,
+      description: "Forbidden: bot was blocked by the user",
+    },
+    "sendDocument",
+    {}
+  );
+  const firstCleanupFailure = new Error("cleanup a failed");
+  const secondCleanupFailure = new Error("cleanup b failed");
+  const { api, grammyRecovery, processor } = createHarness({
+    cleanupFailures: {
+      "/tmp/enc-a.pdf.pdf": firstCleanupFailure,
+      "/tmp/enc-b.pdf.pdf": secondCleanupFailure,
+    },
+    grammyErrorHandler: async () => {
+      // Simulates blocked/deactivated recovery completing successfully.
+    },
+  });
+  api.sendDocument = async () => {
+    throw grammyFailure;
+  };
+
+  const caught = await processor
+    .process(deliveryJob([attachment("a.pdf"), attachment("b.pdf")]))
+    .catch((error: unknown) => error);
+
+  assert.equal(grammyRecovery.length, 1);
+  assert.strictEqual(grammyRecovery[0]?.error, grammyFailure);
+  assert.ok(caught instanceof AggregateError);
+  assert.equal(caught.errors.length, 2);
+  assert.strictEqual(caught.errors[0], firstCleanupFailure);
+  assert.strictEqual(caught.errors[1], secondCleanupFailure);
+  assert.match(
+    caught.message,
+    /cleanup failed after handling a Telegram error/
+  );
+});
+
+test("a handled GrammyError without cleanup failures does not fail the job", async () => {
+  const grammyFailure = new GrammyError(
+    "blocked",
+    {
+      ok: false,
+      error_code: 403,
+      description: "Forbidden: bot was blocked by the user",
+    },
+    "sendDocument",
+    {}
+  );
+  const { api, grammyRecovery, processor } = createHarness({
+    grammyErrorHandler: async () => {
+      // Simulates blocked/deactivated recovery completing successfully.
+    },
+  });
+  api.sendDocument = async () => {
+    throw grammyFailure;
+  };
+
+  await processor.process(deliveryJob([attachment("a.pdf")]));
+
+  assert.equal(grammyRecovery.length, 1);
+  assert.strictEqual(grammyRecovery[0]?.error, grammyFailure);
 });
 
 test("unrecognized Grammy errors propagate", async () => {
