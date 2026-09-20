@@ -1,80 +1,39 @@
 # AGENTS.md
 
-Project-specific rules for coding agents. Keep this file focused on instructions that prevent common mistakes; use [`docs/working.md`](docs/working.md) for architecture details.
-
-## Quick Context
-
-- GrammY Telegram bot with BullMQ background workers.
-- PostgreSQL via Drizzle ORM for persistence; Redis powers BullMQ queues.
-- Docker Compose files live under `docker/compose/`.
-- When changing architecture or development workflows, review this file and `docs/working.md` and update affected guidance in the same change.
-- For delegated implementation, prefer Terra medium or Luna high; keep assignments narrow and review their changes in the main agent.
-- Antigravity CLI is also available for delegation: use `agy --help` and `agy models` to check invocation and model options, then `agy --print` for a bounded task. Review its output and changes in the main agent.
-- Prefer a Medium reasoning model for routine `agy` implementation tasks to control credit use; batch closely related changes and avoid duplicate global checks.
+GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Compose files: `docker/compose/`.
 
 ## Commands
 
-- Start the full dev stack:
-  ```bash
-  docker compose -f docker/compose/compose.dev.yaml up --build
-  ```
-- Use `pnpm` for project scripts and dependency operations.
-- Use `pnpm exec <command>` for project-local binaries, for example `pnpm exec tsc --noEmit`.
-- Do not use `npx` in this repository.
-- Before finishing TypeScript changes, run `pnpm exec tsc --noEmit`; run `pnpm lint` when lint-sensitive code changed.
-- Tests live in `tests/**/*.test.ts`, mirroring `src/` domains (`tests/api/`, `tests/bot/`, `tests/workers/`, `tests/utils/`; shared `tests/helpers.ts` and `tests/setup.ts` stay at the root). Run `pnpm test`. While iterating, target one file, for example `node --import tsx --import ./tests/setup.ts --test tests/api/token-solver.test.ts` (`setup.ts` provides the dummy env some suites need). Keep filenames stable and put new suites in the folder matching their `src/` domain.
-- For token-solver or X-Token hook changes, run the token-solver suite (offline, stub fetch).
-- For syllabus lookup changes, run the syllabus-views suite to check page rendering and attachment selection IDs offline.
-- For timetable lookup changes, run the exam-timetable suite. Timetable API pages are already paginated; do not slice them again locally.
-- For calendar or announcement lookup changes, run the calendar-announcement-views suite; these API pages also must not be sliced locally.
-- For worker recurring-schedule changes, run the recurring-schedules suite; a real Redis check must call setup twice with different patterns and leave one scheduler per logical job.
-- For announcement notification orchestration changes, run the announcements-notify-orchestration suite (offline, injects fake subscriber/attachment/queue/buffer functions).
-- For inline-query changes, run the inline-query suite (offline, injects fake repositories). Result ID prefixes (`ann:`, `cal:`, `tt:`) and queued attachment payloads must stay stable.
-- For data-sync processor changes, run the data-sync suite (offline, injects fake syncers and a recording enqueue function). Initial-sync check failures must propagate instead of scheduling nothing.
+- Dev stack: `docker compose -f docker/compose/compose.dev.yaml up --build`
+- `pnpm test` (all) or one file: `node --import tsx --import ./tests/setup.ts --test tests/<domain>/<file>.test.ts`. Tests mirror `src/` under `tests/<domain>/`; keep filenames stable (`setup.ts` provides the dummy env). Run the suite matching the area changed: token-solver, syllabus-views, exam-timetable, calendar-announcement-views, recurring-schedules (double-setup keeps one scheduler per job), announcements-notify-orchestration, inline-query, data-sync.
+- After TS changes: `pnpm exec tsc --noEmit`. Run `pnpm lint` for lint-sensitive code. Use `pnpm exec`, never `npx`.
 
-## TypeScript and Style
+## TypeScript
 
-- Pure ESM with `moduleResolution: "NodeNext"`. Local imports must include `.js` extensions even though source files are `.ts`.
-- TypeScript is strict. Watch especially for `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused symbols, missing `override`, and incomplete return paths.
-- Do not introduce `any`; use `unknown` and narrow with type guards.
-- Use GrammY's `fmt` template tag for formatted bot messages, and `joinWithNewlines()` for multi-line text.
-- Environment access belongs in Zod-backed config modules under `src/configs/`. Do not add new direct `process.env` reads elsewhere.
+- Pure ESM (`NodeNext`): local imports need `.js` suffixes. Strict mode: watch `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused symbols, missing `override`, incomplete return paths.
+- No `any`; narrow `unknown` with guards. Bot text via GrammY `fmt` + `joinWithNewlines()`.
+- Env only in Zod-backed `src/configs/`; no new `process.env` elsewhere.
 
-## API and Caching
+## API
 
-- KTU services use the shared Got clients from `src/api/client.ts`.
-- Import services through their domain entry point under `src/api/services/` (`ktu`, `file`, `llm`, `betteruptime`); do not recreate a mixed root barrel. Only the announcement notification worker may import the LLM domain.
-- KTU services default to `cachedApiClient`. Workers that need fresh KTU data should pass `baseApiClient` through supported service params.
-- Never pass `cache: false` to Got. Use the service `apiClient` dependency-injection parameter instead.
-- `src/api/hooks/before/add-x-token-header.ts` only gates on the KTU base URL and attaches `X-Token`; solver HTTP communication and response validation live in `src/api/token-solver.ts`. Keep the token hook after the cache hook so cache hits never mint a single-use Turnstile token. Solver timeout, network, non-2xx, malformed JSON, or blank-token failures throw instead of sending a KTU request without a token.
-- Large attachment endpoints are intentionally excluded from the in-memory cache; do not bypass this by adding ad-hoc caching around attachment downloads.
+- KTU calls go through Got clients in `src/api/client.ts`; import services via `src/api/services/<ktu|file|llm|betteruptime>`. Only the announcements-notify worker imports `llm`.
+- `cachedApiClient` is default; workers needing fresh data pass `baseApiClient` via the service `apiClient` param. Never pass `cache: false`.
+- The hook (`src/api/hooks/before/add-x-token-header.ts`) only gates on the KTU base URL and runs after the cache hook, so cache hits never mint a single-use Turnstile token; solver failures throw instead of sending a tokenless request. Attachment endpoints stay uncached. No ad-hoc caching around downloads.
 
-## Bot and GrammY
+## Bot
 
-- Before changing GrammY APIs, plugins, middleware ordering, or callback-query handling, check the GrammY docs first.
-- Main bot composition lives in `src/bot/bot.ts`. Broadcast, attachment-delivery, and announcement workers use the minimal `src/bot/utils/create-worker-bot.ts`; announcement startup installs `apiThrottler()` then `autoRetry({ maxRetryAttempts: 5 })` explicitly.
-- In bot/composer code, use `ctx.api`. In worker processors, use the injected bot's raw `bot.api`.
-- Callback-query composers should use `createComposerErrorBoundary([...sessionKeys])`. Capture the returned protected composer and register handlers on it; middleware registered on the original composer is not protected.
-- Syllabus entry callback IDs are indices in the original API response, not the filtered or paginated list. Preserve that mapping and existing callback prefixes during refactors.
-- Timetable `attachmentId` alone does not guarantee a download: require nonblank `fileName` and `encryptId` too, and preserve valid strings verbatim in queued jobs.
-- Telegram rate limits are undocumented. Broadcast processing intentionally uses low concurrency; on `retry_after`, pause the queue and re-throw so BullMQ retries.
+- Check GrammY docs before touching framework APIs, middleware order, or callback handling. Main composition in `src/bot/bot.ts`; workers use minimal `create-worker-bot()` (`ctx.api` in composers, raw `bot.api` in worker processors).
+- Callback composers use `createComposerErrorBoundary([...sessionKeys])` and register on the returned composer. Syllabus download IDs are indices into the original API response, not the filtered page; preserve existing callback prefixes. API pages arrive paginated; render as received, never re-slice locally. Inline result prefixes (`ann:`, `cal:`, `tt:`) and queued attachment payloads are stable.
+- Timetable downloads require nonblank `attachmentId` + `fileName` + `encryptId`, preserved verbatim. Broadcasts run at concurrency 1; on `retry_after`, pause the queue and re-throw for BullMQ retry.
 
 ## Workers
 
-- Keep dependency initialization and initial/recurring scheduling explicit in each worker's `startup.ts`; processors in `worker.ts` do not inherit a lifecycle base class.
-- Register recurring jobs with `upsertJobScheduler` through `shared/recurring-schedules.ts`. Scheduler IDs are stable and never encode the cron pattern, so a changed schedule updates the existing entry. Do not use `queue.add(..., { repeat })`: it accumulates definitions and BullMQ later converts them into schedulers keyed by legacy hashes. Setup removes legacy repeat definitions for the same logical job names only.
-- Reuse `shared/worker-runtime.ts` for BullMQ lifecycle, `shared/worker-shutdown.ts` for the standard worker-then-database shutdown, and `shared/start-worker.ts` for monitoring/shutdown wiring. Close the worker and queue before the database.
-- Attachment-delivery startup still needs `initDB()`: Telegram error recovery updates chat and subscription records.
-- Attachment retrieval and its temp-file lifecycle live in `src/utils/attachment-download.ts`. Keep `src/utils/file-utils.ts` to generic filesystem helpers that know nothing about KTU endpoints or `AttachmentSource`.
-- Preserve queue names, job IDs, payloads, concurrency, and retry behavior during structural refactors. Keep announcement fetch results local to a job and enqueue broadcasts before replacing the buffer.
-- Announcements notify `startup.ts` constructs `LLMService` and passes it to `AnnouncementsNotifyProcessor` as an `AnnouncementClassifier`; the processor must not construct it. `notify/orchestration.ts` owns job building and the enqueue-before-buffer-replacement ordering and takes its database, bot, and queue behavior as narrow functions.
+- Each worker owns its `startup.ts` (init, scheduling); processors in `worker.ts` only process jobs and do not inherit a lifecycle base class. Share `worker-runtime.ts` / `worker-shutdown.ts` / `start-worker.ts`; close worker and queue before the database.
+- Recurring jobs only via `upsertJobScheduler` (`shared/recurring-schedules.ts`) with stable IDs that never encode the cron pattern; never `queue.add(..., { repeat })`. Setup removes legacy repeat definitions for the same logical job names only.
+- Keep queue names, job IDs, payloads, concurrency, retry behavior stable. Keep announcement fetch results local to a job; orchestration owns job building via narrow DB/bot/queue functions. Data-sync initial-sync failures must propagate, never silently schedule nothing. Announcement `startup.ts` builds `LLMService` and injects it; the processor never constructs it. Its startup installs `apiThrottler()` then `autoRetry({ maxRetryAttempts: 5 })`. Enqueue broadcasts before replacing the notify buffer.
+- Attachment-delivery startup still needs `initDB()` (error recovery writes chats/subs). Temp-file lifecycle lives in `src/utils/attachment-download.ts`; `file-utils.ts` stays generic.
 
 ## Errors and Logging
 
-- Bot-facing errors should extend `BotError` when they need a safe `userMessage`.
-- Composer boundaries wrap already-notified failures in `HandledBotError`; avoid notifying users twice.
-- Use pino from `src/utils/logger.ts` for logs.
-- Log errors as structured fields, preferably `{ err: error }`; do not manually destructure errors.
-- Do not log and throw in the same layer. Log at the boundary, or throw upward.
-- Keep log messages sentence-case with no trailing period. Put identifiers in structured fields, not template strings.
-- Include useful correlation context: `chatId`/`userId` in bot code, `jobId`/`queueName`/`workerName` in workers, and `service`/`url` in API code.
+- User-facing errors extend `BotError` (`userMessage`); already-notified failures become `HandledBotError`. Never notify twice.
+- Pino via `src/utils/logger.ts`, `{ err }` field, no manual destructuring. Log at the boundary or throw, never both. Sentence-case, no trailing period; IDs in fields, not strings. Include `chatId`/`userId` (bot), `jobId`/`queueName`/`workerName` (workers), `service`/`url` (API).

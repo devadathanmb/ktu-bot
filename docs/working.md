@@ -1,293 +1,190 @@
-# How KTU Bot Works?
+# How KTU Bot Works
 
-This document provides a high-level overview of how the entire system works. The goal is to help anyone understand the core architecture, whether you want to contribute, fork the project, or are just curious about how it all comes together.
+This document explains the system architecture: what each service does and how they fit together. For setup instructions, see the [README](../README.md).
 
-## This Isn't Magic
+## The Short Version
 
-Before we dive in, let's clear something up. If you don't have much technical background, you might wonder how this bot pulls data from KTU and sends you announcements as they arrive, or _"How is it able to find my results?"_ _"Is it safe?"_ I know you may have a lot of such questions, and I've received plenty of them from users in the past.
-
-Here's the thing: **this isn't magic**. The bot is just a smart [API consumer](https://medium.com/@kumarnagendra205/mcpa-part-1-api-terminology-api-api-client-api-consumer-and-api-implementation-61165dbd81b3). An API is basically an interface to access data - think of it like a waiter at a restaurant. You tell the waiter what you want, they go to the kitchen, and bring back your order. KTU's website actually uses their own APIs to fetch and display data in the UI. Since this project isn't officially associated with KTU, it uses those same public APIs to get the data.
-
-But what makes the bot special is what it does with that data. It applies some clever techniques while fetching and processing it, enabling all the functionality users rely on. In fact, the bot was known for retrieving results even when KTU's website was down - this was possible because their API remained accessible, and the bot employed specific strategies to fetch results when other methods failed.
-
-If you're curious to learn more about how it works under the hood, keep reading. 👇
+KTU's website fetches its data from public HTTP APIs. This bot uses those same APIs directly and adds what the site lacks: fast search, subscriptions, and notifications. Anything KTU stops exposing publicly (like results after early 2025) is out of the bot's reach too.
 
 ## Architecture Overview
 
 > [!NOTE]
-> In all diagrams below, direct user interaction with the bot is shown for simplicity. In reality, all communication flows through Telegram's servers - users send messages to Telegram, which forwards them to the bot, and responses follow the reverse path.
+> Diagrams below show users talking to the bot directly for simplicity. In reality everything flows through Telegram's servers.
 
-The bot is built as independent services — each handles a specific responsibility, and they communicate through a job queue and database. This means if one piece fails, it doesn't bring down the entire system. For example, if the notification worker crashes, users can still interact with the bot normally — notifications just won't go out until the worker recovers.
-
-Here's how everything fits together at a high level:
+The system runs as independent services that communicate through a job queue and a database. If one worker crashes, the bot keeps serving users.
 
 ```mermaid
 graph TB
-    User[👤 User]
-    TG[Telegram API]
-    Bot[🤖 Bot Service]
-    DB[(PostgreSQL Database)]
-    ApiCache[(In-memory API Cache)]
-    Queue[BullMQ Queues]
-    Redis[(Redis)]
-    KTU[KTU APIs]
+ User[ User]
+ TG[Telegram API]
+ Bot[ Bot Service]
+ DB[(PostgreSQL Database)]
+ ApiCache[(In-memory API Cache)]
+ Queue[BullMQ Queues]
+ Redis[(Redis)]
+ KTU[KTU APIs]
 
-    User -->|Commands/Queries| TG
-    TG -->|Long Polling| Bot
-    Bot -->|Fetch Data| KTU
-    Bot -->|Store/Retrieve| DB
-    Bot -->|API response cache| ApiCache
-    Bot -->|Queue Attachments| Queue
-    Bot -->|Response| TG
-    TG -->|Messages| User
-    Queue -.->|Queue state| Redis
+ User -->|Commands/Queries| TG
+ TG -->|Long Polling| Bot
+ Bot -->|Fetch Data| KTU
+ Bot -->|Store/Retrieve| DB
+ Bot -->|API response cache| ApiCache
+ Bot -->|Queue Attachments| Queue
+ Bot -->|Response| TG
+ TG -->|Messages| User
+ Queue -.->|Queue state| Redis
 
-    style User fill:#4a90e2,stroke:#2e5c8a,color:#fff
-    style Bot fill:#e74c3c,stroke:#c0392b,color:#fff
-    style DB fill:#27ae60,stroke:#1e8449,color:#fff
-    style ApiCache fill:#f1c40f,stroke:#b7950b,color:#000
-    style Queue fill:#34495e,stroke:#2c3e50,color:#fff
-    style Redis fill:#f39c12,stroke:#d68910,color:#fff
-    style KTU fill:#9b59b6,stroke:#7d3c98,color:#fff
+ style User fill:#4a90e2,stroke:#2e5c8a,color:#fff
+ style Bot fill:#e74c3c,stroke:#c0392b,color:#fff
+ style DB fill:#27ae60,stroke:#1e8449,color:#fff
+ style ApiCache fill:#f1c40f,stroke:#b7950b,color:#000
+ style Queue fill:#34495e,stroke:#2c3e50,color:#fff
+ style Redis fill:#f39c12,stroke:#d68910,color:#fff
+ style KTU fill:#9b59b6,stroke:#7d3c98,color:#fff
 ```
 
-And here's the detailed view showing all the moving pieces:
-
 ```mermaid
 graph TB
-    subgraph "User Interface"
-        User[👤 Users]
-        TG[Telegram Servers]
-    end
+ subgraph "User Interface"
+ User[ Users]
+ TG[Telegram Servers]
+ end
 
-    subgraph "Docker Compose Orchestration"
-        subgraph "Core Services"
-            Bot[🤖 Bot Service<br/>Port: 3000]
-            DB[(📊 PostgreSQL<br/>Port: 5432)]
-            Redis[(🔴 Redis<br/>Port: 6379)]
-        end
+ subgraph "Docker Compose Orchestration"
+ subgraph "Core Services"
+ Bot[ Bot Service<br/>Port: 3000]
+ DB[( PostgreSQL<br/>Port: 5432)]
+ Redis[( Redis<br/>Port: 6379)]
+ end
 
-        subgraph "Background Workers"
-            NotifyWorker[📢 Announcements<br/>Notify Worker<br/>Port: 3001]
-            BroadcastWorker[📨 Broadcasts<br/>Worker<br/>Port: 3002]
-            SyncWorker[🔄 Data Sync<br/>Worker<br/>Port: 3003]
-            AttachmentWorker[📦 Attachment<br/>Delivery Worker<br/>Port: 3004]
-        end
+ subgraph "Background Workers"
+ NotifyWorker[ Announcements<br/>Notify Worker<br/>Port: 3001]
+ BroadcastWorker[ Broadcasts<br/>Worker<br/>Port: 3002]
+ SyncWorker[ Data Sync<br/>Worker<br/>Port: 3003]
+ AttachmentWorker[ Attachment<br/>Delivery Worker<br/>Port: 3004]
+ end
 
-        subgraph "Message Queue"
-            Queue[BullMQ Queues]
-            ApiCache[In-memory API Cache]
-        end
-    end
+ subgraph "Message Queue"
+ Queue[BullMQ Queues]
+ ApiCache[In-memory API Cache]
+ end
+ end
 
-    subgraph "External Services"
-        KTU[KTU APIs]
-        LLM[LLM API]
-        FileHost[File Upload Service]
-    end
+ subgraph "External Services"
+ KTU[KTU APIs]
+ LLM[LLM API]
+ FileHost[File Upload Service]
+ end
 
-    User -->|Messages| TG
-    TG <-->|Bot API| Bot
+ User -->|Messages| TG
+ TG <-->|Bot API| Bot
 
-    Bot -->|Query/Store| DB
-    Bot -->|API response cache| ApiCache
-    Bot -->|Fetch Data| KTU
+ Bot -->|Query/Store| DB
+ Bot -->|API response cache| ApiCache
+ Bot -->|Fetch Data| KTU
 
-    NotifyWorker -->|Poll| KTU
-    NotifyWorker -->|Check State| DB
-    NotifyWorker -->|AI Filter| LLM
-    NotifyWorker -->|Upload small files for file_id reuse| TG
-    NotifyWorker -->|Upload oversized/fallback files| FileHost
-    NotifyWorker -->|Add Jobs| Queue
+ NotifyWorker -->|Poll| KTU
+ NotifyWorker -->|Check State| DB
+ NotifyWorker -->|AI Filter| LLM
+ NotifyWorker -->|Upload small files for file_id reuse| TG
+ NotifyWorker -->|Upload oversized/fallback files| FileHost
+ NotifyWorker -->|Add Jobs| Queue
 
-    Queue -->|Process Broadcast Jobs| BroadcastWorker
-    Queue -->|Process Attachment Jobs| AttachmentWorker
-    BroadcastWorker -->|Send Messages| TG
-    BroadcastWorker -->|Update Status| DB
+ Queue -->|Process Broadcast Jobs| BroadcastWorker
+ Queue -->|Process Attachment Jobs| AttachmentWorker
+ BroadcastWorker -->|Send Messages| TG
+ BroadcastWorker -->|Update Status| DB
 
-    SyncWorker -->|Fetch All Data| KTU
-    SyncWorker -->|Sync| DB
+ SyncWorker -->|Fetch All Data| KTU
+ SyncWorker -->|Sync| DB
 
-    Bot -->|Queue Attachments| Queue
-    AttachmentWorker -->|Download & Send| TG
+ Bot -->|Queue Attachments| Queue
+ AttachmentWorker -->|Download & Send| TG
 
-    Queue -.->|Uses| Redis
+ Queue -.->|Uses| Redis
 
-    style User fill:#4a90e2,stroke:#2e5c8a,color:#fff
-    style TG fill:#5dade2,stroke:#3498db,color:#fff
-    style Bot fill:#e74c3c,stroke:#c0392b,color:#fff
-    style DB fill:#27ae60,stroke:#1e8449,color:#fff
-    style Redis fill:#f39c12,stroke:#d68910,color:#fff
-    style ApiCache fill:#f1c40f,stroke:#b7950b,color:#000
-    style NotifyWorker fill:#e67e22,stroke:#ca6f1e,color:#fff
-    style BroadcastWorker fill:#9b59b6,stroke:#7d3c98,color:#fff
-    style SyncWorker fill:#16a085,stroke:#138d75,color:#fff
-    style Queue fill:#34495e,stroke:#2c3e50,color:#fff
-    style KTU fill:#8e44ad,stroke:#6c3483,color:#fff
-    style LLM fill:#d35400,stroke:#ba4a00,color:#fff
-    style FileHost fill:#c0392b,stroke:#a93226,color:#fff
+ style User fill:#4a90e2,stroke:#2e5c8a,color:#fff
+ style TG fill:#5dade2,stroke:#3498db,color:#fff
+ style Bot fill:#e74c3c,stroke:#c0392b,color:#fff
+ style DB fill:#27ae60,stroke:#1e8449,color:#fff
+ style Redis fill:#f39c12,stroke:#d68910,color:#fff
+ style ApiCache fill:#f1c40f,stroke:#b7950b,color:#000
+ style NotifyWorker fill:#e67e22,stroke:#ca6f1e,color:#fff
+ style BroadcastWorker fill:#9b59b6,stroke:#7d3c98,color:#fff
+ style SyncWorker fill:#16a085,stroke:#138d75,color:#fff
+ style Queue fill:#34495e,stroke:#2c3e50,color:#fff
+ style KTU fill:#8e44ad,stroke:#6c3483,color:#fff
+ style LLM fill:#d35400,stroke:#ba4a00,color:#fff
+ style FileHost fill:#c0392b,stroke:#a93226,color:#fff
 ```
 
 ## Core Components
 
-The entire system is orchestrated using [Docker Compose](https://docs.docker.com/compose/), which lets you define and run all these services together. Compose files are organized under `docker/compose/` (production, staging, dev). Each service gets its own container and they all communicate over a Docker network. This makes development super easy - one command starts everything up with proper networking and all dependencies configured.
+Everything is orchestrated with Docker Compose. Compose files live under `docker/compose/` (dev, staging, production). One command starts the bot, workers, PostgreSQL, and Redis on a shared network.
 
 ### Bot Service
 
-This is the main service that users interact with. It handles all commands, inline queries, searches, and conversations. The bot is built using [GrammY](https://grammy.dev/), which is a modern TypeScript framework for building Telegram bots. GrammY has a great ecosystem of plugins and excellent documentation, making it really easy and fun to work with.
+The main service users talk to: commands, inline queries, searches, and multi-step lookups. Built on [GrammY](https://grammy.dev/), organized as one composer per feature.
 
-The bot uses a [composers pattern](https://grammy.dev/plugins/composer.html) to organize different features - each feature gets its own composer that handles related functionality. This keeps the code clean and maintainable. All the core bot logic lives in the `src/bot/` directory. The bot also uses GrammY's plugin ecosystem extensively - for things like auto-retry, rate limiting, hydration, emoji parsing, and more. You can see the full list of plugins in [`package.json`](../package.json) or check how they're wired up in the middleware section of [`src/bot/bot.ts`](../src/bot/bot.ts)
-
-The syllabus lookup is a program → scheme → branch → syllabus flow under `src/bot/composers/lookups/syllabus/`. Its `composer.ts` registers commands and callbacks on the protected composer, `flow.ts` handles API calls, session updates, pagination and download enqueueing, and `views.ts` builds page text and keyboards. Callback prefixes live in `constants.ts`. Pagination uses arrays already stored in the session. Downloadable entries retain their original API-response indices in callback data, even after filtering and pagination. A single downloadable entry is queued immediately; multiple entries show a chooser. Downloads use the attachment-delivery worker with `source: "syllabus"`.
-
-The exam-timetable lookup keeps callback routing and API pagination in `exam-timetable/composer.ts`, with pure message and keyboard rendering in `views.ts` and attachment metadata validation in `attachments.ts`. API pages are rendered as received. Selecting a timetable renders details once; missing or incomplete attachment metadata adds the no-attachment notice and a view-another keyboard. Valid downloads require an attachment ID, filename, and encrypted ID, and continue through the attachment-delivery worker.
-
-Calendar and announcement lookups likewise keep routing, session handling, API pagination, and attachment enqueueing in their composers, with pure rendering in each feature's `views.ts`. Selecting an item renders its cached details once. Download status messages and payload construction remain local to each feature; announcements without attachments still offer the view-another prompt without queueing a download.
+Supported lookups: syllabus (program → scheme → branch → syllabus), exam timetables, academic calendars, and announcements. Timetable, calendar, and announcement pages render API results as received; syllabus pagination reuses data already held in the session. File downloads are queued to the attachment-delivery worker so the bot never blocks on a download, and syllabus download buttons keep the original API-response indices so the right file is queued after filtering.
 
 ### API Layer and Caching
 
-All KTU API calls go through a shared Got HTTP client in `src/api/client.ts`, which has two variants:
+All KTU calls go through a shared Got client with two variants:
 
-- **`cachedApiClient`** — The default, cached client. Wraps the base client with an in-memory LRU cache via `beforeRequest`/`afterResponse` hooks. Responses are cached by URL + request body hash, with configurable per-endpoint TTLs (e.g., 1 hour for programs/schemes, 30 seconds for announcements). Only 200 responses are cached.
-- **`baseApiClient`** — The uncached client. Used by workers that need fresh data (data-sync, notification checks).
+- **`cachedApiClient`** (default): in-memory LRU cache keyed by URL + request body. Default TTL 5 minutes; 1 hour for programs/schemes/branches/syllabus, 30 seconds for announcements, 5 minutes for timetables and academic calendars. Only 200 responses are cached.
+- **`baseApiClient`** (uncached): used by workers that need fresh data (data sync, notification checks).
 
-KTU service functions use the cached client by default. Services that need cache control (like `fetchPrograms`, `fetchAnnouncements`) accept an optional `apiClient?: Got` parameter, and workers pass `baseApiClient` when they need fresh data. Attachment download services use the cached client directly, but the attachment endpoints are excluded by cache config.
+Excluded from caching: attachment endpoints (`/getAttachments`, `/getAttachment`, large base64 payloads) and the reCAPTCHA probe (`/get?key=v3`).
 
-Service modules are grouped into domain entry points under `src/api/services/`: `ktu/index.ts`, `file/index.ts`, `llm/index.ts`, and `betteruptime/index.ts`. Callers import the domain entry point rather than implementation files or a mixed root barrel, so importing KTU, file-host, or status services never loads LLM configuration. The announcement notification worker is the only consumer of the LLM domain.
-
-KTU requests also need a single-use Cloudflare Turnstile `X-Token`. `src/api/token-solver.ts` owns the solver HTTP call and response validation, while the Got `addXTokenHeader` hook only gates on the KTU base URL and attaches the returned token. The token hook is registered after the cache hook on both clients, so cache hits short-circuit before a token is minted and every uncached KTU request mints exactly once. Solver timeouts, network failures, non-2xx responses, malformed JSON, and blank tokens fail the request immediately instead of sending it without a token.
-
-The cache configuration lives in `src/api/cache/config.ts`. Attachment endpoints (`/getAttachments`, `/getAttachment`) are excluded from caching because they return large base64 payloads that would bloat memory. Non-data probe endpoints are also excluded so request hooks always see fresh upstream behavior.
+KTU also requires a single-use Cloudflare Turnstile `X-Token` on each request. The token hook runs after the cache hook, so cache hits never mint a token and each uncached request mints exactly one. Solver failures (timeout, network error, non-2xx, malformed JSON, blank token) fail the request instead of sending it without a token.
 
 ### PostgreSQL Database
 
-The bot needs permanent storage for things like user subscription preferences, cached announcements, exam timetables, academic calendars, and metadata about blocked users. This is where [PostgreSQL](https://www.postgresql.org/) comes in. The bot uses [Drizzle ORM](https://orm.drizzle.team/) for type-safe database operations, with all schema definitions in [`src/db/schema/`](../src/db/schema/)
-
-PostgreSQL isn't just a simple database - it offers powerful features like [full-text search](https://www.postgresql.org/docs/current/textsearch.html), which the bot leverages heavily for its inline search functionality. When you search for something inline, that query hits the bot's database (not KTU's APIs) and uses PostgreSQL's built-in full-text search to find relevant results quickly.
+Permanent storage for subscription preferences, synced announcements/timetables/calendars, and chat metadata. Schema is defined with [Drizzle ORM](https://orm.drizzle.team/). PostgreSQL's built-in full-text search powers inline search. Queries hit the local copy, not KTU's APIs.
 
 ### Redis and BullMQ
 
-[Redis](https://redis.io/) is an in-memory data store that powers [BullMQ](https://docs.bullmq.io/), which is the job queue system that lets different parts of the bot communicate.
-
-Think of BullMQ as a post office for tasks. The announcements worker creates "jobs" (like letters) and drops them into a queue (like a mailbox). The broadcasts worker then picks up these jobs and processes them. This decoupling is crucial - the service that creates jobs doesn't need to know anything about the service that processes them. If the broadcast service is down, jobs just wait in the queue. When it comes back up, it picks up where it left off.
-
-You can read more about the different background workers the bot uses in the below section.
+[Redis](https://redis.io/) backs [BullMQ](https://docs.bullmq.io/), the job system connecting the services. Producers (bot, notify worker, data-sync worker) drop jobs into queues; consumers (broadcast, attachment-delivery, data-sync workers) pick them up. If a consumer is down, jobs wait in the queue until it recovers.
 
 ## Background Workers
 
-Each worker's `startup.ts` initializes its database and bot dependencies, constructs a processor, and starts BullMQ. Initial and recurring schedules are called explicitly there. The concrete processors in `worker.ts` handle jobs without a shared base class. `shared/worker-runtime.ts` handles common BullMQ options, job logging, health checks, and worker/queue closure; `shared/start-worker.ts` wires monitoring and shutdown. Shutdown drains the worker before closing its queue and the database. Data-sync resource syncers still share their pagination and persistence algorithm through `BaseResourceSyncer`.
-
-Recurring jobs are registered through `shared/recurring-schedules.ts`, which upserts BullMQ job schedulers with stable IDs that never include the cron pattern. Changing a schedule updates the existing scheduler instead of adding another, and setup removes legacy `queue.add(..., { repeat })` definitions for the same logical job names only.
-
-Broadcast, attachment-delivery, and announcement workers use the minimal `createWorkerBot()`, which installs no composers, sessions, or commands. Announcement notification installs `apiThrottler()` and `autoRetry({ maxRetryAttempts: 5 })` API transformers explicitly in its `startup.ts`; data sync needs no bot. Shared worker presentation helpers (`createViewAnotherKeyboard()`, `getContextEmoji()`) live in `src/bot/utils/presentation.ts` so workers never load composer support modules. Attachment delivery still initializes the database because Telegram error recovery updates chat and subscription records. Announcement fetch results belong to the current job, and the buffer is replaced only after broadcast jobs are enqueued. Queue insertion and buffer replacement use separate Redis and PostgreSQL operations, so they are not atomic.
-
-These are independent services that handle specific tasks in the background. Unlike the main bot that responds to user interactions, workers run on schedules or process queued jobs without direct user involvement. They're crucial because they handle time-consuming or periodic tasks without blocking the bot - if a worker crashes, the bot keeps running, and vice versa. This separation also makes the system more scalable since you can run multiple instances of workers independently.
+Workers handle slow or periodic work so the bot stays responsive. Recurring jobs use BullMQ job schedulers with stable IDs, so changing a schedule updates the existing entry instead of creating duplicates.
 
 ### Announcements Notify Worker
 
-This worker uses a **BullMQ job scheduler** to continuously monitor for new announcements. Here's what it does:
+Polls KTU every few minutes (every 2 in production, every minute in dev), diffs against the local buffer, and notifies subscribers about new items:
 
-1. A recurring BullMQ job runs at the specified interval (configurable, usually every few minutes) to fetch the latest announcements from KTU's API
-2. Compares with local state in the database to identify any new announcements that haven't been processed yet
-3. Extracts course filters from each new announcement to determine who it's relevant for (like "B.Tech", "MBA", etc.)
-   - If filter extraction fails or is unclear, it uses an LLM service to determine if the announcement is actually relevant to students
-   - This filters out unwanted trash announcements (which a lot of them are)
-4. Handles file attachments before broadcasting:
-   - Small files are uploaded to a dedicated Telegram channel first to get a reusable `file_id`
-   - Oversized files, or files that fail Telegram upload, are uploaded to a temporary file host and sent as links
-5. Finds matching users by querying the database for users subscribed to the announcement's course filters
-6. Creates broadcast jobs with payloads for each user and adds them to the broadcasts queue
-   - It doesn't send messages itself, just prepares the jobs
-7. Updates the local buffer in the database to mark these announcements as processed
+1. Fetch latest announcements with the uncached client
+2. Compare against the stored buffer to find new ones
+3. Extract course filters per announcement; fall back to the LLM relevance check when filters are missing or unclear
+4. Pre-process attachments: small files go to a dedicated Telegram channel for a reusable `file_id`; oversized or failed uploads go to a temporary file host as links
+5. Enqueue one broadcast job per matching subscriber, then update the buffer
 
-BullMQ automatically handles retries if a job fails (with exponential backoff) and schedules the next run from the stable job scheduler, making this more resilient than traditional cron. All this logic lives in [`src/workers/announcements/notify/`](../src/workers/announcements/notify/)
-
-Its `startup.ts` constructs `LLMService` and injects it into `AnnouncementsNotifyProcessor` as an `AnnouncementClassifier`, so the processor itself only wires together database, bot, and queue behavior. Those narrow functions feed `orchestration.ts`, which owns new-announcement selection, deterministic `announcement-<announcementId>-chat-<chatId>` broadcast job IDs, attachment processing order, and the rule that broadcasts are enqueued before the buffer is replaced. The audience rules (regex extraction, LLM course narrowing, and the relevance fallback) live in `audience.ts` and are unit-tested offline.
+Broadcasts are always enqueued before the buffer is replaced, so a crash between the two re-sends rather than silently dropping notifications.
 
 ### Broadcasts Worker
 
-This is the worker that actually delivers messages to users. It's designed to be generic - it can broadcast anything (announcements, manual admin broadcasts, alerts) as long as the job payload is in the right format. Here's how it works:
-
-1. Monitors the broadcasts queue continuously and picks up jobs as they arrive
-2. Sends each message to the user specified in the job payload via Telegram's Bot API
-3. Handles rate limiting gracefully - when it hits Telegram's [rate limits](https://core.telegram.org/bots/faq#broadcasting-to-users), Telegram responds with a `retry_after` value
-4. Pauses the entire queue for the specified duration (Telegram's limits are intentionally undocumented, so this is the safest approach)
-5. Marks the job for retry and resumes processing after the pause period
-
-> [!TIP]
-> This worker has a `concurrency` value of `1`, which is intentional!
->
-> Since we don't know Telegram's exact rate limits, sending concurrent messages would work fine until it suddenly doesn't. Sequential processing ensures we can properly handle rate limit responses without overwhelming Telegram's servers.
->
-> Read more about it here - [Flood Limits](https://grammy.dev/advanced/flood)
-
-The code and the entire logic lives in [`src/workers/broadcasts/`](../src/workers/broadcasts/)
+Delivers queued messages, one at a time (`concurrency: 1`; Telegram's limits are undocumented, so sequential sending is the safe choice). On `retry_after`, it pauses the whole queue for the requested duration and lets BullMQ retry the job.
 
 ### Data Sync Worker
 
-Here's a frustrating thing about KTU's APIs - their APIs don't expose any text search functionality. You can't search for _"examination results 2025"_ anywhere on their website and get filtered results (this used to be there if I recall correctly but not anymore). It's honestly poor design for such a basic feature, but the bot needs this capability for inline search. The solution? Maintain a local, searchable copy of their data. This worker uses **BullMQ job schedulers** and handles syncing in three separate jobs:
-
-1. **On startup**: Checks if the database needs initial syncing - if yes, performs a full sync by fetching all paginated data from KTU's APIs (announcements, timetables, calendars)
-2. **Periodic jobs**: Three individual BullMQ jobs run periodically (once or a few times per day) for each data type:
-   - `data-sync:announcements` - Syncs announcement data
-   - `data-sync:academic-calendars` - Syncs academic calendar data
-   - `data-sync:exam-timetables` - Syncs exam timetable data
-3. **Individual retries**: If one sync job fails (e.g., announcements), only that specific job retries with exponential backoff - the others continue normally
-4. Uses [upsert operations](https://orm.drizzle.team/docs/insert#on-conflict-do-update) to store/update data in PostgreSQL
-   - If a record exists, it updates; if not, it inserts
-5. Leverages PostgreSQL's [full-text search](https://www.postgresql.org/docs/current/textsearch.html) which is set up at the schema level
-   - Once the data is in, search capabilities are automatically available
-
-When users perform inline searches, their queries hit this local copy instead of KTU's APIs, making searches fast and enabling features KTU's website doesn't even have.
-
-The BullMQ-based approach makes this much more resilient than traditional cron scheduling. Check out [`src/workers/data-sync/`](../src/workers/data-sync/) for the implementation.
+KTU's APIs have no text search, so this worker maintains the local searchable copy. It runs a full sync on first startup (when the database is empty), then re-syncs on a 30-minute schedule. Records are upserted, so re-runs are safe; inline search reads this copy via PostgreSQL full-text search.
 
 ### Attachment Delivery Worker
 
-This worker handles file downloads and deliveries asynchronously, preventing the bot from being blocked by large file downloads. When users request attachments (calendars, timetables, announcements), the bot immediately queues the request and returns to serving other users. Here's how it works:
+Sends requested files without blocking the bot:
 
-1. **Job Creation**: When a user requests files, the bot creates a job containing all attachment metadata and immediately returns
-   - Bot sends a friendly status message like _"⏳ Preparing your calendar... I'll send it shortly!"_
-   - The bot doesn't wait for downloads to complete
-2. **Background Processing**: The worker picks up jobs from the queue and downloads all attachments
-   - Uses **all-or-nothing delivery** - if any file fails to download, nothing is sent to ensure users get complete data
-   - Downloads happen asynchronously without blocking other users
-3. **Document Delivery**: Once all files are downloaded, sends them as Telegram documents one by one
-   - Downloads are completed before sending starts, which avoids partial delivery caused by a later KTU download failure
-   - The first document includes a caption listing all attachment names for clarity
-   - Files above Telegram's upload limit are uploaded to the temporary file host and sent as links
-4. **Graceful Error Handling**: Handles various failure scenarios without crashing
-   - If user blocks the bot, marks their chat as kicked and removes subscriptions
-   - If user deactivates account, cleans up their data from the database
-   - If rate limited by Telegram, pauses the entire queue for the specified duration, then resumes processing
-5. **Status Updates**: Deletes the loading message once delivery is complete (or on failure)
-   - No chat pollution - the status message disappears after completion
-   - User receives their files cleanly without extra messages
+1. The bot queues the request and immediately replies with a status message
+2. The worker downloads every attachment first. If any download fails, nothing is sent (all-or-nothing, no partial sets)
+3. Files go out as Telegram documents, the first with a caption listing all attachment names; files over Telegram's size limit go to the temporary file host as links
+4. The status message is deleted on completion, and chats that blocked the bot or deactivated are cleaned up
 
-This worker has a `concurrency` of `2` to prevent overwhelming Telegram's rate limits while still processing requests efficiently. The worker implementation lives in [`src/workers/attachment-delivery/`](../src/workers/attachment-delivery/), with shared attachment helpers under [`src/workers/shared/utils/`](../src/workers/shared/utils/). KTU attachment retrieval and the temp-file lifecycle live in [`src/utils/attachment-download.ts`](../src/utils/attachment-download.ts); [`src/utils/file-utils.ts`](../src/utils/file-utils.ts) keeps generic temp-file helpers that know nothing about KTU endpoints or attachment sources.
+Runs at `concurrency: 2` to stay under Telegram's rate limits.
 
 ## Health Checks and Monitoring
 
-Each service exposes a health check endpoint (bot on port `3000`, workers on `3001-3004`, Bull Board on `3010`) that verifies service health and PostgreSQL connectivity. Workers additionally check BullMQ's running state, ping the queue's Redis connection, and check configured failure/backlog thresholds. These endpoints support deployment health checks and restart policies. The health check utility is in [`src/monitoring/health-check.ts`](../src/monitoring/health-check.ts).
+Every service exposes `/health` (bot `3000`, workers `3001`–`3004`, Bull Board `3010`). Worker checks cover the service itself plus its queue and database connectivity.
 
-### Queue Monitoring with Bull Board
-
-There's a dedicated [**Bull Board**](https://github.com/felixmosh/bull-board) service running on port `3010` that provides a web dashboard for monitoring all BullMQ queues in real-time. Access it at `http://localhost:3010` to view job states, retry failed jobs, and monitor queue health across all workers.
-
-### Prometheus Metrics
-
-The bot and worker monitoring servers can expose Prometheus metrics. Metrics are served from each service's monitoring port when enabled/configured, and `docker/monitoring/compose.yaml` runs a self-contained Prometheus instance on port `9090`. Optional remote-write credentials can be supplied through `env/prod/prometheus.env`.
-
-## Tech Stack
-
-Here's what powers the bot:
-
-- [**TypeScript**](https://www.typescriptlang.org/) - Type-safe JavaScript
-- [**GrammY**](https://grammy.dev/) - The Telegram bot framework
-- [**PostgreSQL**](https://www.postgresql.org/) - Database with full-text search
-- [**Drizzle ORM**](https://orm.drizzle.team/) - Type-safe database queries
-- [**BullMQ with Redis**](https://docs.bullmq.io/) - Job queue for background tasks
-
-## Wrapping Up
-
-That's the gist of how everything works! The architecture might seem complex at first, but each piece has a clear purpose. The bot handles user interactions, workers process background tasks, the database stores everything, and the queue system ties it all together. If you want to contribute or have questions, feel free to open an issue.
+- **Bull Board** (`http://localhost:3010`): real-time view of all queues: job states, retries, failures.
+- **Prometheus** (optional): the bot exposes app metrics when `ENABLE_PROMETHEUS_METRICS=true` (default `false`); workers always expose BullMQ queue metrics on their monitoring ports. `docker/monitoring/compose.yaml` runs a standalone Prometheus on port `9090` with remote-write credentials from `env/prod/prometheus.env`.
