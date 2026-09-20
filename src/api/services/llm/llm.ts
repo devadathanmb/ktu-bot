@@ -22,7 +22,17 @@ const GroqCompletionRequestSchema = z.object({
   model: z.string(),
   messages: z.array(GroqMessageSchema),
   temperature: z.number().min(0).max(2).optional(),
-  max_tokens: z.number().positive().optional(),
+  reasoning_effort: z.enum(["low", "medium", "high"]).optional(),
+  response_format: z
+    .object({
+      type: z.literal("json_schema"),
+      json_schema: z.object({
+        name: z.string(),
+        strict: z.literal(true),
+        schema: z.record(z.string(), z.unknown()),
+      }),
+    })
+    .optional(),
 });
 
 const GroqCompletionResponseSchema = z.object({
@@ -61,6 +71,41 @@ const AnnouncementRelevantCoursesResultSchema = z
     );
     return new Set<AnnouncementFilter>(validCourses);
   });
+
+// Strict Structured Outputs schemas (constrained decoding, guaranteed
+// schema-valid JSON). openai/gpt-oss-20b supports strict mode; all fields
+// are required and additionalProperties is false, per Groq docs.
+const ANNOUNCEMENT_RELEVANCE_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "announcement_relevance",
+    strict: true,
+    schema: {
+      type: "object",
+      properties: {
+        is_relevant: { type: "boolean" },
+      },
+      required: ["is_relevant"],
+      additionalProperties: false,
+    },
+  },
+} as const;
+
+const ANNOUNCEMENT_COURSES_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "announcement_courses",
+    strict: true,
+    schema: {
+      type: "object",
+      properties: {
+        relevant_courses: { type: "array", items: { type: "string" } },
+      },
+      required: ["relevant_courses"],
+      additionalProperties: false,
+    },
+  },
+} as const;
 
 function parseJsonResponse<T>(schema: z.ZodSchema<T>, jsonString: string): T {
   let parsed: unknown;
@@ -136,7 +181,8 @@ export class LLMService {
           },
         ],
         temperature: this.config.TEMPERATURE,
-        max_tokens: this.config.MAX_TOKENS,
+        reasoning_effort: "low" as const,
+        response_format: ANNOUNCEMENT_COURSES_RESPONSE_FORMAT,
       };
 
       const response = await this.makeGroqRequest(request);
@@ -186,7 +232,8 @@ export class LLMService {
           },
         ],
         temperature: this.config.TEMPERATURE,
-        max_tokens: this.config.MAX_TOKENS,
+        reasoning_effort: "low" as const,
+        response_format: ANNOUNCEMENT_RELEVANCE_RESPONSE_FORMAT,
       };
 
       const response = await this.makeGroqRequest(request);

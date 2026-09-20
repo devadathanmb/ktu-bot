@@ -11,6 +11,7 @@ process.env.REDIS_DB ??= "0";
 process.env.BOT_TOKEN ??= "test-token";
 process.env.BOT_HEALTH_CHECK_PORT ??= "3000";
 process.env.BOT_FILE_UPLOAD_CHANNEL_ID ??= "-1001";
+process.env.GROQ_API_KEY ??= "test-groq-key";
 process.env.UPTIME_ROBOT_API_KEY ??= "test-uptime-robot-key";
 process.env.BETTER_UPTIME_API_TOKEN ??= "test-better-uptime-token";
 process.env.BETTER_UPTIME_MONITOR_GROUP_ID ??= "test-monitor-group";
