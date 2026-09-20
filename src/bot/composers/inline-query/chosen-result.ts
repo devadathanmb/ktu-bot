@@ -10,10 +10,27 @@ import {
   SearchType,
 } from "./search-types.js";
 
-export interface ChosenResultRepos {
-  announcements: Pick<AnnouncementsRepository, "getById">;
-  calendars: Pick<AcademicCalendarsRepository, "getById">;
-  timetables: Pick<ExamTimetablesRepository, "getById">;
+export type ChosenResultAnnouncementsRepository = Pick<
+  AnnouncementsRepository,
+  "getById"
+>;
+
+export type ChosenResultCalendarsRepository = Pick<
+  AcademicCalendarsRepository,
+  "getById"
+>;
+
+export type ChosenResultTimetablesRepository = Pick<
+  ExamTimetablesRepository,
+  "getById"
+>;
+
+// Factories, not live instances: ignored/special IDs resolve without opening a
+// database session, and only the selected resource builds its repository.
+export interface ChosenResultRepositoryFactories {
+  createAnnouncementsRepository: () => ChosenResultAnnouncementsRepository;
+  createCalendarsRepository: () => ChosenResultCalendarsRepository;
+  createTimetablesRepository: () => ChosenResultTimetablesRepository;
 }
 
 export type ChosenResultResource =
@@ -37,7 +54,7 @@ export type ChosenResultResolution =
 
 export async function resolveChosenResultAttachments(
   resultId: string,
-  repos: ChosenResultRepos
+  factories: ChosenResultRepositoryFactories
 ): Promise<ChosenResultResolution> {
   // help items already have keyboards
   if (
@@ -67,7 +84,9 @@ export async function resolveChosenResultAttachments(
 
   switch (searchType) {
     case SearchType.ANNOUNCEMENTS: {
-      const dbAnnouncement = await repos.announcements.getById(Number(id));
+      const dbAnnouncement = await factories
+        .createAnnouncementsRepository()
+        .getById(Number(id));
 
       if (!dbAnnouncement) {
         return {
@@ -91,7 +110,9 @@ export async function resolveChosenResultAttachments(
       };
     }
     case SearchType.CALENDARS: {
-      const dbCalendar = await repos.calendars.getById(Number(id));
+      const dbCalendar = await factories
+        .createCalendarsRepository()
+        .getById(Number(id));
 
       if (!dbCalendar) {
         return {
@@ -110,7 +131,9 @@ export async function resolveChosenResultAttachments(
       };
     }
     case SearchType.TIMETABLES: {
-      const dbTimetable = await repos.timetables.getById(Number(id));
+      const dbTimetable = await factories
+        .createTimetablesRepository()
+        .getById(Number(id));
 
       if (!dbTimetable) {
         return {

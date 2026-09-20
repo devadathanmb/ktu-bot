@@ -1,5 +1,5 @@
 import { BotContext } from "../../../types/bot.types.js";
-import { Composer, InlineQueryResultBuilder } from "grammy";
+import { Composer } from "grammy";
 import { createComposerErrorBoundary } from "../shared/error-boundary.js";
 import { fmt } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
@@ -11,7 +11,11 @@ import { AcademicCalendarsRepository } from "../../../db/repositories/academic-c
 import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
 import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
 import { parseQuery } from "./query.js";
-import { addSearchAgainButton, buildHelpResults } from "./results.js";
+import {
+  addSearchAgainButton,
+  buildHelpResults,
+  buildTemporarySearchFailureResult,
+} from "./results.js";
 import {
   searchAnnouncements,
   searchCalendars,
@@ -32,10 +36,11 @@ export const inlineQuery = _inlineQuery.errorBoundary(
 inlineQuery.on("inline_query", async ctx => {
   const query = ctx.inlineQuery?.query || "";
   const { type, searchTerm } = parseQuery(query);
+  const chatId = ctx.from?.id;
+
+  let results: InlineQueryResult[] = [];
 
   try {
-    let results: InlineQueryResult[] = [];
-
     if (!type) {
       results = buildHelpResults();
     } else {
@@ -62,24 +67,22 @@ inlineQuery.on("inline_query", async ctx => {
 
       results = addSearchAgainButton(results, query);
     }
-
-    await ctx.answerInlineQuery(results);
   } catch (error) {
-    const chatId = ctx.from?.id;
     logger.error(
-      { err: error as Error, chatId, query, type, searchTerm },
+      { err: error, chatId, query, type, searchTerm },
       "Error in inline query handler"
     );
 
-    const errorResult = [
-      InlineQueryResultBuilder.article(
-        "-1",
-        "KTU servers are having issues right now"
-      ).text(
-        "KTU servers are having issues right now. Please try again later."
-      ),
-    ];
-    await ctx.answerInlineQuery(errorResult).catch();
+    results = buildTemporarySearchFailureResult();
+  }
+
+  try {
+    await ctx.answerInlineQuery(results);
+  } catch (error) {
+    logger.error(
+      { err: error, chatId, query, type, searchTerm },
+      "Failed to answer inline query"
+    );
   }
 });
 
@@ -92,9 +95,9 @@ inlineQuery.on("chosen_inline_result", async ctx => {
 
   try {
     const resolution = await resolveChosenResultAttachments(resultId, {
-      announcements: new AnnouncementsRepository(),
-      calendars: new AcademicCalendarsRepository(),
-      timetables: new ExamTimetablesRepository(),
+      createAnnouncementsRepository: () => new AnnouncementsRepository(),
+      createCalendarsRepository: () => new AcademicCalendarsRepository(),
+      createTimetablesRepository: () => new ExamTimetablesRepository(),
     });
 
     if (resolution.status === "ignored") return;
@@ -119,18 +122,23 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     );
   } catch (error) {
     logger.error(
-      { err: error as Error, resultId, chatId },
+      { err: error, resultId, chatId },
       "Error in chosen inline result handler"
     );
 
-    await ctx.api
-      .sendMessage(
+    try {
+      await ctx.api.sendMessage(
         chatId,
         joinWithNewlines([
           fmt`${emoji("crying_cat")} An error occurred while fetching attachments.`,
           fmt`Please try again.`,
         ]).text
-      )
-      .catch(() => {});
+      );
+    } catch (notificationError) {
+      logger.error(
+        { err: notificationError, resultId, chatId },
+        "Failed to notify user about chosen inline result error"
+      );
+    }
   }
 });

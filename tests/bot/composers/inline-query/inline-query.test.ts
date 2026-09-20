@@ -8,6 +8,7 @@ import {
 import {
   addSearchAgainButton,
   buildHelpResults,
+  buildTemporarySearchFailureResult,
   constructNoResultsFound,
   renderAnnouncementResults,
   renderCalendarResults,
@@ -16,7 +17,7 @@ import {
 import {
   buildAttachmentDeliveryJob,
   resolveChosenResultAttachments,
-  type ChosenResultRepos,
+  type ChosenResultRepositoryFactories,
 } from "../../../../src/bot/composers/inline-query/chosen-result.js";
 import {
   searchAnnouncements,
@@ -153,6 +154,16 @@ test("no-results IDs are namespaced per resource", () => {
   assert.deepEqual(resultIds(constructNoResultsFound(SearchType.TIMETABLES)), [
     "no_timetables",
   ]);
+});
+
+test("temporary search failure result keeps its stable ID and avoids KTU blame", () => {
+  const results = buildTemporarySearchFailureResult();
+  assert.deepEqual(resultIds(results), ["-1"]);
+
+  const fallback = results[0]!;
+  const text = articleMessageText(fallback);
+  assert.match(text, /temporarily unavailable/);
+  assert.doesNotMatch(text, /KTU/);
 });
 
 test("resource results use prefixed record IDs and fall back on empty titles", () => {
@@ -309,47 +320,95 @@ test("calendar and timetable searches transform rows into results", async () => 
   );
 });
 
-function reposWith(
-  overrides: Partial<ChosenResultRepos> = {}
-): ChosenResultRepos {
+function factoriesWith(
+  overrides: Partial<ChosenResultRepositoryFactories> = {}
+): ChosenResultRepositoryFactories {
   return {
-    announcements: { getById: async () => undefined },
-    calendars: { getById: async () => undefined },
-    timetables: { getById: async () => undefined },
+    createAnnouncementsRepository: () => ({ getById: async () => undefined }),
+    createCalendarsRepository: () => ({ getById: async () => undefined }),
+    createTimetablesRepository: () => ({ getById: async () => undefined }),
     ...overrides,
   };
 }
 
+const unusedFactory = () => {
+  throw new Error("repository must not be constructed");
+};
+
 test("help and no-results IDs resolve to ignored", async () => {
   assert.deepEqual(
-    await resolveChosenResultAttachments("help_announcements", reposWith()),
+    await resolveChosenResultAttachments("help_announcements", factoriesWith()),
     { status: "ignored" }
   );
   assert.deepEqual(
-    await resolveChosenResultAttachments("no_timetables", reposWith()),
+    await resolveChosenResultAttachments("no_timetables", factoriesWith()),
     { status: "ignored" }
   );
 });
 
-test("ignored IDs resolve without touching repositories", async () => {
-  const unreachable = () => {
-    throw new Error("repository must not be used");
+test("ignored IDs resolve without building repositories", async () => {
+  const factories: ChosenResultRepositoryFactories = {
+    createAnnouncementsRepository: unusedFactory,
+    createCalendarsRepository: unusedFactory,
+    createTimetablesRepository: unusedFactory,
   };
+
   assert.deepEqual(
-    await resolveChosenResultAttachments("help_announcements", {
-      announcements: { getById: unreachable },
-      calendars: { getById: unreachable },
-      timetables: { getById: unreachable },
-    }),
+    await resolveChosenResultAttachments("help_announcements", factories),
     { status: "ignored" }
   );
+  assert.deepEqual(
+    await resolveChosenResultAttachments("no_calendars", factories),
+    { status: "ignored" }
+  );
+});
+
+test("only the selected result type builds a repository", async () => {
+  const built: string[] = [];
+  const factories: ChosenResultRepositoryFactories = {
+    createAnnouncementsRepository: () => {
+      built.push("announcements");
+      return { getById: async () => announcementRow() };
+    },
+    createCalendarsRepository: () => {
+      built.push("calendars");
+      return { getById: async () => calendarRow() };
+    },
+    createTimetablesRepository: () => {
+      built.push("timetables");
+      return { getById: async () => timetableRow() };
+    },
+  };
+
+  await resolveChosenResultAttachments("ann_1", factories);
+  assert.deepEqual(built, ["announcements"]);
+
+  built.length = 0;
+  await resolveChosenResultAttachments("cal_2", factories);
+  assert.deepEqual(built, ["calendars"]);
+
+  built.length = 0;
+  await resolveChosenResultAttachments("tt_3", factories);
+  assert.deepEqual(built, ["timetables"]);
+});
+
+test("malformed and unknown IDs build no repositories", async () => {
+  const factories: ChosenResultRepositoryFactories = {
+    createAnnouncementsRepository: unusedFactory,
+    createCalendarsRepository: unusedFactory,
+    createTimetablesRepository: unusedFactory,
+  };
+
+  for (const resultId of ["ann_", "ann", "", "xyz_123"]) {
+    await resolveChosenResultAttachments(resultId, factories);
+  }
 });
 
 test("malformed and unknown result IDs explain the problem", async () => {
   for (const resultId of ["ann_", "ann", ""]) {
     const resolution = await resolveChosenResultAttachments(
       resultId,
-      reposWith()
+      factoriesWith()
     );
     assert.equal(resolution.status, "invalid-format");
     assert.match(
@@ -358,7 +417,10 @@ test("malformed and unknown result IDs explain the problem", async () => {
     );
   }
 
-  const unknown = await resolveChosenResultAttachments("xyz_123", reposWith());
+  const unknown = await resolveChosenResultAttachments(
+    "xyz_123",
+    factoriesWith()
+  );
   assert.equal(unknown.status, "unknown-type");
   assert.match(
     (unknown as { message: string }).message,
@@ -367,20 +429,29 @@ test("malformed and unknown result IDs explain the problem", async () => {
 });
 
 test("missing records resolve to resource-specific not-found outcomes", async () => {
-  assert.deepEqual(await resolveChosenResultAttachments("ann_9", reposWith()), {
-    status: "not-found",
-    message: "❌ Announcement not found.",
-  });
-  assert.deepEqual(await resolveChosenResultAttachments("cal_9", reposWith()), {
-    status: "not-found",
-    message: "❌ Academic calendar not found.",
-  });
-  assert.deepEqual(await resolveChosenResultAttachments("tt_9", reposWith()), {
-    status: "not-found",
-    message: "❌ Exam timetable not found.",
-  });
   assert.deepEqual(
-    await resolveChosenResultAttachments("ann_abc", reposWith()),
+    await resolveChosenResultAttachments("ann_9", factoriesWith()),
+    {
+      status: "not-found",
+      message: "❌ Announcement not found.",
+    }
+  );
+  assert.deepEqual(
+    await resolveChosenResultAttachments("cal_9", factoriesWith()),
+    {
+      status: "not-found",
+      message: "❌ Academic calendar not found.",
+    }
+  );
+  assert.deepEqual(
+    await resolveChosenResultAttachments("tt_9", factoriesWith()),
+    {
+      status: "not-found",
+      message: "❌ Exam timetable not found.",
+    }
+  );
+  assert.deepEqual(
+    await resolveChosenResultAttachments("ann_abc", factoriesWith()),
     { status: "not-found", message: "❌ Announcement not found." }
   );
 });
@@ -392,10 +463,10 @@ test("announcement attachments resolve in order; empty ones report no attachment
   ];
   const ready = await resolveChosenResultAttachments(
     "ann_1",
-    reposWith({
-      announcements: {
+    factoriesWith({
+      createAnnouncementsRepository: () => ({
         getById: async () => announcementRow({ attachments }),
-      },
+      }),
     })
   );
   assert.deepEqual(ready, {
@@ -409,10 +480,10 @@ test("announcement attachments resolve in order; empty ones report no attachment
 
   const empty = await resolveChosenResultAttachments(
     "ann_1",
-    reposWith({
-      announcements: {
+    factoriesWith({
+      createAnnouncementsRepository: () => ({
         getById: async () => announcementRow({ attachments: [] }),
-      },
+      }),
     })
   );
   assert.deepEqual(empty, {
@@ -424,7 +495,11 @@ test("announcement attachments resolve in order; empty ones report no attachment
 test("calendar and timetable resolutions keep attachment semantics", async () => {
   const calendar = await resolveChosenResultAttachments(
     "cal_2",
-    reposWith({ calendars: { getById: async () => calendarRow() } })
+    factoriesWith({
+      createCalendarsRepository: () => ({
+        getById: async () => calendarRow(),
+      }),
+    })
   );
   assert.deepEqual(calendar, {
     status: "ready",
@@ -434,7 +509,11 @@ test("calendar and timetable resolutions keep attachment semantics", async () =>
 
   const timetable = await resolveChosenResultAttachments(
     "tt_3",
-    reposWith({ timetables: { getById: async () => timetableRow() } })
+    factoriesWith({
+      createTimetablesRepository: () => ({
+        getById: async () => timetableRow(),
+      }),
+    })
   );
   assert.deepEqual(timetable, {
     status: "ready",
@@ -449,8 +528,10 @@ test("calendar and timetable resolutions keep attachment semantics", async () =>
   ]) {
     const incomplete = await resolveChosenResultAttachments(
       "tt_3",
-      reposWith({
-        timetables: { getById: async () => timetableRow({ attachment }) },
+      factoriesWith({
+        createTimetablesRepository: () => ({
+          getById: async () => timetableRow({ attachment }),
+        }),
       })
     );
     assert.deepEqual(incomplete, {

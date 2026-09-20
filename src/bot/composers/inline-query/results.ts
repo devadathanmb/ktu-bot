@@ -30,6 +30,16 @@ export function constructNoResultsFound(type: SearchType) {
   ];
 }
 
+// Keeps the historical "-1" result ID that the previous fallback used.
+export function buildTemporarySearchFailureResult(): InlineQueryResult[] {
+  return [
+    InlineQueryResultBuilder.article(
+      "-1",
+      "Search is temporarily unavailable"
+    ).text("Search is temporarily unavailable. Please try again later."),
+  ];
+}
+
 export function buildHelpResults(): InlineQueryResult[] {
   return [
     InlineQueryResultBuilder.article(
