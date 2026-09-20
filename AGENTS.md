@@ -5,7 +5,7 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 ## Commands
 
 - Dev stack: `docker compose -f docker/compose/compose.dev.yaml up --build`
-- `pnpm test` (all) or one file: `node --import tsx --import ./tests/setup.ts --test tests/<domain>/<file>.test.ts`. Tests mirror `src/` under `tests/<domain>/`; keep filenames stable (`setup.ts` provides the dummy env). Run the suite matching the area changed: token-solver, syllabus-views, exam-timetable, calendar-announcement-views, recurring-schedules (double-setup keeps one scheduler per job), announcements-notify-orchestration, inline-query, data-sync.
+- `pnpm test` (all) or one file: `node --import tsx --import ./tests/setup.ts --test tests/<path-mirroring-src>/<file>.test.ts`. Tests live at the `tests/` path mirroring the `src/` directory of the unit under test; filenames are kept stable and may cover more than one module (`setup.ts` provides the dummy env). Run the suite matching the area changed: token-solver, syllabus-views, exam-timetable, calendar-announcement-views, recurring-schedules (double-setup keeps one scheduler per job), announcements-notify-orchestration, inline-query, data-sync.
 - After TS changes: `pnpm exec tsc --noEmit`. Run `pnpm lint` for lint-sensitive code. Use `pnpm exec`, never `npx`.
 
 ## TypeScript

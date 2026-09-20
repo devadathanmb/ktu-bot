@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "node --import tsx --import ./tests/setup.ts --test \"tests/**/*.test.ts\"",
-    "test:llm-eval": "RUN_LLM_EVAL=1 node --import tsx --import ./tests/setup.ts --test tests/api/llm-eval.test.ts",
+    "test:llm-eval": "RUN_LLM_EVAL=1 node --import tsx --import ./tests/setup.ts --test tests/api/services/llm/llm-eval.test.ts",
     "test:coverage": "c8 --reporter=text --reports-dir=coverage node --import tsx --import ./tests/setup.ts --test \"tests/**/*.test.ts\"",
     "test:coverage:check": "node scripts/check-coverage.mjs",
     "start": "node dist/index.js",

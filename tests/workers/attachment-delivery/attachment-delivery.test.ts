@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { Job, Queue } from "bullmq";
 import { GrammyError, type Bot } from "grammy";
-import type { BotContext } from "../../src/types/bot.types.js";
-import type { Attachment } from "../../src/types/service.types.js";
-import type { DownloadedAttachment } from "../../src/utils/attachment-download.js";
-import { TELEGRAM_MAX_FILE_SIZE_BYTES } from "../../src/utils/attachment-download.js";
-import { AttachmentDeliveryProcessor } from "../../src/workers/attachment-delivery/worker.js";
-import type { AttachmentDeliveryJob } from "../../src/workers/attachment-delivery/queue.js";
+import type { BotContext } from "../../../src/types/bot.types.js";
+import type { Attachment } from "../../../src/types/service.types.js";
+import type { DownloadedAttachment } from "../../../src/utils/attachment-download.js";
+import { TELEGRAM_MAX_FILE_SIZE_BYTES } from "../../../src/utils/attachment-download.js";
+import { AttachmentDeliveryProcessor } from "../../../src/workers/attachment-delivery/worker.js";
+import type { AttachmentDeliveryJob } from "../../../src/workers/attachment-delivery/queue.js";
 
 interface ApiCall {
   method: string;

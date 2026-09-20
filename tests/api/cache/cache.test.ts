@@ -3,14 +3,14 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import test, { type TestContext } from "node:test";
 import got from "got";
-import { APICache } from "../../src/api/cache/cache.js";
-import { createCachedApiClient } from "../../src/api/cache/create-cached-client.js";
+import { APICache } from "../../../src/api/cache/cache.js";
+import { createCachedApiClient } from "../../../src/api/cache/create-cached-client.js";
 import {
   createCacheKey,
   getTtlForUrl,
   isPathExcluded,
-} from "../../src/api/cache/keys.js";
-import type { CacheConfig } from "../../src/api/cache/types.js";
+} from "../../../src/api/cache/keys.js";
+import type { CacheConfig } from "../../../src/api/cache/types.js";
 
 function testConfig(overrides: Partial<CacheConfig> = {}): CacheConfig {
   return {

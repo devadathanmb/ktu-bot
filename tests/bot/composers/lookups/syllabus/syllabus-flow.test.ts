@@ -5,7 +5,7 @@ import type {
   Program,
   Scheme,
   SyllabusEntry,
-} from "../../src/types/service.types.js";
+} from "../../../../../src/types/service.types.js";
 import {
   clearSyllabusSession,
   nextPage,
@@ -17,12 +17,12 @@ import {
   selectScheme,
   start,
   type SyllabusFlowDeps,
-} from "../../src/bot/composers/lookups/syllabus/flow.js";
-import { SessionNotFoundError } from "../../src/errors/bot-errors.js";
-import { baseSession, createFakeCtx, ctxCalls } from "./fakes.js";
-import { callbackData } from "../helpers.js";
+} from "../../../../../src/bot/composers/lookups/syllabus/flow.js";
+import { SessionNotFoundError } from "../../../../../src/errors/bot-errors.js";
+import { baseSession, createFakeCtx, ctxCalls } from "../../../fakes.js";
+import { callbackData } from "../../../../helpers.js";
 import type { InlineKeyboard } from "grammy";
-import { attachmentDeliveryQueue } from "../../src/workers/attachment-delivery/queue.js";
+import { attachmentDeliveryQueue } from "../../../../../src/workers/attachment-delivery/queue.js";
 
 // The flow module imports the real attachment-delivery queue, whose Redis
 // connection would keep the test process alive. It is never used here:

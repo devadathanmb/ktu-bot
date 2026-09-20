@@ -3,26 +3,26 @@ import test, { after } from "node:test";
 import {
   endTimetableLookup,
   handleTimetableSelection,
-} from "../../src/bot/composers/lookups/exam-timetable/composer.js";
+} from "../../../../src/bot/composers/lookups/exam-timetable/composer.js";
 import {
   endCalendarLookup,
   handleCalendarAttachment,
   handleCalendarSelection,
-} from "../../src/bot/composers/lookups/academic-calendar/composer.js";
+} from "../../../../src/bot/composers/lookups/academic-calendar/composer.js";
 import {
   endAnnouncementsLookup,
   handleAnnouncementAttachments,
   handleAnnouncementSelection,
-} from "../../src/bot/composers/lookups/announcements/composer.js";
-import { attachmentDeliveryQueue } from "../../src/workers/attachment-delivery/queue.js";
+} from "../../../../src/bot/composers/lookups/announcements/composer.js";
+import { attachmentDeliveryQueue } from "../../../../src/workers/attachment-delivery/queue.js";
 import type {
   AcademicCalendar,
   Announcement,
   Attachment,
   ExamTimeTable,
-} from "../../src/types/service.types.js";
-import { baseSession, createFakeCtx, ctxCalls } from "./fakes.js";
-import { callbackData } from "../helpers.js";
+} from "../../../../src/types/service.types.js";
+import { baseSession, createFakeCtx, ctxCalls } from "../../fakes.js";
+import { callbackData } from "../../../helpers.js";
 import type { InlineKeyboard } from "grammy";
 
 type QueuedJob = {

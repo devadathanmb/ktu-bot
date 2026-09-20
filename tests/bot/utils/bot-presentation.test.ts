@@ -3,8 +3,8 @@ import test from "node:test";
 import {
   createViewAnotherKeyboard,
   getContextEmoji,
-} from "../../src/bot/utils/presentation.js";
-import { callbackData } from "../helpers.js";
+} from "../../../src/bot/utils/presentation.js";
+import { callbackData } from "../../helpers.js";
 
 test("view-another keyboards keep button text and callback payloads", () => {
   for (const prefix of ["timetable", "announcement", "syllabus"]) {

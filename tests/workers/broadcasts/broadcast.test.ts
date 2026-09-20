@@ -4,14 +4,14 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import type { Job, Queue } from "bullmq";
 import { GrammyError, type Bot } from "grammy";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type * as schema from "../../src/db/schema/index.js";
-import type { BotContext } from "../../src/types/bot.types.js";
-import { broadcastsQueue } from "../../src/workers/broadcasts/queue.js";
-import { BroadcastProcessor } from "../../src/workers/broadcasts/worker.js";
+import type * as schema from "../../../src/db/schema/index.js";
+import type { BotContext } from "../../../src/types/bot.types.js";
+import { broadcastsQueue } from "../../../src/workers/broadcasts/queue.js";
+import { BroadcastProcessor } from "../../../src/workers/broadcasts/worker.js";
 import type {
   BroadcastJob,
   ProcessedAttachment,
-} from "../../src/workers/shared/types.js";
+} from "../../../src/workers/shared/types.js";
 
 interface ApiCall {
   method: string;

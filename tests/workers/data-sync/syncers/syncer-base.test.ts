@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { Got } from "got";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type * as schema from "../../src/db/schema/index.js";
+import type * as schema from "../../../../src/db/schema/index.js";
 import {
   BaseResourceSyncer,
   type TransactionRunner,
-} from "../../src/workers/data-sync/syncers/base.js";
-import type { DatabaseInstance } from "../../src/db/types.js";
+} from "../../../../src/workers/data-sync/syncers/base.js";
+import type { DatabaseInstance } from "../../../../src/db/types.js";
 
 interface Item {
   id: number;

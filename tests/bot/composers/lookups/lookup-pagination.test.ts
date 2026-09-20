@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { FormattedString } from "@grammyjs/parse-mode";
 import { InlineKeyboard } from "grammy";
-import type { BotContext } from "../../src/types/bot.types.js";
+import type { BotContext } from "../../../../src/types/bot.types.js";
 import {
   fetchAndRenderApiPage,
   findItemById,
@@ -10,9 +10,9 @@ import {
   handleApiPreviousPage,
   parseSelectCallback,
   startApiPaginatedLookup,
-} from "../../src/bot/composers/lookups/utils.js";
-import { SessionNotFoundError } from "../../src/errors/bot-errors.js";
-import { createFakeCtx, ctxCalls } from "./fakes.js";
+} from "../../../../src/bot/composers/lookups/utils.js";
+import { SessionNotFoundError } from "../../../../src/errors/bot-errors.js";
+import { createFakeCtx, ctxCalls } from "../../fakes.js";
 
 interface Item {
   id: number;

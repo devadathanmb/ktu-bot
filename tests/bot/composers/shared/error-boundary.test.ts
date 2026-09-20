@@ -4,15 +4,20 @@ import { BotError as GrammyBotError, type NextFunction } from "grammy";
 import {
   createComposerErrorBoundary,
   createSyllabusErrorBoundary,
-} from "../../src/bot/composers/shared/error-boundary.js";
-import { start } from "../../src/bot/composers/lookups/syllabus/flow.js";
-import { HandledBotError } from "../../src/errors/handled-bot-error.js";
+} from "../../../../src/bot/composers/shared/error-boundary.js";
+import { start } from "../../../../src/bot/composers/lookups/syllabus/flow.js";
+import { HandledBotError } from "../../../../src/errors/handled-bot-error.js";
 import {
   KTUAPIError,
   SessionNotFoundError,
-} from "../../src/errors/bot-errors.js";
-import { baseSession, createFakeCtx, ctxCalls, type FakeCtx } from "./fakes.js";
-import { attachmentDeliveryQueue } from "../../src/workers/attachment-delivery/queue.js";
+} from "../../../../src/errors/bot-errors.js";
+import {
+  baseSession,
+  createFakeCtx,
+  ctxCalls,
+  type FakeCtx,
+} from "../../fakes.js";
+import { attachmentDeliveryQueue } from "../../../../src/workers/attachment-delivery/queue.js";
 
 // The flow module imports the real attachment-delivery queue, whose Redis
 // connection would keep the test process alive. It is never used here.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { LLMService } from "../../src/api/services/llm/llm.js";
+import { LLMService } from "../../../../src/api/services/llm/llm.js";
 
 // Live-model evals against the Groq API. These stay skipped in the default
 // suite (no network, no key needed) and only run on demand:

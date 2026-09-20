@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import test, { after } from "node:test";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type * as schema from "../../src/db/schema/index.js";
-import type { ResourceSyncer } from "../../src/workers/data-sync/syncers/base.js";
+import type * as schema from "../../../src/db/schema/index.js";
+import type { ResourceSyncer } from "../../../src/workers/data-sync/syncers/base.js";
 import {
   dataSyncQueue,
   type SyncJobType,
-} from "../../src/workers/data-sync/queue.js";
+} from "../../../src/workers/data-sync/queue.js";
 import {
   DataSyncProcessor,
   type InitialSyncJob,
-} from "../../src/workers/data-sync/worker.js";
+} from "../../../src/workers/data-sync/worker.js";
 
 const SYNC_TYPES: SyncJobType[] = [
   "data-sync:announcements",

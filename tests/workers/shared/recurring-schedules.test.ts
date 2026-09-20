@@ -4,7 +4,7 @@ import {
   setupRecurringSchedules,
   type RecurringJobSchedule,
   type SchedulerQueue,
-} from "../../src/workers/shared/recurring-schedules.js";
+} from "../../../src/workers/shared/recurring-schedules.js";
 
 interface SyncData {
   syncType: string;
