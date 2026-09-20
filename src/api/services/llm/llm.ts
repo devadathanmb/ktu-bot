@@ -107,6 +107,37 @@ const ANNOUNCEMENT_COURSES_RESPONSE_FORMAT = {
   },
 } as const;
 
+type GroqCompletionRequest = z.infer<typeof GroqCompletionRequestSchema>;
+type GroqCompletionResponse = z.infer<typeof GroqCompletionResponseSchema>;
+
+export type GroqCompletionRequester = (
+  request: GroqCompletionRequest
+) => Promise<GroqCompletionResponse>;
+
+function createGroqCompletionRequester(): GroqCompletionRequester {
+  return async request => {
+    const validatedRequestPayload = GroqCompletionRequestSchema.parse(request);
+
+    const response = await got.post(GROQ_API.COMPLETION_ENDPOINT, {
+      headers: {
+        "Authorization": `Bearer ${LLMConfigSchema.API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      json: validatedRequestPayload,
+      responseType: "json",
+      timeout: {
+        request: LLMConfigSchema.TIMEOUT_MS,
+      },
+      retry: {
+        limit: LLMConfigSchema.MAX_RETRIES,
+        methods: ["POST"],
+      },
+    });
+
+    return GroqCompletionResponseSchema.parse(response.body);
+  };
+}
+
 function parseJsonResponse<T>(schema: z.ZodSchema<T>, jsonString: string): T {
   let parsed: unknown;
   try {
@@ -133,36 +164,12 @@ function logRateLimit(error: HTTPError, operation: string): void {
   );
 }
 
-export class LLMService {
-  private config: typeof LLMConfigSchema;
-
-  constructor() {
-    this.config = LLMConfigSchema;
-  }
-
-  private async makeGroqRequest(
-    request: z.infer<typeof GroqCompletionRequestSchema>
-  ): Promise<z.infer<typeof GroqCompletionResponseSchema>> {
-    const validatedRequestPayload = GroqCompletionRequestSchema.parse(request);
-
-    const response = await got.post(GROQ_API.COMPLETION_ENDPOINT, {
-      headers: {
-        "Authorization": `Bearer ${this.config.API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      json: validatedRequestPayload,
-      responseType: "json",
-      timeout: {
-        request: this.config.TIMEOUT_MS,
-      },
-      retry: {
-        limit: this.config.MAX_RETRIES,
-        methods: ["POST"],
-      },
-    });
-
-    return GroqCompletionResponseSchema.parse(response.body);
-  }
+/**
+ * Classification core with a required requester dependency so unit tests can
+ * exercise the fallback policy without network access.
+ */
+export class LLMClassificationCore {
+  constructor(private readonly makeGroqRequest: GroqCompletionRequester) {}
 
   async findRelevantCoursesFromAnnouncement(
     announcementContent: string
@@ -173,14 +180,14 @@ export class LLMService {
       const prompt = buildCourseFindingPrompt(announcementContent);
 
       const request = {
-        model: this.config.COMPLETION_MODEL,
+        model: LLMConfigSchema.COMPLETION_MODEL,
         messages: [
           {
             role: "user" as const,
             content: prompt,
           },
         ],
-        temperature: this.config.TEMPERATURE,
+        temperature: LLMConfigSchema.TEMPERATURE,
         reasoning_effort: "low" as const,
         response_format: ANNOUNCEMENT_COURSES_RESPONSE_FORMAT,
       };
@@ -207,6 +214,8 @@ export class LLMService {
         logger.error({ err: error }, "Error in LLM course finding service");
       }
 
+      // Fail open by returning an empty set: the resolver keeps its broader
+      // regex-derived audience instead of narrowing it to LLM-chosen courses.
       return new Set<AnnouncementFilter>();
     }
   }
@@ -221,14 +230,14 @@ export class LLMService {
       );
 
       const request = {
-        model: this.config.COMPLETION_MODEL,
+        model: LLMConfigSchema.COMPLETION_MODEL,
         messages: [
           {
             role: "user" as const,
             content: prompt,
           },
         ],
-        temperature: this.config.TEMPERATURE,
+        temperature: LLMConfigSchema.TEMPERATURE,
         reasoning_effort: "low" as const,
         response_format: ANNOUNCEMENT_RELEVANCE_RESPONSE_FORMAT,
       };
@@ -240,6 +249,10 @@ export class LLMService {
         response.choices[0]!.message.content
       ).is_relevant;
     } catch (error) {
+      // Fail open: every classification failure (validation, API, rate limit)
+      // must deliver a potentially relevant notification rather than suppress
+      // it. Only the schema-valid `is_relevant: false` returned above
+      // suppresses the student/relevant audience.
       if (error instanceof z.ZodError) {
         const announcement = announcementContent.substring(0, 100) + "...";
         logger.warn(
@@ -251,7 +264,6 @@ export class LLMService {
         );
       } else if (isRateLimitError(error)) {
         logRateLimit(error, "announcement-relevance");
-        return false;
       } else {
         logger.error(
           { err: error },
@@ -261,5 +273,11 @@ export class LLMService {
 
       return true;
     }
+  }
+}
+
+export class LLMService extends LLMClassificationCore {
+  constructor() {
+    super(createGroqCompletionRequester());
   }
 }
