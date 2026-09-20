@@ -11,6 +11,7 @@ import {
 } from "../../utils/attachment-download.js";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
+import { combineFailures } from "../../errors/combine-failures.js";
 import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";
 import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import {
@@ -65,6 +66,8 @@ export class AttachmentDeliveryProcessor {
     );
 
     const downloadedAttachments: DownloadedAttachment[] = [];
+    let processingFailed = false;
+    let processingError: unknown;
 
     try {
       // Download every attachment before sending anything. Telegram sends are not
@@ -103,17 +106,55 @@ export class AttachmentDeliveryProcessor {
         "Attachment delivery job completed"
       );
     } catch (error) {
+      processingFailed = true;
+      processingError = error;
       if (statusMessageId !== undefined) {
         await this.updateErrorMessage(chatId, statusMessageId);
       }
-      throw error;
-    } finally {
-      await Promise.all(
-        downloadedAttachments.map(downloaded =>
-          this.cleanupAttachment(downloaded)
-        )
+    }
+
+    const cleanupErrors = await this.cleanupAllDownloadedAttachments(
+      downloadedAttachments
+    );
+
+    if (processingFailed) {
+      throw combineFailures(
+        "Attachment delivery failed and temp file cleanup failed",
+        processingError,
+        cleanupErrors
       );
     }
+
+    if (cleanupErrors.length > 0) {
+      throw combineFailures(
+        "Temp file cleanup failed",
+        cleanupErrors[0],
+        cleanupErrors.slice(1)
+      );
+    }
+  }
+
+  /**
+   * Attempt every cleanup so one failure cannot hide the others, and return
+   * failures in attachment order for deterministic aggregation.
+   */
+  private async cleanupAllDownloadedAttachments(
+    downloadedAttachments: readonly DownloadedAttachment[]
+  ): Promise<unknown[]> {
+    const results = await Promise.allSettled(
+      downloadedAttachments.map(downloaded =>
+        this.cleanupAttachment(downloaded)
+      )
+    );
+
+    const failures: unknown[] = [];
+    for (const result of results) {
+      if (result.status === "rejected") {
+        failures.push(result.reason);
+      }
+    }
+
+    return failures;
   }
 
   private async sendDownloadedAttachment(options: {

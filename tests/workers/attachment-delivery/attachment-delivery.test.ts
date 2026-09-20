@@ -27,6 +27,7 @@ function createHarness(
   options: {
     sizes?: Record<string, number>;
     failOnDownload?: string;
+    cleanupFailures?: Record<string, Error>;
   } = {}
 ) {
   const calls: ApiCall[] = [];
@@ -66,6 +67,10 @@ function createHarness(
     },
     cleanupAttachment: async downloaded => {
       cleaned.push(downloaded.tempFilePath);
+      const cleanupFailure = options.cleanupFailures?.[downloaded.tempFilePath];
+      if (cleanupFailure) {
+        throw cleanupFailure;
+      }
     },
     sendOversizedAsLink: async (_bot, chatId, downloaded) => {
       links.push({ chatId, fileName: downloaded.fileName });
@@ -212,6 +217,69 @@ test("send failures update the status message and propagate", async () => {
     /telegram down/
   );
 
+  const edit = calls.find(call => call.method === "editMessageText");
+  assert.deepEqual(edit?.args.slice(0, 2), [7, 9]);
+  assert.match(edit?.args[2] as string, /Something went wrong/);
+  assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf"]);
+});
+
+test("cleanup attempts every downloaded file and preserves all failures", async () => {
+  const firstFailure = new Error("cleanup a failed");
+  const secondFailure = new Error("cleanup b failed");
+  const { cleaned, processor } = createHarness({
+    cleanupFailures: {
+      "/tmp/enc-a.pdf.pdf": firstFailure,
+      "/tmp/enc-b.pdf.pdf": secondFailure,
+    },
+  });
+
+  const caught = await processor
+    .process(deliveryJob([attachment("a.pdf"), attachment("b.pdf")]))
+    .catch((error: unknown) => error);
+
+  assert.ok(caught instanceof AggregateError);
+  assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf", "/tmp/enc-b.pdf.pdf"]);
+  assert.equal(caught.errors.length, 2);
+  assert.strictEqual(caught.errors[0], firstFailure);
+  assert.strictEqual(caught.errors[1], secondFailure);
+  assert.strictEqual(caught.cause, firstFailure);
+  assert.match(caught.message, /Temp file cleanup failed/);
+});
+
+test("a single cleanup failure propagates unchanged", async () => {
+  const failure = new Error("cleanup a failed");
+  const { processor } = createHarness({
+    cleanupFailures: { "/tmp/enc-a.pdf.pdf": failure },
+  });
+
+  const caught = await processor
+    .process(deliveryJob([attachment("a.pdf")]))
+    .catch((error: unknown) => error);
+
+  assert.strictEqual(caught, failure);
+});
+
+test("send and cleanup failures are both preserved", async () => {
+  const sendFailure = new Error("telegram down");
+  const cleanupFailure = new Error("cleanup a failed");
+  const { api, calls, cleaned, processor } = createHarness({
+    cleanupFailures: { "/tmp/enc-a.pdf.pdf": cleanupFailure },
+  });
+  api.sendDocument = async (...args: unknown[]) => {
+    calls.push({ method: "sendDocument", args });
+    throw sendFailure;
+  };
+
+  const caught = await processor
+    .process(deliveryJob([attachment("a.pdf")], { statusMessageId: 9 }))
+    .catch((error: unknown) => error);
+
+  assert.ok(caught instanceof AggregateError);
+  assert.equal(caught.errors.length, 2);
+  assert.strictEqual(caught.errors[0], sendFailure);
+  assert.strictEqual(caught.errors[1], cleanupFailure);
+  assert.strictEqual(caught.cause, sendFailure);
+  assert.match(caught.message, /delivery failed and temp file cleanup failed/);
   const edit = calls.find(call => call.method === "editMessageText");
   assert.deepEqual(edit?.args.slice(0, 2), [7, 9]);
   assert.match(edit?.args[2] as string, /Something went wrong/);

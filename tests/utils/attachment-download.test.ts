@@ -126,6 +126,68 @@ test("withDownloadedAttachment always cleans up", async () => {
   await assert.rejects(stat(failedPath));
 });
 
+test("operation and cleanup failures are both preserved", async () => {
+  const service = createService();
+  const cleanupTarget = await mkdtemp(join(tmpdir(), "ktu-bot-cleanup-"));
+  const operationError = new Error("consumer failed");
+
+  try {
+    const caught = await service
+      .withDownloadedAttachment(
+        "enc-1",
+        "a.pdf",
+        "default",
+        async downloaded => {
+          // Point cleanup at a directory: unlinking it is a deterministic
+          // non-ENOENT failure without relying on file permissions.
+          await rm(downloaded.tempFilePath, { force: true });
+          downloaded.tempFilePath = cleanupTarget;
+          throw operationError;
+        }
+      )
+      .catch((error: unknown) => error);
+
+    assert.ok(caught instanceof AggregateError);
+    assert.equal(caught.errors.length, 2);
+    assert.strictEqual(caught.errors[0], operationError);
+    assert.strictEqual(caught.cause, operationError);
+    assert.match(
+      caught.message,
+      /operation failed and temp file cleanup failed/
+    );
+    const cleanupError = caught.errors[1] as NodeJS.ErrnoException;
+    assert.notEqual(cleanupError.code, "ENOENT");
+  } finally {
+    await rm(cleanupTarget, { recursive: true, force: true });
+  }
+});
+
+test("a cleanup-only failure propagates unchanged", async () => {
+  const service = createService();
+  const cleanupTarget = await mkdtemp(join(tmpdir(), "ktu-bot-cleanup-"));
+
+  try {
+    const caught = await service
+      .withDownloadedAttachment(
+        "enc-1",
+        "a.pdf",
+        "default",
+        async downloaded => {
+          await rm(downloaded.tempFilePath, { force: true });
+          downloaded.tempFilePath = cleanupTarget;
+          return "done";
+        }
+      )
+      .catch((error: unknown) => error);
+
+    assert.ok(caught instanceof Error);
+    assert.ok(!(caught instanceof AggregateError));
+    assert.notEqual((caught as NodeJS.ErrnoException).code, "ENOENT");
+  } finally {
+    await rm(cleanupTarget, { recursive: true, force: true });
+  }
+});
+
 test("temp file helpers round-trip and tolerate missing files", async () => {
   const path = await createTempFile(Buffer.from("data"), "unit.pdf");
   assert.deepEqual(await readFile(path), Buffer.from("data"));

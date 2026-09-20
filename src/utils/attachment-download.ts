@@ -3,6 +3,7 @@ import {
   fetchSyllabusAttachment,
 } from "../api/services/ktu/index.js";
 import type { AttachmentSource } from "../types/service.types.js";
+import { combineFailures } from "../errors/combine-failures.js";
 import { cleanupTempFile, createTempFile } from "./file-utils.js";
 import logger from "./logger.js";
 
@@ -33,6 +34,8 @@ export interface AttachmentDownloadService {
   /**
    * Download an attachment and run an operation with automatic temp file cleanup.
    * The temp file is always deleted, even if the operation throws.
+   * When both the operation and the cleanup fail, both failures are preserved
+   * as an AggregateError instead of the cleanup failure replacing the original.
    */
   withDownloadedAttachment: <T>(
     encryptId: string,
@@ -91,11 +94,25 @@ export function createAttachmentDownloadService(
       fileName,
       source
     );
+
+    let result: T;
     try {
-      return await operation(downloaded);
-    } finally {
-      await cleanupDownloadedAttachment(downloaded);
+      result = await operation(downloaded);
+    } catch (operationError) {
+      try {
+        await cleanupDownloadedAttachment(downloaded);
+      } catch (cleanupError) {
+        throw combineFailures(
+          "Attachment operation failed and temp file cleanup failed",
+          operationError,
+          [cleanupError]
+        );
+      }
+      throw operationError;
     }
+
+    await cleanupDownloadedAttachment(downloaded);
+    return result;
   }
 
   return {
