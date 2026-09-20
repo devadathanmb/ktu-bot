@@ -84,18 +84,26 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
 
   logger.info(logData, "User action");
 
-  await next();
+  let outcome: "success" | "error" = "success";
 
-  const duration = Date.now() - start;
-  logger.info(
-    {
-      chat_id: ctx.chat?.id,
-      update_id: ctx.update.update_id,
-      update_type: updateType,
-      response_time_ms: duration,
-    },
-    "Response time"
-  );
+  try {
+    await next();
+  } catch (error) {
+    outcome = "error";
+    throw error;
+  } finally {
+    const duration = Date.now() - start;
+    logger.info(
+      {
+        chat_id: ctx.chat?.id,
+        update_id: ctx.update.update_id,
+        update_type: updateType,
+        outcome,
+        response_time_ms: duration,
+      },
+      "Response time"
+    );
+  }
 }
 
 export default logging;
