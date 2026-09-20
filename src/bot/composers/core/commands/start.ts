@@ -7,7 +7,6 @@ import {
 } from "../../../../utils/formatting.js";
 import { BotConfig } from "../../../../configs/bot.js";
 import { emoji } from "@grammyjs/emoji";
-import { helpCommand } from "./help.js";
 import { coreCommand } from "./registry.js";
 
 const metadata = coreCommand("start");
@@ -21,7 +20,7 @@ export const startCommand = new Command<BotContext>(
     const welcomeHeader = fmt`${greeting} ${emoji("waving_hand")}`;
     const welcomeMessage = fmt`${b}Welcome to KTU Bot!${b}`;
     const description = fmt`I can help you with announcements, academic calendar, exam timetables, notifications and more!`;
-    const callToAction = fmt`Type ${b}${formatCommand(helpCommand)}${b} for more info.`;
+    const callToAction = fmt`Type ${b}${formatCommand(coreCommand("help"))}${b} for more info.`;
     const thanks = fmt`Thank you for using KTU Bot! ${emoji("folded_hands")}`;
 
     const fullMessage = joinWithNewlines(

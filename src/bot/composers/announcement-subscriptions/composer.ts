@@ -10,6 +10,12 @@ import { fmt, b, FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 import { createAnnouncementSubscriptionErrorBoundary } from "../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
+import {
+  announcementsChangeFilterCommandInfo,
+  announcementsShowStatusCommandInfo,
+  announcementsSubscribeCommandInfo,
+  announcementsUnsubscribeCommandInfo,
+} from "./command-info.js";
 
 const MESSAGES: Record<string, Array<FormattedString>> = {
   ALREADY_SUBSCRIBED: [
@@ -36,8 +42,8 @@ const protectedComposer = composer.errorBoundary(
 );
 
 const announcementsSubscribeCommand = new Command<BotContext>(
-  "announcements_subscribe",
-  `${emoji("bell")} Subscribe to announcements`,
+  announcementsSubscribeCommandInfo.name,
+  announcementsSubscribeCommandInfo.description,
   async ctx => {
     await withTransaction(async tx => {
       const chatId = ctx.chatId;
@@ -158,8 +164,8 @@ protectedComposer.callbackQuery("announcement_apply_filters", async ctx => {
 });
 
 const announcementsUnsubscribeCommand = new Command<BotContext>(
-  "announcements_unsubscribe",
-  `${emoji("prohibited")} Unsubscribe from announcements`,
+  announcementsUnsubscribeCommandInfo.name,
+  announcementsUnsubscribeCommandInfo.description,
   async ctx => {
     await withTransaction(async tx => {
       const chatId = ctx.chatId;
@@ -189,8 +195,8 @@ const announcementsUnsubscribeCommand = new Command<BotContext>(
 );
 
 const announcementsShowFilterCommand = new Command<BotContext>(
-  "announcements_show_status",
-  `${emoji("clipboard")} Show current announcement subscription status`,
+  announcementsShowStatusCommandInfo.name,
+  announcementsShowStatusCommandInfo.description,
   async ctx => {
     const chatId = ctx.chatId;
     const announcementSubscriptionRepo = new AnnouncementSubscriptionRepository(
@@ -248,8 +254,8 @@ const announcementsShowFilterCommand = new Command<BotContext>(
 );
 
 const announcementsChangeFilterCommand = new Command<BotContext>(
-  "announcements_change_filter",
-  `${emoji("toolbox")} Change announcement filters`,
+  announcementsChangeFilterCommandInfo.name,
+  announcementsChangeFilterCommandInfo.description,
   async ctx => {
     await withTransaction(async tx => {
       const chatId = ctx.chatId;
@@ -298,8 +304,4 @@ protectedComposer.use(announcementSubscriptionsCommands);
 export {
   composer as announcementSubscriptions,
   announcementSubscriptionsCommands,
-  announcementsSubscribeCommand,
-  announcementsUnsubscribeCommand,
-  announcementsShowFilterCommand,
-  announcementsChangeFilterCommand,
 };

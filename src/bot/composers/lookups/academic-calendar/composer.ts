@@ -54,4 +54,4 @@ calendarCommands.add(calendarLookupCommand);
 protectedComposer.use(calendarCommands);
 
 export const calendarLookup = composer;
-export { calendarCommands, calendarLookupCommand };
+export { calendarCommands };

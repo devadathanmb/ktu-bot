@@ -3,7 +3,7 @@ import { Command } from "@grammyjs/commands";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import { lookupCommandInfos } from "../../lookups/command-info.js";
-import { announcementSubscriptionsCommands } from "../../announcement-subscriptions/composer.js";
+import { announcementSubscriptionCommandInfos } from "../../announcement-subscriptions/command-info.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../../../configs/bot.js";
 import { coreCommand, coreCommands } from "./registry.js";
@@ -21,7 +21,7 @@ ${commands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;
     const allLookupCommands = lookupCommandInfos;
     const lookupCommands = fmt`${emoji("magnifying_glass_tilted_left")} ${b}Lookup Commands${b}
 ${allLookupCommands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;
-    const allNotificationCommands = announcementSubscriptionsCommands.commands;
+    const allNotificationCommands = announcementSubscriptionCommandInfos;
     const subscriptionCommands = fmt`${emoji("bell")} ${b}Notification Commands${b}
 ${allNotificationCommands.map(cmd => `• /${cmd.name} - ${cmd.description}`).join("\n")}`;
     const inlineInfo = fmt`${emoji("light_bulb")} ${b}Pro Tip${b}

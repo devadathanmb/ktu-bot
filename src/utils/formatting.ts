@@ -1,6 +1,4 @@
 import { fmt, FormattedString } from "@grammyjs/parse-mode";
-import { Command } from "@grammyjs/commands";
-import { BotContext } from "../types/bot.types.js";
 
 export function joinWithNewlines(
   parts: FormattedString[],
@@ -37,8 +35,13 @@ export function joinWithNewlines(
   return fmt(templatesArray, ...values);
 }
 
-export const formatCommand = (command: Command<BotContext>): string => {
-  return `/${command.stringName}`;
+/**
+ * Renders a command reference for user-facing text. Static command metadata
+ * entries carry a `name`, so text-only modules can format commands without
+ * importing initialized composer or Command objects.
+ */
+export const formatCommand = (command: { readonly name: string }): string => {
+  return `/${command.name}`;
 };
 
 export function formatDateToReadableString(

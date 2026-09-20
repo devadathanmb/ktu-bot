@@ -60,4 +60,4 @@ announcementsCommands.add(announcementsLookupCommand);
 protectedComposer.use(announcementsCommands);
 
 export const announcementsLookup = composer;
-export { announcementsCommands, announcementsLookupCommand };
+export { announcementsCommands };

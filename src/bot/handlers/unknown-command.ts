@@ -1,7 +1,7 @@
 import { Context } from "grammy";
 import { CommandsFlavor } from "@grammyjs/commands";
 import { EmojiFlavor } from "@grammyjs/emoji";
-import { helpCommand } from "../composers/core/composer.js";
+import { coreCommand } from "../composers/core/commands/registry.js";
 import { formatCommand } from "../../utils/formatting.js";
 import { deleteMessageSafely } from "../../utils/bot.js";
 import { getRandomSticker } from "../../constants/stickers.js";
@@ -29,7 +29,7 @@ export const unknownCommandHandler = async (ctx: UnknownCommandContext) => {
     );
   } else {
     await ctx.reply(
-      `${emoji("crying_face")} Oops... I don't know that command. Use ${formatCommand(helpCommand)}`
+      `${emoji("crying_face")} Oops... I don't know that command. Use ${formatCommand(coreCommand("help"))}`
     );
   }
 };

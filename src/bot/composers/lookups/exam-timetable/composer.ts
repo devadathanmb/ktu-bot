@@ -57,4 +57,4 @@ timetableCommands.add(timetableLookupCommand);
 protectedComposer.use(timetableCommands);
 
 export const timetableLookup = composer;
-export { timetableCommands, timetableLookupCommand };
+export { timetableCommands };

@@ -1,16 +1,16 @@
 import {
-  announcementsChangeFilterCommand,
-  announcementsSubscribeCommand,
-  announcementsUnsubscribeCommand,
-} from "../bot/composers/announcement-subscriptions/composer.js";
-import { announcementsLookupCommand } from "../bot/composers/lookups/announcements/composer.js";
+  announcementsChangeFilterCommandInfo,
+  announcementsSubscribeCommandInfo,
+  announcementsUnsubscribeCommandInfo,
+} from "../bot/composers/announcement-subscriptions/command-info.js";
+import {
+  announcementsCommandInfo,
+  calendarCommandInfo,
+  timetableCommandInfo,
+} from "../bot/composers/lookups/command-info.js";
 import { formatCommand } from "../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { fmt, FormattedString } from "@grammyjs/parse-mode";
-import { BotContext } from "../types/bot.types.js";
-import { Command } from "@grammyjs/commands";
-import { calendarLookupCommand } from "../bot/composers/lookups/academic-calendar/composer.js";
-import { timetableLookupCommand } from "../bot/composers/lookups/exam-timetable/composer.js";
 import { BotConfig } from "../configs/bot.js";
 
 const resultDeprecationReason: FormattedString[] = [
@@ -19,7 +19,7 @@ const resultDeprecationReason: FormattedString[] = [
   fmt`For more details, refer to ${FormattedString.link("Why is results not working?", BotConfig.BOT_REWRITE_DOC_URL)}`,
 ];
 
-const generateMigrationReason = (newCommand: Command<BotContext>) => {
+const generateMigrationReason = (newCommand: { readonly name: string }) => {
   return [
     fmt`${emoji("delivery_truck")} This command has been migrated.`,
     fmt`${emoji("right_arrow")} Use ${formatCommand(newCommand)} instead`,
@@ -31,12 +31,12 @@ const DEPRECATED_COMMAND_TO_REASON_MAP: Record<string, FormattedString[]> = {
   result: resultDeprecationReason,
   oldresults: resultDeprecationReason,
   oldresult: resultDeprecationReason,
-  subscribe: generateMigrationReason(announcementsSubscribeCommand),
-  unsubscribe: generateMigrationReason(announcementsUnsubscribeCommand),
-  changefilter: generateMigrationReason(announcementsChangeFilterCommand),
-  notifications: generateMigrationReason(announcementsLookupCommand),
-  calendar: generateMigrationReason(calendarLookupCommand),
-  timetable: generateMigrationReason(timetableLookupCommand),
+  subscribe: generateMigrationReason(announcementsSubscribeCommandInfo),
+  unsubscribe: generateMigrationReason(announcementsUnsubscribeCommandInfo),
+  changefilter: generateMigrationReason(announcementsChangeFilterCommandInfo),
+  notifications: generateMigrationReason(announcementsCommandInfo),
+  calendar: generateMigrationReason(calendarCommandInfo),
+  timetable: generateMigrationReason(timetableCommandInfo),
 } as const;
 
 const DEPRECATED_COMMANDS_LIST = Object.keys(DEPRECATED_COMMAND_TO_REASON_MAP);

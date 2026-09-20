@@ -111,7 +111,7 @@ protectedComposer.callbackQuery(
   async ctx => {
     await ctx.answerCallbackQuery();
     await ctx.editMessageText(
-      `Syllabus lookup ended. Use ${formatCommand(syllabusLookupCommand)} to start again.`
+      `Syllabus lookup ended. Use ${formatCommand(syllabusCommandInfo)} to start again.`
     );
     clearSyllabusSession(ctx);
   }
@@ -122,4 +122,4 @@ syllabusCommands.add(syllabusLookupCommand);
 protectedComposer.use(syllabusCommands);
 
 export const syllabusLookup = composer;
-export { syllabusCommands, syllabusLookupCommand };
+export { syllabusCommands };

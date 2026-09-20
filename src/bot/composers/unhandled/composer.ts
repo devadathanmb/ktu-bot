@@ -2,7 +2,7 @@ import { getRandomSticker } from "../../../constants/stickers.js";
 import { BotContext } from "../../../types/bot.types.js";
 import { deleteMessageSafely } from "../../../utils/bot.js";
 import { Composer } from "grammy";
-import { helpCommand } from "../core/composer.js";
+import { coreCommand } from "../core/commands/registry.js";
 import { formatCommand } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../../configs/bot.js";
@@ -20,7 +20,7 @@ composer.on("message", async ctx => {
   const stickerMsg = await ctx.replyWithSticker(randomSticker);
 
   await ctx.reply(
-    `That doesn't seem like something I can do. Please use ${formatCommand(helpCommand)} to see what I can do.`
+    `That doesn't seem like something I can do. Please use ${formatCommand(coreCommand("help"))} to see what I can do.`
   );
 
   setTimeout(() => {
