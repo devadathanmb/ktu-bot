@@ -138,7 +138,7 @@ function createGroqCompletionRequester(): GroqCompletionRequester {
   };
 }
 
-function parseJsonResponse<T>(schema: z.ZodSchema<T>, jsonString: string): T {
+function parseJsonResponse<T>(schema: z.ZodType<T>, jsonString: string): T {
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonString);
