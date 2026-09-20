@@ -1,7 +1,7 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { CommandGroup, Command } from "@grammyjs/commands";
 import { Composer } from "grammy";
-import { fetchAcademicCalendars } from "../../../../api/services/index.js";
+import { fetchAcademicCalendars } from "../../../../api/services/ktu/index.js";
 import { AcademicCalendar } from "../../../../types/service.types.js";
 import {
   parseSelectCallback,

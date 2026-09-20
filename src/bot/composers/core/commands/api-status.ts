@@ -1,6 +1,6 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
-import { getBetterUptimeApiStatus } from "../../../../api/services/index.js";
+import { getApiStatus } from "../../../../api/services/betteruptime/index.js";
 import { editMessageSafely } from "../../../../utils/bot.js";
 import { InlineKeyboard } from "grammy";
 import {
@@ -41,7 +41,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
     });
 
     try {
-      const apiStatusResponse = await getBetterUptimeApiStatus();
+      const apiStatusResponse = await getApiStatus();
 
       // Build status message for all monitors
       const title = fmt`${emoji("globe_with_meridians")} ${b}KTU Services Status${b}`;

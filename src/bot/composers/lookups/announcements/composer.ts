@@ -20,7 +20,7 @@ import {
 } from "../../../../utils/formatting.js";
 import { createAnnouncementsErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
-import { fetchAnnouncements } from "../../../../api/services/index.js";
+import { fetchAnnouncements } from "../../../../api/services/ktu/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import {
   formatAnnouncementDetails,

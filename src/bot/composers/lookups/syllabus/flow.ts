@@ -6,7 +6,7 @@ import {
   fetchPrograms,
   fetchSchemes,
   fetchSyllabus,
-} from "../../../../api/services/index.js";
+} from "../../../../api/services/ktu/index.js";
 import { BotContext } from "../../../../types/bot.types.js";
 import {
   Branch,

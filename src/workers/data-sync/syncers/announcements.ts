@@ -1,6 +1,6 @@
 import type { Announcement } from "../../../types/service.types.js";
 import { BaseResourceSyncer } from "./base.js";
-import { fetchAnnouncements } from "../../../api/services/index.js";
+import { fetchAnnouncements } from "../../../api/services/ktu/index.js";
 import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
 import { announcements } from "../../../db/schema/announcements.js";
 import type { DatabaseInstance } from "../../../db/types.js";

@@ -5,7 +5,7 @@ import { ProcessedAttachment } from "../types.js";
 import {
   withDownloadedAttachment,
   TELEGRAM_MAX_FILE_SIZE_BYTES,
-} from "../../../utils/file-utils.js";
+} from "../../../utils/attachment-download.js";
 import {
   uploadToFileChannel,
   uploadToFileHost,

@@ -20,7 +20,7 @@ import {
 } from "../../../../utils/formatting.js";
 import { createTimetableErrorBoundary } from "../../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
-import { fetchTimetables } from "../../../../api/services/index.js";
+import { fetchTimetables } from "../../../../api/services/ktu/index.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { getTimetableAttachment } from "./attachments.js";
 import {

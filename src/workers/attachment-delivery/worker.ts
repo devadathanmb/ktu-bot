@@ -8,7 +8,7 @@ import {
   downloadAttachmentToTempFile,
   TELEGRAM_MAX_FILE_SIZE_BYTES,
   type DownloadedAttachment,
-} from "../../utils/file-utils.js";
+} from "../../utils/attachment-download.js";
 import logger from "../../utils/logger.js";
 import { emoji } from "@grammyjs/emoji";
 import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";

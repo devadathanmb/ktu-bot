@@ -1,6 +1,6 @@
 import type { ExamTimeTable } from "../../../types/service.types.js";
 import { BaseResourceSyncer } from "./base.js";
-import { fetchTimetables } from "../../../api/services/index.js";
+import { fetchTimetables } from "../../../api/services/ktu/index.js";
 import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
 import { examTimetables } from "../../../db/schema/exam-timetables.js";
 import type { DatabaseInstance } from "../../../db/types.js";

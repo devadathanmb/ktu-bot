@@ -1,8 +1,8 @@
 import { Bot, InputFile } from "grammy";
 import { BotContext } from "../../../types/bot.types.js";
-import type { DownloadedAttachment } from "../../../utils/file-utils.js";
+import type { DownloadedAttachment } from "../../../utils/attachment-download.js";
 import { BotConfig } from "../../../configs/bot.js";
-import { uploadTempFile } from "../../../api/services/index.js";
+import { uploadTempFile } from "../../../api/services/file/index.js";
 import logger from "../../../utils/logger.js";
 
 export async function uploadToFileChannel(
