@@ -9,10 +9,7 @@ import { addBroadcastJobs } from "../../broadcasts/queue.js";
 import { fmt, b, type FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
-import {
-  resolveAnnouncementAudience,
-  type AnnouncementClassifier,
-} from "./audience.js";
+import type { AnnouncementAudienceResolver } from "./audience.js";
 import { enqueueNewAnnouncementBroadcasts } from "./orchestration.js";
 import logger from "../../../utils/logger.js";
 import { withTransaction } from "../../../db/transactions.js";
@@ -26,7 +23,7 @@ export class AnnouncementsNotifyProcessor {
   constructor(
     private readonly db: NodePgDatabase<typeof schema>,
     private readonly bot: Bot<BotContext>,
-    private readonly classifier: AnnouncementClassifier
+    private readonly resolveAudience: AnnouncementAudienceResolver
   ) {}
 
   async process(job: Job<Record<string, never>>): Promise<void> {
@@ -90,10 +87,7 @@ export class AnnouncementsNotifyProcessor {
       message: announcement.message || "",
     };
 
-    const { filters } = await resolveAnnouncementAudience(
-      JSON.stringify(content),
-      this.classifier
-    );
+    const { filters } = await this.resolveAudience(JSON.stringify(content));
 
     // Find subscribers matching any of these filters
     const subscriptionRepo = new AnnouncementSubscriptionRepository(this.db);

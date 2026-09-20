@@ -6,6 +6,7 @@ import { ExamTimetablesSyncer } from "./syncers/exam-timetables.js";
 import { baseApiClient } from "../../api/client.js";
 import { DataSyncWorkerConfig } from "../../configs/data-sync-worker.js";
 import { closeDB, initDB } from "../../db/connection.js";
+import { withTransaction } from "../../db/transactions.js";
 import logger from "../../utils/logger.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
@@ -18,11 +19,20 @@ async function start(): Promise<void> {
     const db = await initDB();
     const processor = new DataSyncProcessor({
       syncers: {
-        "data-sync:announcements": new AnnouncementsSyncer(db, baseApiClient),
-        "data-sync:academic-calendars": new CalendarsSyncer(db, baseApiClient),
+        "data-sync:announcements": new AnnouncementsSyncer(
+          db,
+          baseApiClient,
+          withTransaction
+        ),
+        "data-sync:academic-calendars": new CalendarsSyncer(
+          db,
+          baseApiClient,
+          withTransaction
+        ),
         "data-sync:exam-timetables": new ExamTimetablesSyncer(
           db,
-          baseApiClient
+          baseApiClient,
+          withTransaction
         ),
       },
       enqueueSyncJob: job => dataSyncQueue.add(job.name, job.data),

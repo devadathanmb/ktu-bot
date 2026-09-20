@@ -1,7 +1,6 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../../../db/schema/index.js";
 import type { Got } from "got";
-import { withTransaction } from "../../../db/transactions.js";
 import type { DatabaseInstance } from "../../../db/types.js";
 import logger from "../../../utils/logger.js";
 
@@ -32,7 +31,7 @@ export abstract class BaseResourceSyncer<
   constructor(
     database: NodePgDatabase<typeof schema>,
     apiClient: Got,
-    txRunner: TransactionRunner = withTransaction
+    txRunner: TransactionRunner
   ) {
     this.db = database;
     this.apiClient = apiClient;

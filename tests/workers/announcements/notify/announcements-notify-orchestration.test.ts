@@ -6,7 +6,7 @@ import {
   UNDERGRADUATE_COURSES,
 } from "../../../../src/constants/courses.js";
 import {
-  resolveAnnouncementAudience,
+  createAnnouncementAudienceResolver,
   type AnnouncementClassifier,
 } from "../../../../src/workers/announcements/notify/audience.js";
 import {
@@ -229,13 +229,16 @@ test("course-specific announcements skip the LLM and keep their filters", async 
     },
   };
 
-  const audience = await resolveAnnouncementAudience(
+  const resolveAudience = createAnnouncementAudienceResolver({
+    classifier,
+    sleep: async () => {},
+  });
+
+  const audience = await resolveAudience(
     JSON.stringify({
       subject: "B.Tech exam schedule",
       message: "Exam starts soon",
-    }),
-    classifier,
-    async () => {}
+    })
   );
 
   assert.equal(courseLookups, 0);
@@ -263,11 +266,12 @@ test("broad UG filters are narrowed by the LLM course list", async () => {
     },
   };
 
-  const audience = await resolveAnnouncementAudience(
-    BROAD_UG_ANNOUNCEMENT_CONTENT,
+  const resolveAudience = createAnnouncementAudienceResolver({
     classifier,
-    async () => {}
-  );
+    sleep: async () => {},
+  });
+
+  const audience = await resolveAudience(BROAD_UG_ANNOUNCEMENT_CONTENT);
 
   assert.equal(courseLookups, 1);
   assert.deepEqual(
@@ -292,11 +296,12 @@ test("a failed LLM course lookup keeps the broad course filters", async () => {
     },
   };
 
-  const audience = await resolveAnnouncementAudience(
-    BROAD_UG_ANNOUNCEMENT_CONTENT,
+  const resolveAudience = createAnnouncementAudienceResolver({
     classifier,
-    async () => {}
-  );
+    sleep: async () => {},
+  });
+
+  const audience = await resolveAudience(BROAD_UG_ANNOUNCEMENT_CONTENT);
 
   assert.deepEqual(
     audience.filters,
@@ -322,13 +327,14 @@ test("general announcements use the LLM relevance result for the audience", asyn
     },
   };
 
-  const audience = await resolveAnnouncementAudience(
-    GENERIC_ANNOUNCEMENT_CONTENT,
+  const resolveAudience = createAnnouncementAudienceResolver({
     classifier,
-    async milliseconds => {
+    sleep: async milliseconds => {
       sleeps.push(milliseconds);
-    }
-  );
+    },
+  });
+
+  const audience = await resolveAudience(GENERIC_ANNOUNCEMENT_CONTENT);
 
   assert.equal(relevanceChecks, 1);
   assert.deepEqual(sleeps, [2000]);
@@ -346,11 +352,12 @@ test("general announcements the LLM rejects only reach ALL subscribers", async (
     },
   };
 
-  const audience = await resolveAnnouncementAudience(
-    GENERIC_ANNOUNCEMENT_CONTENT,
+  const resolveAudience = createAnnouncementAudienceResolver({
     classifier,
-    async () => {}
-  );
+    sleep: async () => {},
+  });
+
+  const audience = await resolveAudience(GENERIC_ANNOUNCEMENT_CONTENT);
 
   assert.deepEqual(audience.filters, new Set([AnnouncementFilter.ALL]));
   assert.equal(audience.isStudentRelevant, false);

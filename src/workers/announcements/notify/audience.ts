@@ -5,7 +5,6 @@ import {
 } from "../../../constants/courses.js";
 import findCourseFiltersFromText from "../../../utils/find-course-filters-from-text.js";
 import logger from "../../../utils/logger.js";
-import { setTimeout } from "node:timers/promises";
 
 export interface AnnouncementClassifier {
   findRelevantCoursesFromAnnouncement(
@@ -18,6 +17,15 @@ export interface AnnouncementAudience {
   filters: Set<AnnouncementFilter>;
   isStudentRelevant: boolean;
 }
+
+export interface AnnouncementAudienceDeps {
+  classifier: AnnouncementClassifier;
+  sleep: (milliseconds: number) => Promise<void>;
+}
+
+export type AnnouncementAudienceResolver = (
+  announcementContent: string
+) => Promise<AnnouncementAudience>;
 
 function containsEveryFilter(
   filters: ReadonlySet<AnnouncementFilter>,
@@ -75,72 +83,74 @@ export function addUniversalSubscriptionFilters(
   filters.add(AnnouncementFilter.ALL);
 }
 
-export async function resolveAnnouncementAudience(
-  announcementContent: string,
-  classifier: AnnouncementClassifier,
-  // Injectable so tests do not pay the production LLM stagger delay.
-  sleep: (milliseconds: number) => Promise<void> = milliseconds =>
-    setTimeout(milliseconds)
-): Promise<AnnouncementAudience> {
-  const filters = findCourseFiltersFromText(announcementContent);
+export function createAnnouncementAudienceResolver(
+  deps: AnnouncementAudienceDeps
+): AnnouncementAudienceResolver {
+  const { classifier, sleep } = deps;
 
-  logger.debug(
-    {
-      announcement: announcementContent,
-      filters: Array.from(filters),
-    },
-    "Regex extracted course filters from announcement"
-  );
+  return async announcementContent => {
+    const filters = findCourseFiltersFromText(announcementContent);
 
-  let isStudentRelevant = hasSpecificAudienceFilters(filters);
-
-  // Broad phrases like "UG" or "PG" expand to every course in that group.
-  // That is useful for reach, but too coarse for notifications, so we ask the
-  // LLM for a narrower course list only when the extracted set actually
-  // contains the whole UG/PG group instead of relying on set size alone.
-  if (shouldRefineBroadCourseMatch(filters)) {
-    logger.debug(
-      "Broad course filters found, using LLM to determine specific relevant courses"
-    );
-    const llmMatchedCourses =
-      await classifier.findRelevantCoursesFromAnnouncement(announcementContent);
     logger.debug(
       {
-        llmMatchedCourses: Array.from(llmMatchedCourses),
         announcement: announcementContent,
+        filters: Array.from(filters),
       },
-      "LLM matched courses from announcement"
+      "Regex extracted course filters from announcement"
     );
-    if (llmMatchedCourses.size > 0) {
-      filters.clear();
-      llmMatchedCourses.forEach(courseCode => {
-        filters.add(courseCode);
-      });
-    }
-    isStudentRelevant = true;
-  }
 
-  // General announcements with no course signal need an LLM relevance check.
-  // If relevant, we target every course filter plus `RELEVANT`; if not, only
-  // `ALL` subscribers receive it via addUniversalSubscriptionFilters below.
-  if (isOnlyAllAnnouncementsFilter(filters)) {
-    // Stagger LLM calls to avoid bursts
-    await sleep(2 * 1000);
+    let isStudentRelevant = hasSpecificAudienceFilters(filters);
 
-    logger.debug("No specific filters found, checking relevancy with LLM");
-    const isRelevant =
-      await classifier.isAnnouncementRelevant(announcementContent);
-
-    if (isRelevant) {
+    // Broad phrases like "UG" or "PG" expand to every course in that group.
+    // That is useful for reach, but too coarse for notifications, so we ask the
+    // LLM for a narrower course list only when the extracted set actually
+    // contains the whole UG/PG group instead of relying on set size alone.
+    if (shouldRefineBroadCourseMatch(filters)) {
       logger.debug(
-        "Announcement deemed relevant by LLM, adding all student audience filters"
+        "Broad course filters found, using LLM to determine specific relevant courses"
       );
-      addAllStudentAudienceFilters(filters);
+      const llmMatchedCourses =
+        await classifier.findRelevantCoursesFromAnnouncement(
+          announcementContent
+        );
+      logger.debug(
+        {
+          llmMatchedCourses: Array.from(llmMatchedCourses),
+          announcement: announcementContent,
+        },
+        "LLM matched courses from announcement"
+      );
+      if (llmMatchedCourses.size > 0) {
+        filters.clear();
+        llmMatchedCourses.forEach(courseCode => {
+          filters.add(courseCode);
+        });
+      }
+      isStudentRelevant = true;
     }
-    isStudentRelevant = isRelevant;
-  }
 
-  addUniversalSubscriptionFilters(filters, { isStudentRelevant });
+    // General announcements with no course signal need an LLM relevance check.
+    // If relevant, we target every course filter plus `RELEVANT`; if not, only
+    // `ALL` subscribers receive it via addUniversalSubscriptionFilters below.
+    if (isOnlyAllAnnouncementsFilter(filters)) {
+      // Stagger LLM calls to avoid bursts
+      await sleep(2 * 1000);
 
-  return { filters, isStudentRelevant };
+      logger.debug("No specific filters found, checking relevancy with LLM");
+      const isRelevant =
+        await classifier.isAnnouncementRelevant(announcementContent);
+
+      if (isRelevant) {
+        logger.debug(
+          "Announcement deemed relevant by LLM, adding all student audience filters"
+        );
+        addAllStudentAudienceFilters(filters);
+      }
+      isStudentRelevant = isRelevant;
+    }
+
+    addUniversalSubscriptionFilters(filters, { isStudentRelevant });
+
+    return { filters, isStudentRelevant };
+  };
 }

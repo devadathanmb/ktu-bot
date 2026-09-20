@@ -1,3 +1,4 @@
+import { setTimeout } from "node:timers/promises";
 import { autoRetry } from "@grammyjs/auto-retry";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { LLMService } from "../../../api/services/llm/index.js";
@@ -8,6 +9,7 @@ import logger from "../../../utils/logger.js";
 import { createWorker } from "../../shared/worker-runtime.js";
 import { createWorkerShutdown } from "../../shared/worker-shutdown.js";
 import { startWorkerMonitoring } from "../../shared/start-worker.js";
+import { createAnnouncementAudienceResolver } from "./audience.js";
 import { announcementsNotifyQueue, setupRecurringSchedule } from "./queue.js";
 import { AnnouncementsNotifyProcessor } from "./worker.js";
 
@@ -22,7 +24,15 @@ async function start(): Promise<void> {
     logger.info("Bot instance created with throttler and auto-retry");
 
     const classifier = new LLMService();
-    const processor = new AnnouncementsNotifyProcessor(db, bot, classifier);
+    const resolveAudience = createAnnouncementAudienceResolver({
+      classifier,
+      sleep: milliseconds => setTimeout(milliseconds),
+    });
+    const processor = new AnnouncementsNotifyProcessor(
+      db,
+      bot,
+      resolveAudience
+    );
     const worker = await createWorker({
       workerName: serviceName,
       queue: announcementsNotifyQueue,
