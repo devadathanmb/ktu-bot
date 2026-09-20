@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node --import tsx --import ./tests/setup.ts --test tests/*.test.ts",
     "start": "node dist/index.js",
     "start:dev": "tsx src/index.ts",
     "dev": "tsx src/index.ts",

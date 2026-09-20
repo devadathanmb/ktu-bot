@@ -1,295 +1,30 @@
 import { BotContext } from "../../../types/bot.types.js";
-import { Composer, InlineKeyboard, InlineQueryResultBuilder } from "grammy";
+import { Composer, InlineQueryResultBuilder } from "grammy";
 import { createComposerErrorBoundary } from "../shared/error-boundary.js";
-import { AnnouncementsRepository } from "../../../db/repositories/announcements-repository.js";
-import { AcademicCalendarsRepository } from "../../../db/repositories/academic-calendars-repository.js";
-import { ExamTimetablesRepository } from "../../../db/repositories/exam-timetables-repository.js";
-import { fmt, b } from "@grammyjs/parse-mode";
-import type { FormattedString } from "@grammyjs/parse-mode";
+import { fmt } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 import { emoji } from "@grammyjs/emoji";
 import logger from "../../../utils/logger.js";
 import type { InlineQueryResult } from "grammy/types";
-import {
-  INLINE_ANNOUNCEMENTS_SEARCH_BUTTON,
-  INLINE_CALENDARS_SEARCH_BUTTON,
-  INLINE_TIMETABLES_SEARCH_BUTTON,
-} from "./keyboards.js";
 import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/queue.js";
-
-interface AttachmentInfo {
-  name: string;
-  encryptId: string;
-}
+import { parseQuery } from "./query.js";
+import { addSearchAgainButton, buildHelpResults } from "./results.js";
+import {
+  searchAnnouncements,
+  searchCalendars,
+  searchTimetables,
+} from "./search.js";
+import {
+  buildAttachmentDeliveryJob,
+  resolveChosenResultAttachments,
+} from "./chosen-result.js";
+import { SearchType } from "./search-types.js";
 
 const _inlineQuery = new Composer<BotContext>();
 
 export const inlineQuery = _inlineQuery.errorBoundary(
   createComposerErrorBoundary([])
 );
-
-enum SearchType {
-  ANNOUNCEMENTS = "announcements",
-  CALENDARS = "calendars",
-  TIMETABLES = "timetables",
-}
-
-const SEARCH_PREFIXES_TO_TYPE_MAP: Record<string, SearchType> = {
-  "ann:": SearchType.ANNOUNCEMENTS,
-  "cal:": SearchType.CALENDARS,
-  "tt:": SearchType.TIMETABLES,
-} as const;
-
-const SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP: Record<SearchType, string> = {
-  [SearchType.ANNOUNCEMENTS]: "ann",
-  [SearchType.CALENDARS]: "cal",
-  [SearchType.TIMETABLES]: "tt",
-} as const;
-
-const SPECIAL_RESULT_PREFIXES = {
-  HELP: "help_",
-  NO_RESULTS: "no_",
-} as const;
-
-function constructNoResultsFound(type: SearchType) {
-  return [
-    InlineQueryResultBuilder.article(
-      `${SPECIAL_RESULT_PREFIXES.NO_RESULTS}${type}`,
-      `${emoji("woman_shrugging")} No ${type} found`
-    ).text(
-      `${emoji("woman_shrugging")} No ${type} found for your search query.`
-    ),
-  ];
-}
-
-function parseQuery(query: string): {
-  type: SearchType | null;
-  searchTerm: string;
-} {
-  const trimmedQuery = query.trim();
-
-  for (const [prefix, type] of Object.entries(SEARCH_PREFIXES_TO_TYPE_MAP)) {
-    if (trimmedQuery.startsWith(prefix)) {
-      return {
-        type,
-        searchTerm: trimmedQuery.slice(prefix.length).trim(),
-      };
-    }
-  }
-
-  return { type: null, searchTerm: trimmedQuery };
-}
-
-function getSearchTypeFromPrefix(prefix: string): SearchType | null {
-  for (const [searchType, idPrefix] of Object.entries(
-    SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP
-  )) {
-    if (idPrefix === prefix) {
-      return searchType as SearchType;
-    }
-  }
-  return null;
-}
-
-async function searchAnnouncements(
-  searchTerm: string
-): Promise<InlineQueryResult[]> {
-  const repo = new AnnouncementsRepository();
-  logger.debug({ searchTerm }, "Searching announcements");
-
-  const dbAnnouncements = searchTerm.trim()
-    ? await repo.search(searchTerm, { limit: 50 })
-    : await repo.getAll({ limit: 50 });
-
-  const announcements = dbAnnouncements.map(dbAnnouncement =>
-    AnnouncementsRepository.transformToApi(dbAnnouncement)
-  );
-
-  const results = announcements.map(announcement => {
-    const parts: FormattedString[] = [];
-    if (announcement.subject) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("open_book")} Subject:${b}`,
-          fmt`${announcement.subject}`,
-        ])
-      );
-    }
-    if (announcement.message) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("memo")} Message:${b}`,
-          fmt`${announcement.message}`,
-        ])
-      );
-    }
-    if (announcement.formattedPublishedDate) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`,
-        ])
-      );
-    }
-
-    const formattedMessage = joinWithNewlines(parts, 2);
-
-    return InlineQueryResultBuilder.article(
-      `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.ANNOUNCEMENTS]}_${announcement.id}`,
-      announcement.subject || "No Subject",
-      {
-        description: announcement.message || "",
-      }
-    ).text(formattedMessage.text, { entities: formattedMessage.entities });
-  });
-
-  if (results.length === 0) {
-    return constructNoResultsFound(SearchType.ANNOUNCEMENTS);
-  }
-
-  return results;
-}
-
-async function searchCalendars(
-  searchTerm: string
-): Promise<InlineQueryResult[]> {
-  const repo = new AcademicCalendarsRepository();
-
-  const dbCalendars = searchTerm.trim()
-    ? await repo.search(searchTerm, { limit: 50 })
-    : await repo.getAll({ limit: 50 });
-
-  const calendars = dbCalendars.map(dbCalendar =>
-    AcademicCalendarsRepository.transformToApi(dbCalendar)
-  );
-
-  const results = calendars.map(calendar => {
-    const parts: FormattedString[] = [];
-    if (calendar.title) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Title:${b}`,
-          fmt`${calendar.title}`,
-        ])
-      );
-    }
-    if (calendar.formattedPublishedDate) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Date:${b} ${calendar.formattedPublishedDate}`,
-        ])
-      );
-    }
-    if (calendar.attachmentName) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("paperclip")} Attachment:${b} ${calendar.attachmentName}`,
-        ])
-      );
-    }
-
-    const formattedMessage = joinWithNewlines(parts, 2);
-
-    return InlineQueryResultBuilder.article(
-      `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.CALENDARS]}_${calendar.id}`,
-      calendar.title || "No Title",
-      {
-        description: calendar.title || "",
-      }
-    ).text(formattedMessage.text, { entities: formattedMessage.entities });
-  });
-
-  if (results.length === 0) {
-    return constructNoResultsFound(SearchType.CALENDARS);
-  }
-
-  return results;
-}
-
-async function searchTimetables(
-  searchTerm: string
-): Promise<InlineQueryResult[]> {
-  const repo = new ExamTimetablesRepository();
-
-  const dbTimetables = searchTerm.trim()
-    ? await repo.search(searchTerm, { limit: 50 })
-    : await repo.getAll({ limit: 50 });
-
-  const timetables = dbTimetables.map(dbTimetable =>
-    ExamTimetablesRepository.transformToApi(dbTimetable)
-  );
-
-  const results = timetables.map(timetable => {
-    const parts: FormattedString[] = [];
-    if (timetable.title) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("clipboard")} Title:${b}`,
-          fmt`${timetable.title}`,
-        ])
-      );
-    }
-    if (timetable.formattedPublishedDate) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Date:${b} ${timetable.formattedPublishedDate}`,
-        ])
-      );
-    }
-    if (timetable.fileName) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("paperclip")} File:${b} ${timetable.fileName}`,
-        ])
-      );
-    }
-
-    const formattedMessage = joinWithNewlines(parts, 2);
-
-    return InlineQueryResultBuilder.article(
-      `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.TIMETABLES]}_${timetable.id}`,
-      timetable.title || "No Title",
-      {
-        description: timetable.title || "",
-      }
-    ).text(formattedMessage.text, { entities: formattedMessage.entities });
-  });
-
-  if (results.length === 0) {
-    return constructNoResultsFound(SearchType.TIMETABLES);
-  }
-
-  return results;
-}
-
-function addSearchAgainButton(
-  results: InlineQueryResult[],
-  originalQuery: string
-): InlineQueryResult[] {
-  const searchAgainKeyboard = new InlineKeyboard().switchInlineCurrent(
-    `${emoji("high_voltage")} Search Again`,
-    originalQuery
-  );
-
-  return results.map(result => {
-    // Skip help and no-results items
-    if (
-      result.id?.startsWith(SPECIAL_RESULT_PREFIXES.HELP) ||
-      result.id?.startsWith(SPECIAL_RESULT_PREFIXES.NO_RESULTS)
-    ) {
-      return result;
-    }
-
-    // Add the keyboard to article results
-    if (result.type === "article") {
-      return {
-        ...result,
-        reply_markup: searchAgainKeyboard,
-      };
-    }
-
-    return result;
-  });
-}
 
 inlineQuery.on("inline_query", async ctx => {
   const query = ctx.inlineQuery?.query || "";
@@ -299,39 +34,7 @@ inlineQuery.on("inline_query", async ctx => {
     let results: InlineQueryResult[] = [];
 
     if (!type) {
-      results = [
-        InlineQueryResultBuilder.article(
-          `${SPECIAL_RESULT_PREFIXES.HELP}announcements`,
-          `${emoji("loudspeaker")} Search Announcements`,
-          {
-            reply_markup: InlineKeyboard.from([
-              INLINE_ANNOUNCEMENTS_SEARCH_BUTTON,
-            ]),
-          }
-        ).text(
-          `${emoji("loudspeaker")} Click the button below to start searching announcements!`
-        ),
-        InlineQueryResultBuilder.article(
-          `${SPECIAL_RESULT_PREFIXES.HELP}calendars`,
-          `${emoji("calendar")} Search Academic Calendars`,
-          {
-            reply_markup: InlineKeyboard.from([INLINE_CALENDARS_SEARCH_BUTTON]),
-          }
-        ).text(
-          `${emoji("calendar")} Click the button below to start searching academic calendars!`
-        ),
-        InlineQueryResultBuilder.article(
-          `${SPECIAL_RESULT_PREFIXES.HELP}timetables`,
-          `${emoji("clipboard")} Search Exam Timetables`,
-          {
-            reply_markup: InlineKeyboard.from([
-              INLINE_TIMETABLES_SEARCH_BUTTON,
-            ]),
-          }
-        ).text(
-          `${emoji("clipboard")} Click the button below to start searching exam timetables!`
-        ),
-      ];
+      results = buildHelpResults();
     } else {
       switch (type) {
         case SearchType.ANNOUNCEMENTS:
@@ -375,120 +78,29 @@ inlineQuery.on("chosen_inline_result", async ctx => {
   const resultId = chosenResult.result_id;
   const chatId = chosenResult.from.id;
 
-  // help items already have keyboards
-  if (resultId.startsWith("help_") || resultId.startsWith("no_")) {
-    return;
-  }
-
   try {
-    const [prefix, id] = resultId.split("_");
+    const resolution = await resolveChosenResultAttachments(resultId);
 
-    if (!prefix || !id) {
-      await ctx.api.sendMessage(
-        chatId,
-        `${emoji("cross_mark")} Invalid result format.`
-      );
+    if (resolution.status === "ignored") return;
+
+    if (resolution.status !== "ready") {
+      await ctx.api.sendMessage(chatId, resolution.message);
       return;
     }
 
-    const searchType = getSearchTypeFromPrefix(prefix);
-
-    if (!searchType) {
-      await ctx.api.sendMessage(
-        chatId,
-        `${emoji("cross_mark")} Unknown resource type.`
-      );
-      return;
-    }
-
-    let attachments: AttachmentInfo[] = [];
-    let resourceName = "";
-
-    switch (searchType) {
-      case SearchType.ANNOUNCEMENTS: {
-        const repo = new AnnouncementsRepository();
-        const dbAnnouncement = await repo.getById(Number(id));
-
-        if (!dbAnnouncement) {
-          await ctx.api.sendMessage(
-            chatId,
-            `${emoji("cross_mark")} Announcement not found.`
-          );
-          return;
-        }
-
-        const announcement =
-          AnnouncementsRepository.transformToApi(dbAnnouncement);
-        attachments = announcement.attachments;
-        resourceName = "announcement";
-        break;
-      }
-      case SearchType.CALENDARS: {
-        const repo = new AcademicCalendarsRepository();
-        const dbCalendar = await repo.getById(Number(id));
-
-        if (!dbCalendar) {
-          await ctx.api.sendMessage(
-            chatId,
-            `${emoji("cross_mark")} Academic calendar not found.`
-          );
-          return;
-        }
-
-        const calendar = AcademicCalendarsRepository.transformToApi(dbCalendar);
-        attachments = [
-          { name: calendar.attachmentName, encryptId: calendar.encryptId },
-        ];
-        resourceName = "academic calendar";
-        break;
-      }
-      case SearchType.TIMETABLES: {
-        const repo = new ExamTimetablesRepository();
-        const dbTimetable = await repo.getById(Number(id));
-
-        if (!dbTimetable) {
-          await ctx.api.sendMessage(
-            chatId,
-            `${emoji("cross_mark")} Exam timetable not found.`
-          );
-          return;
-        }
-
-        const timetable = ExamTimetablesRepository.transformToApi(dbTimetable);
-        if (timetable.fileName && timetable.encryptId) {
-          attachments = [
-            { name: timetable.fileName, encryptId: timetable.encryptId },
-          ];
-        } else {
-          attachments = [];
-        }
-        resourceName = "exam timetable";
-        break;
-      }
-    }
-
-    if (attachments.length === 0) {
-      await ctx.api.sendMessage(
-        chatId,
-        `${emoji("information")} No attachments found for this ${resourceName}.`
-      );
-      return;
-    }
-
-    const plural = attachments.length > 1 ? "s" : "";
+    const plural = resolution.attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.api.sendMessage(
       chatId,
-      `${emoji("hourglass_not_done")} Downloading your file${plural} from ${resourceName} in the background... Please wait!`
+      `${emoji("hourglass_not_done")} Downloading your file${plural} from ${resolution.resource} in the background... Please wait!`
     );
 
-    const jobData: Parameters<typeof addAttachmentDeliveryJob>[0] = {
-      chatId: chatId,
-      attachments: attachments,
-      statusMessageId: statusMessage.message_id,
-      context: "inline query result",
-    };
-
-    await addAttachmentDeliveryJob(jobData);
+    await addAttachmentDeliveryJob(
+      buildAttachmentDeliveryJob(
+        chatId,
+        resolution.attachments,
+        statusMessage.message_id
+      )
+    );
   } catch (error) {
     logger.error(
       { err: error as Error, resultId, chatId },
