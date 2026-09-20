@@ -3,6 +3,17 @@ import { TokenSolverConfig } from "../configs/token-solver.js";
 const TOKEN_PATH = "/token";
 
 /**
+ * Every fetchToken failure. Lets KTU error mapping tell solver outages
+ * apart from KTU API failures instead of mislabeling them as the latter.
+ */
+export class TokenSolverError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "TokenSolverError";
+  }
+}
+
+/**
  * Fetches a fresh Cloudflare Turnstile token from the token solver.
  *
  * Turnstile tokens are single-use, so every uncached KTU request must mint its
@@ -17,24 +28,36 @@ export async function fetchToken(
   fetchImpl: typeof fetch = fetch
 ): Promise<string> {
   const url = `${TokenSolverConfig.URL}${TOKEN_PATH}`;
-  const response = await fetchImpl(url, {
-    signal: AbortSignal.timeout(TokenSolverConfig.TIMEOUT_MS),
-  });
+  let response: Response;
+  try {
+    response = await fetchImpl(url, {
+      signal: AbortSignal.timeout(TokenSolverConfig.TIMEOUT_MS),
+    });
+  } catch (error: unknown) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new TokenSolverError(`Token solver request failed: ${detail}`, {
+      cause: error,
+    });
+  }
 
   if (!response.ok) {
-    throw new Error(`Token solver responded with status ${response.status}`);
+    throw new TokenSolverError(
+      `Token solver responded with status ${response.status}`
+    );
   }
 
   let body: unknown;
   try {
     body = await response.json();
   } catch (error: unknown) {
-    throw new Error("Token solver returned malformed JSON", { cause: error });
+    throw new TokenSolverError("Token solver returned malformed JSON", {
+      cause: error,
+    });
   }
 
   const token = readToken(body);
   if (!token) {
-    throw new Error("Token solver returned a blank token");
+    throw new TokenSolverError("Token solver returned a blank token");
   }
 
   return token;

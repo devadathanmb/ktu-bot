@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { cachedApiClient } from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
+import { withKtuErrorMapper } from "./ktu-error-mapper.js";
 
 const AttachmentResponseSchema = z
   .string()
@@ -20,7 +20,7 @@ async function _fetchAttachment(encryptId: string): Promise<string> {
   return AttachmentResponseSchema.parse(response.body);
 }
 
-export const fetchAttachment = withServiceWrapper(
+export const fetchAttachment = withKtuErrorMapper(
   "fetchAttachment",
   _fetchAttachment
 );

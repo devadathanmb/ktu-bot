@@ -3,7 +3,7 @@ import { z } from "zod";
 import { cachedApiClient } from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
 import { formatDateToReadableString } from "../../../utils/formatting.js";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
+import { withKtuErrorMapper } from "./ktu-error-mapper.js";
 import type { Announcement } from "../../../types/service.types.js";
 import type { Got } from "got";
 
@@ -71,7 +71,7 @@ async function _fetchAnnouncements({
   return announcements;
 }
 
-export const fetchAnnouncements = withServiceWrapper(
+export const fetchAnnouncements = withKtuErrorMapper(
   "fetchAnnouncements",
   _fetchAnnouncements
 );

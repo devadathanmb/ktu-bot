@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
+import { withKtuErrorMapper } from "./ktu-error-mapper.js";
 import type { Branch } from "../../../types/service.types.js";
 import type { Got } from "got";
 
@@ -42,7 +42,7 @@ async function _fetchBranches({
   }));
 }
 
-export const fetchBranches = withServiceWrapper(
+export const fetchBranches = withKtuErrorMapper(
   "fetchBranches",
   _fetchBranches
 );

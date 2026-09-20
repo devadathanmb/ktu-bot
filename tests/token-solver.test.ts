@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import got, { RequestError, type NormalizedOptions } from "got";
 import { TokenSolverConfig } from "../src/configs/token-solver.js";
-import { fetchToken } from "../src/api/token-solver.js";
+import { fetchToken, TokenSolverError } from "../src/api/token-solver.js";
 import {
   addXTokenHeader,
   createAddXTokenHeader,
@@ -54,6 +54,15 @@ test("fetchToken rejects on malformed solver JSON", async () => {
   );
 
   await assert.rejects(fetchToken(fetchImpl), /malformed JSON/);
+});
+
+test("fetchToken failures are TokenSolverErrors", async () => {
+  const { fetchImpl } = createFetchStub(
+    async () => new Response("{}", { status: 503 })
+  );
+
+  const error = await fetchToken(fetchImpl).catch((caught: unknown) => caught);
+  assert.ok(error instanceof TokenSolverError);
 });
 
 test("fetchToken rejects on an absent or blank token", async () => {

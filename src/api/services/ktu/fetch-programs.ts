@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
+import { withKtuErrorMapper } from "./ktu-error-mapper.js";
 import type { Program } from "../../../types/service.types.js";
 import type { Got } from "got";
 
@@ -36,7 +36,7 @@ async function _fetchPrograms({ apiClient }: FetchProgramsParams = {}): Promise<
     }));
 }
 
-export const fetchPrograms = withServiceWrapper(
+export const fetchPrograms = withKtuErrorMapper(
   "fetchPrograms",
   _fetchPrograms
 );

@@ -2,7 +2,6 @@ import { z } from "zod";
 import { baseApiClient } from "../../client.js";
 import { BETTER_UPTIME_API } from "../../../constants/api.js";
 import { ExternalApiConfig } from "../../../configs/api.js";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import logger from "../../../utils/logger.js";
 import type {
   ApiStatus,
@@ -50,7 +49,7 @@ const BetterUptimeResponseTimeSchema = z.object({
   }),
 });
 
-async function _getApiStatus(): Promise<ApiStatusResponse> {
+export async function getApiStatus(): Promise<ApiStatusResponse> {
   const monitorsResponse = await baseApiClient.get(
     `${BETTER_UPTIME_API.MONITOR_GROUPS_ENDPOINT}/${ExternalApiConfig.BETTER_UPTIME_MONITOR_GROUP_ID}/monitors`,
     {
@@ -114,5 +113,3 @@ async function _getApiStatus(): Promise<ApiStatusResponse> {
 
   return { monitors };
 }
-
-export const getApiStatus = withServiceWrapper("getApiStatus", _getApiStatus);

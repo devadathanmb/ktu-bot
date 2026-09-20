@@ -3,7 +3,7 @@ import { z } from "zod";
 import { cachedApiClient } from "../../client.js";
 import { KTU_API_ENDPOINTS } from "../../../constants/api.js";
 import { formatDateToReadableString } from "../../../utils/formatting.js";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
+import { withKtuErrorMapper } from "./ktu-error-mapper.js";
 import type { ExamTimeTable } from "../../../types/service.types.js";
 import type { Got } from "got";
 
@@ -59,7 +59,7 @@ async function _fetchExamTimetables({
   return timetables;
 }
 
-export const fetchTimetables = withServiceWrapper(
+export const fetchTimetables = withKtuErrorMapper(
   "fetchTimetables",
   _fetchExamTimetables
 );

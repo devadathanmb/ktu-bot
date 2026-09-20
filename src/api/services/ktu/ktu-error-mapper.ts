@@ -1,10 +1,27 @@
 import { HTTPError, RequestError } from "got";
 import { ZodError } from "zod";
-import { KTUAPIError } from "../../errors/bot-errors.js";
-import logger from "../../utils/logger.js";
+import { KTUAPIError } from "../../../errors/bot-errors.js";
+import { TokenSolverError } from "../../token-solver.js";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function withServiceWrapper<TArgs extends any[], TReturn>(
+function isTokenSolverFailure(error: unknown): boolean {
+  let current: unknown = error;
+  while (current instanceof Error) {
+    if (current instanceof TokenSolverError) return true;
+    current = current.cause;
+  }
+  return false;
+}
+
+/**
+ * Translates failures from KTU API services into KTUAPIError with safe user
+ * messages. KTU-only: other services must not use this boundary or their
+ * outages get mislabeled as KTU failures.
+ *
+ * Translation never logs; the bot/worker handling boundary owns logging.
+ * Failures this mapper does not recognize — including token-solver outages,
+ * which travel through got as RequestError — are rethrown untouched.
+ */
+export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
   serviceName: string,
   serviceFunction: (...args: TArgs) => Promise<TReturn>
 ) {
@@ -12,20 +29,12 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
     try {
       return await serviceFunction(...args);
     } catch (error: unknown) {
+      if (isTokenSolverFailure(error)) throw error;
+
       // Handle HTTP errors from got
       if (error instanceof HTTPError) {
         const statusCode = error.response.statusCode;
         const url = error.response.requestUrl?.toString();
-
-        logger.error(
-          {
-            service: serviceName,
-            err: error,
-            statusCode,
-            url,
-          },
-          `Error in ${serviceName}`
-        );
 
         // Throw KTUAPIError with specific user messages for different status codes
         switch (statusCode) {
@@ -81,15 +90,6 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
       if (error instanceof RequestError) {
         const url = error.request?.requestUrl?.toString();
 
-        logger.error(
-          {
-            service: serviceName,
-            err: error,
-            url,
-          },
-          `Error in ${serviceName}`
-        );
-
         throw new KTUAPIError(
           serviceName,
           `Network error: ${error.message}`,
@@ -102,14 +102,6 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
 
       // Handle Zod validation errors (invalid API response format)
       if (error instanceof ZodError) {
-        logger.error(
-          {
-            service: serviceName,
-            err: error,
-          },
-          `Zod validation error in ${serviceName}`
-        );
-
         throw new KTUAPIError(
           serviceName,
           `API response validation failed: ${error.message}`,
@@ -119,22 +111,6 @@ export function withServiceWrapper<TArgs extends any[], TReturn>(
           error
         );
       }
-
-      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
-      const errorStatusCode = (error as any)?.response?.statusCode;
-      const errorUrl =
-        (error as any)?.response?.requestUrl?.toString() ||
-        (error as any)?.request?.requestUrl?.toString();
-
-      logger.error(
-        {
-          service: serviceName,
-          err: error as Error,
-          statusCode: errorStatusCode,
-          url: errorUrl,
-        },
-        `Error in ${serviceName}`
-      );
 
       // If the error is not handled above, re-throw
       throw error;

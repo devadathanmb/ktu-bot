@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
+import { withKtuErrorMapper } from "./ktu-error-mapper.js";
 import logger from "../../../utils/logger.js";
 import type { Got } from "got";
 
@@ -57,7 +57,7 @@ async function _fetchSyllabusAttachment({
   return base64Data;
 }
 
-export const fetchSyllabusAttachment = withServiceWrapper(
+export const fetchSyllabusAttachment = withKtuErrorMapper(
   "fetchSyllabusAttachment",
   _fetchSyllabusAttachment
 );

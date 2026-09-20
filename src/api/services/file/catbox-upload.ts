@@ -1,6 +1,5 @@
 import { z } from "zod";
 import got from "got";
-import { withServiceWrapper } from "../../utils/service-wrapper.js";
 import { CATBOX_API } from "../../../constants/api.js";
 import type { TempFileUploadParams } from "../../../types/service.types.js";
 import { readFileAsBuffer } from "../../../utils/file-utils.js";
@@ -9,7 +8,9 @@ const CatboxResponseSchema = z
   .url("Invalid URL returned from Catbox API")
   .startsWith("https://", "Response must be a secure HTTPS URL");
 
-async function _uploadTempFile(params: TempFileUploadParams): Promise<string> {
+export async function uploadTempFile(
+  params: TempFileUploadParams
+): Promise<string> {
   const { filePath, fileName } = params;
 
   const fileBuffer = await readFileAsBuffer(filePath);
@@ -28,8 +29,3 @@ async function _uploadTempFile(params: TempFileUploadParams): Promise<string> {
   const uri = response.body.trim();
   return CatboxResponseSchema.parse(uri);
 }
-
-export const uploadTempFile = withServiceWrapper(
-  "uploadTempFile",
-  _uploadTempFile
-);
