@@ -12,6 +12,9 @@ export const BROADCASTS_QUEUE = "BROADCASTS_QUEUE";
 export const broadcastsQueue = createQueue<BroadcastJob>({
   name: BROADCASTS_QUEUE,
   defaultJobOptions: {
+    // A sustained flood outlasts 3 attempts; each retry already waits out
+    // `retry_after` via the 429 handler's pause before BullMQ re-attempts.
+    attempts: 8,
     removeOnFail: { count: 50 },
   },
 });

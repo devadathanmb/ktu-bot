@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { after } from "node:test";
 import { FormattedString } from "@grammyjs/parse-mode";
 import type { Job, Queue } from "bullmq";
 import { GrammyError, type Bot } from "grammy";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "../../src/db/schema/index.js";
 import type { BotContext } from "../../src/types/bot.types.js";
+import { broadcastsQueue } from "../../src/workers/broadcasts/queue.js";
 import { BroadcastProcessor } from "../../src/workers/broadcasts/worker.js";
 import type {
   BroadcastJob,
@@ -16,6 +17,12 @@ interface ApiCall {
   method: string;
   args: unknown[];
 }
+
+// The imported queue module constructs the real queue; it is never used
+// here, only its retry defaults are asserted, so close it after.
+after(async () => {
+  await broadcastsQueue.close();
+});
 
 function createHarness(subscribed: boolean) {
   const calls: ApiCall[] = [];
@@ -189,4 +196,8 @@ test("rethrows unrecognized Grammy errors after handling", async () => {
     .process(textJob())
     .catch((error: unknown) => error);
   assert.strictEqual(caught, failure);
+});
+
+test("broadcasts queue retries past a sustained flood", () => {
+  assert.equal(broadcastsQueue.opts.defaultJobOptions?.attempts, 8);
 });
