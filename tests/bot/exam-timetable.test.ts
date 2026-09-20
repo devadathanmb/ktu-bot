@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getTimetableAttachment } from "../src/bot/composers/lookups/exam-timetable/attachments.js";
+import { getTimetableAttachment } from "../../src/bot/composers/lookups/exam-timetable/attachments.js";
 import {
   formatTimetableDetails,
   generateTimetablesKeyboard,
   generateTimetablesText,
-} from "../src/bot/composers/lookups/exam-timetable/views.js";
-import type { ExamTimeTable } from "../src/types/service.types.js";
-import { callbackData } from "./helpers.js";
+} from "../../src/bot/composers/lookups/exam-timetable/views.js";
+import type { ExamTimeTable } from "../../src/types/service.types.js";
+import { callbackData } from "../helpers.js";
 
 const timetable: ExamTimeTable = {
   id: 91,

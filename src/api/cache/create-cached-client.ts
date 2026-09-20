@@ -15,6 +15,11 @@ export function createCachedApiClient(
   config: CacheConfig
 ): Got {
   const cache = new APICache(config);
+  // Synthetic responses served from cache still flow through got's
+  // afterResponse hooks. Without tracking them, every hit would re-set
+  // the entry with a fresh TTL (sliding expiration) and hot endpoints
+  // would never expire.
+  const syntheticResponses = new WeakSet<object>();
 
   return baseApiClient.extend({
     hooks: {
@@ -33,13 +38,20 @@ export function createCachedApiClient(
           if (!cached) return undefined;
 
           logger.debug({ key }, "Returning cached response");
-          return createSyntheticResponse(url, cached);
+          const synthetic = createSyntheticResponse(url, cached);
+          syntheticResponses.add(synthetic);
+          return synthetic;
         },
       ],
       // Cache 200 responses; invalidate on any other status to prevent
       // a future request from accidentally reusing a stale success.
       afterResponse: [
         response => {
+          if (syntheticResponses.has(response)) {
+            syntheticResponses.delete(response);
+            return response;
+          }
+
           const url = response.request.options.url?.toString();
           if (!url) return response;
 

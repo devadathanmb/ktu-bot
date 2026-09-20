@@ -4,7 +4,7 @@ import type { InlineQueryResult } from "grammy/types";
 import {
   parseQuery,
   getSearchTypeFromPrefix,
-} from "../src/bot/composers/inline-query/query.js";
+} from "../../src/bot/composers/inline-query/query.js";
 import {
   addSearchAgainButton,
   buildHelpResults,
@@ -12,26 +12,26 @@ import {
   renderAnnouncementResults,
   renderCalendarResults,
   renderTimetableResults,
-} from "../src/bot/composers/inline-query/results.js";
+} from "../../src/bot/composers/inline-query/results.js";
 import {
   buildAttachmentDeliveryJob,
   resolveChosenResultAttachments,
   type ChosenResultRepos,
-} from "../src/bot/composers/inline-query/chosen-result.js";
+} from "../../src/bot/composers/inline-query/chosen-result.js";
 import {
   searchAnnouncements,
   searchCalendars,
   searchTimetables,
-} from "../src/bot/composers/inline-query/search.js";
-import { SearchType } from "../src/bot/composers/inline-query/search-types.js";
+} from "../../src/bot/composers/inline-query/search.js";
+import { SearchType } from "../../src/bot/composers/inline-query/search-types.js";
 import type {
   AcademicCalendar,
   Announcement,
   ExamTimeTable,
-} from "../src/types/service.types.js";
-import { announcements } from "../src/db/schema/announcements.js";
-import { academicCalendars } from "../src/db/schema/academic-calendars.js";
-import { examTimetables } from "../src/db/schema/exam-timetables.js";
+} from "../../src/types/service.types.js";
+import { announcements } from "../../src/db/schema/announcements.js";
+import { academicCalendars } from "../../src/db/schema/academic-calendars.js";
+import { examTimetables } from "../../src/db/schema/exam-timetables.js";
 
 type AnnouncementRow = typeof announcements.$inferSelect;
 type CalendarRow = typeof academicCalendars.$inferSelect;

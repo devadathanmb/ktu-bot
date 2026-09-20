@@ -4,10 +4,10 @@ import type { AddressInfo } from "node:net";
 import test, { type TestContext } from "node:test";
 import got, { HTTPError, RequestError } from "got";
 import { z, ZodError } from "zod";
-import { withKtuErrorMapper } from "../src/api/services/ktu/ktu-error-mapper.js";
-import { TokenSolverError } from "../src/api/token-solver.js";
-import { KTUAPIError } from "../src/errors/bot-errors.js";
-import { uploadTempFile } from "../src/api/services/file/index.js";
+import { withKtuErrorMapper } from "../../src/api/services/ktu/ktu-error-mapper.js";
+import { TokenSolverError } from "../../src/api/token-solver.js";
+import { KTUAPIError } from "../../src/errors/bot-errors.js";
+import { uploadTempFile } from "../../src/api/services/file/index.js";
 
 async function startStatusServer(
   status: number,

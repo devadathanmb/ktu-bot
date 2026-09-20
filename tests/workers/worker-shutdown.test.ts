@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createWorkerShutdown } from "../src/workers/shared/worker-shutdown.js";
+import { createWorkerShutdown } from "../../src/workers/shared/worker-shutdown.js";
 
 test("worker shutdown closes the worker and resolves", async () => {
   let closeCalls = 0;

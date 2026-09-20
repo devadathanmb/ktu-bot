@@ -14,15 +14,23 @@ export interface DownloadedAttachment {
   fileSizeBytes: number;
 }
 
+export interface AttachmentFetchers {
+  fetchDefault?: (encryptId: string) => Promise<string>;
+  fetchSyllabus?: (params: { encryptId: string }) => Promise<string>;
+}
+
 export async function downloadAttachmentToTempFile(
   encryptId: string,
   fileName: string,
-  source: AttachmentSource = "default"
+  source: AttachmentSource = "default",
+  fetchers: AttachmentFetchers = {}
 ): Promise<DownloadedAttachment> {
+  const fetchDefault = fetchers.fetchDefault ?? fetchAttachment;
+  const fetchSyllabus = fetchers.fetchSyllabus ?? fetchSyllabusAttachment;
   const base64Data =
     source === "syllabus"
-      ? await fetchSyllabusAttachment({ encryptId })
-      : await fetchAttachment(encryptId);
+      ? await fetchSyllabus({ encryptId })
+      : await fetchDefault(encryptId);
 
   const decodedSize = Buffer.byteLength(base64Data, "base64");
 
@@ -57,12 +65,14 @@ export async function withDownloadedAttachment<T>(
   encryptId: string,
   fileName: string,
   source: AttachmentSource,
-  operation: (downloaded: DownloadedAttachment) => Promise<T>
+  operation: (downloaded: DownloadedAttachment) => Promise<T>,
+  fetchers: AttachmentFetchers = {}
 ): Promise<T> {
   const downloaded = await downloadAttachmentToTempFile(
     encryptId,
     fileName,
-    source
+    source,
+    fetchers
   );
   try {
     return await operation(downloaded);

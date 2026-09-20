@@ -17,16 +17,26 @@ interface RepoBase<TInsert> {
   bulkUpsert(items: TInsert[]): Promise<number>;
 }
 
+export type TransactionRunner = <T>(
+  callback: (tx: DatabaseInstance) => Promise<T>
+) => Promise<T>;
+
 export abstract class BaseResourceSyncer<
   TEntity,
   TInsert,
 > implements ResourceSyncer {
   protected db: NodePgDatabase<typeof schema>;
   protected apiClient: Got;
+  private readonly txRunner: TransactionRunner;
 
-  constructor(database: NodePgDatabase<typeof schema>, apiClient: Got) {
+  constructor(
+    database: NodePgDatabase<typeof schema>,
+    apiClient: Got,
+    txRunner: TransactionRunner = withTransaction
+  ) {
     this.db = database;
     this.apiClient = apiClient;
+    this.txRunner = txRunner;
   }
 
   abstract readonly name: string;
@@ -92,7 +102,7 @@ export abstract class BaseResourceSyncer<
     let totalProcessed = 0;
     let batchNumber = 0;
 
-    await withTransaction(async tx => {
+    await this.txRunner(async tx => {
       const repo = this.createRepo(tx);
 
       for await (const batch of this.fetchInBatches()) {
@@ -133,7 +143,7 @@ export abstract class BaseResourceSyncer<
       return;
     }
 
-    await withTransaction(async tx => {
+    await this.txRunner(async tx => {
       const repo = this.createRepo(tx);
       const transformedItems = recentItems.map(item =>
         this.transformFromApi(item)

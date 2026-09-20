@@ -5,14 +5,14 @@ import {
   buildProgramsPage,
   buildSchemesPage,
   buildSyllabusEntriesPage,
-} from "../src/bot/composers/lookups/syllabus/views.js";
+} from "../../src/bot/composers/lookups/syllabus/views.js";
 import type {
   Branch,
   Program,
   Scheme,
   SyllabusEntry,
-} from "../src/types/service.types.js";
-import { callbackData } from "./helpers.js";
+} from "../../src/types/service.types.js";
+import { callbackData } from "../helpers.js";
 
 test("program pages keep API IDs, local numbering, and five buttons per row", () => {
   const programs: Program[] = Array.from({ length: 11 }, (_, index) => ({

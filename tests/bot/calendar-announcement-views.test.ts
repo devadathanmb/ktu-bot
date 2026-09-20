@@ -6,17 +6,17 @@ import {
   formatCalendarDetails,
   generateCalendarsKeyboard,
   generateCalendarsText,
-} from "../src/bot/composers/lookups/academic-calendar/views.js";
+} from "../../src/bot/composers/lookups/academic-calendar/views.js";
 import {
   formatAnnouncementDetails,
   generateAnnouncementsKeyboard,
   generateAnnouncementsText,
-} from "../src/bot/composers/lookups/announcements/views.js";
+} from "../../src/bot/composers/lookups/announcements/views.js";
 import type {
   AcademicCalendar,
   Announcement,
-} from "../src/types/service.types.js";
-import { callbackData } from "./helpers.js";
+} from "../../src/types/service.types.js";
+import { callbackData } from "../helpers.js";
 
 const calendar: AcademicCalendar = {
   id: 41,

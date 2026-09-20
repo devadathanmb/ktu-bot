@@ -4,17 +4,20 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import {
   AnnouncementFilter,
   UNDERGRADUATE_COURSES,
-} from "../src/constants/courses.js";
+} from "../../src/constants/courses.js";
 import {
   resolveAnnouncementAudience,
   type AnnouncementClassifier,
-} from "../src/workers/announcements/notify/audience.js";
+} from "../../src/workers/announcements/notify/audience.js";
 import {
   enqueueNewAnnouncementBroadcasts,
   type AnnouncementNotificationDeps,
-} from "../src/workers/announcements/notify/orchestration.js";
-import type { Announcement, Attachment } from "../src/types/service.types.js";
-import type { BroadcastJobInput } from "../src/workers/broadcasts/queue.js";
+} from "../../src/workers/announcements/notify/orchestration.js";
+import type {
+  Announcement,
+  Attachment,
+} from "../../src/types/service.types.js";
+import type { BroadcastJobInput } from "../../src/workers/broadcasts/queue.js";
 
 const ALL_ANNOUNCEMENT_FILTERS = new Set(Object.values(AnnouncementFilter));
 

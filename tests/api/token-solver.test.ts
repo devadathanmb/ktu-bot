@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import got, { RequestError, type NormalizedOptions } from "got";
-import { TokenSolverConfig } from "../src/configs/token-solver.js";
-import { fetchToken, TokenSolverError } from "../src/api/token-solver.js";
+import { TokenSolverConfig } from "../../src/configs/token-solver.js";
+import { fetchToken, TokenSolverError } from "../../src/api/token-solver.js";
 import {
   addXTokenHeader,
   createAddXTokenHeader,
-} from "../src/api/hooks/before/add-x-token-header.js";
-import { addKtuHeaders } from "../src/api/hooks/before/add-ktu-headers.js";
-import { baseApiClient, cachedApiClient } from "../src/api/client.js";
+} from "../../src/api/hooks/before/add-x-token-header.js";
+import { addKtuHeaders } from "../../src/api/hooks/before/add-ktu-headers.js";
+import { baseApiClient, cachedApiClient } from "../../src/api/client.js";
 
 const tokenUrl = `${TokenSolverConfig.URL}/token`;
 const ktuUrl = "https://api.ktu.edu.in/ktu-web-portal-api/anon/announcemnts";
