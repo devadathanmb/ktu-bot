@@ -2,6 +2,8 @@
 // Unit tests never open real connections, but importing repository modules
 // parses DB config at load time. Dummy values keep `pnpm test` working
 // without a populated environment; real values are respected when present.
+// Silent keeps logs from expected-error tests out of normal test output.
+process.env.LOG_LEVEL ??= "silent";
 process.env.DATABASE_URI ??= "postgres://localhost:5432/ktu-bot-test";
 process.env.PGSSLMODE ??= "disable";
 process.env.DATA_SYNC_WORKER_HEALTHCHECK_PORT ??= "3103";

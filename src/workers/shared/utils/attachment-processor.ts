@@ -52,8 +52,8 @@ async function processSingleAttachment(
     if (fileId) return { fileName, fileId };
   } catch (error) {
     logger.warn(
-      { fileName, error },
-      `Failed to upload ${fileName} to Telegram, falling back to file host`
+      { err: error, fileName },
+      "Failed to upload attachment to Telegram, falling back to file host"
     );
   }
 

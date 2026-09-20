@@ -36,7 +36,7 @@ export function setupMetricsEndpoint(
       c.header("Content-Type", contentType);
       return c.text(metrics);
     } catch (error) {
-      logger.error(error, "Failed to collect metrics");
+      logger.error({ err: error }, "Failed to collect metrics");
       return c.text("Error collecting metrics", 500);
     }
   });

@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 const logConfigSchema = z.object({
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("debug"),
+  LOG_LEVEL: z
+    .enum(["debug", "info", "warn", "error", "silent"])
+    .default("debug"),
   NODE_ENV: z.enum(["development", "production"]).default("development"),
 });
 

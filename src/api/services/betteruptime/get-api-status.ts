@@ -96,7 +96,7 @@ export async function getApiStatus(): Promise<ApiStatusResponse> {
         }
       } catch (error) {
         logger.warn(
-          { err: error as Error, monitorId: monitor.id },
+          { err: error, monitorId: monitor.id },
           "Failed to fetch response times for monitor"
         );
       }

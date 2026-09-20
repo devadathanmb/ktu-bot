@@ -13,7 +13,7 @@ export function createWorkerBot(): Bot<BotContext> {
       return;
     }
 
-    logger.error({ err: error as Error }, "Unexpected bot error");
+    logger.error({ err: error }, "Unexpected bot error");
   });
 
   return bot;

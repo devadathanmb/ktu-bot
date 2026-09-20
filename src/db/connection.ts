@@ -47,7 +47,7 @@ export async function closeDB(): Promise<void> {
       logger.info("Database connection closed");
     }
   } catch (error) {
-    logger.error(error, "Failed to close database connection");
+    logger.error({ err: error }, "Failed to close database connection");
   }
 }
 

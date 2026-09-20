@@ -72,7 +72,7 @@ export const editMessageSafely = async (
     return true;
   } catch (error) {
     const chatId = ctx.chat?.id;
-    logger.error({ error, chatId, messageId }, "Failed to edit message");
+    logger.error({ err: error, chatId, messageId }, "Failed to edit message");
     return false;
   }
 };

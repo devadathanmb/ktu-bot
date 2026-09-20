@@ -73,7 +73,7 @@ async function startBotInLongPolling() {
     process.on("SIGINT", () => void onShutdown(runner, "SIGINT"));
     process.on("SIGTERM", () => void onShutdown(runner, "SIGTERM"));
   } catch (error) {
-    logger.error(error, "Failed to start bot");
+    logger.error({ err: error }, "Failed to start bot");
     await onShutdown();
   }
 }

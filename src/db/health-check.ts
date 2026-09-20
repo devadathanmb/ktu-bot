@@ -6,7 +6,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
     await getDb().execute("SELECT NOW()");
     return true;
   } catch (error) {
-    logger.error(error, "Database health check failed");
+    logger.error({ err: error }, "Database health check failed");
     return false;
   }
 }

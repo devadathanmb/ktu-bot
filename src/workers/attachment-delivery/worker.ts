@@ -204,7 +204,7 @@ export class AttachmentDeliveryProcessor {
       );
     } catch (error) {
       logger.warn(
-        { chatId, messageId, err: error as Error },
+        { err: error, chatId, messageId },
         "Failed to update status message"
       );
     }

@@ -58,7 +58,10 @@ function startBullBoard() {
       );
     });
   } catch (error) {
-    logger.error(error, "Failed to start Bull Board monitoring service");
+    logger.error(
+      { err: error },
+      "Failed to start Bull Board monitoring service"
+    );
     process.exit(1);
   }
 }

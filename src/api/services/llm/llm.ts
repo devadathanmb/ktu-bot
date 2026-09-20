@@ -204,10 +204,7 @@ export class LLMService {
       } else if (isRateLimitError(error)) {
         logRateLimit(error, "course-finding");
       } else {
-        logger.error(
-          { err: error as Error },
-          "Error in LLM course finding service"
-        );
+        logger.error({ err: error }, "Error in LLM course finding service");
       }
 
       return new Set<AnnouncementFilter>();
@@ -257,7 +254,7 @@ export class LLMService {
         return false;
       } else {
         logger.error(
-          { err: error as Error },
+          { err: error },
           "Error in LLM announcement relevance check"
         );
       }

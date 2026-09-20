@@ -86,10 +86,7 @@ export async function checkQueueHealth(
     return isHealthy;
   } catch (error) {
     const queueName = queue.name;
-    logger.error(
-      { queueName, err: error as Error },
-      "Failed to check queue health"
-    );
+    logger.error({ err: error, queueName }, "Failed to check queue health");
     return false;
   }
 }
