@@ -4,38 +4,43 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import test from "node:test";
 import {
-  cleanupDownloadedAttachment,
-  downloadAttachmentToTempFile,
-  withDownloadedAttachment,
+  createAttachmentDownloadService,
+  type AttachmentFetcherDeps,
 } from "../../src/utils/attachment-download.js";
 import { cleanupTempFile, createTempFile } from "../../src/utils/file-utils.js";
 
 const HELLO_BASE64 = Buffer.from("hello ktu").toString("base64");
 
+function createService(overrides: Partial<AttachmentFetcherDeps> = {}) {
+  return createAttachmentDownloadService({
+    fetchAttachment: async () => HELLO_BASE64,
+    fetchSyllabusAttachment: async () => HELLO_BASE64,
+    ...overrides,
+  });
+}
+
 test("default and syllabus sources use their own fetchers", async () => {
   const calls: string[] = [];
-  const fetchers = {
-    fetchDefault: async (encryptId: string) => {
+  const service = createAttachmentDownloadService({
+    fetchAttachment: async (encryptId: string) => {
       calls.push(`default:${encryptId}`);
       return HELLO_BASE64;
     },
-    fetchSyllabus: async ({ encryptId }: { encryptId: string }) => {
+    fetchSyllabusAttachment: async ({ encryptId }: { encryptId: string }) => {
       calls.push(`syllabus:${encryptId}`);
       return HELLO_BASE64;
     },
-  };
+  });
 
-  const fromDefault = await downloadAttachmentToTempFile(
+  const fromDefault = await service.downloadAttachmentToTempFile(
     "enc-1",
     "a.pdf",
-    "default",
-    fetchers
+    "default"
   );
-  const fromSyllabus = await downloadAttachmentToTempFile(
+  const fromSyllabus = await service.downloadAttachmentToTempFile(
     "enc-2",
     "b.pdf",
-    "syllabus",
-    fetchers
+    "syllabus"
   );
 
   try {
@@ -51,17 +56,17 @@ test("default and syllabus sources use their own fetchers", async () => {
       Buffer.from("hello ktu")
     );
   } finally {
-    await cleanupDownloadedAttachment(fromDefault);
-    await cleanupDownloadedAttachment(fromSyllabus);
+    await service.cleanupDownloadedAttachment(fromDefault);
+    await service.cleanupDownloadedAttachment(fromSyllabus);
   }
 });
 
 test("unsafe encryptId characters never reach the filesystem name", async () => {
-  const downloaded = await downloadAttachmentToTempFile(
+  const service = createService();
+  const downloaded = await service.downloadAttachmentToTempFile(
     "../../enc:1/\\?*",
     "a.pdf",
-    "default",
-    { fetchDefault: async () => HELLO_BASE64 }
+    "default"
   );
 
   try {
@@ -71,34 +76,35 @@ test("unsafe encryptId characters never reach the filesystem name", async () => 
     assert.doesNotMatch(base, /[/\\:?*]/);
     await stat(downloaded.tempFilePath);
   } finally {
-    await cleanupDownloadedAttachment(downloaded);
+    await service.cleanupDownloadedAttachment(downloaded);
   }
 });
 
 test("fetch failures propagate", async () => {
+  const service = createService({
+    fetchAttachment: async () => {
+      throw new Error("ktu down");
+    },
+  });
+
   await assert.rejects(
-    downloadAttachmentToTempFile("enc-1", "a.pdf", "default", {
-      fetchDefault: async () => {
-        throw new Error("ktu down");
-      },
-    }),
+    service.downloadAttachmentToTempFile("enc-1", "a.pdf", "default"),
     /ktu down/
   );
 });
 
 test("withDownloadedAttachment always cleans up", async () => {
-  const fetchers = { fetchDefault: async () => HELLO_BASE64 };
+  const service = createService();
   let seenPath = "";
 
-  const result = await withDownloadedAttachment(
+  const result = await service.withDownloadedAttachment(
     "enc-1",
     "a.pdf",
     "default",
     async downloaded => {
       seenPath = downloaded.tempFilePath;
       return "done";
-    },
-    fetchers
+    }
   );
 
   assert.equal(result, "done");
@@ -106,15 +112,14 @@ test("withDownloadedAttachment always cleans up", async () => {
 
   let failedPath = "";
   await assert.rejects(
-    withDownloadedAttachment(
+    service.withDownloadedAttachment(
       "enc-1",
       "a.pdf",
       "default",
       async downloaded => {
         failedPath = downloaded.tempFilePath;
         throw new Error("consumer failed");
-      },
-      fetchers
+      }
     ),
     /consumer failed/
   );
