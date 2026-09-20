@@ -13,6 +13,12 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 - Pure ESM (`NodeNext`): local imports need `.js` suffixes. Strict mode: watch `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused symbols, missing `override`, incomplete return paths.
 - No `any`; narrow `unknown` with guards. Bot text via GrammY `fmt` + `joinWithNewlines()`.
 - Env only in Zod-backed `src/configs/`; no new `process.env` elsewhere.
+- Comments explain rationale, invariants, external constraints, or non-obvious failure ordering; remove comments/docstrings that narrate code or justify production APIs only by testing.
+
+## Architecture
+
+- Production dependency wiring belongs in startup/composition roots; inject narrow behavior at I/O boundaries. Do not add Core/production subclass pairs, `WithDeps` twin entry points, or repository factories solely for tests: prefer one implementation with production defaults or explicit startup wiring.
+- Never await Telegram/network I/O inside a DB transaction. Commit before reporting success; DB failure must not produce success; keep related DB writes atomic and preserve retry state when post-commit notification fails.
 
 ## API
 
@@ -23,6 +29,7 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 ## Bot
 
 - Check GrammY docs before touching framework APIs, middleware order, or callback handling. Main composition in `src/bot/bot.ts`; workers use minimal `create-worker-bot()` (`ctx.api` in composers, raw `bot.api` in worker processors).
+- Static command/presentation metadata must not require importing initialized composers.
 - Callback composers use `createComposerErrorBoundary([...sessionKeys])` and register on the returned composer. Syllabus download IDs are indices into the original API response, not the filtered page; preserve existing callback prefixes. API pages arrive paginated; render as received, never re-slice locally. Inline result prefixes (`ann:`, `cal:`, `tt:`) and queued attachment payloads are stable.
 - Timetable downloads require nonblank `attachmentId` + `fileName` + `encryptId`, preserved verbatim. Broadcasts run at concurrency 1; on `retry_after`, pause the queue and re-throw for BullMQ retry.
 
