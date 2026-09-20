@@ -8,6 +8,7 @@ import {
 } from "../../../../api/services/ktu/index.js";
 import { BotContext } from "../../../../types/bot.types.js";
 import { formatCommand } from "../../../../utils/formatting.js";
+import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
 import { addAttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createSyllabusErrorBoundary } from "../../shared/error-boundary.js";
 import { syllabusCommandInfo } from "../command-info.js";
@@ -110,8 +111,10 @@ protectedComposer.callbackQuery(
   `${CB.VIEW_ANOTHER}_view_another_false`,
   async ctx => {
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(
-      `Syllabus lookup ended. Use ${formatCommand(syllabusCommandInfo)} to start again.`
+    await editMessageIgnoringNotModified(() =>
+      ctx.editMessageText(
+        `Syllabus lookup ended. Use ${formatCommand(syllabusCommandInfo)} to start again.`
+      )
     );
     clearSyllabusSession(ctx);
   }

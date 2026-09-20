@@ -8,7 +8,11 @@ import {
   Scheme,
   SyllabusEntry,
 } from "../../../../types/service.types.js";
-import { deleteMessageSafely } from "../../../../utils/bot.js";
+import {
+  deleteMessageSafely,
+  editMessageIgnoringNotModified,
+} from "../../../../utils/bot.js";
+import logger from "../../../../utils/logger.js";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
@@ -73,10 +77,12 @@ async function renderPrograms(
   ctx.session.syllabusPrograms = programs;
   ctx.session.syllabusProgramPage = page;
   const { text, keyboard } = buildProgramsPage(programs, page);
-  await ctx.editMessageText(text.text, {
-    reply_markup: keyboard,
-    entities: text.entities,
-  });
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(text.text, {
+      reply_markup: keyboard,
+      entities: text.entities,
+    })
+  );
 }
 
 async function renderSchemes(
@@ -87,10 +93,12 @@ async function renderSchemes(
   ctx.session.syllabusSchemes = schemes;
   ctx.session.syllabusSchemePage = page;
   const { text, keyboard } = buildSchemesPage(schemes, page);
-  await ctx.editMessageText(text.text, {
-    reply_markup: keyboard,
-    entities: text.entities,
-  });
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(text.text, {
+      reply_markup: keyboard,
+      entities: text.entities,
+    })
+  );
 }
 
 async function renderBranches(
@@ -101,10 +109,12 @@ async function renderBranches(
   ctx.session.syllabusBranches = branches;
   ctx.session.syllabusBranchPage = page;
   const { text, keyboard } = buildBranchesPage(branches, page);
-  await ctx.editMessageText(text.text, {
-    reply_markup: keyboard,
-    entities: text.entities,
-  });
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(text.text, {
+      reply_markup: keyboard,
+      entities: text.entities,
+    })
+  );
 }
 
 async function renderEntries(
@@ -115,10 +125,12 @@ async function renderEntries(
   ctx.session.syllabusEntries = entries;
   ctx.session.syllabusSyllabusPage = page;
   const { text, keyboard } = buildSyllabusEntriesPage(entries, page);
-  await ctx.editMessageText(text.text, {
-    reply_markup: keyboard,
-    entities: text.entities,
-  });
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(text.text, {
+      reply_markup: keyboard,
+      entities: text.entities,
+    })
+  );
 }
 
 export function clearSyllabusSession(ctx: BotContext): void {
@@ -132,6 +144,7 @@ export function clearSyllabusSession(ctx: BotContext): void {
   ctx.session.syllabusEntries = [];
   ctx.session.syllabusSelectedProgramId = null;
   ctx.session.syllabusSelectedSchemeId = null;
+  ctx.session.syllabusEnqueuedDownloadKey = null;
   ctx.session.syllabusMessageId = null;
 }
 
@@ -162,12 +175,16 @@ async function showLoading(
   message: (typeof MESSAGES)[keyof typeof MESSAGES]
 ): Promise<void> {
   const text = joinWithNewlines(message, 2);
-  await ctx.editMessageText(text.text, { entities: text.entities });
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(text.text, { entities: text.entities })
+  );
 }
 
 async function showInvalidSelection(ctx: CallbackContext): Promise<void> {
-  await ctx.editMessageText(
-    `${emoji("cross_mark")} Invalid selection. Please try again.`
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(
+      `${emoji("cross_mark")} Invalid selection. Please try again.`
+    )
   );
 }
 
@@ -251,6 +268,15 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     ctx: CallbackContext,
     entry: SyllabusEntry
   ): Promise<void> {
+    const downloadKey = `${entry.encryptAttachmentId}:${entry.attachmentName}`;
+    if (ctx.session.syllabusEnqueuedDownloadKey === downloadKey) {
+      logger.debug(
+        { chatId: ctx.chat?.id, userId: ctx.from?.id },
+        "Ignoring duplicate syllabus download"
+      );
+      return;
+    }
+    ctx.session.syllabusEnqueuedDownloadKey = downloadKey;
     await deleteMessageSafely(ctx, ctx.callbackQuery.message?.message_id);
     const status = await ctx.reply(
       `${emoji("hourglass_not_done")} Downloading syllabus in the background... This may take a moment!`
@@ -288,11 +314,13 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     await showLoading(ctx, MESSAGES.FETCHING_SCHEMES);
     const schemes = await deps.fetchSchemes({ programId: program.id });
     if (schemes.length === 0) {
-      await ctx.editMessageText(
-        joinWithNewlines([
-          fmt`${emoji("woman_shrugging")} No schemes found for ${b}${program.name}${b}.`,
-        ]).text,
-        { reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER) }
+      await editMessageIgnoringNotModified(() =>
+        ctx.editMessageText(
+          joinWithNewlines([
+            fmt`${emoji("woman_shrugging")} No schemes found for ${b}${program.name}${b}.`,
+          ]).text,
+          { reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER) }
+        )
       );
       return;
     }
@@ -309,11 +337,13 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     await showLoading(ctx, MESSAGES.FETCHING_BRANCHES);
     const branches = await deps.fetchBranches({ schemeId: scheme.id });
     if (branches.length === 0) {
-      await ctx.editMessageText(
-        joinWithNewlines([
-          fmt`${emoji("woman_shrugging")} No branches found for ${b}${scheme.scheme}${b}.`,
-        ]).text,
-        { reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER) }
+      await editMessageIgnoringNotModified(() =>
+        ctx.editMessageText(
+          joinWithNewlines([
+            fmt`${emoji("woman_shrugging")} No branches found for ${b}${scheme.scheme}${b}.`,
+          ]).text,
+          { reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER) }
+        )
       );
       return;
     }
@@ -337,10 +367,12 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
         ],
         2
       );
-      await ctx.editMessageText(text.text, {
-        reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER),
-        entities: text.entities,
-      });
+      await editMessageIgnoringNotModified(() =>
+        ctx.editMessageText(text.text, {
+          reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER),
+          entities: text.entities,
+        })
+      );
       return;
     }
     if (downloadable.length === 1)

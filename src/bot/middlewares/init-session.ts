@@ -22,5 +22,6 @@ export const initSession = (): SessionData => ({
   syllabusEntries: [],
   syllabusSelectedProgramId: null,
   syllabusSelectedSchemeId: null,
+  syllabusEnqueuedDownloadKey: null,
   syllabusMessageId: null,
 });

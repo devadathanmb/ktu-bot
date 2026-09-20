@@ -1,6 +1,7 @@
 import { InlineKeyboard } from "grammy";
 import { fmt, b, i, FormattedString } from "@grammyjs/parse-mode";
 import { shortenString, joinWithNewlines } from "../../../utils/formatting.js";
+import { editMessageIgnoringNotModified } from "../../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotContext } from "../../../types/bot.types.js";
 import { SessionNotFoundError } from "../../../errors/index.js";
@@ -36,10 +37,12 @@ async function renderApiPage<TItem>(
   const keyboard = config.buildKeyboard(items, page);
   const messageText = config.buildText(items);
 
-  await ctx.editMessageText(messageText.text, {
-    reply_markup: keyboard,
-    entities: messageText.entities,
-  });
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(messageText.text, {
+      reply_markup: keyboard,
+      entities: messageText.entities,
+    })
+  );
 }
 
 export async function fetchAndRenderApiPage<TItem>(
@@ -49,9 +52,11 @@ export async function fetchAndRenderApiPage<TItem>(
 ): Promise<void> {
   storeCallbackMessageId(ctx, config.messageIdSessionKey);
 
-  await ctx.editMessageText(config.loadingMessage.text, {
-    entities: config.loadingMessage.entities,
-  });
+  await editMessageIgnoringNotModified(() =>
+    ctx.editMessageText(config.loadingMessage.text, {
+      entities: config.loadingMessage.entities,
+    })
+  );
 
   const items = await config.fetchPage(page);
   await renderApiPage(ctx, config, page, items);

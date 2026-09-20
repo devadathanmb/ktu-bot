@@ -34,6 +34,7 @@ interface SessionData {
   syllabusEntries: SyllabusEntry[];
   syllabusSelectedProgramId: number | null;
   syllabusSelectedSchemeId: number | null;
+  syllabusEnqueuedDownloadKey: string | null;
   syllabusMessageId: number | null;
 }
 

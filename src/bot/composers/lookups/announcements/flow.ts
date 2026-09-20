@@ -3,6 +3,8 @@ import { fmt } from "@grammyjs/parse-mode";
 import { CallbackQueryContext } from "grammy";
 import { BotContext } from "../../../../types/bot.types.js";
 import { Announcement } from "../../../../types/service.types.js";
+import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
+import logger from "../../../../utils/logger.js";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
@@ -146,8 +148,10 @@ export function createAnnouncementsFlow(
 
     const parsed = parseSelectCallback(ctx.callbackQuery.data, "announcement");
     if (!parsed.isValid) {
-      await ctx.editMessageText(
-        `${emoji("cross_mark")} Invalid callback format. Please try again.`
+      await editMessageIgnoringNotModified(() =>
+        ctx.editMessageText(
+          `${emoji("cross_mark")} Invalid callback format. Please try again.`
+        )
       );
       return;
     }
@@ -159,7 +163,18 @@ export function createAnnouncementsFlow(
       parsed.id
     );
 
-    await handleSelection(ctx, announcement);
+    // The successful render replaces the selection buttons, so a repeated
+    // selection callback is a duplicate tap rather than a new choice.
+    const selectionChanged = await editMessageIgnoringNotModified(() =>
+      handleSelection(ctx, announcement)
+    );
+    if (!selectionChanged) {
+      logger.debug(
+        { chatId: ctx.chat?.id, userId: ctx.from?.id },
+        "Ignoring duplicate announcement selection"
+      );
+      return;
+    }
     await handleAttachments(ctx, announcement);
   }
 
@@ -173,8 +188,10 @@ export function createAnnouncementsFlow(
   async function end(ctx: CallbackContext): Promise<void> {
     await ctx.answerCallbackQuery();
 
-    await ctx.editMessageText(
-      `Announcements lookup ended. Use /${announcementsCommandInfo.name} to start again.`
+    await editMessageIgnoringNotModified(() =>
+      ctx.editMessageText(
+        `Announcements lookup ended. Use /${announcementsCommandInfo.name} to start again.`
+      )
     );
 
     ctx.session.announcementsPage = null;

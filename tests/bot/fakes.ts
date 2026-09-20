@@ -34,6 +34,7 @@ export function baseSession(overrides: Partial<SessionData> = {}): SessionData {
     syllabusEntries: [],
     syllabusSelectedProgramId: null,
     syllabusSelectedSchemeId: null,
+    syllabusEnqueuedDownloadKey: null,
     syllabusMessageId: null,
     ...overrides,
   };
@@ -48,6 +49,7 @@ export interface FakeCtxOptions {
   replyMessageId?: number;
   apiDeleteError?: Error;
   apiEditMessageTextError?: Error;
+  ctxEditMessageTextError?: Error;
   replyError?: Error;
 }
 
@@ -97,6 +99,9 @@ export function createFakeCtx(options: FakeCtxOptions = {}): {
     },
     editMessageText: async (...args: unknown[]) => {
       calls.push({ method: "ctx.editMessageText", args });
+      if (options.ctxEditMessageTextError) {
+        throw options.ctxEditMessageTextError;
+      }
       return true;
     },
     reply: async (...args: unknown[]) => {

@@ -1,4 +1,4 @@
-import { Context } from "grammy";
+import { Context, GrammyError } from "grammy";
 import logger from "./logger.js";
 
 /** Deletes a message, silently ignoring failures and missing ids. */
@@ -42,6 +42,32 @@ export const replyMessageSafely = async (
     return undefined;
   }
 };
+
+/** Duplicate taps send the same callback twice; the second edit is a no-op. */
+export function isMessageNotModifiedError(error: unknown): boolean {
+  return (
+    error instanceof GrammyError &&
+    error.error_code === 400 &&
+    error.description.includes("message is not modified")
+  );
+}
+
+/**
+ * Runs a message edit, treating Telegram's no-op response as success.
+ * Returns whether the message changed; callers must skip follow-up
+ * sends when it returns false to stay idempotent on duplicate taps.
+ */
+export async function editMessageIgnoringNotModified(
+  edit: () => Promise<unknown>
+): Promise<boolean> {
+  try {
+    await edit();
+    return true;
+  } catch (error) {
+    if (!isMessageNotModifiedError(error)) throw error;
+    return false;
+  }
+}
 
 const TELEGRAM_MEDIA_TYPES = new Set<string>([
   "photo",

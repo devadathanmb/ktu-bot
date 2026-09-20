@@ -5,6 +5,7 @@ import { BotContext } from "../../../types/bot.types.js";
 import { SessionNotFoundError } from "../../../errors/index.js";
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
 import { joinWithNewlines } from "../../../utils/formatting.js";
+import { editMessageIgnoringNotModified } from "../../../utils/bot.js";
 import { MESSAGES } from "./helpers.js";
 
 export type SubscriptionChange = "created" | "updated";
@@ -30,17 +31,21 @@ export async function applyAnnouncementFilters(
 
   if (ctx.session.selectedFilters.length === 0) {
     const errorMessage = `${emoji("cross_mark")} Please select at least one filter before applying.`;
-    await ctx.api.editMessageText(chatId, prevMessageId, errorMessage);
+    await editMessageIgnoringNotModified(() =>
+      ctx.api.editMessageText(chatId, prevMessageId, errorMessage)
+    );
     return;
   }
 
   const change = await persistFilters(chatId, ctx.session.selectedFilters);
 
   if (change === "updated") {
-    await ctx.api.editMessageText(
-      chatId,
-      prevMessageId,
-      `${emoji("check_mark_button")} Your announcement filters have been updated successfully!`
+    await editMessageIgnoringNotModified(() =>
+      ctx.api.editMessageText(
+        chatId,
+        prevMessageId,
+        `${emoji("check_mark_button")} Your announcement filters have been updated successfully!`
+      )
     );
   } else {
     const selectedFilterNames = ctx.session.selectedFilters.map(
@@ -55,9 +60,11 @@ export async function applyAnnouncementFilters(
       2
     );
 
-    await ctx.api.editMessageText(chatId, prevMessageId, successMessage.text, {
-      entities: successMessage.entities,
-    });
+    await editMessageIgnoringNotModified(() =>
+      ctx.api.editMessageText(chatId, prevMessageId, successMessage.text, {
+        entities: successMessage.entities,
+      })
+    );
   }
 
   ctx.session.selectedFilters = [];

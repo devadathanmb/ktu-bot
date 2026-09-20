@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GrammyError } from "grammy";
 import { createTimetableFlow } from "../../../../src/bot/composers/lookups/exam-timetable/flow.js";
 import { createCalendarFlow } from "../../../../src/bot/composers/lookups/academic-calendar/flow.js";
 import { createAnnouncementsFlow } from "../../../../src/bot/composers/lookups/announcements/flow.js";
+import {
+  editMessageIgnoringNotModified,
+  isMessageNotModifiedError,
+} from "../../../../src/utils/bot.js";
 import type { AttachmentDeliveryJob } from "../../../../src/workers/attachment-delivery/queue.js";
 import type {
   AcademicCalendar,
@@ -328,4 +333,186 @@ test("view-another resets to the first page and refetches", async () => {
   assert.equal(ctx.session.calendarPage, 0);
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(edits.at(-1)?.[0] as string, /Calendar 2026/);
+});
+
+function notModifiedError(): GrammyError {
+  return new GrammyError(
+    "Call to 'editMessageText' failed! (400: Bad Request: message is not modified)",
+    {
+      ok: false,
+      error_code: 400,
+      description:
+        "Bad Request: message is not modified: specified new message content and reply markup are exactly the same",
+    },
+    "editMessageText",
+    {}
+  );
+}
+
+test("duplicate announcement taps resolve without queueing again", async () => {
+  const { queued, queueDownload } = queueStub();
+  const flow = createAnnouncements(queueDownload);
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({
+      announcementsAnnouncements: [
+        announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
+      ],
+    }),
+    callbackData: "announcement_select_81",
+    ctxEditMessageTextError: notModifiedError(),
+  });
+
+  await flow.select(ctx);
+
+  assert.deepEqual(queued, []);
+  assert.deepEqual(ctxCalls(calls, "ctx.reply"), []);
+});
+
+test("duplicate calendar taps resolve without queueing again", async () => {
+  const { queued, queueDownload } = queueStub();
+  const flow = createCalendar(queueDownload);
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({ calendarCalendars: [calendar] }),
+    callbackData: "calendar_select_41",
+    ctxEditMessageTextError: notModifiedError(),
+  });
+
+  await flow.select(ctx);
+
+  assert.deepEqual(queued, []);
+  assert.deepEqual(ctxCalls(calls, "ctx.reply"), []);
+});
+
+test("duplicate timetable taps resolve without queueing again", async () => {
+  const { queued, queueDownload } = queueStub();
+  const flow = createTimetable(queueDownload);
+  const { ctx, calls } = createFakeCtx({
+    session: baseSession({ timetableTimetables: [timetable] }),
+    callbackData: "timetable_select_91",
+    ctxEditMessageTextError: notModifiedError(),
+  });
+
+  await flow.select(ctx);
+
+  assert.deepEqual(queued, []);
+  assert.deepEqual(ctxCalls(calls, "ctx.reply"), []);
+});
+
+test("unrelated edit failures still propagate to the error boundary", async () => {
+  const flow = createAnnouncements(async () => {});
+  const { ctx } = createFakeCtx({
+    session: baseSession({
+      announcementsAnnouncements: [
+        announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
+      ],
+    }),
+    callbackData: "announcement_select_81",
+    ctxEditMessageTextError: new Error("telegram down"),
+  });
+
+  await assert.rejects(flow.select(ctx), /telegram down/);
+});
+
+test("a different 400 edit failure still propagates", async () => {
+  const flow = createAnnouncements(async () => {});
+  const { ctx } = createFakeCtx({
+    session: baseSession({
+      announcementsAnnouncements: [
+        announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
+      ],
+    }),
+    callbackData: "announcement_select_81",
+    ctxEditMessageTextError: new GrammyError(
+      "Call to 'editMessageText' failed! (400: Bad Request: message to delete not found)",
+      {
+        ok: false,
+        error_code: 400,
+        description: "Bad Request: message to delete not found",
+      },
+      "editMessageText",
+      {}
+    ),
+  });
+
+  await assert.rejects(flow.select(ctx), /message to delete not found/);
+});
+
+test("repeat invalid callbacks resolve without failing", async () => {
+  const announcementCtx = createFakeCtx({
+    session: baseSession({
+      announcementsAnnouncements: [
+        announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
+      ],
+    }),
+    callbackData: "announcement_select_xyz",
+    ctxEditMessageTextError: notModifiedError(),
+  });
+  await createAnnouncements(async () => {}).select(announcementCtx.ctx);
+
+  const calendarCtx = createFakeCtx({
+    session: baseSession({ calendarCalendars: [calendar] }),
+    callbackData: "calendar_select_xyz",
+    ctxEditMessageTextError: notModifiedError(),
+  });
+  await createCalendar(async () => {}).select(calendarCtx.ctx);
+
+  const timetableCtx = createFakeCtx({
+    session: baseSession({ timetableTimetables: [timetable] }),
+    callbackData: "timetable_select_xyz",
+    ctxEditMessageTextError: notModifiedError(),
+  });
+  await createTimetable(async () => {}).select(timetableCtx.ctx);
+
+  for (const calls of [
+    announcementCtx.calls,
+    calendarCtx.calls,
+    timetableCtx.calls,
+  ]) {
+    assert.deepEqual(ctxCalls(calls, "ctx.reply"), []);
+  }
+});
+
+test("a repeat tap after success resolves without side effects", async () => {
+  const { queued, queueDownload } = queueStub();
+  const flow = createAnnouncements(queueDownload);
+  const session = baseSession({
+    announcementsAnnouncements: [
+      announcement([{ name: "a.pdf", encryptId: "enc-a" }]),
+    ],
+  });
+
+  const first = createFakeCtx({
+    session,
+    callbackData: "announcement_select_81",
+  });
+  await flow.select(first.ctx);
+  assert.equal(queued.length, 1);
+
+  const second = createFakeCtx({
+    session,
+    callbackData: "announcement_select_81",
+    ctxEditMessageTextError: notModifiedError(),
+  });
+  await flow.select(second.ctx);
+
+  assert.equal(queued.length, 1);
+  assert.deepEqual(ctxCalls(second.calls, "ctx.reply"), []);
+});
+
+test("editMessageIgnoringNotModified only swallows the no-op edit", async () => {
+  assert.equal(await editMessageIgnoringNotModified(async () => {}), true);
+  assert.equal(
+    await editMessageIgnoringNotModified(async () => {
+      throw notModifiedError();
+    }),
+    false
+  );
+  await assert.rejects(
+    editMessageIgnoringNotModified(async () => {
+      throw new Error("boom");
+    }),
+    /boom/
+  );
+  assert.equal(isMessageNotModifiedError(notModifiedError()), true);
+  assert.equal(isMessageNotModifiedError(new Error("boom")), false);
 });

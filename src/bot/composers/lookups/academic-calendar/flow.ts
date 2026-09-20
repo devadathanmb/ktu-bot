@@ -3,6 +3,8 @@ import { fmt } from "@grammyjs/parse-mode";
 import { CallbackQueryContext } from "grammy";
 import { BotContext } from "../../../../types/bot.types.js";
 import { AcademicCalendar } from "../../../../types/service.types.js";
+import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
+import logger from "../../../../utils/logger.js";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { calendarCommandInfo } from "../command-info.js";
@@ -137,8 +139,10 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
 
     const parsed = parseSelectCallback(ctx.callbackQuery.data, "calendar");
     if (!parsed.isValid) {
-      await ctx.editMessageText(
-        `${emoji("cross_mark")} Invalid callback format. Please try again.`
+      await editMessageIgnoringNotModified(() =>
+        ctx.editMessageText(
+          `${emoji("cross_mark")} Invalid callback format. Please try again.`
+        )
       );
       return;
     }
@@ -147,7 +151,18 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
 
     const calendar = findItemById(ctx.session.calendarCalendars, parsed.id);
 
-    await handleSelection(ctx, calendar);
+    // The successful render replaces the selection buttons, so a repeated
+    // selection callback is a duplicate tap rather than a new choice.
+    const selectionChanged = await editMessageIgnoringNotModified(() =>
+      handleSelection(ctx, calendar)
+    );
+    if (!selectionChanged) {
+      logger.debug(
+        { chatId: ctx.chat?.id, userId: ctx.from?.id },
+        "Ignoring duplicate calendar selection"
+      );
+      return;
+    }
     await handleAttachment(ctx, calendar);
   }
 
@@ -160,8 +175,10 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
 
   async function end(ctx: CallbackContext): Promise<void> {
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(
-      `Academic calendar lookup ended. Use /${calendarCommandInfo.name} to start again.`
+    await editMessageIgnoringNotModified(() =>
+      ctx.editMessageText(
+        `Academic calendar lookup ended. Use /${calendarCommandInfo.name} to start again.`
+      )
     );
 
     ctx.session.calendarPage = null;

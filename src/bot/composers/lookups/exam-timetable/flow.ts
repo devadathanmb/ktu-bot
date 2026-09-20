@@ -2,7 +2,9 @@ import { emoji } from "@grammyjs/emoji";
 import { fmt } from "@grammyjs/parse-mode";
 import { CallbackQueryContext } from "grammy";
 import { BotContext } from "../../../../types/bot.types.js";
-import { ExamTimeTable } from "../../../../types/service.types.js";
+import { Attachment, ExamTimeTable } from "../../../../types/service.types.js";
+import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
+import logger from "../../../../utils/logger.js";
 import { joinWithNewlines } from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
@@ -78,12 +80,11 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     await fetchAndRenderApiPage(ctx, createLookupConfig());
   }
 
-  async function handleSelection(
+  async function renderSelection(
     ctx: BotContext,
-    timetable: ExamTimeTable
+    timetable: ExamTimeTable,
+    attachment: Attachment | null
   ): Promise<void> {
-    const attachment = getTimetableAttachment(timetable);
-
     if (!attachment) {
       const noAttachmentMsg = joinWithNewlines(
         [
@@ -104,7 +105,12 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     await ctx.editMessageText(detailsMsg.text, {
       entities: detailsMsg.entities,
     });
+  }
 
+  async function queueTimetableDownload(
+    ctx: BotContext,
+    attachment: Attachment
+  ): Promise<void> {
     const statusMessage = await ctx.reply(
       `${emoji("hourglass_not_done")} Downloading your timetable in the background... This may take a moment!`
     );
@@ -147,8 +153,10 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
 
     const parsed = parseSelectCallback(ctx.callbackQuery.data, "timetable");
     if (!parsed.isValid) {
-      await ctx.editMessageText(
-        `${emoji("cross_mark")} Invalid callback format. Please try again.`
+      await editMessageIgnoringNotModified(() =>
+        ctx.editMessageText(
+          `${emoji("cross_mark")} Invalid callback format. Please try again.`
+        )
       );
       return;
     }
@@ -156,8 +164,22 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     storeCallbackMessageId(ctx, "timetableMessageId");
 
     const timetable = findItemById(ctx.session.timetableTimetables, parsed.id);
+    const attachment = getTimetableAttachment(timetable);
 
-    await handleSelection(ctx, timetable);
+    // The successful render replaces the selection buttons, so a repeated
+    // selection callback is a duplicate tap rather than a new choice.
+    const selectionChanged = await editMessageIgnoringNotModified(() =>
+      renderSelection(ctx, timetable, attachment)
+    );
+    if (!selectionChanged) {
+      logger.debug(
+        { chatId: ctx.chat?.id, userId: ctx.from?.id },
+        "Ignoring duplicate timetable selection"
+      );
+      return;
+    }
+    if (!attachment) return;
+    await queueTimetableDownload(ctx, attachment);
   }
 
   async function viewAnother(ctx: CallbackContext): Promise<void> {
@@ -170,8 +192,10 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
   async function end(ctx: CallbackContext): Promise<void> {
     await ctx.answerCallbackQuery();
 
-    await ctx.editMessageText(
-      `Timetable lookup ended. Use /${timetableCommandInfo.name} to start again.`
+    await editMessageIgnoringNotModified(() =>
+      ctx.editMessageText(
+        `Timetable lookup ended. Use /${timetableCommandInfo.name} to start again.`
+      )
     );
 
     ctx.session.timetablePage = null;

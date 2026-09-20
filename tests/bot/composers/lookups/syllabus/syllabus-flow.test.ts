@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { GrammyError } from "grammy";
 import type {
   Branch,
   Program,
@@ -167,6 +168,28 @@ test("selectProgram rejects callbacks outside the program namespace", async () =
   assert.deepEqual(fetched, []);
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(edits[0]?.[0] as string, /Invalid selection/);
+});
+
+test("a repeat invalid selection resolves without failing", async () => {
+  const { flow, fetched } = stubFlow();
+  const { ctx } = createFakeCtx({
+    session: baseSession({ syllabusPrograms: programs }),
+    callbackData: "syllabusbranch_select_73",
+    ctxEditMessageTextError: new GrammyError(
+      "Call to 'editMessageText' failed! (400: Bad Request: message is not modified)",
+      {
+        ok: false,
+        error_code: 400,
+        description: "Bad Request: message is not modified",
+      },
+      "editMessageText",
+      {}
+    ),
+  });
+
+  await flow.selectProgram(ctx);
+
+  assert.deepEqual(fetched, []);
 });
 
 test("selectProgram surfaces a missing session item instead of guessing", async () => {
@@ -525,6 +548,27 @@ test("restart clears the session and reloads programs", async () => {
   assert.equal(ctx.session.syllabusSelectedProgramId, null);
 });
 
+test("a duplicate entry tap does not queue a second download", async () => {
+  const { flow, queued } = stubFlow();
+  const session = baseSession({ syllabusEntries: [entry()] });
+
+  const first = createFakeCtx({
+    session,
+    callbackData: "syllabusentry_select_0",
+  });
+  await flow.selectEntry(first.ctx);
+  assert.equal(queued.length, 1);
+
+  const second = createFakeCtx({
+    session,
+    callbackData: "syllabusentry_select_0",
+  });
+  await flow.selectEntry(second.ctx);
+
+  assert.equal(queued.length, 1);
+  assert.deepEqual(ctxCalls(second.calls, "ctx.reply"), []);
+});
+
 test("clearSyllabusSession resets every syllabus key", () => {
   const { ctx } = createFakeCtx({
     session: baseSession({
@@ -538,6 +582,7 @@ test("clearSyllabusSession resets every syllabus key", () => {
       syllabusEntries: [entry()],
       syllabusSelectedProgramId: 100,
       syllabusSelectedSchemeId: 42,
+      syllabusEnqueuedDownloadKey: "enc-1:S1.pdf",
       syllabusMessageId: 9,
     }),
   });

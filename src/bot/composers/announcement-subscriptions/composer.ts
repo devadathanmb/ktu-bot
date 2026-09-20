@@ -12,6 +12,7 @@ import {
 } from "./helpers.js";
 import { fmt, b } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
+import { editMessageIgnoringNotModified } from "../../../utils/bot.js";
 import { createAnnouncementSubscriptionErrorBoundary } from "../shared/error-boundary.js";
 import { emoji } from "@grammyjs/emoji";
 import {
@@ -76,7 +77,9 @@ protectedComposer.callbackQuery(/^announcement_filter_select_/, async ctx => {
 
   if (!(filter in ANNOUNCEMENT_FILTER_MAP)) {
     const invalidMessage = `${emoji("cross_mark")} Invalid filter selected. Please try again.`;
-    await ctx.api.editMessageText(chatId, prevMessageId, invalidMessage);
+    await editMessageIgnoringNotModified(() =>
+      ctx.api.editMessageText(chatId, prevMessageId, invalidMessage)
+    );
     return;
   }
 
