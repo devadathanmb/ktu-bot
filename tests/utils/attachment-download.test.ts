@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, dirname, join } from "node:path";
 import test from "node:test";
 import {
   cleanupDownloadedAttachment,
@@ -126,4 +128,50 @@ test("temp file helpers round-trip and tolerate missing files", async () => {
   await cleanupTempFile(path);
   await assert.rejects(stat(path));
   await cleanupTempFile(path);
+});
+
+test("temp file names stay inside the attachments directory", async () => {
+  const path = await createTempFile(Buffer.from("data"), "../../../escape.pdf");
+
+  try {
+    assert.equal(dirname(path), join(tmpdir(), "ktu-bot-attachments"));
+    const base = basename(path);
+    assert.equal(base.includes(".."), false);
+    assert.equal(base.includes("/"), false);
+    assert.ok(base.endsWith("escape.pdf"));
+    await stat(path);
+  } finally {
+    await cleanupTempFile(path);
+  }
+});
+
+test("same-name temp files created together never collide", async () => {
+  const [first, second] = await Promise.all([
+    createTempFile(Buffer.from("first"), "same.pdf"),
+    createTempFile(Buffer.from("second"), "same.pdf"),
+  ]);
+
+  try {
+    assert.notEqual(first, second);
+    assert.deepEqual(await readFile(first), Buffer.from("first"));
+    assert.deepEqual(await readFile(second), Buffer.from("second"));
+  } finally {
+    await cleanupTempFile(first);
+    await cleanupTempFile(second);
+  }
+});
+
+test("cleanup failures other than ENOENT propagate", async () => {
+  // A directory cannot be unlinked, which gives a deterministic non-ENOENT
+  // failure without relying on file permissions.
+  const directory = await mkdtemp(join(tmpdir(), "ktu-bot-cleanup-"));
+
+  try {
+    await assert.rejects(cleanupTempFile(directory), (error: unknown) => {
+      assert.notEqual((error as NodeJS.ErrnoException).code, "ENOENT");
+      return true;
+    });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
