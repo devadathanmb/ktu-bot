@@ -47,6 +47,8 @@ export interface FakeCtxOptions {
   callbackMessageId?: number;
   replyMessageId?: number;
   apiDeleteError?: Error;
+  apiEditMessageTextError?: Error;
+  replyError?: Error;
 }
 
 export function createFakeCtx(options: FakeCtxOptions = {}): {
@@ -59,6 +61,7 @@ export function createFakeCtx(options: FakeCtxOptions = {}): {
   const ctx = {
     session: options.session ?? baseSession(),
     chat: { id: options.chatId ?? 7 },
+    chatId: options.chatId ?? 7,
     msgId: options.msgId,
     from: { id: 11, username: "tester" },
     callbackQuery:
@@ -81,6 +84,9 @@ export function createFakeCtx(options: FakeCtxOptions = {}): {
     api: {
       editMessageText: async (...args: unknown[]) => {
         calls.push({ method: "api.editMessageText", args });
+        if (options.apiEditMessageTextError) {
+          throw options.apiEditMessageTextError;
+        }
         return true;
       },
       deleteMessage: async (...args: unknown[]) => {
@@ -95,6 +101,7 @@ export function createFakeCtx(options: FakeCtxOptions = {}): {
     },
     reply: async (...args: unknown[]) => {
       calls.push({ method: "ctx.reply", args });
+      if (options.replyError) throw options.replyError;
       const messageId = nextReplyId;
       nextReplyId += 1;
       return { message_id: messageId };

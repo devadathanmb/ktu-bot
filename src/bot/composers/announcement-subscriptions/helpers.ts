@@ -4,6 +4,25 @@ import { emoji } from "@grammyjs/emoji";
 import { fmt, FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
 
+const MESSAGES: Record<string, Array<FormattedString>> = {
+  ALREADY_SUBSCRIBED: [
+    fmt`${emoji("bell")} You are already subscribed to announcements!`,
+    fmt`Use /announcements_show_status to check your announcement subscription status.`,
+  ],
+  NOT_SUBSCRIBED_WITH_EMOJI: [
+    fmt`${emoji("cross_mark")} You are not subscribed to announcements.`,
+    fmt`Use /announcements_subscribe to subscribe to announcements.`,
+  ],
+  NOT_SUBSCRIBED_CHANGE_FILTER: [
+    fmt`${emoji("cross_mark")} You are not subscribed to announcements.`,
+    fmt`${emoji("light_bulb")} Use /announcements_subscribe to subscribe first.`,
+  ],
+  UNSUBSCRIBE_SUCCESS: [
+    fmt`${emoji("crying_face")} I'm sorry to see you go! You have been successfully unsubscribed from announcements.`,
+    fmt`If you change your mind, you can always use /announcements_subscribe to subscribe again.`,
+  ],
+} as const;
+
 function generateFilterKeyboard(selectedFilters: string[]): InlineKeyboard {
   const keyboard = new InlineKeyboard();
   const entries = Object.entries(ANNOUNCEMENT_FILTER_MAP);
@@ -72,4 +91,4 @@ function generateMessageText(
   );
 }
 
-export { generateFilterKeyboard, generateMessageText };
+export { generateFilterKeyboard, generateMessageText, MESSAGES };
