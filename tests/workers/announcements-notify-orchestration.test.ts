@@ -355,3 +355,64 @@ test("general announcements the LLM rejects only reach ALL subscribers", async (
   assert.deepEqual(audience.filters, new Set([AnnouncementFilter.ALL]));
   assert.equal(audience.isStudentRelevant, false);
 });
+
+test("an attachment failure aborts before any enqueue or buffer change", async () => {
+  const { deps, enqueued, replaced } = createHarness({
+    findSubscriberChatIds: async () => [7],
+    processAttachments: async () => {
+      throw new Error("attachment store down");
+    },
+  });
+
+  await assert.rejects(
+    enqueueNewAnnouncementBroadcasts(
+      [createAnnouncement({ id: 42 }), createAnnouncement({ id: 43 })],
+      [],
+      deps
+    ),
+    /attachment store down/
+  );
+
+  assert.deepEqual(enqueued, []);
+  assert.deepEqual(replaced, []);
+});
+
+test("a buffer replacement failure propagates after enqueue", async () => {
+  const { deps, enqueued } = createHarness({
+    findSubscriberChatIds: async () => [7],
+    replaceBuffer: async () => {
+      throw new Error("buffer write failed");
+    },
+  });
+
+  await assert.rejects(
+    enqueueNewAnnouncementBroadcasts(
+      [createAnnouncement({ id: 42 })],
+      [],
+      deps
+    ),
+    /buffer write failed/
+  );
+
+  assert.equal(enqueued.length, 1);
+});
+
+test("a subscriber lookup failure leaves queue and buffer untouched", async () => {
+  const { deps, enqueued, replaced } = createHarness({
+    findSubscriberChatIds: async () => {
+      throw new Error("subscriber query failed");
+    },
+  });
+
+  await assert.rejects(
+    enqueueNewAnnouncementBroadcasts(
+      [createAnnouncement({ id: 42 })],
+      [],
+      deps
+    ),
+    /subscriber query failed/
+  );
+
+  assert.deepEqual(enqueued, []);
+  assert.deepEqual(replaced, []);
+});

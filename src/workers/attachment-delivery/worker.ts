@@ -19,11 +19,28 @@ import {
 } from "../../bot/utils/presentation.js";
 import { buildReplyParameters } from "../shared/utils/telegram-send.js";
 
+export interface AttachmentDeliveryDeps {
+  downloadAttachment?: typeof downloadAttachmentToTempFile;
+  cleanupAttachment?: typeof cleanupDownloadedAttachment;
+  sendOversizedAsLink?: typeof sendAsLink;
+}
+
 export class AttachmentDeliveryProcessor {
+  private readonly downloadAttachment: typeof downloadAttachmentToTempFile;
+  private readonly cleanupAttachment: typeof cleanupDownloadedAttachment;
+  private readonly sendOversizedAsLink: typeof sendAsLink;
+
   constructor(
     private readonly bot: Bot<BotContext>,
-    private readonly queue: Queue<AttachmentDeliveryJob>
-  ) {}
+    private readonly queue: Queue<AttachmentDeliveryJob>,
+    deps: AttachmentDeliveryDeps = {}
+  ) {
+    this.downloadAttachment =
+      deps.downloadAttachment ?? downloadAttachmentToTempFile;
+    this.cleanupAttachment =
+      deps.cleanupAttachment ?? cleanupDownloadedAttachment;
+    this.sendOversizedAsLink = deps.sendOversizedAsLink ?? sendAsLink;
+  }
 
   async process(job: Job<AttachmentDeliveryJob>): Promise<void> {
     try {
@@ -56,7 +73,7 @@ export class AttachmentDeliveryProcessor {
       // transactional, but this prevents partial deliveries caused by a later KTU
       // download failure after earlier files were already sent.
       for (const attachment of attachments) {
-        const downloaded = await downloadAttachmentToTempFile(
+        const downloaded = await this.downloadAttachment(
           attachment.encryptId,
           attachment.name,
           attachment.source ?? "default"
@@ -95,7 +112,7 @@ export class AttachmentDeliveryProcessor {
     } finally {
       await Promise.all(
         downloadedAttachments.map(downloaded =>
-          cleanupDownloadedAttachment(downloaded)
+          this.cleanupAttachment(downloaded)
         )
       );
     }
@@ -119,7 +136,7 @@ export class AttachmentDeliveryProcessor {
     } = options;
 
     if (downloaded.fileSizeBytes > TELEGRAM_MAX_FILE_SIZE_BYTES) {
-      await sendAsLink(this.bot, chatId, downloaded, {
+      await this.sendOversizedAsLink(this.bot, chatId, downloaded, {
         contextLabel: getContextEmoji(context),
         replyToMessageId,
       });
