@@ -230,10 +230,3 @@ Found a bug? Have an idea? [Open an issue](https://github.com/devadathanmb/ktu-b
 ## License
 
 **AGPL-3.0**: See [LICENSE](./LICENSE.md) for details.
-
-This means you can use, modify, and distribute this code freely, but you must:
-
-- Keep it open source
-- Share your changes under the same license
-- Give credit where it's due
-- If you run this software on a server and let users interact with it remotely, you must provide them with the source code
