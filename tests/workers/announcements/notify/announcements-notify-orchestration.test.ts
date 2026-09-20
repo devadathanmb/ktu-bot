@@ -234,7 +234,7 @@ test("course-specific announcements skip the LLM and keep their filters", async 
     sleep: async () => {},
   });
 
-  const audience = await resolveAudience(
+  const filters = await resolveAudience(
     JSON.stringify({
       subject: "B.Tech exam schedule",
       message: "Exam starts soon",
@@ -244,14 +244,13 @@ test("course-specific announcements skip the LLM and keep their filters", async 
   assert.equal(courseLookups, 0);
   assert.equal(relevanceChecks, 0);
   assert.deepEqual(
-    audience.filters,
+    filters,
     new Set([
       AnnouncementFilter.BTECH,
       AnnouncementFilter.RELEVANT,
       AnnouncementFilter.ALL,
     ])
   );
-  assert.equal(audience.isStudentRelevant, true);
 });
 
 test("broad UG filters are narrowed by the LLM course list", async () => {
@@ -271,11 +270,11 @@ test("broad UG filters are narrowed by the LLM course list", async () => {
     sleep: async () => {},
   });
 
-  const audience = await resolveAudience(BROAD_UG_ANNOUNCEMENT_CONTENT);
+  const filters = await resolveAudience(BROAD_UG_ANNOUNCEMENT_CONTENT);
 
   assert.equal(courseLookups, 1);
   assert.deepEqual(
-    audience.filters,
+    filters,
     new Set([
       AnnouncementFilter.BTECH,
       AnnouncementFilter.MCA,
@@ -283,7 +282,6 @@ test("broad UG filters are narrowed by the LLM course list", async () => {
       AnnouncementFilter.ALL,
     ])
   );
-  assert.equal(audience.isStudentRelevant, true);
 });
 
 test("a failed LLM course lookup keeps the broad course filters", async () => {
@@ -301,17 +299,16 @@ test("a failed LLM course lookup keeps the broad course filters", async () => {
     sleep: async () => {},
   });
 
-  const audience = await resolveAudience(BROAD_UG_ANNOUNCEMENT_CONTENT);
+  const filters = await resolveAudience(BROAD_UG_ANNOUNCEMENT_CONTENT);
 
   assert.deepEqual(
-    audience.filters,
+    filters,
     new Set([
       ...UNDERGRADUATE_COURSES,
       AnnouncementFilter.RELEVANT,
       AnnouncementFilter.ALL,
     ])
   );
-  assert.equal(audience.isStudentRelevant, true);
 });
 
 test("general announcements use the LLM relevance result for the audience", async () => {
@@ -334,12 +331,11 @@ test("general announcements use the LLM relevance result for the audience", asyn
     },
   });
 
-  const audience = await resolveAudience(GENERIC_ANNOUNCEMENT_CONTENT);
+  const filters = await resolveAudience(GENERIC_ANNOUNCEMENT_CONTENT);
 
   assert.equal(relevanceChecks, 1);
   assert.deepEqual(sleeps, [2000]);
-  assert.deepEqual(audience.filters, ALL_ANNOUNCEMENT_FILTERS);
-  assert.equal(audience.isStudentRelevant, true);
+  assert.deepEqual(filters, ALL_ANNOUNCEMENT_FILTERS);
 });
 
 test("general announcements the LLM rejects only reach ALL subscribers", async () => {
@@ -357,10 +353,9 @@ test("general announcements the LLM rejects only reach ALL subscribers", async (
     sleep: async () => {},
   });
 
-  const audience = await resolveAudience(GENERIC_ANNOUNCEMENT_CONTENT);
+  const filters = await resolveAudience(GENERIC_ANNOUNCEMENT_CONTENT);
 
-  assert.deepEqual(audience.filters, new Set([AnnouncementFilter.ALL]));
-  assert.equal(audience.isStudentRelevant, false);
+  assert.deepEqual(filters, new Set([AnnouncementFilter.ALL]));
 });
 
 test("an attachment failure aborts before any enqueue or buffer change", async () => {

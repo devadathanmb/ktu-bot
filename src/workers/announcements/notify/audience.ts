@@ -13,19 +13,14 @@ export interface AnnouncementClassifier {
   isAnnouncementRelevant(announcementContent: string): Promise<boolean>;
 }
 
-export interface AnnouncementAudience {
-  filters: Set<AnnouncementFilter>;
-  isStudentRelevant: boolean;
-}
-
-export interface AnnouncementAudienceDeps {
+interface AnnouncementAudienceDeps {
   classifier: AnnouncementClassifier;
   sleep: (milliseconds: number) => Promise<void>;
 }
 
 export type AnnouncementAudienceResolver = (
   announcementContent: string
-) => Promise<AnnouncementAudience>;
+) => Promise<Set<AnnouncementFilter>>;
 
 function containsEveryFilter(
   filters: ReadonlySet<AnnouncementFilter>,
@@ -34,7 +29,7 @@ function containsEveryFilter(
   return Array.from(requiredFilters).every(filter => filters.has(filter));
 }
 
-export function shouldRefineBroadCourseMatch(
+function shouldRefineBroadCourseMatch(
   filters: ReadonlySet<AnnouncementFilter>
 ): boolean {
   return (
@@ -43,13 +38,13 @@ export function shouldRefineBroadCourseMatch(
   );
 }
 
-export function isOnlyAllAnnouncementsFilter(
+function isOnlyAllAnnouncementsFilter(
   filters: ReadonlySet<AnnouncementFilter>
 ): boolean {
   return filters.size === 1 && filters.has(AnnouncementFilter.ALL);
 }
 
-export function hasSpecificAudienceFilters(
+function hasSpecificAudienceFilters(
   filters: ReadonlySet<AnnouncementFilter>
 ): boolean {
   return Array.from(filters).some(
@@ -59,15 +54,13 @@ export function hasSpecificAudienceFilters(
   );
 }
 
-export function addAllStudentAudienceFilters(
-  filters: Set<AnnouncementFilter>
-): void {
+function addAllStudentAudienceFilters(filters: Set<AnnouncementFilter>): void {
   Object.values(AnnouncementFilter).forEach(filter => {
     filters.add(filter);
   });
 }
 
-export function addUniversalSubscriptionFilters(
+function addUniversalSubscriptionFilters(
   filters: Set<AnnouncementFilter>,
   options: { isStudentRelevant: boolean }
 ): void {
@@ -151,6 +144,6 @@ export function createAnnouncementAudienceResolver(
 
     addUniversalSubscriptionFilters(filters, { isStudentRelevant });
 
-    return { filters, isStudentRelevant };
+    return filters;
   };
 }

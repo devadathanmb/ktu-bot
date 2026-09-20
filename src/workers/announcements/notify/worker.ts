@@ -87,7 +87,7 @@ export class AnnouncementsNotifyProcessor {
       message: announcement.message || "",
     };
 
-    const { filters } = await this.resolveAudience(JSON.stringify(content));
+    const filters = await this.resolveAudience(JSON.stringify(content));
 
     // Find subscribers matching any of these filters
     const subscriptionRepo = new AnnouncementSubscriptionRepository(this.db);
