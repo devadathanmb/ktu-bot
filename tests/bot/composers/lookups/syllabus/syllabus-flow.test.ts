@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test, { after } from "node:test";
+import test from "node:test";
 import type {
   Branch,
   Program,
@@ -8,28 +8,17 @@ import type {
 } from "../../../../../src/types/service.types.js";
 import {
   clearSyllabusSession,
+  createSyllabusFlow,
   nextPage,
   previousPage,
-  restart,
-  selectBranch,
-  selectEntry,
-  selectProgram,
-  selectScheme,
-  start,
+  type SyllabusFlow,
   type SyllabusFlowDeps,
 } from "../../../../../src/bot/composers/lookups/syllabus/flow.js";
 import { SessionNotFoundError } from "../../../../../src/errors/bot-errors.js";
+import type { AttachmentDeliveryJob } from "../../../../../src/workers/attachment-delivery/queue.js";
 import { baseSession, createFakeCtx, ctxCalls } from "../../../fakes.js";
 import { callbackData } from "../../../../helpers.js";
 import type { InlineKeyboard } from "grammy";
-import { attachmentDeliveryQueue } from "../../../../../src/workers/attachment-delivery/queue.js";
-
-// The flow module imports the real attachment-delivery queue, whose Redis
-// connection would keep the test process alive. It is never used here:
-// downloads go through the injected queueDownload seam.
-after(async () => {
-  await attachmentDeliveryQueue.close();
-});
 
 const programs: Program[] = [
   { id: 100, name: "B.Tech", description: "UG" },
@@ -70,45 +59,54 @@ const deadEntry: SyllabusEntry = entry({
   attachmentName: null,
 });
 
-type QueuedJob = Parameters<NonNullable<SyllabusFlowDeps["queueDownload"]>>[0];
+type QueuedJob = AttachmentDeliveryJob;
 
-function stubDeps(overrides: Partial<SyllabusFlowDeps> = {}): {
-  deps: SyllabusFlowDeps;
+function stubFlow(overrides: Partial<SyllabusFlowDeps> = {}): {
+  flow: SyllabusFlow;
   queued: QueuedJob[];
   fetched: string[];
 } {
   const queued: QueuedJob[] = [];
   const fetched: string[] = [];
-  const deps: SyllabusFlowDeps = {
-    fetchPrograms: async () => {
-      fetched.push("programs");
-      return programs;
-    },
-    fetchSchemes: async () => {
-      fetched.push("schemes");
-      return schemes;
-    },
-    fetchBranches: async () => {
-      fetched.push("branches");
-      return branches;
-    },
-    fetchSyllabus: async () => {
-      fetched.push("syllabus");
-      return [entry()];
-    },
-    queueDownload: async job => {
-      queued.push(job);
-    },
-    ...overrides,
-  };
-  return { deps, queued, fetched };
+  const flow = createSyllabusFlow({
+    fetchPrograms:
+      overrides.fetchPrograms ??
+      (async () => {
+        fetched.push("programs");
+        return programs;
+      }),
+    fetchSchemes:
+      overrides.fetchSchemes ??
+      (async () => {
+        fetched.push("schemes");
+        return schemes;
+      }),
+    fetchBranches:
+      overrides.fetchBranches ??
+      (async () => {
+        fetched.push("branches");
+        return branches;
+      }),
+    fetchSyllabus:
+      overrides.fetchSyllabus ??
+      (async () => {
+        fetched.push("syllabus");
+        return [entry()];
+      }),
+    queueDownload:
+      overrides.queueDownload ??
+      (async job => {
+        queued.push(job);
+      }),
+  });
+  return { flow, queued, fetched };
 }
 
 test("start loads programs into a fresh session", async () => {
-  const { deps, fetched } = stubDeps();
+  const { flow, fetched } = stubFlow();
   const { ctx, calls } = createFakeCtx();
 
-  await start(ctx, deps);
+  await flow.start(ctx);
 
   assert.deepEqual(fetched, ["programs"]);
   assert.deepEqual(ctx.session.syllabusPrograms, programs);
@@ -121,7 +119,7 @@ test("start loads programs into a fresh session", async () => {
 });
 
 test("start clears stale lookup state", async () => {
-  const { deps } = stubDeps();
+  const { flow } = stubFlow();
   const { ctx } = createFakeCtx({
     session: baseSession({
       syllabusSchemes: schemes,
@@ -131,7 +129,7 @@ test("start clears stale lookup state", async () => {
     }),
   });
 
-  await start(ctx, deps);
+  await flow.start(ctx);
 
   assert.deepEqual(ctx.session.syllabusSchemes, []);
   assert.deepEqual(ctx.session.syllabusEntries, []);
@@ -139,14 +137,14 @@ test("start clears stale lookup state", async () => {
 });
 
 test("selectProgram renders the schemes for the chosen program", async () => {
-  const { deps, fetched } = stubDeps();
+  const { flow, fetched } = stubFlow();
   const { ctx, calls } = createFakeCtx({
     session: baseSession({ syllabusPrograms: programs }),
     callbackData: "syllabusprog_select_100",
     callbackMessageId: 3,
   });
 
-  await selectProgram(ctx, deps);
+  await flow.selectProgram(ctx);
 
   assert.deepEqual(fetched, ["schemes"]);
   assert.deepEqual(ctx.session.syllabusSchemes, schemes);
@@ -158,13 +156,13 @@ test("selectProgram renders the schemes for the chosen program", async () => {
 });
 
 test("selectProgram rejects callbacks outside the program namespace", async () => {
-  const { deps, fetched } = stubDeps();
+  const { flow, fetched } = stubFlow();
   const { ctx, calls } = createFakeCtx({
     session: baseSession({ syllabusPrograms: programs }),
     callbackData: "syllabusbranch_select_73",
   });
 
-  await selectProgram(ctx, deps);
+  await flow.selectProgram(ctx);
 
   assert.deepEqual(fetched, []);
   const edits = ctxCalls(calls, "ctx.editMessageText");
@@ -172,23 +170,23 @@ test("selectProgram rejects callbacks outside the program namespace", async () =
 });
 
 test("selectProgram surfaces a missing session item instead of guessing", async () => {
-  const { deps } = stubDeps();
+  const { flow } = stubFlow();
   const { ctx } = createFakeCtx({
     session: baseSession({ syllabusPrograms: [] }),
     callbackData: "syllabusprog_select_100",
   });
 
-  await assert.rejects(selectProgram(ctx, deps), SessionNotFoundError);
+  await assert.rejects(flow.selectProgram(ctx), SessionNotFoundError);
 });
 
 test("selectProgram with no schemes offers to view another", async () => {
-  const { deps } = stubDeps({ fetchSchemes: async () => [] });
+  const { flow } = stubFlow({ fetchSchemes: async () => [] });
   const { ctx, calls } = createFakeCtx({
     session: baseSession({ syllabusPrograms: programs }),
     callbackData: "syllabusprog_select_100",
   });
 
-  await selectProgram(ctx, deps);
+  await flow.selectProgram(ctx);
 
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(edits.at(-1)?.[0] as string, /No schemes found for/);
@@ -202,7 +200,7 @@ test("selectProgram with no schemes offers to view another", async () => {
 });
 
 test("selectBranch queues a lone syllabus without listing it", async () => {
-  const { deps, queued } = stubDeps({
+  const { flow, queued } = stubFlow({
     fetchSyllabus: async () => [deadEntry, entry()],
   });
   const { ctx, calls } = createFakeCtx({
@@ -211,7 +209,7 @@ test("selectBranch queues a lone syllabus without listing it", async () => {
     msgId: 8,
   });
 
-  await selectBranch(ctx, deps);
+  await flow.selectBranch(ctx);
 
   assert.deepEqual(queued, [
     {
@@ -233,7 +231,7 @@ test("selectBranch queues a lone syllabus without listing it", async () => {
 });
 
 test("selectBranch omits the reply target outside message context", async () => {
-  const { deps, queued } = stubDeps({
+  const { flow, queued } = stubFlow({
     fetchSyllabus: async () => [entry()],
   });
   const { ctx } = createFakeCtx({
@@ -241,13 +239,13 @@ test("selectBranch omits the reply target outside message context", async () => 
     callbackData: "syllabusbranch_select_73",
   });
 
-  await selectBranch(ctx, deps);
+  await flow.selectBranch(ctx);
 
   assert.equal("replyToMessageId" in (queued[0] ?? {}), false);
 });
 
 test("selectBranch renders entries when several are downloadable", async () => {
-  const { deps, queued } = stubDeps({
+  const { flow, queued } = stubFlow({
     fetchSyllabus: async () => [
       entry({ attachmentName: "S1.pdf" }),
       entry({ attachmentName: "S2.pdf" }),
@@ -258,7 +256,7 @@ test("selectBranch renders entries when several are downloadable", async () => {
     callbackData: "syllabusbranch_select_73",
   });
 
-  await selectBranch(ctx, deps);
+  await flow.selectBranch(ctx);
 
   assert.deepEqual(queued, []);
   assert.deepEqual(ctx.session.syllabusEntries.length, 2);
@@ -268,13 +266,13 @@ test("selectBranch renders entries when several are downloadable", async () => {
 });
 
 test("selectBranch with nothing downloadable offers to view another", async () => {
-  const { deps } = stubDeps({ fetchSyllabus: async () => [deadEntry] });
+  const { flow } = stubFlow({ fetchSyllabus: async () => [deadEntry] });
   const { ctx, calls } = createFakeCtx({
     session: baseSession({ syllabusBranches: branches }),
     callbackData: "syllabusbranch_select_73",
   });
 
-  await selectBranch(ctx, deps);
+  await flow.selectBranch(ctx);
 
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(edits.at(-1)?.[0] as string, /No syllabus uploaded yet/);
@@ -287,13 +285,13 @@ test("selectBranch with nothing downloadable offers to view another", async () =
 });
 
 test("selectEntry downloads by original response index", async () => {
-  const { deps, queued } = stubDeps();
+  const { flow, queued } = stubFlow();
   const { ctx } = createFakeCtx({
     session: baseSession({ syllabusEntries: [deadEntry, entry()] }),
     callbackData: "syllabusentry_select_1",
   });
 
-  await selectEntry(ctx, deps);
+  await flow.selectEntry(ctx);
 
   assert.equal(queued.length, 1);
   assert.deepEqual(queued[0]?.attachments, [
@@ -302,13 +300,13 @@ test("selectEntry downloads by original response index", async () => {
 });
 
 test("selectScheme renders branches and handles empty results", async () => {
-  const { deps, fetched } = stubDeps();
+  const { flow, fetched } = stubFlow();
   const { ctx, calls } = createFakeCtx({
     session: baseSession({ syllabusSchemes: schemes }),
     callbackData: "syllabusscheme_select_42",
   });
 
-  await selectScheme(ctx, deps);
+  await flow.selectScheme(ctx);
 
   assert.deepEqual(fetched, ["branches"]);
   assert.deepEqual(ctx.session.syllabusBranches, branches);
@@ -316,12 +314,12 @@ test("selectScheme renders branches and handles empty results", async () => {
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(edits.at(-1)?.[0] as string, /Computer Science/);
 
-  const empty = stubDeps({ fetchBranches: async () => [] });
+  const empty = stubFlow({ fetchBranches: async () => [] });
   const noBranches = createFakeCtx({
     session: baseSession({ syllabusSchemes: schemes }),
     callbackData: "syllabusscheme_select_42",
   });
-  await selectScheme(noBranches.ctx, empty.deps);
+  await empty.flow.selectScheme(noBranches.ctx);
   const emptyEdits = ctxCalls(noBranches.calls, "ctx.editMessageText");
   assert.match(emptyEdits.at(-1)?.[0] as string, /No branches found for/);
   const emptyKeyboard = (
@@ -335,13 +333,13 @@ test("selectScheme renders branches and handles empty results", async () => {
 
 test("selectEntry ignores a null attachmentId when download fields are present", async () => {
   const downloadable = entry({ attachmentId: null });
-  const { deps, queued } = stubDeps();
+  const { flow, queued } = stubFlow();
   const { ctx } = createFakeCtx({
     session: baseSession({ syllabusEntries: [downloadable] }),
     callbackData: "syllabusentry_select_0",
   });
 
-  await selectEntry(ctx, deps);
+  await flow.selectEntry(ctx);
 
   assert.equal(queued.length, 1);
   assert.deepEqual(queued[0]?.attachments, [
@@ -350,13 +348,13 @@ test("selectEntry ignores a null attachmentId when download fields are present",
 });
 
 test("selectEntry rejects entries without attachments", async () => {
-  const { deps, queued } = stubDeps();
+  const { flow, queued } = stubFlow();
   const { ctx, calls } = createFakeCtx({
     session: baseSession({ syllabusEntries: [deadEntry] }),
     callbackData: "syllabusentry_select_0",
   });
 
-  await selectEntry(ctx, deps);
+  await flow.selectEntry(ctx);
 
   assert.deepEqual(queued, []);
   const edits = ctxCalls(calls, "ctx.editMessageText");
@@ -364,14 +362,14 @@ test("selectEntry rejects entries without attachments", async () => {
 });
 
 test("selectEntry still queues when the lookup message is already gone", async () => {
-  const { deps, queued } = stubDeps();
+  const { flow, queued } = stubFlow();
   const { ctx, calls } = createFakeCtx({
     session: baseSession({ syllabusEntries: [entry()] }),
     callbackData: "syllabusentry_select_0",
     apiDeleteError: new Error("message to delete not found"),
   });
 
-  await selectEntry(ctx, deps);
+  await flow.selectEntry(ctx);
 
   assert.equal(queued.length, 1);
   assert.ok(
@@ -509,7 +507,7 @@ test("page turns work for scheme and filtered entry lists", async () => {
 });
 
 test("restart clears the session and reloads programs", async () => {
-  const { deps, fetched } = stubDeps();
+  const { flow, fetched } = stubFlow();
   const { ctx } = createFakeCtx({
     session: baseSession({
       syllabusPrograms: [],
@@ -519,7 +517,7 @@ test("restart clears the session and reloads programs", async () => {
     callbackData: "syllabus_view_another_true",
   });
 
-  await restart(ctx, deps);
+  await flow.restart(ctx);
 
   assert.deepEqual(fetched, ["programs"]);
   assert.deepEqual(ctx.session.syllabusPrograms, programs);

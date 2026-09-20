@@ -5,7 +5,7 @@ import {
   createComposerErrorBoundary,
   createSyllabusErrorBoundary,
 } from "../../../../src/bot/composers/shared/error-boundary.js";
-import { start } from "../../../../src/bot/composers/lookups/syllabus/flow.js";
+import { createSyllabusFlow } from "../../../../src/bot/composers/lookups/syllabus/flow.js";
 import { HandledBotError } from "../../../../src/errors/handled-bot-error.js";
 import {
   KTUAPIError,
@@ -181,11 +181,17 @@ test("a failing fetch surfaces its KTU message through the boundary", async () =
   );
   const { ctx, calls } = createFakeCtx({ callbackData: "start" });
 
-  const caught = await start(ctx, {
+  const caught = await createSyllabusFlow({
     fetchPrograms: async () => {
       throw ktuError;
     },
-  }).catch((error: unknown) => error);
+    fetchSchemes: async () => [],
+    fetchBranches: async () => [],
+    fetchSyllabus: async () => [],
+    queueDownload: async () => {},
+  })
+    .start(ctx)
+    .catch((error: unknown) => error);
   assert.strictEqual(caught, ktuError);
 
   const handled = (await runBoundary(boundary, caught, ctx)) as HandledBotError;
