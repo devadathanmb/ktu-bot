@@ -49,8 +49,9 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "10"
+        compress: "true"
 
   ktu-bot-db-migrations:
     build:
@@ -68,6 +69,12 @@ services:
         "echo 'Running DB migrations!\n\n' && pnpm db:migrate && echo '\n\nDB Migrations applied successfully!'",
       ]
     restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+        compress: "true"
 
   announcements-notify-worker:
     image: ktu-bot:latest
@@ -112,8 +119,9 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "10"
+        compress: "true"
 
   broadcasts-worker:
     image: ktu-bot:latest
@@ -158,8 +166,9 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "10"
+        compress: "true"
 
   data-sync-worker:
     image: ktu-bot:latest
@@ -204,8 +213,9 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "10"
+        compress: "true"
 
   attachment-delivery-worker:
     image: ktu-bot:latest
@@ -251,8 +261,9 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "10"
+        compress: "true"
 
   bull-board-service:
     image: ktu-bot:latest
@@ -303,5 +314,6 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "50m"
+        max-file: "10"
+        compress: "true"
