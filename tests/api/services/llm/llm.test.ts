@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { HTTPError, type PlainResponse } from "got";
 import {
-  LLMClassificationCore,
+  LLMService,
   type GroqCompletionRequester,
 } from "../../../../src/api/services/llm/llm.js";
 import { AnnouncementFilter } from "../../../../src/constants/courses.js";
@@ -53,7 +53,7 @@ function createRateLimitError(): HTTPError {
 }
 
 test("a valid is_relevant false still suppresses the audience", async () => {
-  const classifier = new LLMClassificationCore(
+  const classifier = new LLMService(
     requesterReturning('{"is_relevant": false}')
   );
 
@@ -64,7 +64,7 @@ test("a valid is_relevant false still suppresses the audience", async () => {
 });
 
 test("a valid is_relevant true is returned unchanged", async () => {
-  const classifier = new LLMClassificationCore(
+  const classifier = new LLMService(
     requesterReturning('{"is_relevant": true}')
   );
 
@@ -75,9 +75,7 @@ test("a valid is_relevant true is returned unchanged", async () => {
 });
 
 test("HTTP 429 fails open instead of suppressing the announcement", async () => {
-  const classifier = new LLMClassificationCore(
-    requesterThrowing(createRateLimitError())
-  );
+  const classifier = new LLMService(requesterThrowing(createRateLimitError()));
 
   assert.equal(
     await classifier.isAnnouncementRelevant(ANNOUNCEMENT_CONTENT),
@@ -86,7 +84,7 @@ test("HTTP 429 fails open instead of suppressing the announcement", async () => 
 });
 
 test("API and transport failures fail open", async () => {
-  const classifier = new LLMClassificationCore(
+  const classifier = new LLMService(
     requesterThrowing(new Error("socket hang up"))
   );
 
@@ -97,7 +95,7 @@ test("API and transport failures fail open", async () => {
 });
 
 test("schema-invalid LLM responses fail open", async () => {
-  const classifier = new LLMClassificationCore(
+  const classifier = new LLMService(
     requesterReturning('{"is_relevant": "not-a-boolean"}')
   );
 
@@ -108,9 +106,7 @@ test("schema-invalid LLM responses fail open", async () => {
 });
 
 test("invalid JSON LLM responses fail open", async () => {
-  const classifier = new LLMClassificationCore(
-    requesterReturning("not json at all")
-  );
+  const classifier = new LLMService(requesterReturning("not json at all"));
 
   assert.equal(
     await classifier.isAnnouncementRelevant(ANNOUNCEMENT_CONTENT),
@@ -119,7 +115,7 @@ test("invalid JSON LLM responses fail open", async () => {
 });
 
 test("a failed course lookup returns an empty set to keep broad filters", async () => {
-  const classifier = new LLMClassificationCore(
+  const classifier = new LLMService(
     requesterThrowing(new Error("socket hang up"))
   );
 
@@ -130,7 +126,7 @@ test("a failed course lookup returns an empty set to keep broad filters", async 
 });
 
 test("valid course lookups are filtered to known course codes", async () => {
-  const classifier = new LLMClassificationCore(
+  const classifier = new LLMService(
     requesterReturning('{"relevant_courses": ["BTECH", "NOT_A_COURSE", "MCA"]}')
   );
 

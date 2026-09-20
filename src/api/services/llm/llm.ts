@@ -1,6 +1,6 @@
 import got, { HTTPError } from "got";
 import { z } from "zod";
-import { LLMConfigSchema } from "../../../configs/llm.js";
+import { LLMConfig } from "../../../configs/llm.js";
 import { GROQ_API } from "../../../constants/llm.js";
 import {
   ANNOUNCEMENT_RELEVANCE_PROMPT,
@@ -120,16 +120,16 @@ function createGroqCompletionRequester(): GroqCompletionRequester {
 
     const response = await got.post(GROQ_API.COMPLETION_ENDPOINT, {
       headers: {
-        "Authorization": `Bearer ${LLMConfigSchema.API_KEY}`,
+        "Authorization": `Bearer ${LLMConfig.API_KEY}`,
         "Content-Type": "application/json",
       },
       json: validatedRequestPayload,
       responseType: "json",
       timeout: {
-        request: LLMConfigSchema.TIMEOUT_MS,
+        request: LLMConfig.TIMEOUT_MS,
       },
       retry: {
-        limit: LLMConfigSchema.MAX_RETRIES,
+        limit: LLMConfig.MAX_RETRIES,
         methods: ["POST"],
       },
     });
@@ -165,11 +165,13 @@ function logRateLimit(error: HTTPError, operation: string): void {
 }
 
 /**
- * Classification core with a required requester dependency so unit tests can
- * exercise the fallback policy without network access.
+ * LLM classification service with an injectable requester dependency so unit
+ * tests can exercise the fallback policy without network access.
  */
-export class LLMClassificationCore {
-  constructor(private readonly makeGroqRequest: GroqCompletionRequester) {}
+export class LLMService {
+  constructor(
+    private readonly requestCompletion: GroqCompletionRequester = createGroqCompletionRequester()
+  ) {}
 
   async findRelevantCoursesFromAnnouncement(
     announcementContent: string
@@ -180,19 +182,19 @@ export class LLMClassificationCore {
       const prompt = buildCourseFindingPrompt(announcementContent);
 
       const request = {
-        model: LLMConfigSchema.COMPLETION_MODEL,
+        model: LLMConfig.COMPLETION_MODEL,
         messages: [
           {
             role: "user" as const,
             content: prompt,
           },
         ],
-        temperature: LLMConfigSchema.TEMPERATURE,
+        temperature: LLMConfig.TEMPERATURE,
         reasoning_effort: "low" as const,
         response_format: ANNOUNCEMENT_COURSES_RESPONSE_FORMAT,
       };
 
-      const response = await this.makeGroqRequest(request);
+      const response = await this.requestCompletion(request);
 
       return parseJsonResponse(
         AnnouncementRelevantCoursesResultSchema,
@@ -230,19 +232,19 @@ export class LLMClassificationCore {
       );
 
       const request = {
-        model: LLMConfigSchema.COMPLETION_MODEL,
+        model: LLMConfig.COMPLETION_MODEL,
         messages: [
           {
             role: "user" as const,
             content: prompt,
           },
         ],
-        temperature: LLMConfigSchema.TEMPERATURE,
+        temperature: LLMConfig.TEMPERATURE,
         reasoning_effort: "low" as const,
         response_format: ANNOUNCEMENT_RELEVANCE_RESPONSE_FORMAT,
       };
 
-      const response = await this.makeGroqRequest(request);
+      const response = await this.requestCompletion(request);
 
       return parseJsonResponse(
         AnnouncementRelevanceResultSchema,
@@ -273,11 +275,5 @@ export class LLMClassificationCore {
 
       return true;
     }
-  }
-}
-
-export class LLMService extends LLMClassificationCore {
-  constructor() {
-    super(createGroqCompletionRequester());
   }
 }

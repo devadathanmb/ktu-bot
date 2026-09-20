@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 const llmConfigSchema = z.object({
-  API_KEY: z.string(),
+  API_KEY: z.string().trim().min(1),
   COMPLETION_MODEL: z.string(),
   TEMPERATURE: z.number().min(0).max(2),
   TIMEOUT_MS: z.number().positive(),
   MAX_RETRIES: z.number().min(0),
 });
 
-export const LLMConfigSchema = llmConfigSchema.parse({
+export const LLMConfig = llmConfigSchema.parse({
   API_KEY: process.env.GROQ_API_KEY,
   // GPT-OSS-only: requests send `reasoning_effort` and strict Structured
   // Outputs, which non-reasoning models reject. Keep model and request
