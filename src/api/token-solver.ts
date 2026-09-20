@@ -14,54 +14,57 @@ export class TokenSolverError extends Error {
 }
 
 /**
- * Fetches a fresh Cloudflare Turnstile token from the token solver.
+ * Builds a Cloudflare Turnstile token minter over the given fetch
+ * implementation.
  *
  * Turnstile tokens are single-use, so every uncached KTU request must mint its
  * own token. Any failure (timeout, network error, non-2xx response, malformed
  * JSON, or a blank token) throws so the caller never sends a KTU request
  * without an X-Token and triggers a second, misleading 401.
- *
- * The `fetchImpl` parameter exists only so tests can inject a stub; production
- * callers use the built-in fetch.
  */
-export async function fetchToken(
-  fetchImpl: typeof fetch = fetch
-): Promise<string> {
-  const url = `${TokenSolverConfig.URL}${TOKEN_PATH}`;
-  let response: Response;
-  try {
-    response = await fetchImpl(url, {
-      signal: AbortSignal.timeout(TokenSolverConfig.TIMEOUT_MS),
-    });
-  } catch (error: unknown) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new TokenSolverError(`Token solver request failed: ${detail}`, {
-      cause: error,
-    });
-  }
+export function createFetchToken(
+  fetchImpl: typeof fetch
+): () => Promise<string> {
+  return async () => {
+    const url = `${TokenSolverConfig.URL}${TOKEN_PATH}`;
+    let response: Response;
+    try {
+      response = await fetchImpl(url, {
+        signal: AbortSignal.timeout(TokenSolverConfig.TIMEOUT_MS),
+      });
+    } catch (error: unknown) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new TokenSolverError(`Token solver request failed: ${detail}`, {
+        cause: error,
+      });
+    }
 
-  if (!response.ok) {
-    throw new TokenSolverError(
-      `Token solver responded with status ${response.status}`
-    );
-  }
+    if (!response.ok) {
+      throw new TokenSolverError(
+        `Token solver responded with status ${response.status}`
+      );
+    }
 
-  let body: unknown;
-  try {
-    body = await response.json();
-  } catch (error: unknown) {
-    throw new TokenSolverError("Token solver returned malformed JSON", {
-      cause: error,
-    });
-  }
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch (error: unknown) {
+      throw new TokenSolverError("Token solver returned malformed JSON", {
+        cause: error,
+      });
+    }
 
-  const token = readToken(body);
-  if (!token) {
-    throw new TokenSolverError("Token solver returned a blank token");
-  }
+    const token = readToken(body);
+    if (!token) {
+      throw new TokenSolverError("Token solver returned a blank token");
+    }
 
-  return token;
+    return token;
+  };
 }
+
+// Production minter, composed with the runtime's global fetch.
+export const fetchToken = createFetchToken(fetch);
 
 function readToken(body: unknown): string | undefined {
   if (typeof body !== "object" || body === null) return undefined;

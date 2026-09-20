@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import got, { RequestError, type NormalizedOptions } from "got";
 import { TokenSolverConfig } from "../../src/configs/token-solver.js";
-import { fetchToken, TokenSolverError } from "../../src/api/token-solver.js";
+import {
+  createFetchToken,
+  TokenSolverError,
+} from "../../src/api/token-solver.js";
 import {
   addXTokenHeader,
   createAddXTokenHeader,
@@ -31,8 +34,9 @@ test("fetchToken returns the solver token and calls it once", async () => {
   const { fetchImpl, calls } = createFetchStub(async () =>
     Response.json({ token: "turnstile-token" })
   );
+  const fetchToken = createFetchToken(fetchImpl);
 
-  assert.equal(await fetchToken(fetchImpl), "turnstile-token");
+  assert.equal(await fetchToken(), "turnstile-token");
   assert.equal(calls.length, 1);
   const firstCall = calls[0];
   assert.ok(firstCall);
@@ -44,16 +48,18 @@ test("fetchToken rejects on a non-2xx solver response", async () => {
   const { fetchImpl } = createFetchStub(
     async () => new Response("{}", { status: 503 })
   );
+  const fetchToken = createFetchToken(fetchImpl);
 
-  await assert.rejects(fetchToken(fetchImpl), /status 503/);
+  await assert.rejects(fetchToken(), /status 503/);
 });
 
 test("fetchToken rejects on malformed solver JSON", async () => {
   const { fetchImpl } = createFetchStub(
     async () => new Response("<html>not json</html>")
   );
+  const fetchToken = createFetchToken(fetchImpl);
 
-  await assert.rejects(fetchToken(fetchImpl), /malformed JSON/);
+  await assert.rejects(fetchToken(), /malformed JSON/);
 });
 
 test("fetchToken failures are TokenSolverErrors", async () => {
@@ -61,14 +67,16 @@ test("fetchToken failures are TokenSolverErrors", async () => {
     async () => new Response("{}", { status: 503 })
   );
 
-  const error = await fetchToken(fetchImpl).catch((caught: unknown) => caught);
+  const fetchToken = createFetchToken(fetchImpl);
+  const error = await fetchToken().catch((caught: unknown) => caught);
   assert.ok(error instanceof TokenSolverError);
 });
 
 test("fetchToken rejects on an absent or blank token", async () => {
   for (const body of [{}, { token: "" }, { token: "   " }, "token"]) {
     const { fetchImpl } = createFetchStub(async () => Response.json(body));
-    await assert.rejects(fetchToken(fetchImpl), /blank token/);
+    const fetchToken = createFetchToken(fetchImpl);
+    await assert.rejects(fetchToken(), /blank token/);
   }
 });
 
@@ -87,7 +95,8 @@ test("fetchToken propagates solver network and timeout failures", async () => {
     const { fetchImpl } = createFetchStub(async () => {
       throw error;
     });
-    await assert.rejects(fetchToken(fetchImpl), pattern);
+    const fetchToken = createFetchToken(fetchImpl);
+    await assert.rejects(fetchToken(), pattern);
   }
 });
 

@@ -6,14 +6,12 @@ import { fetchToken } from "../../token-solver.js";
  * Adds a fresh X-Token to every KTU API request.
  *
  * The hook only gates on the KTU base URL and attaches the token; HTTP
- * communication and response validation live in `fetchToken`. Solver failures
- * propagate so the request fails instead of continuing to KTU without a token.
- *
- * `mintToken` exists only so tests can inject a stub; production uses
- * `fetchToken`.
+ * communication and response validation live in the injected minter. Solver
+ * failures propagate so the request fails instead of continuing to KTU without
+ * a token.
  */
 export function createAddXTokenHeader(
-  mintToken: () => Promise<string> = fetchToken
+  mintToken: () => Promise<string>
 ): BeforeRequestHook {
   return async options => {
     if (!options.url || !options.url.toString().includes(KTU_API_BASE_URI)) {
@@ -27,4 +25,4 @@ export function createAddXTokenHeader(
   };
 }
 
-export const addXTokenHeader = createAddXTokenHeader();
+export const addXTokenHeader = createAddXTokenHeader(fetchToken);
