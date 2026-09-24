@@ -15,7 +15,7 @@ const serviceName = "data-sync-worker";
 
 async function start(): Promise<void> {
   try {
-    const db = await initDB();
+    const db = await initDB({ applicationName: serviceName });
     const processor = new DataSyncProcessor({
       syncers: {
         "data-sync:announcements": new AnnouncementsSyncer(

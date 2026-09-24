@@ -11,7 +11,7 @@ const serviceName = "broadcasts-worker";
 
 async function start(): Promise<void> {
   try {
-    const db = await initDB();
+    const db = await initDB({ applicationName: serviceName });
     const bot = createWorkerBot();
     logger.info("Bot instance created");
 

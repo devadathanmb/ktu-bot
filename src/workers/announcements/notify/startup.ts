@@ -16,7 +16,7 @@ const serviceName = "announcements-notify-worker";
 
 async function start(): Promise<void> {
   try {
-    const db = await initDB();
+    const db = await initDB({ applicationName: serviceName });
     const bot = createWorkerBot();
     bot.api.config.use(apiThrottler());
     bot.api.config.use(autoRetry({ maxRetryAttempts: 5 }));

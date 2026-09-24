@@ -18,7 +18,7 @@ const serviceName = "attachment-delivery-worker";
 async function start(): Promise<void> {
   try {
     // Telegram error recovery updates chat and subscription records.
-    await initDB();
+    await initDB({ applicationName: serviceName });
     const bot = createWorkerBot();
     logger.info("Bot instance created");
 

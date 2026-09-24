@@ -33,7 +33,7 @@ async function startBotInLongPolling() {
   });
 
   try {
-    await initDB();
+    await initDB({ max: 3, applicationName: "ktu-bot-app" });
 
     let bot;
     let metricsRegistry;
