@@ -112,6 +112,7 @@ export function createAnnouncementsFlow(
 
     const jobData: AttachmentDeliveryJob = {
       chatId: ctx.chat!.id,
+      requestedByUserId: ctx.from!.id,
       attachments,
       statusMessageId: statusMessage.message_id,
       context: "announcement",

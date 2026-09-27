@@ -15,7 +15,14 @@ const serviceName = "data-sync-worker";
 
 async function start(): Promise<void> {
   try {
-    const db = await initDB({ applicationName: serviceName });
+    // Initial sync runs one long transaction of small bulk upserts (batches
+    // capped at 2000 rows). The limit below bounds individual statements,
+    // not the whole transaction: a healthy bulk write finishes in seconds,
+    // while a true stall fails the job so BullMQ retries instead of hanging.
+    const db = await initDB({
+      applicationName: serviceName,
+      statementTimeoutMs: 5 * 60_000,
+    });
     const processor = new DataSyncProcessor({
       syncers: {
         "data-sync:announcements": new AnnouncementsSyncer(

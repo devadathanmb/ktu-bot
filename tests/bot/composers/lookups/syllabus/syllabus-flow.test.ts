@@ -237,6 +237,7 @@ test("selectBranch queues a lone syllabus without listing it", async () => {
   assert.deepEqual(queued, [
     {
       chatId: 7,
+      requestedByUserId: 11,
       attachments: [{ name: "S1.pdf", encryptId: "enc-1", source: "syllabus" }],
       statusMessageId: 40,
       context: "syllabus",

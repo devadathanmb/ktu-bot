@@ -6,8 +6,25 @@ import { getMediaType, getUpdateType } from "../../utils/bot.js";
 const MAX_TEXT_LOG_LENGTH = 100;
 const MAX_QUERY_LOG_LENGTH = 50;
 
+// Arrival timestamps stamped before `sequentialize` so the per-chat queue
+// wait stays observable after `logging` moved downstream of it. Keyed by the
+// per-update context object, which is unique for each update.
+const arrivalTimes = new WeakMap<object, number>();
+
+async function stampArrivalTime(
+  ctx: BotContext,
+  next: NextFunction
+): Promise<void> {
+  arrivalTimes.set(ctx, Date.now());
+  await next();
+}
+
 async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
   const start = Date.now();
+  const receivedAt = arrivalTimes.get(ctx);
+  arrivalTimes.delete(ctx);
+  const queueWaitMs =
+    receivedAt !== undefined ? Math.max(0, start - receivedAt) : 0;
 
   const updateType = getUpdateType(ctx.update);
 
@@ -100,6 +117,7 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
         update_type: updateType,
         outcome,
         response_time_ms: duration,
+        queue_wait_ms: queueWaitMs,
       },
       "Response time"
     );
@@ -107,3 +125,4 @@ async function logging(ctx: BotContext, next: NextFunction): Promise<void> {
 }
 
 export default logging;
+export { stampArrivalTime };

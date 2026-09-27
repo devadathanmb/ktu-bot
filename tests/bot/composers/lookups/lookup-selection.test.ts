@@ -125,6 +125,7 @@ test("timetables with attachments queue a background download", async () => {
   assert.deepEqual(queued, [
     {
       chatId: 7,
+      requestedByUserId: 11,
       attachments: [{ name: "tt.pdf", encryptId: "enc-tt" }],
       statusMessageId: 40,
       context: "timetable",
@@ -151,6 +152,7 @@ test("calendar selection renders details and queues its attachment", async () =>
   assert.deepEqual(queued, [
     {
       chatId: 7,
+      requestedByUserId: 11,
       attachments: [{ name: "cal.pdf", encryptId: "enc-cal" }],
       statusMessageId: 40,
       context: "calendar",

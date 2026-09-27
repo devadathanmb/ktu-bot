@@ -155,6 +155,7 @@ function buildDownloadJob(
 ): AttachmentDeliveryJob {
   const data: AttachmentDeliveryJob = {
     chatId: ctx.chat!.id,
+    requestedByUserId: ctx.from!.id,
     attachments: [
       {
         name: entry.attachmentName!,

@@ -136,6 +136,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     await addAttachmentDeliveryJob(
       buildAttachmentDeliveryJob(
         chatId,
+        chosenResult.from.id,
         resolution.attachments,
         statusMessage.message_id
       )

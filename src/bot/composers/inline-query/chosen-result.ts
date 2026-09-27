@@ -155,11 +155,13 @@ export async function resolveChosenResultAttachments(
 
 export function buildAttachmentDeliveryJob(
   chatId: number,
+  requestedByUserId: number,
   attachments: AttachmentInfo[],
   statusMessageId: number
 ): AttachmentDeliveryJob {
   return {
     chatId: chatId,
+    requestedByUserId: requestedByUserId,
     attachments: attachments,
     statusMessageId: statusMessageId,
     context: "inline query result",

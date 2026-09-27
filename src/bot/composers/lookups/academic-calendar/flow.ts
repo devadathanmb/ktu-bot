@@ -98,6 +98,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
 
     const jobData: AttachmentDeliveryJob = {
       chatId: ctx.chat!.id,
+      requestedByUserId: ctx.from!.id,
       attachments: [
         {
           name: calendar.attachmentName,

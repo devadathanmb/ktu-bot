@@ -14,7 +14,7 @@ import { emojiParser } from "@grammyjs/emoji";
 import { hydrate } from "@grammyjs/hydrate";
 import { announcementSubscriptions } from "./composers/announcement-subscriptions/composer.js";
 import { initSession } from "./middlewares/init-session.js";
-import logging from "./middlewares/logging.js";
+import logging, { stampArrivalTime } from "./middlewares/logging.js";
 import { globalErrorHandler } from "./handlers/global-error.js";
 import { unknownCommandHandler } from "./handlers/unknown-command.js";
 import { unhandled } from "./composers/unhandled/composer.js";
@@ -52,16 +52,14 @@ export function createBot(): Bot<BotContext> {
  */
 export function createBotWithMetrics(metrics: BotMetrics): Bot<BotContext> {
   const bot = new Bot<BotContext>(BotConfig.BOT_TOKEN);
-  bot.use(createMetricsMiddleware(metrics));
-  configureBot(bot);
+  configureBot(bot, metrics);
   bot.catch(error => globalErrorHandler(error, metrics));
   return bot;
 }
 
-function configureBot(bot: Bot<BotContext>): void {
-  // Logging should be the first middleware in the stack
-  // This is to track response times and other useful info
-  bot.use(logging);
+function configureBot(bot: Bot<BotContext>, metrics?: BotMetrics): void {
+  // Arrival stamp first so the per-chat queue wait stays observable.
+  bot.use(stampArrivalTime);
 
   // Long polling only middlewares:
   if (BotConfig.IS_LONG_POLLING_DEPLOYMENT) {
@@ -75,6 +73,14 @@ function configureBot(bot: Bot<BotContext>): void {
     // Sequentialize middleware to process updates from the same chat one by one
     // This prevents race conditions
     bot.use(sequentialize(getSessionKey));
+  }
+
+  // Logging and metrics sit downstream of sequentialize so response_time_ms
+  // measures handler time, not time queued behind another update from the
+  // same chat. The queue wait is reported separately as queue_wait_ms.
+  bot.use(logging);
+  if (metrics) {
+    bot.use(createMetricsMiddleware(metrics));
   }
 
   bot.use(

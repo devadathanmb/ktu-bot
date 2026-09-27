@@ -12,6 +12,10 @@ const baseRedisConnectionOptions = {
 export const queueRedisConnectionOptions: ConnectionOptions = {
   ...baseRedisConnectionOptions,
   enableOfflineQueue: false, // Fail fast when Redis is down
+  // Bound queue-side Redis commands to 30s so a stalled call fails fast.
+  // Keep this off the worker connection: its blocking operations require
+  // maxRetriesPerRequest: null and must not be timed out.
+  commandTimeout: 30_000,
 };
 
 export const workerRedisConnectionOptions: ConnectionOptions = {

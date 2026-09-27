@@ -539,8 +539,9 @@ test("calendar and timetable resolutions keep attachment semantics", async () =>
 
 test("queued payload carries chat, attachments, status message, and context", () => {
   const attachments = [{ name: "a.pdf", encryptId: "enc-a" }];
-  assert.deepEqual(buildAttachmentDeliveryJob(7, attachments, 99), {
+  assert.deepEqual(buildAttachmentDeliveryJob(7, 11, attachments, 99), {
     chatId: 7,
+    requestedByUserId: 11,
     attachments,
     statusMessageId: 99,
     context: "inline query result",

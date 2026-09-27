@@ -117,6 +117,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
 
     const jobData: AttachmentDeliveryJob = {
       chatId: ctx.chat!.id,
+      requestedByUserId: ctx.from!.id,
       attachments: [attachment],
       statusMessageId: statusMessage.message_id,
       context: "timetable",

@@ -17,6 +17,17 @@ export interface InitDbOptions {
   max?: number;
   /** Reported as `application_name` in pg_stat_activity for attribution. */
   applicationName?: string;
+  /**
+   * Server-side per-statement timeout in ms. 0 leaves the server default in
+   * place (pg omits falsy values from connection startup parameters).
+   * Defaults to 30s so stalled calls fail fast on interactive paths.
+   */
+  statementTimeoutMs?: number;
+  /**
+   * Client-side abort in ms. 0 disables it. Defaults to 5s above the
+   * statement timeout so the identifiable server 57014 surfaces first.
+   */
+  queryTimeoutMs?: number;
 }
 
 export interface PoolStats {
@@ -36,12 +47,21 @@ export async function initDB(
   // which is what previously produced intermittent connect timeouts.
   // connectionTimeoutMillis makes an unreachable server fail fast instead of
   // waiting on the kernel SYN-retry window (~127s) while /health hangs.
+  const statementTimeoutMs = options.statementTimeoutMs ?? 30_000;
+  const queryTimeoutMs =
+    options.queryTimeoutMs ??
+    (statementTimeoutMs === 0 ? 0 : statementTimeoutMs + 5_000);
   const dbPool = new Pool({
     connectionString: DbConfig.DATABASE_URI,
     ssl: DbConfig.SSL_CONFIG,
     max: options.max ?? 2,
     idleTimeoutMillis: 120_000,
     connectionTimeoutMillis: 5_000,
+    // Bound every query server-side and client-side so a stalled database
+    // call fails fast instead of holding the per-chat sequentialize lock
+    // indefinitely. No statement_timeout is set anywhere else.
+    statement_timeout: statementTimeoutMs,
+    query_timeout: queryTimeoutMs,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10_000,
     ...(options.applicationName
