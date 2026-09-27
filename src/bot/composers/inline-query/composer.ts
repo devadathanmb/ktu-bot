@@ -130,7 +130,7 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     const plural = resolution.attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.api.sendMessage(
       chatId,
-      `${emoji("hourglass_not_done")} Downloading your file${plural} from ${resolution.resource} in the background... Please wait!`
+      `${emoji("hourglass_not_done")} Downloading the file${plural} from your selected ${resolution.resource} in the background... Please wait!`
     );
 
     await addAttachmentDeliveryJob(
