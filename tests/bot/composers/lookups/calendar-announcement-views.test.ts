@@ -114,12 +114,12 @@ test("announcement details preserve separate sections and entities", () => {
   const details = formatAnnouncementDetails(announcement);
   assert.equal(
     details.text,
-    "📖 Subject:\n\nExams <Revised> & Final\n\n📝 Message:\n\nRead <carefully> & prepare.\n\n📅 Date: 20 September 2026"
+    "📖 Title:\n\nExams <Revised> & Final\n\n📝 Message:\n\nRead <carefully> & prepare.\n\n📅 Published: 20 September 2026"
   );
   assert.deepEqual(boldText(details), [
-    "📖 Subject:",
+    "📖 Title:",
     "📝 Message:",
-    "📅 Date:",
+    "📅 Published:",
   ]);
 });
 
@@ -127,7 +127,7 @@ test("announcement details omit empty sections", () => {
   assert.equal(
     formatAnnouncementDetails({ ...announcement, subject: "", message: "" })
       .text,
-    "📅 Date: 20 September 2026"
+    "📅 Published: 20 September 2026"
   );
   assert.equal(
     formatAnnouncementDetails({
@@ -151,7 +151,7 @@ test("announcement details omit empty sections", () => {
 test("inline and interactive announcements retain the same spacing, content and entities", () => {
   const item = {
     ...announcement,
-    message: "First paragraph.\n\nSecond paragraph.",
+    message: "First paragraph <&> 😀.\n\nSecond paragraph — kept.",
   };
   const details = formatAnnouncementDetails(item);
   const result = renderAnnouncementResults([item])[0]!;

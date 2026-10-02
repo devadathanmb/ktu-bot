@@ -34,7 +34,7 @@ export function formatAnnouncementDetails(
     parts.push(
       joinWithNewlines(
         [
-          fmt`${b}${emoji("open_book")} Subject:${b}`,
+          fmt`${b}${emoji("open_book")} Title:${b}`,
           fmt`${announcement.subject}`,
         ],
         2
@@ -51,7 +51,7 @@ export function formatAnnouncementDetails(
   }
   if (announcement.formattedPublishedDate) {
     parts.push(
-      fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`
+      fmt`${b}${emoji("calendar")} Published:${b} ${announcement.formattedPublishedDate}`
     );
   }
 

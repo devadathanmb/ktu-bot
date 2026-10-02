@@ -15,15 +15,16 @@ const metadata = coreCommand("help");
 
 function formatCommandSection(
   title: FormattedString,
-  commands: readonly CoreCommandInfo[]
+  commands: readonly CoreCommandInfo[],
+  layout: "compact" | "stacked" = "compact"
 ): FormattedString {
+  const entries = commands.map(cmd =>
+    layout === "stacked"
+      ? joinWithNewlines([fmt`${formatCommand(cmd)}`, fmt`${cmd.description}`])
+      : fmt`${formatCommand(cmd)}: ${cmd.description}`
+  );
   return joinWithNewlines(
-    [
-      title,
-      ...commands.map(cmd =>
-        joinWithNewlines([fmt`${formatCommand(cmd)}`, fmt`${cmd.description}`])
-      ),
-    ],
+    [title, joinWithNewlines(entries, layout === "stacked" ? 2 : 1)],
     2
   );
 }
@@ -34,7 +35,7 @@ export const helpCommand = new Command<BotContext>(
   async ctx => {
     const helpTitle = fmt`${b}Available Commands${b}`;
     const coreCommandsMessage = formatCommandSection(
-      fmt`${emoji("gear")} ${b}Getting started${b}`,
+      fmt`${emoji("gear")} ${b}Other commands${b}`,
       coreCommands
     );
     const lookupCommands = formatCommandSection(
@@ -43,7 +44,8 @@ export const helpCommand = new Command<BotContext>(
     );
     const subscriptionCommands = formatCommandSection(
       fmt`${emoji("bell")} ${b}Announcement alerts${b}`,
-      announcementSubscriptionCommandInfos
+      announcementSubscriptionCommandInfos,
+      "stacked"
     );
     const inlineInfo = joinWithNewlines([
       fmt`${emoji("light_bulb")} ${b}Search in any chat${b}`,
@@ -53,9 +55,9 @@ export const helpCommand = new Command<BotContext>(
     const fullHelpMessage = joinWithNewlines(
       [
         helpTitle,
-        coreCommandsMessage,
         lookupCommands,
         subscriptionCommands,
+        coreCommandsMessage,
         inlineInfo,
       ],
       2

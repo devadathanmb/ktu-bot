@@ -105,9 +105,9 @@ test("help keeps command sections formatted after joining and disables link prev
   assert.equal(method, "sendMessage");
   assert.deepEqual(formattedSpans(payload, "bold"), [
     "Available Commands",
-    "Getting started",
     "Find documents",
     "Announcement alerts",
+    "Other commands",
     "Search in any chat",
     `@${BotConfig.BOT_USERNAME}`,
   ]);
@@ -115,12 +115,22 @@ test("help keeps command sections formatted after joining and disables link prev
   assert.match(payload["text"] as string, /\/announcements_subscribe/);
   assert.match(
     payload["text"] as string,
-    /\/start\n⚡ Meet KTU Bot\n\n\/help\n❓ See the available commands/
+    /\/announcements: KTU announcements\n\/calendars: Academic calendars\n\/timetables: Exam timetables\n\/syllabus: Syllabuses/
   );
   assert.match(
     payload["text"] as string,
-    /\/announcements_subscribe\n🔔 Get announcement alerts\n\n\/announcements_unsubscribe/
+    /\/announcements_subscribe\nTurn on alerts\n\n\/announcements_unsubscribe\nTurn off alerts/
   );
+  assert.match(
+    payload["text"] as string,
+    /\/start: Start the bot\n\/help: Available commands/
+  );
+  const commandRows = (payload["text"] as string)
+    .split("\n")
+    .filter(line => line.startsWith("/"));
+  assert.equal(commandRows.length, 13);
+  for (const row of commandRows)
+    assert.doesNotMatch(row, /\p{Extended_Pictographic}/u);
   assert.doesNotMatch(payload["text"] as string, /—/);
 });
 

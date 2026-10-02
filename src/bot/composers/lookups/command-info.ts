@@ -1,29 +1,26 @@
-import { emoji } from "@grammyjs/emoji";
-
 /**
  * Static command metadata for the lookup composers. Command construction and
  * `/help` both read these entries, so the names and descriptions cannot drift.
- * This module deliberately imports nothing besides the emoji helper, which
- * keeps presentation code free of the attachment-delivery queue.
+ * Keep this module free of initialized composers and queues.
  */
 export const announcementsCommandInfo = {
   name: "announcements",
-  description: `${emoji("loudspeaker")} Browse KTU announcements`,
+  description: "KTU announcements",
 } as const;
 
 export const calendarCommandInfo = {
   name: "calendars",
-  description: `${emoji("calendar")} Find an academic calendar`,
+  description: "Academic calendars",
 } as const;
 
 export const timetableCommandInfo = {
   name: "timetables",
-  description: `${emoji("books")} Find an exam timetable`,
+  description: "Exam timetables",
 } as const;
 
 export const syllabusCommandInfo = {
   name: "syllabus",
-  description: `${emoji("scroll")} Find a syllabus by program and branch`,
+  description: "Syllabuses",
 } as const;
 
 /** Ordered exactly as `/help` presents the lookup commands. */

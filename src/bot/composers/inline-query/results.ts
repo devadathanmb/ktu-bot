@@ -3,6 +3,7 @@ import type { InlineQueryResult } from "grammy/types";
 import { emoji } from "@grammyjs/emoji";
 import { b, fmt, type FormattedString } from "@grammyjs/parse-mode";
 import { joinWithNewlines } from "../../../utils/formatting.js";
+import { formatAnnouncementDetails } from "../lookups/announcements/views.js";
 import type {
   AcademicCalendar,
   Announcement,
@@ -82,38 +83,7 @@ export function renderAnnouncementResults(
   announcements: Announcement[]
 ): InlineQueryResult[] {
   const results = announcements.map(announcement => {
-    const parts: FormattedString[] = [];
-    if (announcement.subject) {
-      parts.push(
-        joinWithNewlines(
-          [
-            fmt`${b}${emoji("open_book")} Subject:${b}`,
-            fmt`${announcement.subject}`,
-          ],
-          2
-        )
-      );
-    }
-    if (announcement.message) {
-      parts.push(
-        joinWithNewlines(
-          [
-            fmt`${b}${emoji("memo")} Message:${b}`,
-            fmt`${announcement.message}`,
-          ],
-          2
-        )
-      );
-    }
-    if (announcement.formattedPublishedDate) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`,
-        ])
-      );
-    }
-
-    const formattedMessage = joinWithNewlines(parts, 2);
+    const formattedMessage = formatAnnouncementDetails(announcement);
 
     return InlineQueryResultBuilder.article(
       `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.ANNOUNCEMENTS]}_${announcement.id}`,
