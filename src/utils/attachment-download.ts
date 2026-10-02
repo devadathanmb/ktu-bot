@@ -1,6 +1,11 @@
+import { createWriteStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
+import { z } from "zod";
 import {
   fetchAttachment,
   fetchSyllabusAttachment,
+  type AttachmentResponseConsumer,
 } from "../api/services/ktu/index.js";
 import type { AttachmentSource } from "../types/service.types.js";
 import { combineFailures } from "../errors/combine-failures.js";
@@ -15,11 +20,84 @@ export interface DownloadedAttachment {
   fileSizeBytes: number;
 }
 
-// Every dependency is required: callers build a service with the fetchers they
-// need, and the exported operations below compose the live KTU fetchers once.
 export interface AttachmentFetcherDeps {
-  fetchAttachment: (encryptId: string) => Promise<string>;
-  fetchSyllabusAttachment: (params: { encryptId: string }) => Promise<string>;
+  fetchAttachment: typeof fetchAttachment;
+  fetchSyllabusAttachment: typeof fetchSyllabusAttachment;
+}
+
+const Base64ChunkSchema = z.string().regex(/^[A-Za-z0-9+/]*={0,2}$/);
+const CompleteBase64Schema = z
+  .string()
+  .regex(
+    /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+    "Invalid base64 padding"
+  );
+const Base64TailSchema = z
+  .string()
+  .regex(/^(?:[A-Za-z0-9+/]{2,3})?$/, "Incomplete base64 attachment");
+const EndOfBase64Schema = z.literal("", { error: "Data after base64 padding" });
+const AttachmentSizeSchema = z
+  .number()
+  .positive("Attachment data cannot be empty");
+const DECODE_CHUNK_SIZE = 64 * 1024;
+
+async function* decodeAttachment(
+  response: AsyncIterable<Buffer>
+): AsyncGenerator<Buffer> {
+  let carry = "";
+  let filenameStarted = false;
+  let padded = false;
+
+  for await (const chunk of response) {
+    if (filenameStarted) continue;
+    // Bound decoding allocations even if a source yields an unusually large chunk.
+    for (let offset = 0; offset < chunk.length; offset += DECODE_CHUNK_SIZE) {
+      let data =
+        carry +
+        chunk.subarray(offset, offset + DECODE_CHUNK_SIZE).toString("utf8");
+      carry = "";
+      const separator = data.indexOf("&&");
+      if (separator !== -1) {
+        data = data.slice(0, separator);
+        filenameStarted = true;
+      } else if (data.endsWith("&")) {
+        carry = "&";
+        data = data.slice(0, -1);
+      }
+      data = data.replace(/\s/g, "");
+      Base64ChunkSchema.parse(data);
+      if (padded) EndOfBase64Schema.parse(data);
+      const completeLength = data.length - (data.length % 4);
+      carry = data.slice(completeLength) + carry;
+      if (completeLength > 0) {
+        const complete = CompleteBase64Schema.parse(
+          data.slice(0, completeLength)
+        );
+        padded = complete.includes("=");
+        yield Buffer.from(complete, "base64");
+      }
+      if (filenameStarted) break;
+    }
+  }
+
+  Base64TailSchema.parse(carry);
+  if (padded) EndOfBase64Schema.parse(carry);
+  if (carry.length > 0) {
+    yield Buffer.from(carry, "base64");
+  }
+}
+
+async function cleanupAndRethrow(
+  tempFilePath: string,
+  error: unknown,
+  message: string
+): Promise<never> {
+  try {
+    await cleanupTempFile(tempFilePath);
+  } catch (cleanupError) {
+    throw combineFailures(message, error, [cleanupError]);
+  }
+  throw error;
 }
 
 export interface AttachmentDownloadService {
@@ -53,28 +131,40 @@ export function createAttachmentDownloadService(
     fileName: string,
     source: AttachmentSource = "default"
   ): Promise<DownloadedAttachment> {
-    const base64Data =
-      source === "syllabus"
-        ? await deps.fetchSyllabusAttachment({ encryptId })
-        : await deps.fetchAttachment(encryptId);
-
-    const decodedSize = Buffer.byteLength(base64Data, "base64");
-
-    logger.info(
-      { fileName, source, fileSizeBytes: decodedSize },
-      "Attachment downloaded"
-    );
-
-    // Write to disk so the base64 string can be GC'd before we use the file.
-    // Keeps peak memory at ~decodedSize rather than ~3x decodedSize
-    // (base64 string + decoded buffer could be held simultaneously otherwise).
     const safeEncryptId = encryptId.replace(/[^a-zA-Z0-9_-]/g, "_");
     const tempFilePath = await createTempFile(
-      Buffer.from(base64Data, "base64"),
+      Buffer.alloc(0),
       `${safeEncryptId}_${fileName}`
     );
+    let fileSizeBytes = 0;
+    const consumeResponse: AttachmentResponseConsumer = async response => {
+      await pipeline(
+        response,
+        decodeAttachment,
+        createWriteStream(tempFilePath)
+      );
+      fileSizeBytes = AttachmentSizeSchema.parse(
+        (await stat(tempFilePath)).size
+      );
+    };
 
-    return { tempFilePath, fileName, fileSizeBytes: decodedSize };
+    try {
+      if (source === "syllabus") {
+        await deps.fetchSyllabusAttachment({ encryptId, consumeResponse });
+      } else {
+        await deps.fetchAttachment(encryptId, consumeResponse);
+      }
+    } catch (error) {
+      return cleanupAndRethrow(
+        tempFilePath,
+        error,
+        "Attachment download and cleanup failed"
+      );
+    }
+
+    logger.info({ fileName, source, fileSizeBytes }, "Attachment downloaded");
+
+    return { tempFilePath, fileName, fileSizeBytes };
   }
 
   async function cleanupDownloadedAttachment(
@@ -99,16 +189,11 @@ export function createAttachmentDownloadService(
     try {
       result = await operation(downloaded);
     } catch (operationError) {
-      try {
-        await cleanupDownloadedAttachment(downloaded);
-      } catch (cleanupError) {
-        throw combineFailures(
-          "Attachment operation failed and temp file cleanup failed",
-          operationError,
-          [cleanupError]
-        );
-      }
-      throw operationError;
+      return cleanupAndRethrow(
+        downloaded.tempFilePath,
+        operationError,
+        "Attachment operation failed and temp file cleanup failed"
+      );
     }
 
     await cleanupDownloadedAttachment(downloaded);
@@ -133,3 +218,15 @@ export const cleanupDownloadedAttachment =
   productionAttachmentDownload.cleanupDownloadedAttachment;
 export const withDownloadedAttachment =
   productionAttachmentDownload.withDownloadedAttachment;
+
+export async function cleanupDownloadedAttachments(
+  downloaded: readonly DownloadedAttachment[],
+  cleanup: typeof cleanupDownloadedAttachment = cleanupDownloadedAttachment
+): Promise<unknown[]> {
+  const results = await Promise.allSettled(
+    downloaded.map(file => cleanup(file))
+  );
+  return results.flatMap(result =>
+    result.status === "rejected" ? [result.reason as unknown] : []
+  );
+}

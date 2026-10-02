@@ -1,4 +1,4 @@
-import { readFile, writeFile, unlink, mkdir } from "fs/promises";
+import { writeFile, unlink, mkdir } from "fs/promises";
 import { randomUUID } from "node:crypto";
 import { basename, join } from "path";
 import { tmpdir } from "os";
@@ -34,10 +34,6 @@ export async function createTempFile(
   );
   await writeFile(tempFilePath, buffer);
   return tempFilePath;
-}
-
-export async function readFileAsBuffer(filePath: string): Promise<Buffer> {
-  return readFile(filePath);
 }
 
 export async function cleanupTempFile(filePath: string): Promise<void> {

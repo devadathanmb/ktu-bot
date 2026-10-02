@@ -1,23 +1,23 @@
-import { z } from "zod";
 import { cachedApiClient } from "../../client.js";
 import { KTU_API_SERVICE_ENDPOINTS } from "../../../constants/api.js";
 import { withKtuErrorMapper } from "./ktu-error-mapper.js";
 import logger from "../../../utils/logger.js";
 import type { Got } from "got";
+import type { AttachmentResponseConsumer } from "./fetch-attachment.js";
 
 const SYLLABUS_ATTACHMENT_TIMEOUT_MS = 60 * 1000;
-
-const SyllabusAttachmentResponseSchema = z.string().min(1);
 
 interface FetchSyllabusAttachmentParams {
   encryptId: string;
   apiClient?: Got;
+  consumeResponse: AttachmentResponseConsumer;
 }
 
 async function _fetchSyllabusAttachment({
   encryptId,
   apiClient,
-}: FetchSyllabusAttachmentParams): Promise<string> {
+  consumeResponse,
+}: FetchSyllabusAttachmentParams): Promise<void> {
   const c = apiClient ?? cachedApiClient;
   const payload = { encryptId };
 
@@ -26,35 +26,19 @@ async function _fetchSyllabusAttachment({
     "Fetching syllabus attachment"
   );
 
-  const response = await c.post(KTU_API_SERVICE_ENDPOINTS.SYLLABUS_ATTACHMENT, {
-    json: payload,
-    responseType: "text" as const,
-    timeout: { request: SYLLABUS_ATTACHMENT_TIMEOUT_MS },
-  });
-
-  const rawData = SyllabusAttachmentResponseSchema.parse(response.body);
-
-  const separatorIndex = rawData.indexOf("&&");
-  let base64Data: string;
-  let fileName: string | undefined;
-
-  if (separatorIndex !== -1) {
-    base64Data = rawData.substring(0, separatorIndex);
-    fileName = rawData.substring(separatorIndex + 2);
-  } else {
-    base64Data = rawData;
-  }
-
-  logger.debug(
+  const response = c.stream.post(
+    KTU_API_SERVICE_ENDPOINTS.SYLLABUS_ATTACHMENT,
     {
-      encryptId,
-      fileName,
-      fileSizeBytes: Buffer.byteLength(base64Data, "base64"),
-    },
-    "Syllabus attachment fetched"
+      json: payload,
+      timeout: { request: SYLLABUS_ATTACHMENT_TIMEOUT_MS },
+    }
   );
 
-  return base64Data;
+  try {
+    await consumeResponse(response);
+  } finally {
+    response.destroy();
+  }
 }
 
 export const fetchSyllabusAttachment = withKtuErrorMapper(

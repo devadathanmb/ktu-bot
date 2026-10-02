@@ -12,6 +12,7 @@ import { sendAsLink } from "../shared/utils/attachment-delivery.js";
 import { handleWorkerGrammyError } from "../shared/utils/telegram-error-utils.js";
 import { startWorkerMonitoring } from "../shared/start-worker.js";
 import { createWorker } from "../shared/worker-runtime.js";
+import { splitPdfAttachment } from "../../utils/pdf-splitter.js";
 
 const serviceName = "attachment-delivery-worker";
 
@@ -28,6 +29,7 @@ async function start(): Promise<void> {
       {
         downloadAttachment: downloadAttachmentToTempFile,
         cleanupAttachment: cleanupDownloadedAttachment,
+        splitAttachment: splitPdfAttachment,
         sendOversizedAsLink: sendAsLink,
         handleGrammyError: handleWorkerGrammyError,
       }

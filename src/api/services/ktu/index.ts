@@ -1,5 +1,8 @@
 export { fetchAnnouncements } from "./fetch-announcements.js";
-export { fetchAttachment } from "./fetch-attachment.js";
+export {
+  fetchAttachment,
+  type AttachmentResponseConsumer,
+} from "./fetch-attachment.js";
 export { fetchTimetables } from "./fetch-timetables.js";
 export { fetchAcademicCalendars } from "./fetch-academic-calendars.js";
 export { fetchPrograms } from "./fetch-programs.js";

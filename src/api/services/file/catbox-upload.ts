@@ -1,8 +1,8 @@
+import { openAsBlob } from "node:fs";
 import { z } from "zod";
 import got from "got";
 import { CATBOX_API } from "../../../constants/api.js";
 import type { TempFileUploadParams } from "../../../types/service.types.js";
-import { readFileAsBuffer } from "../../../utils/file-utils.js";
 
 const CatboxResponseSchema = z
   .url("Invalid URL returned from Catbox API")
@@ -13,12 +13,10 @@ export async function uploadTempFile(
 ): Promise<string> {
   const { filePath, fileName } = params;
 
-  const fileBuffer = await readFileAsBuffer(filePath);
-
-  // Create native FormData instance (got v15 requires native Web API FormData)
   const form = new FormData();
   form.append("reqtype", "fileupload");
-  form.append("fileToUpload", new Blob([fileBuffer]), fileName || "file");
+  // A file-backed Blob keeps the oversized-file fallback bounded in memory too.
+  form.append("fileToUpload", await openAsBlob(filePath), fileName || "file");
 
   const response = await got.post(CATBOX_API.UPLOAD_ENDPOINT, {
     body: form,

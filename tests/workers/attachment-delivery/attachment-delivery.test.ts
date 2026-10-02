@@ -11,6 +11,7 @@ import {
   type AttachmentDeliveryDeps,
 } from "../../../src/workers/attachment-delivery/worker.js";
 import type { AttachmentDeliveryJob } from "../../../src/workers/attachment-delivery/queue.js";
+import { combineFailures } from "../../../src/errors/combine-failures.js";
 
 interface ApiCall {
   method: string;
@@ -29,6 +30,7 @@ function createHarness(
     failOnDownload?: string;
     cleanupFailures?: Record<string, Error>;
     grammyErrorHandler?: AttachmentDeliveryDeps["handleGrammyError"];
+    splitAttachment?: AttachmentDeliveryDeps["splitAttachment"];
   } = {}
 ) {
   const calls: ApiCall[] = [];
@@ -37,6 +39,15 @@ function createHarness(
   const links: Array<{ chatId: number; fileName: string }> = [];
   const grammyRecovery: Array<{ chatId: number; error: GrammyError }> = [];
   const api = {
+    sendMediaGroup: async (...args: unknown[]) => {
+      calls.push({ method: "sendMediaGroup", args });
+      throw new GrammyError(
+        "Request Entity Too Large",
+        { ok: false, error_code: 413, description: "Request Entity Too Large" },
+        "sendMediaGroup",
+        {}
+      );
+    },
     sendDocument: async (...args: unknown[]) => {
       calls.push({ method: "sendDocument", args });
       return { message_id: 20 };
@@ -74,6 +85,7 @@ function createHarness(
         throw cleanupFailure;
       }
     },
+    splitAttachment: options.splitAttachment ?? (async () => []),
     sendOversizedAsLink: async (_bot, chatId, downloaded) => {
       links.push({ chatId, fileName: downloaded.fileName });
       return "https://files/large.pdf";
@@ -199,6 +211,249 @@ test("routes oversized files to link sending", async () => {
   assert.deepEqual(links, [{ chatId: 7, fileName: "big.pdf" }]);
   assert.ok(calls.every(call => call.method !== "sendDocument"));
   assert.deepEqual(cleaned, ["/tmp/enc-big.pdf.pdf"]);
+});
+
+function splitParts(): DownloadedAttachment[] {
+  return [1, 2, 3].map(part => ({
+    tempFilePath: `/tmp/part-${part}.pdf`,
+    fileName: `big (part ${part} of 3).pdf`,
+    fileSizeBytes: 30 * 1024 * 1024,
+  }));
+}
+
+test("prepares and sends numbered PDF parts in order, then cleans original and parts", async () => {
+  const parts = splitParts();
+  const splitCalls: string[] = [];
+  const { calls, links, cleaned, processor } = createHarness({
+    sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+    splitAttachment: async original => {
+      splitCalls.push(original.fileName);
+      assert.deepEqual(
+        calls.map(call => call.method),
+        ["editMessageText"]
+      );
+      assert.equal(
+        calls[0]?.args[2],
+        "⏳ This PDF is too large to send as one file (94 MiB).\n\nI’ll split it into smaller parts and send them here. Please wait…"
+      );
+      return parts;
+    },
+  });
+  await processor.process(
+    deliveryJob([attachment("big.pdf"), attachment("small.pdf")], {
+      replyToMessageId: 5,
+    })
+  );
+  assert.deepEqual(splitCalls, ["big.pdf"]);
+  assert.deepEqual(links, []);
+  const sends = calls.filter(
+    call => call.method === "sendDocument" || call.method === "sendMediaGroup"
+  );
+  assert.deepEqual(
+    sends.map(call => call.method),
+    ["sendDocument", "sendDocument", "sendDocument", "sendDocument"]
+  );
+  assert.deepEqual(
+    sends
+      .slice(0, 3)
+      .map(send => (send.args[1] as { filename: string }).filename),
+    parts.map(part => part.fileName)
+  );
+  for (const [index, send] of sends.entries()) {
+    const options = send.args[2] as Record<string, unknown>;
+    if (index < 3)
+      assert.equal(options["caption"], `📄 big.pdf\n\nPart ${index + 1} of 3`);
+    else assert.equal("caption" in options, false);
+    assert.deepEqual(options["reply_parameters"], {
+      message_id: 5,
+      allow_sending_without_reply: true,
+    });
+  }
+  assert.deepEqual(cleaned, [
+    "/tmp/enc-big.pdf.pdf",
+    ...parts.map(part => part.tempFilePath),
+    "/tmp/enc-small.pdf.pdf",
+  ]);
+});
+
+test("split failure falls back to the original file link", async () => {
+  const { calls, links, cleaned, processor } = createHarness({
+    sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+    splitAttachment: async () => {
+      throw new Error("qpdf timed out");
+    },
+  });
+  await processor.process(deliveryJob([attachment("big.pdf")]));
+  assert.deepEqual(links, [{ chatId: 7, fileName: "big.pdf" }]);
+  assert.ok(
+    calls.every(
+      call => call.method !== "sendDocument" && call.method !== "sendMediaGroup"
+    )
+  );
+  assert.deepEqual(cleaned, ["/tmp/enc-big.pdf.pdf"]);
+});
+
+test("large part sets upload individually with context on each part", async () => {
+  for (const count of [2, 3, 10, 11, 12, 19, 20]) {
+    const parts = Array.from({ length: count }, (_, index) => ({
+      tempFilePath: `/tmp/part-${index + 1}.pdf`,
+      fileName: `big (part ${index + 1} of ${count}).pdf`,
+      fileSizeBytes: 30 * 1024 * 1024,
+    }));
+    const { calls, processor, cleaned } = createHarness({
+      sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+      splitAttachment: async () => parts,
+    });
+    await processor.process(deliveryJob([attachment("big.pdf")]));
+    const sends = calls.filter(call => call.method === "sendDocument");
+    assert.equal(sends.length, count);
+    assert.deepEqual(
+      sends.map(send => (send.args[1] as { filename: string }).filename),
+      parts.map(part => part.fileName)
+    );
+    for (const [index, send] of sends.entries()) {
+      assert.equal(
+        (send.args[2] as { caption: string }).caption,
+        `📄 big.pdf\n\nPart ${index + 1} of ${count}`
+      );
+    }
+    assert.equal(
+      calls.some(call => call.method === "sendMediaGroup"),
+      false
+    );
+    assert.equal(cleaned.length, count + 1);
+  }
+});
+
+test("unavailable progress message does not stop splitting or delivery", async () => {
+  const { api, calls, cleaned, processor } = createHarness({
+    sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+    splitAttachment: async () => splitParts(),
+  });
+  api.editMessageText = async () => {
+    throw new Error("Message unavailable");
+  };
+  await processor.process(deliveryJob([attachment("big.pdf")]));
+  assert.equal(calls.filter(call => call.method === "sendDocument").length, 3);
+  assert.equal(cleaned.length, 4);
+});
+
+test("oversized non-PDF fallback does not announce PDF splitting", async () => {
+  const { calls, links, processor } = createHarness({
+    sizes: { "enc-big.zip": 94 * 1024 * 1024 },
+  });
+  await processor.process(deliveryJob([attachment("big.zip")]));
+  assert.equal(
+    calls.some(call => call.method === "editMessageText"),
+    false
+  );
+  assert.deepEqual(links, [{ chatId: 7, fileName: "big.zip" }]);
+});
+
+test("split cleanup errors are not hidden by the link fallback", async () => {
+  const failure = combineFailures(
+    "split and cleanup failed",
+    new Error("qpdf failed"),
+    [new Error("cleanup failed")]
+  );
+  const { links, cleaned, processor } = createHarness({
+    sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+    splitAttachment: async () => {
+      throw failure;
+    },
+  });
+  await assert.rejects(
+    processor.process(deliveryJob([attachment("big.pdf")])),
+    error => error === failure
+  );
+  assert.deepEqual(links, []);
+  assert.deepEqual(cleaned, ["/tmp/enc-big.pdf.pdf"]);
+});
+
+test("a later download failure sends no prepared parts and cleans them all", async () => {
+  const parts = splitParts();
+  const { calls, cleaned, processor } = createHarness({
+    sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+    failOnDownload: "enc-small.pdf",
+    splitAttachment: async () => parts,
+  });
+  await assert.rejects(
+    processor.process(
+      deliveryJob([attachment("big.pdf"), attachment("small.pdf")])
+    ),
+    /ktu download failed/
+  );
+  assert.ok(
+    calls.every(
+      call => call.method !== "sendDocument" && call.method !== "sendMediaGroup"
+    )
+  );
+  assert.deepEqual(cleaned, [
+    "/tmp/enc-big.pdf.pdf",
+    ...parts.map(part => part.tempFilePath),
+  ]);
+});
+
+test("failed part delivery cleans every part without switching to a duplicate link delivery", async () => {
+  const parts = splitParts();
+  const { api, calls, links, cleaned, processor } = createHarness({
+    sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+    splitAttachment: async () => parts,
+  });
+  let sends = 0;
+  api.sendDocument = async (...args: unknown[]) => {
+    calls.push({ method: "sendDocument", args });
+    sends++;
+    throw new Error("Telegram unavailable");
+  };
+  await assert.rejects(
+    processor.process(deliveryJob([attachment("big.pdf")])),
+    /Telegram unavailable/
+  );
+  assert.equal(sends, 1);
+  assert.deepEqual(links, []);
+  assert.deepEqual(cleaned, [
+    "/tmp/enc-big.pdf.pdf",
+    ...parts.map(part => part.tempFilePath),
+  ]);
+});
+
+test("a later part failure stops delivery and cleans every prepared part", async () => {
+  const parts = Array.from({ length: 20 }, (_, index) => ({
+    tempFilePath: `/tmp/part-${index + 1}.pdf`,
+    fileName: `big (part ${index + 1} of 20).pdf`,
+    fileSizeBytes: 30 * 1024 * 1024,
+  }));
+  const { api, calls, links, cleaned, processor } = createHarness({
+    sizes: { "enc-big.pdf": 94 * 1024 * 1024 },
+    splitAttachment: async () => parts,
+  });
+  let sends = 0;
+  api.sendDocument = async (...args: unknown[]) => {
+    calls.push({ method: "sendDocument", args });
+    if (++sends === 2) throw new Error("Telegram unavailable");
+    return { message_id: 20 };
+  };
+  await assert.rejects(
+    processor.process(
+      deliveryJob([attachment("big.pdf"), attachment("small.pdf")])
+    ),
+    /Telegram unavailable/
+  );
+  assert.equal(sends, 2);
+  assert.equal(
+    calls.some(
+      call =>
+        call.method === "sendMediaGroup" || call.method === "deleteMessage"
+    ),
+    false
+  );
+  assert.deepEqual(links, []);
+  assert.deepEqual(cleaned, [
+    "/tmp/enc-big.pdf.pdf",
+    ...parts.map(part => part.tempFilePath),
+    "/tmp/enc-small.pdf.pdf",
+  ]);
 });
 
 test("an already-removed status message does not fail delivery", async () => {

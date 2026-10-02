@@ -28,7 +28,7 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 
 ## Bot
 
-- Check GrammY docs before touching framework APIs, middleware order, or callback handling. Main composition in `src/bot/bot.ts`; workers use minimal `create-worker-bot()` (`ctx.api` in composers, raw `bot.api` in worker processors).
+- Before any Telegram API change, look up the current official Telegram Bot API documentation online and the relevant GrammY docs. Verify method constraints, per-file and combined-request upload limits, captions, and reply behavior as applicable; framework syntax alone is not enough. Check GrammY docs for middleware order and callback handling too. Main composition in `src/bot/bot.ts`; workers use minimal `create-worker-bot()` (`ctx.api` in composers, raw `bot.api` in worker processors).
 - Static command/presentation metadata must not require importing initialized composers.
 - Callback composers use `createComposerErrorBoundary([...sessionKeys])` and register on the returned composer. Syllabus download IDs are indices into the original API response, not the filtered page; preserve existing callback prefixes. API pages arrive paginated; render as received, never re-slice locally. Inline result prefixes (`ann:`, `cal:`, `tt:`) and queued attachment payloads are stable.
 - Timetable downloads require nonblank `attachmentId` + `fileName` + `encryptId`, preserved verbatim. Broadcasts run at concurrency 1; on `retry_after`, pause the queue and re-throw for BullMQ retry.
@@ -39,6 +39,7 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 - Recurring jobs only via `upsertJobScheduler` (`shared/recurring-schedules.ts`) with stable IDs that never encode the cron pattern; never `queue.add(..., { repeat })`. Setup removes legacy repeat definitions for the same logical job names only.
 - Keep queue names, job IDs, payloads, concurrency, retry behavior stable. Keep announcement fetch results local to a job; orchestration owns job building via narrow DB/bot/queue functions. Data-sync initial-sync failures must propagate, never silently schedule nothing. Announcement `startup.ts` builds `LLMService` and injects it; the processor never constructs it. Its startup installs `apiThrottler()` then `autoRetry({ maxRetryAttempts: 5 })`. Enqueue broadcasts before replacing the notify buffer.
 - Attachment-delivery startup still needs `initDB()` (error recovery writes chats/subs). Temp-file lifecycle lives in `src/utils/attachment-download.ts`; `file-utils.ts` stays generic.
+- Keep attachment downloads and file-host uploads file-backed, not whole-file buffers. Prepare all attachments and PDF parts before sending; preserve part order, original-file link fallback, and cleanup of originals and parts on every outcome. Keep qpdf execution serialized and bounded to protect worker memory. Upload split parts individually: their combined size can exceed Telegram's album request limit.
 
 ## Errors and Logging
 

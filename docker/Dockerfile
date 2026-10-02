@@ -24,8 +24,8 @@ RUN pnpm build
 
 FROM base AS production
 
-# curl is used by Docker Compose healthchecks.
-RUN apk add --no-cache curl
+# curl serves healthchecks; qpdf splits oversized PDFs without rasterizing them.
+RUN apk add --no-cache curl qpdf
 
 # Install only production dependencies in the final image.
 # --ignore-scripts skips the prepare script (runs husky, a devDependency).

@@ -54,7 +54,7 @@ I needed to run the database locally. So Firebase had to go, and over time I've 
 
 ### 3. Separation of Concerns - Doing It Right This Time
 
-This was also a no-brainer. I had to decouple the bot from other services and do broadcasts the right way, even if it meant splitting things into multiple independent services. This makes the project maintainable in the long run and creates clear boundaries for errors and future development. You can read more about the current setup here: [How It Works](./working.md)
+This was also a no-brainer. I had to decouple the bot from other services and do broadcasts the right way, even if it meant splitting things into multiple independent services. This makes the project maintainable in the long run and creates clear boundaries for errors and future development.
 
 ### The Rest of the Stack
 
@@ -80,7 +80,7 @@ This is literally the most commonly asked question. Yes, I know it's broken ([se
 
 I don't exactly recall when, but somewhere in early 2025, KTU entirely removed the result checking API endpoint. They made signing into the student portal the only way to check results. I'm not sure why - maybe they didn't like other clients using those APIs - but nevertheless, it was removed entirely. And this is what the bot uses for data.
 
-**This bot is essentially a smart API consumer** (read [how it works](./working.md#the-short-version)) - it accesses data the same way the website accesses data. So anything that's not accessible through the website (a public HTTP endpoint) is not accessible to the bot either. And no, we cannot fix it. Unless they expose a way to check results without logging in, it's simply impossible.
+**This bot is essentially a smart API consumer** - it accesses data the same way the website accesses data. So anything that's not accessible through the website (a public HTTP endpoint) is not accessible to the bot either. And no, we cannot fix it. Unless they expose a way to check results without logging in, it's simply impossible.
 
 We _could_ technically make it work by requiring users to sign in to the student portal with their registration number and password, then fetching the data on their behalf. But this is **more dangerous** than what it gains. Unless it's something you built for you and your friends, giving your credentials (whatever account it may be) to random inputs is dangerous. It could even become directly illegal, so that's something the bot will never implement because it shouldn't be done that way.
 
@@ -103,7 +103,7 @@ I don't know about this either. Like mentioned above, the bot is essentially an 
 
 **Not at all.** This bot is a prime example of how an API consumer can do engineering better than the actual tool itself.
 
-For example, while rewriting, I realized how the search functionality for announcements was removed from the website despite their API still sending that data in the payload. This is such a basic feature that should exist from day 1! That's when I wrote the whole [data sync worker](./working.md#data-sync-worker) and implemented full-text search using PostgreSQL. There is a reason why people found their results through the bot while the website threw `502` errors at them - which is basically engineering done right with whatever was available!
+For example, while rewriting, I realized how the search functionality for announcements was removed from the website despite their API still sending that data in the payload. This is such a basic feature that should exist from day 1! That's when I wrote the whole data sync worker and implemented full-text search using PostgreSQL. There is a reason why people found their results through the bot while the website threw `502` errors at them - which is basically engineering done right with whatever was available!
 
 The whole experience offered by the official website is still subpar. Although a lot of things like responsive design have been fixed today, there's still no proper loading state, no correct state management in user actions, and a bunch of other issues that make for poor UX. What makes it even funnier is that students from this very university have built webapps that are out of the world! And this is the reason why the entire thing is a meme at this point. It's not always about server capacity - sometimes (and most often) it's just poor engineering that makes the experience terrible.
 

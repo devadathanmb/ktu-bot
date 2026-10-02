@@ -61,15 +61,13 @@ The bot is built as independent services: the main bot, background workers for n
 | **PostgreSQL**                  | Database            | Stores all data with Drizzle ORM for type-safe queries                                        |
 | **Redis**                       | Queue               | Powers BullMQ jobs                                                                            |
 
-> [!TIP]
-> **Want to understand how it all works?** Check out [How It Works](./docs/working.md) for the complete architecture breakdown with diagrams.
-
 ## Quick Start
 
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) + [Docker Compose](https://docs.docker.com/compose/install/)
 - [Node.js](https://nodejs.org/) (if running locally); this project uses `pnpm`
+- [qpdf](https://qpdf.readthedocs.io/) for splitting oversized PDF downloads when running locally; the Docker image includes it
 - A Telegram bot token from [@BotFather](https://t.me/botfather)
 
 Docker is the recommended way to run the stack.
@@ -215,16 +213,12 @@ Found a bug? Have an idea? [Open an issue](https://github.com/devadathanmb/ktu-b
 - Steps to reproduce (if reproducible)
 
 > [!TIP]
-> **Need help getting started?** Check out [How It Works](./docs/working.md) to understand the architecture.
-
-> [!TIP]
 > **New to Telegram Bot ecosystem?** Check out this [awesome getting started guide](https://grammy.dev/guide/getting-started) from GrammY.
 
 ---
 
 ## Documentation
 
-- **[How It Works](./docs/working.md)**: Complete architecture breakdown with diagrams
 - **[The Rewrite Story](./docs/rewrite.md)**: Why I rewrote this and some commonly asked questions
 
 ## License

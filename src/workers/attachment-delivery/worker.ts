@@ -1,10 +1,13 @@
 import type { Job, Queue } from "bullmq";
 import { GrammyError, InputFile, type Bot } from "grammy";
+import { fmt } from "@grammyjs/parse-mode";
+import { extname } from "node:path";
 import type { AttachmentDeliveryJob } from "./queue.js";
 import { Attachment } from "../../types/service.types.js";
 import type { BotContext } from "../../types/bot.types.js";
 import {
   cleanupDownloadedAttachment,
+  cleanupDownloadedAttachments,
   downloadAttachmentToTempFile,
   TELEGRAM_MAX_FILE_SIZE_BYTES,
   type DownloadedAttachment,
@@ -22,10 +25,13 @@ import {
   getContextEmoji,
 } from "../../bot/utils/presentation.js";
 import { buildReplyParameters } from "../shared/utils/telegram-send.js";
+import { splitPdfAttachment } from "../../utils/pdf-splitter.js";
+import { joinWithNewlines } from "../../utils/formatting.js";
 
 export interface AttachmentDeliveryDeps {
   downloadAttachment: typeof downloadAttachmentToTempFile;
   cleanupAttachment: typeof cleanupDownloadedAttachment;
+  splitAttachment: typeof splitPdfAttachment;
   sendOversizedAsLink: typeof sendAsLink;
   handleGrammyError: typeof handleWorkerGrammyError;
 }
@@ -33,6 +39,7 @@ export interface AttachmentDeliveryDeps {
 export class AttachmentDeliveryProcessor {
   private readonly downloadAttachment: typeof downloadAttachmentToTempFile;
   private readonly cleanupAttachment: typeof cleanupDownloadedAttachment;
+  private readonly splitAttachment: typeof splitPdfAttachment;
   private readonly sendOversizedAsLink: typeof sendAsLink;
   private readonly handleGrammyError: typeof handleWorkerGrammyError;
 
@@ -43,6 +50,7 @@ export class AttachmentDeliveryProcessor {
   ) {
     this.downloadAttachment = deps.downloadAttachment;
     this.cleanupAttachment = deps.cleanupAttachment;
+    this.splitAttachment = deps.splitAttachment;
     this.sendOversizedAsLink = deps.sendOversizedAsLink;
     this.handleGrammyError = deps.handleGrammyError;
   }
@@ -111,6 +119,10 @@ export class AttachmentDeliveryProcessor {
     );
 
     const downloadedAttachments: DownloadedAttachment[] = [];
+    const deliveries: Array<{
+      original: DownloadedAttachment;
+      parts: DownloadedAttachment[];
+    }> = [];
     let processingFailed = false;
     let processingError: unknown;
 
@@ -125,12 +137,68 @@ export class AttachmentDeliveryProcessor {
           attachment.source ?? "default"
         );
         downloadedAttachments.push(downloaded);
+        let parts: DownloadedAttachment[] = [];
+        if (downloaded.fileSizeBytes > TELEGRAM_MAX_FILE_SIZE_BYTES) {
+          if (
+            statusMessageId !== undefined &&
+            extname(downloaded.fileName).toLowerCase() === ".pdf"
+          ) {
+            await this.updateStatusMessage(
+              chatId,
+              statusMessageId,
+              joinWithNewlines(
+                [
+                  fmt`⏳ This PDF is too large to send as one file (${Math.ceil(downloaded.fileSizeBytes / 1024 ** 2)} MiB).`,
+                  fmt`I’ll split it into smaller parts and send them here. Please wait…`,
+                ],
+                2
+              ).text
+            );
+          }
+          try {
+            parts = await this.splitAttachment(downloaded);
+          } catch (error) {
+            // Split failures can fall back to the original link, but cleanup failures must not disappear.
+            if (splitCombinedFailure(error).additional.length > 0) throw error;
+            logger.warn(
+              {
+                err: error,
+                jobId: job.id,
+                chatId,
+                fileName: downloaded.fileName,
+              },
+              "PDF splitting failed, falling back to file link"
+            );
+          }
+        }
+        if (parts.length > 0) {
+          logger.info(
+            {
+              jobId: job.id,
+              chatId,
+              fileName: downloaded.fileName,
+              partCount: parts.length,
+            },
+            "Split oversized PDF into Telegram-sized parts"
+          );
+        }
+        downloadedAttachments.push(...parts);
+        deliveries.push({ original: downloaded, parts });
       }
 
-      for (const [index, downloaded] of downloadedAttachments.entries()) {
+      for (const [index, { original, parts }] of deliveries.entries()) {
+        if (parts.length > 0) {
+          await this.sendPdfParts(
+            chatId,
+            original.fileName,
+            parts,
+            replyToMessageId
+          );
+          continue;
+        }
         await this.sendDownloadedAttachment({
           chatId,
-          downloaded,
+          downloaded: original,
           attachments,
           context,
           replyToMessageId,
@@ -154,12 +222,17 @@ export class AttachmentDeliveryProcessor {
       processingFailed = true;
       processingError = error;
       if (statusMessageId !== undefined) {
-        await this.updateErrorMessage(chatId, statusMessageId);
+        await this.updateStatusMessage(
+          chatId,
+          statusMessageId,
+          `${emoji("crying_cat")} Oops! Something went wrong. Please try again.`
+        );
       }
     }
 
-    const cleanupErrors = await this.cleanupAllDownloadedAttachments(
-      downloadedAttachments
+    const cleanupErrors = await cleanupDownloadedAttachments(
+      downloadedAttachments,
+      this.cleanupAttachment
     );
 
     if (processingFailed) {
@@ -179,27 +252,28 @@ export class AttachmentDeliveryProcessor {
     }
   }
 
-  /**
-   * Attempt every cleanup so one failure cannot hide the others, and return
-   * failures in attachment order for deterministic aggregation.
-   */
-  private async cleanupAllDownloadedAttachments(
-    downloadedAttachments: readonly DownloadedAttachment[]
-  ): Promise<unknown[]> {
-    const results = await Promise.allSettled(
-      downloadedAttachments.map(downloaded =>
-        this.cleanupAttachment(downloaded)
-      )
-    );
-
-    const failures: unknown[] = [];
-    for (const result of results) {
-      if (result.status === "rejected") {
-        failures.push(result.reason);
-      }
+  private async sendPdfParts(
+    chatId: number,
+    originalName: string,
+    parts: DownloadedAttachment[],
+    replyToMessageId: number | undefined
+  ): Promise<void> {
+    const options = buildReplyParameters({
+      messageIdToReplyTo: replyToMessageId,
+    });
+    // Telegram rejects albums when the combined upload exceeds its request limit,
+    // even when every document fits individually.
+    for (const [index, part] of parts.entries()) {
+      const caption = joinWithNewlines(
+        [fmt`📄 ${originalName}`, fmt`Part ${index + 1} of ${parts.length}`],
+        2
+      ).text;
+      await this.bot.api.sendDocument(
+        chatId,
+        new InputFile(part.tempFilePath, part.fileName),
+        { caption, ...options }
+      );
     }
-
-    return failures;
   }
 
   private async sendDownloadedAttachment(options: {
@@ -242,12 +316,11 @@ export class AttachmentDeliveryProcessor {
   }
 
   private buildCaption(attachments: Attachment[], context: string): string {
-    if (attachments.length === 0) return "";
     const contextEmoji = getContextEmoji(context);
-    return [
-      `${contextEmoji} Attachments:`,
-      ...attachments.map(a => a.name),
-    ].join("\n");
+    return joinWithNewlines([
+      fmt`${contextEmoji} Attachments:`,
+      ...attachments.map(a => fmt`${a.name}`),
+    ]).text;
   }
 
   private async sendViewAnotherMessage(
@@ -278,16 +351,13 @@ export class AttachmentDeliveryProcessor {
     }
   }
 
-  private async updateErrorMessage(
+  private async updateStatusMessage(
     chatId: number,
-    messageId: number
+    messageId: number,
+    text: string
   ): Promise<void> {
     try {
-      await this.bot.api.editMessageText(
-        chatId,
-        messageId,
-        `${emoji("crying_cat")} Oops! Something went wrong. Please try again.`
-      );
+      await this.bot.api.editMessageText(chatId, messageId, text);
     } catch (error) {
       logger.warn(
         { err: error, chatId, messageId },
