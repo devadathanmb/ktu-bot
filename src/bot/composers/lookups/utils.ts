@@ -194,8 +194,8 @@ export function generatePaginatedMessageText(
   const itemsList = joinWithNewlines(formattedItems, 2);
 
   const titlePart = fmt`${b}${title}:${b}`;
-  const instructionsPart1 = fmt`${emoji("backhand_index_pointing_down")} ${b}Choose a ${itemType} using the buttons below${b}`;
-  const instructionsPart2 = fmt`${emoji("left_right_arrow")} ${b}Use the navigation buttons to browse pages${b}`;
+  const instructionsPart1 = fmt`${emoji("backhand_index_pointing_down")} ${b}Choose your ${itemType} below.${b}`;
+  const instructionsPart2 = fmt`${emoji("left_right_arrow")} ${b}Use the arrows to browse pages.${b}`;
   const instructions = joinWithNewlines(
     [instructionsPart1, instructionsPart2],
     2

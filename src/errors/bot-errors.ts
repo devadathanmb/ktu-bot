@@ -21,8 +21,8 @@ export class SessionNotFoundError extends BotError {
     message = "Session data not found for the chat",
     userMessage = joinWithNewlines(
       [
-        fmt`Oops.. Session expired ${emoji("alarm_clock")}`,
-        fmt`Please try the corresponding command again.`,
+        fmt`${emoji("alarm_clock")} This session has expired.`,
+        fmt`Run the command again to continue. Use /help to see the commands.`,
       ],
       2
     )

@@ -13,7 +13,10 @@ import {
   editMessageIgnoringNotModified,
 } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import { joinWithNewlines } from "../../../../utils/formatting.js";
+import {
+  formatCommand,
+  joinWithNewlines,
+} from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { LOOKUP_CONFIG } from "../constants.js";
@@ -24,6 +27,7 @@ import {
   totalPages,
 } from "../utils.js";
 import { CB } from "./constants.js";
+import { syllabusCommandInfo } from "../command-info.js";
 import {
   buildBranchesPage,
   buildProgramsPage,
@@ -33,18 +37,10 @@ import {
 } from "./views.js";
 
 const MESSAGES = {
-  FETCHING_PROGRAMS: [
-    fmt`${emoji("hourglass_not_done")} Fetching programs... Please wait...`,
-  ],
-  FETCHING_SCHEMES: [
-    fmt`${emoji("hourglass_not_done")} Fetching schemes... Please wait...`,
-  ],
-  FETCHING_BRANCHES: [
-    fmt`${emoji("hourglass_not_done")} Fetching branches... Please wait...`,
-  ],
-  FETCHING_SYLLABUS: [
-    fmt`${emoji("hourglass_not_done")} Fetching syllabus... Please wait...`,
-  ],
+  FETCHING_PROGRAMS: [fmt`${emoji("hourglass_not_done")} Loading programs…`],
+  FETCHING_SCHEMES: [fmt`${emoji("hourglass_not_done")} Loading schemes…`],
+  FETCHING_BRANCHES: [fmt`${emoji("hourglass_not_done")} Loading branches…`],
+  FETCHING_SYLLABUS: [fmt`${emoji("hourglass_not_done")} Loading syllabuses…`],
 };
 
 type CallbackContext = CallbackQueryContext<BotContext>;
@@ -184,7 +180,7 @@ async function showLoading(
 async function showInvalidSelection(ctx: CallbackContext): Promise<void> {
   await editMessageIgnoringNotModified(() =>
     ctx.editMessageText(
-      `${emoji("cross_mark")} Invalid selection. Please try again.`
+      `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(syllabusCommandInfo)} to start again.`
     )
   );
 }
@@ -280,7 +276,13 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     ctx.session.syllabusEnqueuedDownloadKey = downloadKey;
     await deleteMessageSafely(ctx, ctx.callbackQuery.message?.message_id);
     const status = await ctx.reply(
-      `${emoji("hourglass_not_done")} Downloading syllabus in the background... This may take a moment!`
+      joinWithNewlines(
+        [
+          fmt`${emoji("hourglass_not_done")} Downloading your syllabus…`,
+          fmt`I’ll send it here when ready.`,
+        ],
+        2
+      ).text
     );
     await deps.queueDownload(buildDownloadJob(ctx, entry, status.message_id));
   }

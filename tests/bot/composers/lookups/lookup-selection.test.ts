@@ -216,7 +216,7 @@ test("ending a lookup clears its session state", async () => {
   assert.equal(endedTimetable.ctx.session.timetableMessageId, null);
   assert.match(
     ctxCalls(endedTimetable.calls, "ctx.editMessageText")[0]?.[0] as string,
-    /Timetable lookup ended/
+    /Use \/timetables to browse timetables again/
   );
 
   const endedCalendar = createFakeCtx({
@@ -261,7 +261,7 @@ test("announcement downloads use singular and plural correctly", async () => {
   await singleFlow.select(singleCtx.ctx);
   assert.match(
     ctxCalls(singleCtx.calls, "ctx.reply")[0]?.[0] as string,
-    /Downloading your file in the background/
+    /Downloading your file…\n\nI’ll send it here when ready\./
   );
   assert.deepEqual(single.queued[0]?.attachments, [
     { name: "a.pdf", encryptId: "enc-a" },
@@ -284,7 +284,7 @@ test("announcement downloads use singular and plural correctly", async () => {
   await doubleFlow.select(doubleCtx.ctx);
   assert.match(
     ctxCalls(doubleCtx.calls, "ctx.reply")[0]?.[0] as string,
-    /Downloading your files in the background/
+    /Downloading your files…\n\nI’ll send them here when ready\./
   );
   assert.deepEqual(
     double.queued[0]?.attachments.map(entry => entry.name),
@@ -309,7 +309,7 @@ test("flow start fetches the first page and renders it in place", async () => {
   assert.equal(ctx.session.timetablePage, 0);
   assert.deepEqual(ctx.session.timetableTimetables, [timetable]);
   const loading = ctxCalls(calls, "ctx.reply")[0];
-  assert.match(loading?.[0] as string, /Fetching timetables/);
+  assert.match(loading?.[0] as string, /Loading exam timetables/);
   const apiEdits = ctxCalls(calls, "api.editMessageText");
   assert.deepEqual(apiEdits[0]?.slice(0, 2), [7, 40]);
   assert.match(apiEdits[0]?.[2] as string, /B\.Tech S1 Exams/);

@@ -40,7 +40,7 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API rate limited`,
-              `KTU API is busy. Please try again after sometime.`,
+              `KTU is receiving too many requests. Please wait a bit and try again.`,
               statusCode,
               url,
               error
@@ -49,7 +49,7 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API access denied`,
-              `Access denied to KTU API. Please try again later.`,
+              `KTU is blocking this request. Please try again later.`,
               statusCode,
               url,
               error
@@ -58,7 +58,7 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API internal server error`,
-              `KTU API is currently unavailable. Please try again later.`,
+              `KTU’s service is unavailable. Please try again later.`,
               statusCode,
               url,
               error
@@ -67,7 +67,7 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `Data not found on KTU API`,
-              `Requested data not found. Please try again.`,
+              `The requested information isn’t available from KTU.`,
               statusCode,
               url,
               error
@@ -76,7 +76,7 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API error`,
-              `KTU API is currently having issues. Please try again later.`,
+              `Couldn’t load the data from KTU. Please try again later.`,
               statusCode,
               url,
               error
@@ -90,7 +90,7 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
         throw new KTUAPIError(
           serviceName,
           `Network error: ${error.message}`,
-          `Unable to connect to KTU API. Please try again later.`,
+          `Couldn’t connect to KTU. Please try again later.`,
           undefined,
           url,
           error
@@ -101,7 +101,7 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
         throw new KTUAPIError(
           serviceName,
           `API response validation failed: ${error.message}`,
-          `The API returned data in an unexpected format. Please try again later.`,
+          `Couldn’t read KTU’s response. Please try again later.`,
           undefined,
           undefined,
           error

@@ -13,23 +13,23 @@ export interface CoreCommandInfo {
 const CORE_COMMAND_DEFS = {
   start: {
     name: "start",
-    description: `${emoji("high_voltage")} Start the bot and explore features`,
+    description: `${emoji("high_voltage")} Meet KTU Bot`,
   },
   help: {
     name: "help",
-    description: `${emoji("red_question_mark")} Show comprehensive help with all available commands`,
+    description: `${emoji("red_question_mark")} See the available commands`,
   },
   search: {
     name: "search",
-    description: `${emoji("magnifying_glass_tilted_left")} Search KTU resources using inline queries`,
+    description: `${emoji("magnifying_glass_tilted_left")} Search KTU documents`,
   },
   code: {
     name: "code",
-    description: `${emoji("laptop")} View the bot source code and license information`,
+    description: `${emoji("laptop")} View the source code`,
   },
   serverstatus: {
     name: "serverstatus",
-    description: `${emoji("globe_showing_asia_australia")} Check the KTU services status`,
+    description: `${emoji("globe_showing_asia_australia")} Check if KTU services are working`,
   },
 } as const satisfies Record<string, CoreCommandInfo>;
 

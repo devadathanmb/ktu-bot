@@ -32,18 +32,21 @@ export function formatAnnouncementDetails(
 
   if (announcement.subject) {
     parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("open_book")} Subject:${b}`,
-        fmt`${announcement.subject}`,
-      ])
+      joinWithNewlines(
+        [
+          fmt`${b}${emoji("open_book")} Subject:${b}`,
+          fmt`${announcement.subject}`,
+        ],
+        2
+      )
     );
   }
   if (announcement.message) {
     parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("memo")} Message:${b}`,
-        fmt`${announcement.message}`,
-      ])
+      joinWithNewlines(
+        [fmt`${b}${emoji("memo")} Message:${b}`, fmt`${announcement.message}`],
+        2
+      )
     );
   }
   if (announcement.formattedPublishedDate) {

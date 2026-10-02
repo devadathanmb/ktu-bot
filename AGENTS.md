@@ -12,6 +12,7 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 
 - Pure ESM (`NodeNext`): local imports need `.js` suffixes. Strict mode: watch `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused symbols, missing `override`, incomplete return paths.
 - No `any`; narrow `unknown` with guards. Bot text via GrammY `fmt` + `joinWithNewlines()`.
+- User-facing text: friendly, plain wording; useful emojis; blank lines between labels, content, and actions. Keep lists readable when commands or titles wrap. State what happened and the next step. Avoid em dashes, filler, promotional language, exaggerated apologies, and unnecessary technical details.
 - Env only in Zod-backed `src/configs/`; no new `process.env` elsewhere.
 - Comments explain rationale, invariants, external constraints, or non-obvious failure ordering; remove comments/docstrings that narrate code or justify production APIs only by testing.
 

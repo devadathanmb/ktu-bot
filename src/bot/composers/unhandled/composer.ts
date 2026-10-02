@@ -3,7 +3,8 @@ import { BotContext } from "../../../types/bot.types.js";
 import { deleteMessageSafely } from "../../../utils/bot.js";
 import { Composer } from "grammy";
 import { coreCommand } from "../core/commands/registry.js";
-import { formatCommand } from "../../../utils/formatting.js";
+import { formatCommand, joinWithNewlines } from "../../../utils/formatting.js";
+import { fmt } from "@grammyjs/parse-mode";
 import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../../configs/bot.js";
 
@@ -20,7 +21,8 @@ composer.on("message", async ctx => {
   const stickerMsg = await ctx.replyWithSticker(randomSticker);
 
   await ctx.reply(
-    `That doesn't seem like something I can do. Please use ${formatCommand(coreCommand("help"))} to see what I can do.`
+    fmt`Use ${formatCommand(coreCommand("help"))} to choose a command, or ${formatCommand(coreCommand("search"))} to find KTU resources.`
+      .text
   );
 
   setTimeout(() => {
@@ -32,7 +34,13 @@ composer.on("callback_query", async ctx => {
   await ctx.answerCallbackQuery();
   await deleteMessageSafely(ctx, ctx.callbackQuery.message!.message_id);
   return await ctx.reply(
-    `${emoji("warning")} Session expired. Please try the corresponding action again.`
+    joinWithNewlines(
+      [
+        fmt`${emoji("warning")} These buttons have expired.`,
+        fmt`Run the command again to continue. Use ${formatCommand(coreCommand("help"))} to see the commands.`,
+      ],
+      2
+    ).text
   );
 });
 

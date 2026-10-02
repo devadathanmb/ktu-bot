@@ -19,7 +19,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
   metadata.name,
   metadata.description,
   async ctx => {
-    const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU services status...`;
+    const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU services…`;
 
     const keyboard = new InlineKeyboard()
       .url(
@@ -53,8 +53,8 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
         const statusText = monitor.status.toUpperCase();
 
         const name = fmt`${b}${monitor.name}${b}`;
-        const status = fmt`  ${statusEmoji} ${b}Status:${b} ${statusText}`;
-        const responseTime = fmt`  ${emoji("high_voltage")} ${b}Response Time:${b} ${monitor.responseTime.toFixed(2)}ms`;
+        const status = fmt`${statusEmoji} ${b}Status:${b} ${statusText}`;
+        const responseTime = fmt`${b}Response time:${b} ${monitor.responseTime.toFixed(2)} ms`;
 
         return joinWithNewlines([name, status, responseTime], 1);
       });
@@ -67,7 +67,7 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
         link_preview_options: { is_disabled: true },
       });
     } catch (error) {
-      const errorDescription = fmt`${emoji("frowning_face")} Failed to fetch API status. Please try again later.`;
+      const errorDescription = fmt`${emoji("warning")} Couldn’t check KTU services. Please try again later.`;
       const errorMessage = joinWithNewlines([errorDescription], 2);
 
       await editMessageSafely(

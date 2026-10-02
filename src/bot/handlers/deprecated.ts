@@ -11,8 +11,8 @@ export const deprecatedCommandHandler = async (
   const command = ctx.message!.text.split(" ")[0]!.slice(1);
 
   const deprecationMsg = DEPRECATED_COMMAND_TO_REASON_MAP[command] || [
-    fmt`Sorry, this feature has been deprecated.`,
-    fmt`Please refer to ${formatCommand(coreCommand("help"))} for available commands.`,
+    fmt`This feature is no longer available.`,
+    fmt`Use ${formatCommand(coreCommand("help"))} to see the available commands.`,
   ];
 
   const formattedReply = joinWithNewlines(deprecationMsg, 2);

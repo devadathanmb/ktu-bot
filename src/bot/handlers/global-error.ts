@@ -60,6 +60,6 @@ export const globalErrorHandler = async (
 
   await replyMessageSafely(
     ctx,
-    `${emoji("warning")} Oops! Something went wrong on my end. Please try again later.`
+    `${emoji("warning")} Something went wrong. Please try again later.`
   );
 };

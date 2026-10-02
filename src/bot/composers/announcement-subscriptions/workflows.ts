@@ -30,7 +30,7 @@ export async function applyAnnouncementFilters(
   if (!prevMessageId) throw new SessionNotFoundError();
 
   if (ctx.session.selectedFilters.length === 0) {
-    const errorMessage = `${emoji("cross_mark")} Please select at least one filter before applying.`;
+    const errorMessage = `${emoji("cross_mark")} Choose at least one category before applying filters.`;
     await editMessageIgnoringNotModified(() =>
       ctx.api.editMessageText(chatId, prevMessageId, errorMessage)
     );
@@ -44,7 +44,7 @@ export async function applyAnnouncementFilters(
       ctx.api.editMessageText(
         chatId,
         prevMessageId,
-        `${emoji("check_mark_button")} Your announcement filters have been updated successfully!`
+        `${emoji("check_mark_button")} Announcement filters updated.`
       )
     );
   } else {
@@ -54,8 +54,11 @@ export async function applyAnnouncementFilters(
     );
     const successMessage = joinWithNewlines(
       [
-        fmt`${emoji("check_mark_button")} Successfully subscribed to announcements!`,
-        fmt`${b}Your selected filters:${b} ${selectedFilterNames.join(", ")}`,
+        fmt`${emoji("check_mark_button")} Subscribed to announcements.`,
+        joinWithNewlines([
+          fmt`${b}Selected categories:${b}`,
+          ...selectedFilterNames.map(name => fmt`• ${name}`),
+        ]),
       ],
       2
     );
@@ -83,7 +86,7 @@ export async function unsubscribeFromAnnouncements(
   const removed = await deleteSubscription(ctx.chatId!);
 
   const formattedMsg = removed
-    ? joinWithNewlines(MESSAGES.UNSUBSCRIBE_SUCCESS!)
+    ? joinWithNewlines(MESSAGES.UNSUBSCRIBE_SUCCESS!, 2)
     : joinWithNewlines(MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!, 2);
 
   await ctx.reply(formattedMsg.text, {

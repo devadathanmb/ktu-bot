@@ -16,15 +16,14 @@ export const startCommand = new Command<BotContext>(
   metadata.description,
   async ctx => {
     const userName = ctx.from?.first_name || ctx.from?.username;
-    const greeting = userName ? `Hello ${userName}!` : "Hello there!";
+    const greeting = userName ? `Hi ${userName}!` : "Hi!";
     const welcomeHeader = fmt`${greeting} ${emoji("waving_hand")}`;
     const welcomeMessage = fmt`${b}Welcome to KTU Bot!${b}`;
-    const description = fmt`I can help you with announcements, academic calendar, exam timetables, notifications and more!`;
-    const callToAction = fmt`Type ${b}${formatCommand(coreCommand("help"))}${b} for more info.`;
-    const thanks = fmt`Thank you for using KTU Bot! ${emoji("folded_hands")}`;
+    const description = fmt`Find KTU syllabuses, announcements, academic calendars, and exam timetables. You can also subscribe to announcement notifications.`;
+    const callToAction = fmt`Use ${formatCommand(coreCommand("help"))} to see the commands.`;
 
     const fullMessage = joinWithNewlines(
-      [welcomeHeader, welcomeMessage, description, callToAction, thanks],
+      [welcomeHeader, welcomeMessage, description, callToAction],
       2
     );
 

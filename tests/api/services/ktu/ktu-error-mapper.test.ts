@@ -33,11 +33,11 @@ function closeServer(server: Server): () => Promise<void> {
 }
 
 for (const [status, userMessage] of [
-  [429, "KTU API is busy. Please try again after sometime."],
-  [403, "Access denied to KTU API. Please try again later."],
-  [500, "KTU API is currently unavailable. Please try again later."],
-  [404, "Requested data not found. Please try again."],
-  [418, "KTU API is currently having issues. Please try again later."],
+  [429, "KTU is receiving too many requests. Please wait a bit and try again."],
+  [403, "KTU is blocking this request. Please try again later."],
+  [500, "KTU’s service is unavailable. Please try again later."],
+  [404, "The requested information isn’t available from KTU."],
+  [418, "Couldn’t load the data from KTU. Please try again later."],
 ] as const) {
   test(`HTTP ${status} maps to KTUAPIError with a safe message`, async t => {
     const url = await startStatusServer(status, t);
@@ -64,7 +64,7 @@ test("request failures map to KTUAPIError without a status code", async () => {
   assert.ok(error instanceof KTUAPIError);
   assert.equal(
     error.userMessage,
-    "Unable to connect to KTU API. Please try again later."
+    "Couldn’t connect to KTU. Please try again later."
   );
   assert.equal(error.statusCode, undefined);
   assert.ok(error.url?.startsWith("http://127.0.0.1:"));
@@ -80,7 +80,7 @@ test("validation failures map to KTUAPIError with the Zod cause", async () => {
   assert.ok(error instanceof KTUAPIError);
   assert.equal(
     error.userMessage,
-    "The API returned data in an unexpected format. Please try again later."
+    "Couldn’t read KTU’s response. Please try again later."
   );
   assert.ok(error.cause instanceof ZodError);
 });

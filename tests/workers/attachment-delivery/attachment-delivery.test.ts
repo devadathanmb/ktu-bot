@@ -495,7 +495,52 @@ test("send failures update the status message and propagate", async () => {
 
   const edit = calls.find(call => call.method === "editMessageText");
   assert.deepEqual(edit?.args.slice(0, 2), [7, 9]);
-  assert.match(edit?.args[2] as string, /Something went wrong/);
+  assert.equal(
+    edit?.args[2],
+    "⚠️ Something went wrong with your download.\n\nIf any files are missing, use /syllabus to download them again."
+  );
+  assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf"]);
+});
+
+test("download errors point to a usable command for each delivery context", async () => {
+  for (const [context, command] of [
+    ["syllabus", "/syllabus"],
+    ["calendar", "/calendars"],
+    ["timetable", "/timetables"],
+    ["announcement", "/announcements"],
+    ["inline query result", "/search"],
+    ["unknown", "/search"],
+  ] as const) {
+    const { calls, processor } = createHarness({ failOnDownload: "enc-a.pdf" });
+    await assert.rejects(
+      processor.process(deliveryJob([attachment("a.pdf")], { context })),
+      /ktu download failed/
+    );
+    const edit = calls.find(call => call.method === "editMessageText");
+    assert.equal(
+      edit?.args[2],
+      `⚠️ Something went wrong with your download.\n\nIf any files are missing, use ${command} to download them again.`
+    );
+    assert.equal(
+      calls.some(call => call.method === "sendDocument"),
+      false
+    );
+  }
+});
+
+test("a post-delivery failure does not claim that no files were sent", async () => {
+  const { api, calls, cleaned, processor } = createHarness();
+  api.deleteMessage = async () => {
+    throw new Error("Telegram unavailable");
+  };
+  await assert.rejects(
+    processor.process(deliveryJob([attachment("a.pdf")])),
+    /Telegram unavailable/
+  );
+  assert.equal(calls.filter(call => call.method === "sendDocument").length, 1);
+  const edit = calls.find(call => call.method === "editMessageText");
+  assert.match(edit?.args[2] as string, /If any files are missing/);
+  assert.doesNotMatch(edit?.args[2] as string, /Couldn’t send your files/);
   assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf"]);
 });
 
@@ -558,7 +603,10 @@ test("send and cleanup failures are both preserved", async () => {
   assert.match(caught.message, /delivery failed and temp file cleanup failed/);
   const edit = calls.find(call => call.method === "editMessageText");
   assert.deepEqual(edit?.args.slice(0, 2), [7, 9]);
-  assert.match(edit?.args[2] as string, /Something went wrong/);
+  assert.equal(
+    edit?.args[2],
+    "⚠️ Something went wrong with your download.\n\nIf any files are missing, use /syllabus to download them again."
+  );
   assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf"]);
 });
 

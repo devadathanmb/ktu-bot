@@ -67,9 +67,9 @@ export async function handleChatMemberUpdate(
     await persistence.markChatActive(chatId);
 
     const messages = [
-      fmt`Welcome back! It looks like you had previously blocked this bot ${emoji("smiling_face_with_tear")}, so your old subscriptions have been cleared for privacy reasons.`,
-      fmt`You can easily resubscribe using ${formatCommand(announcementsSubscribeCommandInfo)}`,
-      fmt`Thank you for giving me another chance! ${emoji("raising_hands")}`,
+      fmt`${emoji("waving_hand")} Welcome back!`,
+      fmt`Your announcement subscriptions were cleared when you blocked the bot.`,
+      fmt`Use ${formatCommand(announcementsSubscribeCommandInfo)} to subscribe again.`,
     ];
 
     const formattedReply = joinWithNewlines(messages, 2);

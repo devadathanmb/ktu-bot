@@ -31,7 +31,7 @@ export function createComposerErrorBoundary(
     } else {
       userErrorMessage =
         fallbackErrorMessage ||
-        `${emoji("slightly_frowning_face")} Sorry, something went wrong on my end. Please try again.`;
+        `${emoji("warning")} Something went wrong. Please try again.`;
 
       const chatId = ctx.chat?.id;
       const userId = ctx.from?.id;

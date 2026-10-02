@@ -130,7 +130,13 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     const plural = resolution.attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.api.sendMessage(
       chatId,
-      `${emoji("hourglass_not_done")} Downloading the file${plural} from your selected ${resolution.resource} in the background... Please wait!`
+      joinWithNewlines(
+        [
+          fmt`${emoji("hourglass_not_done")} Downloading the file${plural} from your selected ${resolution.resource}…`,
+          fmt`I’ll send ${plural ? "them" : "it"} here when ready.`,
+        ],
+        2
+      ).text
     );
 
     await addAttachmentDeliveryJob(
@@ -150,10 +156,13 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     try {
       await ctx.api.sendMessage(
         chatId,
-        joinWithNewlines([
-          fmt`${emoji("crying_cat")} An error occurred while fetching attachments.`,
-          fmt`Please try again.`,
-        ]).text
+        joinWithNewlines(
+          [
+            fmt`${emoji("warning")} Couldn’t start the download.`,
+            fmt`Use /search to find the document again.`,
+          ],
+          2
+        ).text
       );
     } catch (notificationError) {
       logger.error(

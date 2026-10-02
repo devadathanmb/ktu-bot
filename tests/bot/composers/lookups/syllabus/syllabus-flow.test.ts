@@ -167,7 +167,10 @@ test("selectProgram rejects callbacks outside the program namespace", async () =
 
   assert.deepEqual(fetched, []);
   const edits = ctxCalls(calls, "ctx.editMessageText");
-  assert.match(edits[0]?.[0] as string, /Invalid selection/);
+  assert.match(
+    edits[0]?.[0] as string,
+    /That selection didn’t work\. Use \/syllabus/
+  );
 });
 
 test("a repeat invalid selection resolves without failing", async () => {
@@ -249,7 +252,7 @@ test("selectBranch queues a lone syllabus without listing it", async () => {
   assert.equal(edits.length, 1);
   assert.match(
     edits[0]?.[0] as string,
-    /Fetching syllabus/,
+    /Loading syllabuses/,
     "only the loading message is edited; no entries page is rendered"
   );
 });
@@ -382,7 +385,10 @@ test("selectEntry rejects entries without attachments", async () => {
 
   assert.deepEqual(queued, []);
   const edits = ctxCalls(calls, "ctx.editMessageText");
-  assert.match(edits[0]?.[0] as string, /Invalid selection/);
+  assert.match(
+    edits[0]?.[0] as string,
+    /That selection didn’t work\. Use \/syllabus/
+  );
 });
 
 test("selectEntry still queues when the lookup message is already gone", async () => {

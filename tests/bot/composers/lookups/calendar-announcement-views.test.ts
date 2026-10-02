@@ -17,6 +17,7 @@ import type {
   Announcement,
 } from "../../../../src/types/service.types.js";
 import { callbackData } from "../../../helpers.js";
+import { renderAnnouncementResults } from "../../../../src/bot/composers/inline-query/results.js";
 
 const calendar: AcademicCalendar = {
   id: 41,
@@ -69,6 +70,8 @@ function runLookupCase<Item>(lookupCase: LookupCase<Item>): void {
     assert.ok(text.text.includes(`6) ${title}`));
     assert.match(text.text, /Published date: 20 September 2026/);
     assert.ok(text.entities.some(entity => entity.type === "bold"));
+    assert.match(text.text, /below\.\n\n↔️ Use the arrows to browse pages\./);
+    assert.ok(boldText(text).some(span => span.startsWith("Choose your ")));
   });
 }
 
@@ -111,7 +114,7 @@ test("announcement details preserve separate sections and entities", () => {
   const details = formatAnnouncementDetails(announcement);
   assert.equal(
     details.text,
-    "📖 Subject:\nExams <Revised> & Final\n\n📝 Message:\nRead <carefully> & prepare.\n\n📅 Date: 20 September 2026"
+    "📖 Subject:\n\nExams <Revised> & Final\n\n📝 Message:\n\nRead <carefully> & prepare.\n\n📅 Date: 20 September 2026"
   );
   assert.deepEqual(boldText(details), [
     "📖 Subject:",
@@ -132,7 +135,7 @@ test("announcement details omit empty sections", () => {
       subject: "",
       formattedPublishedDate: "",
     }).text,
-    "📝 Message:\nRead <carefully> & prepare."
+    "📝 Message:\n\nRead <carefully> & prepare."
   );
   assert.equal(
     formatAnnouncementDetails({
@@ -143,4 +146,19 @@ test("announcement details omit empty sections", () => {
     }).text,
     ""
   );
+});
+
+test("inline and interactive announcements retain the same spacing, content and entities", () => {
+  const item = {
+    ...announcement,
+    message: "First paragraph.\n\nSecond paragraph.",
+  };
+  const details = formatAnnouncementDetails(item);
+  const result = renderAnnouncementResults([item])[0]!;
+  assert.ok(
+    result.type === "article" && "message_text" in result.input_message_content
+  );
+  assert.equal(result.input_message_content.message_text, details.text);
+  assert.deepEqual(result.input_message_content.entities, details.entities);
+  assert.ok(details.text.includes(item.message));
 });

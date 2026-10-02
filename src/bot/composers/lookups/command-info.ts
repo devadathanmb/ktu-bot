@@ -8,22 +8,22 @@ import { emoji } from "@grammyjs/emoji";
  */
 export const announcementsCommandInfo = {
   name: "announcements",
-  description: `${emoji("loudspeaker")} Find published announcements from KTU`,
+  description: `${emoji("loudspeaker")} Browse KTU announcements`,
 } as const;
 
 export const calendarCommandInfo = {
   name: "calendars",
-  description: `${emoji("calendar")} Find published academic calendars from KTU`,
+  description: `${emoji("calendar")} Find an academic calendar`,
 } as const;
 
 export const timetableCommandInfo = {
   name: "timetables",
-  description: `${emoji("books")} Find published exam timetables from KTU`,
+  description: `${emoji("books")} Find an exam timetable`,
 } as const;
 
 export const syllabusCommandInfo = {
   name: "syllabus",
-  description: `${emoji("scroll")} Browse and download KTU syllabi by program and branch`,
+  description: `${emoji("scroll")} Find a syllabus by program and branch`,
 } as const;
 
 /** Ordered exactly as `/help` presents the lookup commands. */

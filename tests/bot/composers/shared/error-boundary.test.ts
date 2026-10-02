@@ -93,7 +93,7 @@ test("expired sessions surface their own message", async () => {
 
   assert.ok(handled instanceof HandledBotError);
   const replies = ctxCalls(calls, "ctx.reply");
-  assert.match(replies[0]?.[0] as string, /Session expired/);
+  assert.match(replies[0]?.[0] as string, /This session has expired/);
 });
 
 test("unexpected failures fall back to a generic message", async () => {
@@ -109,7 +109,7 @@ test("unexpected failures fall back to a generic message", async () => {
   assert.ok(handled instanceof HandledBotError);
   assert.equal(handled.originalError.message, "null pointer somewhere");
   const replies = ctxCalls(calls, "ctx.reply");
-  assert.match(replies[0]?.[0] as string, /something went wrong/);
+  assert.match(replies[0]?.[0] as string, /Something went wrong/);
   assert.equal(ctx.session.syllabusMessageId, null);
 });
 
@@ -127,7 +127,7 @@ test("non-error throws are wrapped before rethrowing", async () => {
   assert.equal(handled.originalError.message, "weird string failure");
   assert.match(
     ctxCalls(calls, "ctx.reply")[0]?.[0] as string,
-    /something went wrong/
+    /Something went wrong/
   );
 });
 

@@ -5,7 +5,10 @@ import { BotContext } from "../../../../types/bot.types.js";
 import { AcademicCalendar } from "../../../../types/service.types.js";
 import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import { joinWithNewlines } from "../../../../utils/formatting.js";
+import {
+  formatCommand,
+  joinWithNewlines,
+} from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { calendarCommandInfo } from "../command-info.js";
 import { LOOKUP_CONFIG } from "../constants.js";
@@ -26,7 +29,7 @@ import {
 
 const MESSAGES = {
   FETCHING_CALENDARS: [
-    fmt`${emoji("hourglass_not_done")} Fetching academic calendars... Please wait...`,
+    fmt`${emoji("hourglass_not_done")} Loading academic calendars…`,
   ],
 };
 
@@ -93,7 +96,13 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
     calendar: AcademicCalendar
   ): Promise<void> {
     const statusMessage = await ctx.reply(
-      `${emoji("hourglass_not_done")} Downloading your calendar in the background... This may take a moment!`
+      joinWithNewlines(
+        [
+          fmt`${emoji("hourglass_not_done")} Downloading your calendar…`,
+          fmt`I’ll send it here when ready.`,
+        ],
+        2
+      ).text
     );
 
     const jobData: AttachmentDeliveryJob = {
@@ -142,7 +151,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
     if (!parsed.isValid) {
       await editMessageIgnoringNotModified(() =>
         ctx.editMessageText(
-          `${emoji("cross_mark")} Invalid callback format. Please try again.`
+          `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(calendarCommandInfo)} to start again.`
         )
       );
       return;
@@ -178,7 +187,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
     await ctx.answerCallbackQuery();
     await editMessageIgnoringNotModified(() =>
       ctx.editMessageText(
-        `Academic calendar lookup ended. Use /${calendarCommandInfo.name} to start again.`
+        `Use ${formatCommand(calendarCommandInfo)} to browse calendars again.`
       )
     );
 

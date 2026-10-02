@@ -26,7 +26,21 @@ import {
 } from "../../bot/utils/presentation.js";
 import { buildReplyParameters } from "../shared/utils/telegram-send.js";
 import { splitPdfAttachment } from "../../utils/pdf-splitter.js";
-import { joinWithNewlines } from "../../utils/formatting.js";
+import { formatCommand, joinWithNewlines } from "../../utils/formatting.js";
+import { coreCommand } from "../../bot/composers/core/commands/registry.js";
+import {
+  announcementsCommandInfo,
+  calendarCommandInfo,
+  timetableCommandInfo,
+  syllabusCommandInfo,
+} from "../../bot/composers/lookups/command-info.js";
+
+const DOWNLOAD_COMMANDS: Record<string, { readonly name: string }> = {
+  announcement: announcementsCommandInfo,
+  calendar: calendarCommandInfo,
+  timetable: timetableCommandInfo,
+  syllabus: syllabusCommandInfo,
+};
 
 export interface AttachmentDeliveryDeps {
   downloadAttachment: typeof downloadAttachmentToTempFile;
@@ -225,7 +239,13 @@ export class AttachmentDeliveryProcessor {
         await this.updateStatusMessage(
           chatId,
           statusMessageId,
-          `${emoji("crying_cat")} Oops! Something went wrong. Please try again.`
+          joinWithNewlines(
+            [
+              fmt`${emoji("warning")} Something went wrong with your download.`,
+              fmt`If any files are missing, use ${formatCommand(DOWNLOAD_COMMANDS[context] ?? coreCommand("search"))} to download them again.`,
+            ],
+            2
+          ).text
         );
       }
     }

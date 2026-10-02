@@ -6,6 +6,7 @@ import {
 } from "../../../../src/bot/composers/announcement-subscriptions/workflows.js";
 import { SessionNotFoundError } from "../../../../src/errors/index.js";
 import { baseSession, createFakeCtx, ctxCalls } from "../../fakes.js";
+import type { MessageEntity } from "grammy/types";
 
 test("applying filters persists before confirming and clears the session after", async () => {
   const { ctx, calls } = createFakeCtx({
@@ -28,10 +29,7 @@ test("applying filters persists before confirming and clears the session after",
   const edits = ctxCalls(calls, "api.editMessageText");
   assert.deepEqual(edits.length, 1);
   assert.deepEqual(edits[0]?.slice(0, 2), [7, 3]);
-  assert.match(
-    edits[0]?.[2] as string,
-    /Your announcement filters have been updated successfully/
-  );
+  assert.match(edits[0]?.[2] as string, /Announcement filters updated/);
   assert.deepEqual(ctx.session.selectedFilters, []);
   assert.equal(ctx.session.announcementSubscriptionMessageId, null);
 });
@@ -48,8 +46,23 @@ test("applying filters confirms the created filters by name", async () => {
   await applyAnnouncementFilters(ctx, async () => "created");
 
   const edit = ctxCalls(calls, "api.editMessageText")[0];
-  assert.match(edit?.[2] as string, /Successfully subscribed/);
-  assert.match(edit?.[2] as string, /B\.Tech, MCA/);
+  assert.equal(
+    edit?.[2],
+    "✅ Subscribed to announcements.\n\nSelected categories:\n• B.Tech\n• MCA"
+  );
+  const text = edit?.[2] as string;
+  const options = edit?.[3] as { entities: MessageEntity[] };
+  assert.deepEqual(
+    options.entities
+      .filter(entity => entity.type === "bold")
+      .map(entity => text.slice(entity.offset, entity.offset + entity.length)),
+    ["Selected categories:"]
+  );
+  for (const entity of options.entities) {
+    assert.ok(
+      entity.offset >= 0 && entity.offset + entity.length <= text.length
+    );
+  }
   assert.deepEqual(ctx.session.selectedFilters, []);
 });
 
@@ -118,7 +131,7 @@ test("applying without a selection asks again and never persists", async () => {
   assert.equal(persisted, false);
   assert.match(
     ctxCalls(calls, "api.editMessageText")[0]?.[2] as string,
-    /Please select at least one filter/
+    /Choose at least one category/
   );
 });
 
@@ -152,10 +165,7 @@ test("unsubscribing deletes before sending the success reply", async () => {
   assert.equal(repliesAtDelete, 0);
   const replies = ctxCalls(calls, "ctx.reply");
   assert.deepEqual(replies.length, 1);
-  assert.match(
-    replies[0]?.[0] as string,
-    /You have been successfully unsubscribed from announcements/
-  );
+  assert.match(replies[0]?.[0] as string, /Unsubscribed from announcements/);
 });
 
 test("unsubscribing without a subscription reports it instead of a success", async () => {

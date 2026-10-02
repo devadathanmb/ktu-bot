@@ -9,22 +9,22 @@ import { emoji } from "@grammyjs/emoji";
  */
 export const announcementsSubscribeCommandInfo = {
   name: "announcements_subscribe",
-  description: `${emoji("bell")} Subscribe to announcements`,
+  description: `${emoji("bell")} Get announcement alerts`,
 } as const;
 
 export const announcementsUnsubscribeCommandInfo = {
   name: "announcements_unsubscribe",
-  description: `${emoji("prohibited")} Unsubscribe from announcements`,
+  description: `${emoji("prohibited")} Stop announcement alerts`,
 } as const;
 
 export const announcementsShowStatusCommandInfo = {
   name: "announcements_show_status",
-  description: `${emoji("clipboard")} Show current announcement subscription status`,
+  description: `${emoji("clipboard")} See your selected categories`,
 } as const;
 
 export const announcementsChangeFilterCommandInfo = {
   name: "announcements_change_filter",
-  description: `${emoji("toolbox")} Change announcement filters`,
+  description: `${emoji("toolbox")} Change your alert categories`,
 } as const;
 
 /** Ordered exactly as `/help` presents the notification commands. */

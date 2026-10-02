@@ -76,7 +76,7 @@ protectedComposer.callbackQuery(/^announcement_filter_select_/, async ctx => {
   );
 
   if (!(filter in ANNOUNCEMENT_FILTER_MAP)) {
-    const invalidMessage = `${emoji("cross_mark")} Invalid filter selected. Please try again.`;
+    const invalidMessage = `${emoji("cross_mark")} That category isn’t available. Choose another category.`;
     await editMessageIgnoringNotModified(() =>
       ctx.api.editMessageText(chatId, prevMessageId, invalidMessage)
     );
@@ -172,21 +172,20 @@ const announcementsShowFilterCommand = new Command<BotContext>(
         ] || filter
     );
 
-    const filtersList = filterNames
-      .map((name: string) => `   • ${name}`)
-      .join("\n");
     const statusMessage = joinWithNewlines(
       [
-        fmt`${emoji("check_mark_button")} ${b}Announcement Subscription Status${b}`,
-        fmt`${emoji("clipboard")} ${b}Active Filters:${b} ${announcementSubscription.filters.length}`,
-        fmt`${emoji("bullseye")} ${b}You are subscribed to:${b}\n${filtersList}`,
+        fmt`${emoji("bell")} ${b}Announcement notifications are on${b}`,
+        joinWithNewlines([
+          fmt`${b}Selected categories (${announcementSubscription.filters.length}):${b}`,
+          ...filterNames.map(name => fmt`• ${name}`),
+        ]),
       ],
       2
     );
     const suggestionsMessage = joinWithNewlines(
       [
-        fmt`${emoji("light_bulb")} Use /announcements_change_filter to modify your filters`,
-        fmt`${emoji("cross_mark")} Use /announcements_unsubscribe to unsubscribe`,
+        fmt`Change categories: /announcements_change_filter`,
+        fmt`Stop notifications: /announcements_unsubscribe`,
       ],
       2
     );

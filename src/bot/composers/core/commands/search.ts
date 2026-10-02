@@ -15,32 +15,33 @@ export const searchCommand = new Command<BotContext>(
   async (ctx: BotContext) => {
     const title = fmt`${emoji("magnifying_glass_tilted_left")} ${b}Search KTU Resources${b}`;
     const botUsername = `@${BotConfig.BOT_USERNAME}`;
-    const description = fmt`Use inline queries to search for KTU announcements, calendars, and timetables instantly! Just type ${code}${botUsername}${code} followed by your search terms in any chat.`;
+    const description = fmt`Search announcements, academic calendars, and exam timetables from any chat. Type ${code}${botUsername}${code} followed by your keywords, then choose a result.`;
 
     const searchTypes = joinWithNewlines([
       fmt`${emoji("books")} ${b}Search Types${b}`,
       joinWithNewlines(
         [
-          fmt`${emoji("loudspeaker")} ${code}ann:${code} — Search ${b}announcements${b} (e.g., ${code}ann: btech exam${code})`,
-          fmt`${emoji("calendar")} ${code}cal:${code} — Search ${b}academic calendars${b} (e.g., ${code}cal: semester${code})`,
-          fmt`${emoji("clipboard")} ${code}tt:${code} — Search ${b}exam timetables${b} (e.g., ${code}tt: btech s3${code})`,
+          joinWithNewlines([
+            fmt`${emoji("loudspeaker")} ${b}Announcements${b}`,
+            fmt`${code}${botUsername} ann: btech exam${code}`,
+          ]),
+          joinWithNewlines([
+            fmt`${emoji("calendar")} ${b}Academic calendars${b}`,
+            fmt`${code}${botUsername} cal: semester${code}`,
+          ]),
+          joinWithNewlines([
+            fmt`${emoji("clipboard")} ${b}Exam timetables${b}`,
+            fmt`${code}${botUsername} tt: btech s3${code}`,
+          ]),
         ],
         2
       ),
     ]);
 
-    const howToUse = joinWithNewlines([
-      fmt`${emoji("light_bulb")} ${b}How to Use${b}`,
-      fmt`Type ${code}${botUsername} prefix: query${code} in any chat, or use the buttons below to get started quickly.`,
-    ]);
-
-    const tips = joinWithNewlines([
-      fmt`${emoji("rocket")} ${b}Pro Tip${b}`,
-      fmt`You can use this feature in ${b}any chat${b} - groups, channels, or private messages! The prefix helps you search specific types of content.`,
-    ]);
+    const howToUse = fmt`${emoji("backhand_index_pointing_down")} Or choose a search type below.`;
 
     const fullMessage = joinWithNewlines(
-      [title, description, searchTypes, howToUse, tips],
+      [title, description, searchTypes, howToUse],
       2
     );
 

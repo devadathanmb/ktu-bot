@@ -113,7 +113,7 @@ protectedComposer.callbackQuery(
     await ctx.answerCallbackQuery();
     await editMessageIgnoringNotModified(() =>
       ctx.editMessageText(
-        `Syllabus lookup ended. Use ${formatCommand(syllabusCommandInfo)} to start again.`
+        `Use ${formatCommand(syllabusCommandInfo)} to find another syllabus.`
       )
     );
     clearSyllabusSession(ctx);

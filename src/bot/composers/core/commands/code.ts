@@ -12,15 +12,10 @@ export const codeCommand = new Command<BotContext>(
   metadata.name,
   metadata.description,
   async ctx => {
-    const license = fmt`This bot is fully open source under AGPL 3.0 ${emoji("high_voltage")}`;
-    const repository = fmt`Check out the source code on GitHub`;
-    const starRequest = fmt`${emoji("star")} Liked the bot? Consider giving it a star!`;
-    const issues = fmt`${emoji("bug")} Found a bug or have a feature request? Open an issue on GitHub!`;
+    const license = fmt`${emoji("laptop")} KTU Bot is open source, licensed under AGPL-3.0.`;
+    const issues = fmt`${emoji("bug")} View the code or report a bug using the buttons below.`;
 
-    const message = joinWithNewlines(
-      [license, repository, starRequest, issues],
-      2
-    );
+    const message = joinWithNewlines([license, issues], 2);
 
     const keyboard = new InlineKeyboard()
       .url(
@@ -28,7 +23,7 @@ export const codeCommand = new Command<BotContext>(
         "https://github.com/devadathanmb/ktu-bot"
       )
       .url(
-        `${emoji("handshake")} Feature Requests / Bug Reports`,
+        `${emoji("bug")} Report a bug / Request a feature`,
         "https://github.com/devadathanmb/ktu-bot/issues"
       );
 

@@ -79,7 +79,7 @@ export function buildProgramsPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus Lookup — Select Program`,
+      `${emoji("scroll")} Syllabus programs`,
       "program",
       "Description"
     ),
@@ -100,7 +100,7 @@ export function buildSchemesPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus Lookup — Select Scheme`,
+      `${emoji("scroll")} Syllabus schemes`,
       "scheme",
       "Academic year"
     ),
@@ -121,7 +121,7 @@ export function buildBranchesPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus Lookup — Select Branch`,
+      `${emoji("scroll")} Syllabus branches`,
       "branch",
       "Academic year"
     ),
@@ -146,8 +146,8 @@ export function buildSyllabusEntriesPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus Lookup — Select Entry`,
-      "entry",
+      `${emoji("scroll")} Syllabus files`,
+      "file",
       "Description"
     ),
     keyboard: generatePaginatedKeyboard(

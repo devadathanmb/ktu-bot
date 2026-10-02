@@ -6,20 +6,20 @@ import { joinWithNewlines } from "../../../utils/formatting.js";
 
 const MESSAGES: Record<string, Array<FormattedString>> = {
   ALREADY_SUBSCRIBED: [
-    fmt`${emoji("bell")} You are already subscribed to announcements!`,
-    fmt`Use /announcements_show_status to check your announcement subscription status.`,
+    fmt`${emoji("bell")} You’re already subscribed to announcements.`,
+    fmt`Use /announcements_show_status to see your filters.`,
   ],
   NOT_SUBSCRIBED_WITH_EMOJI: [
     fmt`${emoji("cross_mark")} You are not subscribed to announcements.`,
-    fmt`Use /announcements_subscribe to subscribe to announcements.`,
+    fmt`Use /announcements_subscribe to choose your filters and subscribe.`,
   ],
   NOT_SUBSCRIBED_CHANGE_FILTER: [
     fmt`${emoji("cross_mark")} You are not subscribed to announcements.`,
     fmt`${emoji("light_bulb")} Use /announcements_subscribe to subscribe first.`,
   ],
   UNSUBSCRIBE_SUCCESS: [
-    fmt`${emoji("crying_face")} I'm sorry to see you go! You have been successfully unsubscribed from announcements.`,
-    fmt`If you change your mind, you can always use /announcements_subscribe to subscribe again.`,
+    fmt`${emoji("check_mark_button")} Unsubscribed from announcements.`,
+    fmt`Use /announcements_subscribe to subscribe again.`,
   ],
 } as const;
 
@@ -69,8 +69,8 @@ function generateMessageText(
     const action = mode === "add" ? "Choose" : "Change";
     return joinWithNewlines(
       [
-        fmt`${action} your announcement filters:`,
-        fmt`Select one or more filters to receive announcements for those categories.`,
+        fmt`${emoji("bell")} ${action} your announcement filters`,
+        fmt`Choose the categories you want notifications for. You can select more than one.`,
       ],
       2
     );
@@ -83,9 +83,12 @@ function generateMessageText(
   const action = mode === "add" ? "Choose" : "Change";
   return joinWithNewlines(
     [
-      fmt`${action} your announcement filters:`,
-      fmt`${emoji("check_mark_button")} You have selected: ${selectedNames.join(", ")}`,
-      fmt`Click a filter again to unselect it, or click "Apply Filters" when you're done.`,
+      fmt`${emoji("bell")} ${action} your announcement filters`,
+      joinWithNewlines([
+        fmt`${emoji("check_mark_button")} Selected:`,
+        ...selectedNames.map(name => fmt`• ${name}`),
+      ]),
+      fmt`Tap a category again to remove it. Tap “Apply Filters” to save.`,
     ],
     2
   );

@@ -5,7 +5,10 @@ import { BotContext } from "../../../../types/bot.types.js";
 import { Announcement } from "../../../../types/service.types.js";
 import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import { joinWithNewlines } from "../../../../utils/formatting.js";
+import {
+  formatCommand,
+  joinWithNewlines,
+} from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { announcementsCommandInfo } from "../command-info.js";
@@ -27,7 +30,7 @@ import {
 
 const MESSAGES = {
   FETCHING_ANNOUNCEMENTS: [
-    fmt`${emoji("hourglass_not_done")} Fetching announcements... Please wait...`,
+    fmt`${emoji("hourglass_not_done")} Loading announcements…`,
   ],
 };
 
@@ -107,7 +110,13 @@ export function createAnnouncementsFlow(
 
     const plural = attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.reply(
-      `${emoji("hourglass_not_done")} Downloading your file${plural} in the background... This may take a moment!`
+      joinWithNewlines(
+        [
+          fmt`${emoji("hourglass_not_done")} Downloading your file${plural}…`,
+          fmt`I’ll send ${plural ? "them" : "it"} here when ready.`,
+        ],
+        2
+      ).text
     );
 
     const jobData: AttachmentDeliveryJob = {
@@ -151,7 +160,7 @@ export function createAnnouncementsFlow(
     if (!parsed.isValid) {
       await editMessageIgnoringNotModified(() =>
         ctx.editMessageText(
-          `${emoji("cross_mark")} Invalid callback format. Please try again.`
+          `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(announcementsCommandInfo)} to start again.`
         )
       );
       return;
@@ -191,7 +200,7 @@ export function createAnnouncementsFlow(
 
     await editMessageIgnoringNotModified(() =>
       ctx.editMessageText(
-        `Announcements lookup ended. Use /${announcementsCommandInfo.name} to start again.`
+        `Use ${formatCommand(announcementsCommandInfo)} to browse announcements again.`
       )
     );
 

@@ -5,7 +5,10 @@ import { BotContext } from "../../../../types/bot.types.js";
 import { Attachment, ExamTimeTable } from "../../../../types/service.types.js";
 import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import { joinWithNewlines } from "../../../../utils/formatting.js";
+import {
+  formatCommand,
+  joinWithNewlines,
+} from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { timetableCommandInfo } from "../command-info.js";
@@ -28,7 +31,7 @@ import {
 
 const MESSAGES = {
   FETCHING_TIMETABLES: [
-    fmt`${emoji("hourglass_not_done")} Fetching timetables... Please wait...`,
+    fmt`${emoji("hourglass_not_done")} Loading exam timetables…`,
   ],
 };
 
@@ -112,7 +115,13 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     attachment: Attachment
   ): Promise<void> {
     const statusMessage = await ctx.reply(
-      `${emoji("hourglass_not_done")} Downloading your timetable in the background... This may take a moment!`
+      joinWithNewlines(
+        [
+          fmt`${emoji("hourglass_not_done")} Downloading your timetable…`,
+          fmt`I’ll send it here when ready.`,
+        ],
+        2
+      ).text
     );
 
     const jobData: AttachmentDeliveryJob = {
@@ -156,7 +165,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     if (!parsed.isValid) {
       await editMessageIgnoringNotModified(() =>
         ctx.editMessageText(
-          `${emoji("cross_mark")} Invalid callback format. Please try again.`
+          `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(timetableCommandInfo)} to start again.`
         )
       );
       return;
@@ -195,7 +204,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
 
     await editMessageIgnoringNotModified(() =>
       ctx.editMessageText(
-        `Timetable lookup ended. Use /${timetableCommandInfo.name} to start again.`
+        `Use ${formatCommand(timetableCommandInfo)} to browse timetables again.`
       )
     );
 

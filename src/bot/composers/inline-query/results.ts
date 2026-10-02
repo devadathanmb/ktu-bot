@@ -25,7 +25,13 @@ export function constructNoResultsFound(type: SearchType) {
       `${SPECIAL_RESULT_PREFIXES.NO_RESULTS}${type}`,
       `${emoji("woman_shrugging")} No ${type} found`
     ).text(
-      `${emoji("woman_shrugging")} No ${type} found for your search query.`
+      joinWithNewlines(
+        [
+          fmt`${emoji("magnifying_glass_tilted_left")} No ${type} found.`,
+          fmt`Try different keywords or a shorter search.`,
+        ],
+        2
+      ).text
     ),
   ];
 }
@@ -49,7 +55,7 @@ export function buildHelpResults(): InlineQueryResult[] {
         reply_markup: InlineKeyboard.from([INLINE_ANNOUNCEMENTS_SEARCH_BUTTON]),
       }
     ).text(
-      `${emoji("loudspeaker")} Click the button below to start searching announcements!`
+      `${emoji("loudspeaker")} Tap the button below to search announcements.`
     ),
     InlineQueryResultBuilder.article(
       `${SPECIAL_RESULT_PREFIXES.HELP}calendars`,
@@ -58,7 +64,7 @@ export function buildHelpResults(): InlineQueryResult[] {
         reply_markup: InlineKeyboard.from([INLINE_CALENDARS_SEARCH_BUTTON]),
       }
     ).text(
-      `${emoji("calendar")} Click the button below to start searching academic calendars!`
+      `${emoji("calendar")} Tap the button below to search academic calendars.`
     ),
     InlineQueryResultBuilder.article(
       `${SPECIAL_RESULT_PREFIXES.HELP}timetables`,
@@ -67,7 +73,7 @@ export function buildHelpResults(): InlineQueryResult[] {
         reply_markup: InlineKeyboard.from([INLINE_TIMETABLES_SEARCH_BUTTON]),
       }
     ).text(
-      `${emoji("clipboard")} Click the button below to start searching exam timetables!`
+      `${emoji("clipboard")} Tap the button below to search exam timetables.`
     ),
   ];
 }
@@ -79,18 +85,24 @@ export function renderAnnouncementResults(
     const parts: FormattedString[] = [];
     if (announcement.subject) {
       parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("open_book")} Subject:${b}`,
-          fmt`${announcement.subject}`,
-        ])
+        joinWithNewlines(
+          [
+            fmt`${b}${emoji("open_book")} Subject:${b}`,
+            fmt`${announcement.subject}`,
+          ],
+          2
+        )
       );
     }
     if (announcement.message) {
       parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("memo")} Message:${b}`,
-          fmt`${announcement.message}`,
-        ])
+        joinWithNewlines(
+          [
+            fmt`${b}${emoji("memo")} Message:${b}`,
+            fmt`${announcement.message}`,
+          ],
+          2
+        )
       );
     }
     if (announcement.formattedPublishedDate) {
