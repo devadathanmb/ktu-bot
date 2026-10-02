@@ -1,6 +1,7 @@
 import { InlineKeyboard } from "grammy";
-import { fmt, b, i, FormattedString } from "@grammyjs/parse-mode";
-import { shortenString, joinWithNewlines } from "../../../utils/formatting.js";
+import { fmt, i, FormattedString } from "@grammyjs/parse-mode";
+import { shortenString } from "../../../utils/formatting.js";
+import { blocks, heading, ICON, lines } from "../../../utils/message-style.js";
 import { editMessageIgnoringNotModified } from "../../../utils/bot.js";
 import { emoji } from "@grammyjs/emoji";
 import { BotContext } from "../../../types/bot.types.js";
@@ -92,7 +93,7 @@ export async function handleApiPreviousPage<TItem>(
 ): Promise<void> {
   const currentPage = config.getPage(ctx) ?? LOOKUP_CONFIG.INITIAL_PAGE;
   if (currentPage === LOOKUP_CONFIG.INITIAL_PAGE) {
-    await ctx.answerCallbackQuery("You are already on the first page.");
+    await ctx.answerCallbackQuery("You’re already on the first page.");
     return;
   }
 
@@ -107,7 +108,7 @@ export async function handleApiNextPage<TItem>(
   const currentPage = config.getPage(ctx) ?? LOOKUP_CONFIG.INITIAL_PAGE;
 
   if (config.getItems(ctx).length < LOOKUP_CONFIG.PAGE_SIZE) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
+    await ctx.answerCallbackQuery("You’re already on the last page.");
     return;
   }
 
@@ -115,7 +116,7 @@ export async function handleApiNextPage<TItem>(
   const items = await config.fetchPage(nextPage);
 
   if (items.length === 0) {
-    await ctx.answerCallbackQuery("You are already on the last page.");
+    await ctx.answerCallbackQuery("You’re already on the last page.");
     return;
   }
 
@@ -165,7 +166,7 @@ export function generatePaginatedKeyboard(
 
   keyboard
     .text(`${emoji("fast_reverse_button")} Prev`, `${callbackPrefix}_prev_page`)
-    .text(`Page: ${currentPage + 1}`, `${callbackPrefix}_page_info`)
+    .text(`Page ${currentPage + 1}`, `${callbackPrefix}_page_info`)
     .text(
       `${emoji("fast_forward_button")} Next`,
       `${callbackPrefix}_next_page`
@@ -176,32 +177,26 @@ export function generatePaginatedKeyboard(
 
 export function generatePaginatedMessageText(
   items: PaginatedItem[],
+  icon: string,
   title: string,
-  itemType: string,
-  subtitleLabel = "Published date"
+  subtitleLabel = "Published"
 ): FormattedString {
   const formattedItems: FormattedString[] = items.map((item, index) => {
-    const shortSubject = fmt`${shortenString(item.subject)}`;
-    const publishedDate = item.formattedPublishedDate;
-    const indexPart = fmt`${index + 1}) ${shortSubject}`;
-    if (publishedDate) {
-      const datePart = fmt`${i}${subtitleLabel}:${i} ${publishedDate}`;
-      return joinWithNewlines([indexPart, datePart]);
+    const indexPart = fmt`${index + 1}. ${shortenString(item.subject)}`;
+    if (item.formattedPublishedDate) {
+      return lines([
+        indexPart,
+        fmt`${i}${subtitleLabel}: ${item.formattedPublishedDate}${i}`,
+      ]);
     }
     return indexPart;
   });
 
-  const itemsList = joinWithNewlines(formattedItems, 2);
-
-  const titlePart = fmt`${b}${title}:${b}`;
-  const instructionsPart1 = fmt`${emoji("backhand_index_pointing_down")} ${b}Choose your ${itemType} below.${b}`;
-  const instructionsPart2 = fmt`${emoji("left_right_arrow")} ${b}Use the arrows to browse pages.${b}`;
-  const instructions = joinWithNewlines(
-    [instructionsPart1, instructionsPart2],
-    2
-  );
-
-  return joinWithNewlines([titlePart, itemsList, instructions], 2);
+  return blocks([
+    heading(icon, title),
+    ...formattedItems,
+    fmt`${ICON.pointer} Tap a number to pick one, or use Prev and Next to browse.`,
+  ]);
 }
 
 export function parseSelectCallback(
@@ -244,11 +239,7 @@ export function findItemById<T extends { id: number }>(
 
 export function storeCallbackMessageId(
   ctx: BotContext,
-  sessionKey:
-    | "announcementsMessageId"
-    | "calendarMessageId"
-    | "timetableMessageId"
-    | "syllabusMessageId"
+  sessionKey: LookupMessageIdSessionKey
 ): void {
   const messageId = ctx.callbackQuery?.message?.message_id;
   if (messageId !== undefined) {

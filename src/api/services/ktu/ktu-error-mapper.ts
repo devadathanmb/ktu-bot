@@ -1,6 +1,7 @@
 import { HTTPError, RequestError } from "got";
 import { ZodError } from "zod";
 import { KTUAPIError } from "../../../errors/bot-errors.js";
+import { problem } from "../../../utils/message-style.js";
 import { TokenSolverError } from "../../token-solver.js";
 
 function isTokenSolverFailure(error: unknown): boolean {
@@ -40,7 +41,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API rate limited`,
-              `KTU is receiving too many requests. Please wait a bit and try again.`,
+              problem(
+                "KTU is busy right now.",
+                "Please wait a minute and try again."
+              ).text,
               statusCode,
               url,
               error
@@ -49,7 +53,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API access denied`,
-              `KTU is blocking this request. Please try again later.`,
+              problem(
+                "KTU blocked this request.",
+                "Please try again in a few minutes."
+              ).text,
               statusCode,
               url,
               error
@@ -58,7 +65,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API internal server error`,
-              `KTU’s service is unavailable. Please try again later.`,
+              problem(
+                "KTU isn’t responding right now.",
+                "Please try again in a few minutes."
+              ).text,
               statusCode,
               url,
               error
@@ -67,7 +77,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `Data not found on KTU API`,
-              `The requested information isn’t available from KTU.`,
+              problem(
+                "KTU doesn’t have that information right now.",
+                "Please try again later."
+              ).text,
               statusCode,
               url,
               error
@@ -76,7 +89,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
             throw new KTUAPIError(
               serviceName,
               `KTU API error`,
-              `Couldn’t load the data from KTU. Please try again later.`,
+              problem(
+                "Couldn’t load data from KTU.",
+                "Please try again in a few minutes."
+              ).text,
               statusCode,
               url,
               error
@@ -90,7 +106,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
         throw new KTUAPIError(
           serviceName,
           `Network error: ${error.message}`,
-          `Couldn’t connect to KTU. Please try again later.`,
+          problem(
+            "Couldn’t connect to KTU.",
+            "Please try again in a few minutes."
+          ).text,
           undefined,
           url,
           error
@@ -101,7 +120,10 @@ export function withKtuErrorMapper<TArgs extends unknown[], TReturn>(
         throw new KTUAPIError(
           serviceName,
           `API response validation failed: ${error.message}`,
-          `Couldn’t read KTU’s response. Please try again later.`,
+          problem(
+            "KTU sent a response I couldn’t read.",
+            "Please try again in a few minutes."
+          ).text,
           undefined,
           undefined,
           error

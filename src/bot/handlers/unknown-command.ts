@@ -2,8 +2,9 @@ import { Context } from "grammy";
 import { CommandsFlavor } from "@grammyjs/commands";
 import { EmojiFlavor } from "@grammyjs/emoji";
 import { coreCommand } from "../composers/core/commands/registry.js";
-import { formatCommand, joinWithNewlines } from "../../utils/formatting.js";
+import { formatCommand } from "../../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
+import { problem } from "../../utils/message-style.js";
 import { deleteMessageSafely } from "../../utils/bot.js";
 import { getRandomSticker } from "../../constants/stickers.js";
 import { emoji } from "@grammyjs/emoji";
@@ -28,12 +29,9 @@ export const unknownCommandHandler = async (ctx: UnknownCommandContext) => {
     );
   } else {
     await ctx.reply(
-      joinWithNewlines(
-        [
-          fmt`${emoji("red_question_mark")} I don’t recognise that command.`,
-          fmt`Use ${formatCommand(coreCommand("help"))} to see the available commands.`,
-        ],
-        2
+      problem(
+        "I don’t know that command.",
+        `Use ${formatCommand(coreCommand("help"))} to see what I can do.`
       ).text
     );
   }

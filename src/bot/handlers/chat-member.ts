@@ -5,7 +5,7 @@ import { Filter } from "grammy";
 import { BotContext } from "../../types/bot.types.js";
 import { joinWithNewlines, formatCommand } from "../../utils/formatting.js";
 import { fmt } from "@grammyjs/parse-mode";
-import { emoji } from "@grammyjs/emoji";
+import { ICON } from "../../utils/message-style.js";
 import logger from "../../utils/logger.js";
 import { announcementsSubscribeCommandInfo } from "../composers/announcement-subscriptions/command-info.js";
 
@@ -67,9 +67,9 @@ export async function handleChatMemberUpdate(
     await persistence.markChatActive(chatId);
 
     const messages = [
-      fmt`${emoji("waving_hand")} Welcome back!`,
-      fmt`Your announcement subscriptions were cleared when you blocked the bot.`,
-      fmt`Use ${formatCommand(announcementsSubscribeCommandInfo)} to subscribe again.`,
+      fmt`${ICON.greeting} Welcome back!`,
+      fmt`Your announcement alerts were turned off when you blocked the bot.`,
+      fmt`Use ${formatCommand(announcementsSubscribeCommandInfo)} to turn them back on.`,
     ];
 
     const formattedReply = joinWithNewlines(messages, 2);

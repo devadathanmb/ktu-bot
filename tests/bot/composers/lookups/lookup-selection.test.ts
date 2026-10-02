@@ -100,7 +100,7 @@ test("timetables without attachments explain instead of queueing", async () => {
 
   assert.deepEqual(queued, []);
   const edits = ctxCalls(calls, "ctx.editMessageText");
-  assert.match(edits[0]?.[0] as string, /No attachment found/);
+  assert.match(edits[0]?.[0] as string, /This timetable has no file attached/);
   const keyboard = (edits[0]?.[1] as { reply_markup: InlineKeyboard })
     .reply_markup;
   assert.deepEqual(callbackData(keyboard), [
@@ -193,7 +193,7 @@ test("announcements without attachments only offer to view another", async () =>
 
   assert.deepEqual(queued, []);
   const replies = ctxCalls(calls, "ctx.reply");
-  assert.match(replies[0]?.[0] as string, /View another announcement\?/);
+  assert.match(replies[0]?.[0] as string, /Want to see another announcement\?/);
   const keyboard = (replies[0]?.[1] as { reply_markup: InlineKeyboard })
     .reply_markup;
   assert.deepEqual(callbackData(keyboard), [
@@ -216,7 +216,7 @@ test("ending a lookup clears its session state", async () => {
   assert.equal(endedTimetable.ctx.session.timetableMessageId, null);
   assert.match(
     ctxCalls(endedTimetable.calls, "ctx.editMessageText")[0]?.[0] as string,
-    /Use \/timetables to browse timetables again/
+    /Use \/timetables anytime to browse timetables again/
   );
 
   const endedCalendar = createFakeCtx({
@@ -261,7 +261,7 @@ test("announcement downloads use singular and plural correctly", async () => {
   await singleFlow.select(singleCtx.ctx);
   assert.match(
     ctxCalls(singleCtx.calls, "ctx.reply")[0]?.[0] as string,
-    /Downloading your file…\n\nI’ll send it here when ready\./
+    /Getting your file…\n\nI’ll send it here as soon as it’s ready\./
   );
   assert.deepEqual(single.queued[0]?.attachments, [
     { name: "a.pdf", encryptId: "enc-a" },
@@ -284,7 +284,7 @@ test("announcement downloads use singular and plural correctly", async () => {
   await doubleFlow.select(doubleCtx.ctx);
   assert.match(
     ctxCalls(doubleCtx.calls, "ctx.reply")[0]?.[0] as string,
-    /Downloading your files…\n\nI’ll send them here when ready\./
+    /Getting your files…\n\nI’ll send them here as soon as they’re ready\./
   );
   assert.deepEqual(
     double.queued[0]?.attachments.map(entry => entry.name),

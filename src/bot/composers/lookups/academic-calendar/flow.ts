@@ -1,15 +1,15 @@
-import { emoji } from "@grammyjs/emoji";
-import { fmt } from "@grammyjs/parse-mode";
 import { CallbackQueryContext } from "grammy";
 import { BotContext } from "../../../../types/bot.types.js";
 import { AcademicCalendar } from "../../../../types/service.types.js";
 import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import {
-  formatCommand,
-  joinWithNewlines,
-} from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
+import {
+  downloading,
+  invalidSelection,
+  loading,
+  lookupEnded,
+} from "../../../../utils/message-style.js";
 import { calendarCommandInfo } from "../command-info.js";
 import { LOOKUP_CONFIG } from "../constants.js";
 import {
@@ -28,9 +28,7 @@ import {
 } from "./views.js";
 
 const MESSAGES = {
-  FETCHING_CALENDARS: [
-    fmt`${emoji("hourglass_not_done")} Loading academic calendars…`,
-  ],
+  FETCHING_CALENDARS: loading("academic calendars"),
 };
 
 type CallbackContext = CallbackQueryContext<BotContext>;
@@ -73,7 +71,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
         }),
       buildKeyboard: generateCalendarsKeyboard,
       buildText: generateCalendarsText,
-      loadingMessage: joinWithNewlines(MESSAGES.FETCHING_CALENDARS, 2),
+      loadingMessage: MESSAGES.FETCHING_CALENDARS,
     };
   }
 
@@ -95,15 +93,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
     ctx: BotContext,
     calendar: AcademicCalendar
   ): Promise<void> {
-    const statusMessage = await ctx.reply(
-      joinWithNewlines(
-        [
-          fmt`${emoji("hourglass_not_done")} Downloading your calendar…`,
-          fmt`I’ll send it here when ready.`,
-        ],
-        2
-      ).text
-    );
+    const statusMessage = await ctx.reply(downloading("calendar").text);
 
     const jobData: AttachmentDeliveryJob = {
       chatId: ctx.chat!.id,
@@ -131,7 +121,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
       ctx.session.calendarPage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
 
-    const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_CALENDARS, 2);
+    const formattedMsg = MESSAGES.FETCHING_CALENDARS;
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -150,9 +140,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
     const parsed = parseSelectCallback(ctx.callbackQuery.data, "calendar");
     if (!parsed.isValid) {
       await editMessageIgnoringNotModified(() =>
-        ctx.editMessageText(
-          `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(calendarCommandInfo)} to start again.`
-        )
+        ctx.editMessageText(invalidSelection(calendarCommandInfo).text)
       );
       return;
     }
@@ -186,9 +174,7 @@ export function createCalendarFlow(deps: CalendarFlowDeps): CalendarFlow {
   async function end(ctx: CallbackContext): Promise<void> {
     await ctx.answerCallbackQuery();
     await editMessageIgnoringNotModified(() =>
-      ctx.editMessageText(
-        `Use ${formatCommand(calendarCommandInfo)} to browse calendars again.`
-      )
+      ctx.editMessageText(lookupEnded(calendarCommandInfo, "calendars"))
     );
 
     ctx.session.calendarPage = null;

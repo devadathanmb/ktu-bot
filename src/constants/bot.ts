@@ -14,14 +14,14 @@ import { fmt, FormattedString } from "@grammyjs/parse-mode";
 import { BotConfig } from "../configs/bot.js";
 
 const resultDeprecationReason: FormattedString[] = [
-  fmt`${emoji("warning")} Results aren’t available through this bot.`,
-  fmt`KTU no longer makes results publicly accessible. Sign in to the official KTU student portal to check yours.`,
-  fmt`${FormattedString.link("Why can’t the bot show results?", BotConfig.BOT_REWRITE_DOC_URL)}`,
+  fmt`${emoji("warning")} I can’t show results anymore.`,
+  fmt`KTU no longer makes results public. You can check yours by signing in to the official KTU student portal.`,
+  fmt`${FormattedString.link("Why can’t I show results?", BotConfig.BOT_REWRITE_DOC_URL)}`,
 ];
 
 const generateMigrationReason = (newCommand: { readonly name: string }) => {
   return [
-    fmt`${emoji("right_arrow")} This command has a new name.`,
+    fmt`${emoji("right_arrow")} That command has a new name.`,
     fmt`Use ${formatCommand(newCommand)} instead.`,
   ];
 };

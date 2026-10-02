@@ -8,7 +8,13 @@ import {
   UPTIME_ROBOT_API,
 } from "../../../../constants/api.js";
 import { fmt, b } from "@grammyjs/parse-mode";
-import { joinWithNewlines } from "../../../../utils/formatting.js";
+import {
+  blocks,
+  heading,
+  ICON,
+  lines,
+  problem,
+} from "../../../../utils/message-style.js";
 import { emoji } from "@grammyjs/emoji";
 import { HandledBotError } from "../../../../errors/handled-bot-error.js";
 import { coreCommand } from "./registry.js";
@@ -19,16 +25,16 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
   metadata.name,
   metadata.description,
   async ctx => {
-    const loadingMessage = fmt`${emoji("hourglass_not_done")} Checking KTU services…`;
+    const loadingMessage = fmt`${ICON.loading} Checking KTU services…`;
 
     const keyboard = new InlineKeyboard()
       .url(
-        `${emoji("bar_chart")} View Monitor Page (Uptimerobot)`,
+        `${emoji("bar_chart")} UptimeRobot status page`,
         UPTIME_ROBOT_API.STATS_PAGE
       )
       .row()
       .url(
-        `${emoji("rocket")} View Monitor Page (Better Uptime)`,
+        `${emoji("rocket")} Better Uptime status page`,
         BETTER_UPTIME_API.STATS_PAGE
       );
 
@@ -45,21 +51,23 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
     try {
       const apiStatusResponse = await getApiStatus();
 
-      const title = fmt`${emoji("globe_with_meridians")} ${b}KTU Services Status${b}`;
+      const title = heading(
+        emoji("globe_with_meridians"),
+        "KTU service status"
+      );
 
       const monitorMessages = apiStatusResponse.monitors.map(monitor => {
         const statusEmoji =
           monitor.status === "up" ? emoji("green_circle") : emoji("red_circle");
-        const statusText = monitor.status.toUpperCase();
+        const statusText = monitor.status === "up" ? "Up" : "Down";
 
-        const name = fmt`${b}${monitor.name}${b}`;
-        const status = fmt`${statusEmoji} ${b}Status:${b} ${statusText}`;
-        const responseTime = fmt`${b}Response time:${b} ${monitor.responseTime.toFixed(2)} ms`;
-
-        return joinWithNewlines([name, status, responseTime], 1);
+        return lines([
+          fmt`${statusEmoji} ${b}${monitor.name}${b}`,
+          fmt`${statusText}, responding in ${Math.round(monitor.responseTime)} ms`,
+        ]);
       });
 
-      const message = joinWithNewlines([title, ...monitorMessages], 2);
+      const message = blocks([title, ...monitorMessages]);
 
       await editMessageSafely(ctx, statusMessage.message_id, message.text, {
         entities: message.entities,
@@ -67,8 +75,10 @@ export const ktuAPIStatusCommand = new Command<BotContext>(
         link_preview_options: { is_disabled: true },
       });
     } catch (error) {
-      const errorDescription = fmt`${emoji("warning")} Couldn’t check KTU services. Please try again later.`;
-      const errorMessage = joinWithNewlines([errorDescription], 2);
+      const errorMessage = problem(
+        "Couldn’t check KTU services.",
+        "Please try again in a few minutes."
+      );
 
       await editMessageSafely(
         ctx,

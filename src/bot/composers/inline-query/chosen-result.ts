@@ -1,4 +1,4 @@
-import { emoji } from "@grammyjs/emoji";
+import { ICON, problem } from "../../../utils/message-style.js";
 import type {
   AcademicCalendar,
   Announcement,
@@ -70,7 +70,10 @@ export async function resolveChosenResultAttachments(
   if (!parsed) {
     return {
       status: "error",
-      message: `${emoji("cross_mark")} Invalid result format.`,
+      message: problem(
+        "That result can’t be opened.",
+        "Use /search to try again."
+      ).text,
     };
   }
 
@@ -79,7 +82,10 @@ export async function resolveChosenResultAttachments(
   if (!searchType) {
     return {
       status: "error",
-      message: `${emoji("cross_mark")} Unknown resource type.`,
+      message: problem(
+        "That result can’t be opened.",
+        "Use /search to try again."
+      ).text,
     };
   }
 
@@ -90,14 +96,17 @@ export async function resolveChosenResultAttachments(
       if (!announcement) {
         return {
           status: "error",
-          message: `${emoji("cross_mark")} Announcement not found.`,
+          message: problem(
+            "I couldn’t find that announcement.",
+            "Use /search to look again."
+          ).text,
         };
       }
 
       if (announcement.attachments.length === 0) {
         return {
           status: "error",
-          message: `${emoji("information")} No attachments found for this announcement.`,
+          message: `${ICON.info} This announcement has no files attached.`,
         };
       }
 
@@ -113,7 +122,10 @@ export async function resolveChosenResultAttachments(
       if (!calendar) {
         return {
           status: "error",
-          message: `${emoji("cross_mark")} Academic calendar not found.`,
+          message: problem(
+            "I couldn’t find that academic calendar.",
+            "Use /search to look again."
+          ).text,
         };
       }
 
@@ -131,7 +143,10 @@ export async function resolveChosenResultAttachments(
       if (!timetable) {
         return {
           status: "error",
-          message: `${emoji("cross_mark")} Exam timetable not found.`,
+          message: problem(
+            "I couldn’t find that exam timetable.",
+            "Use /search to look again."
+          ).text,
         };
       }
 
@@ -147,7 +162,7 @@ export async function resolveChosenResultAttachments(
 
       return {
         status: "error",
-        message: `${emoji("information")} No attachments found for this exam timetable.`,
+        message: `${ICON.info} This exam timetable has no files attached.`,
       };
     }
   }

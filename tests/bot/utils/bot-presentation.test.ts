@@ -11,7 +11,7 @@ test("view-another keyboards keep button text and callback payloads", () => {
     const keyboard = createViewAnotherKeyboard(prefix);
     assert.deepEqual(
       keyboard.inline_keyboard.flat().map(button => button.text),
-      ["✅ Yes", "❌ No"]
+      ["✅ Yes, show me", "❌ No, thanks"]
     );
     assert.deepEqual(callbackData(keyboard), [
       `${prefix}_view_another_true`,
@@ -20,7 +20,7 @@ test("view-another keyboards keep button text and callback payloads", () => {
   }
 });
 
-test("context emoji covers known lookup contexts with a paperclip fallback", () => {
+test("context emoji covers known lookup contexts with a file fallback", () => {
   assert.deepEqual(
     [
       "calendar",
@@ -29,7 +29,7 @@ test("context emoji covers known lookup contexts with a paperclip fallback", () 
       "inline query result",
       "syllabus",
     ].map(getContextEmoji),
-    ["📅", "📚", "📎", "📎", "📜"]
+    ["🗓️", "📋", "📢", "📄", "📚"]
   );
-  assert.equal(getContextEmoji("unknown-context"), "📎");
+  assert.equal(getContextEmoji("unknown-context"), "📄");
 });

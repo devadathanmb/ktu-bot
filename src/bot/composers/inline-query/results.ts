@@ -1,9 +1,11 @@
 import { InlineKeyboard, InlineQueryResultBuilder } from "grammy";
 import type { InlineQueryResult } from "grammy/types";
 import { emoji } from "@grammyjs/emoji";
-import { b, fmt, type FormattedString } from "@grammyjs/parse-mode";
-import { joinWithNewlines } from "../../../utils/formatting.js";
+import { fmt } from "@grammyjs/parse-mode";
+import { blocks, ICON, problem } from "../../../utils/message-style.js";
 import { formatAnnouncementDetails } from "../lookups/announcements/views.js";
+import { formatCalendarDetails } from "../lookups/academic-calendar/views.js";
+import { formatTimetableDetails } from "../lookups/exam-timetable/views.js";
 import type {
   AcademicCalendar,
   Announcement,
@@ -26,13 +28,10 @@ export function constructNoResultsFound(type: SearchType) {
       `${SPECIAL_RESULT_PREFIXES.NO_RESULTS}${type}`,
       `${emoji("woman_shrugging")} No ${type} found`
     ).text(
-      joinWithNewlines(
-        [
-          fmt`${emoji("magnifying_glass_tilted_left")} No ${type} found.`,
-          fmt`Try different keywords or a shorter search.`,
-        ],
-        2
-      ).text
+      blocks([
+        fmt`${ICON.search} No ${type} found.`,
+        fmt`Try different keywords or a shorter search.`,
+      ]).text
     ),
   ];
 }
@@ -43,7 +42,12 @@ export function buildTemporarySearchFailureResult(): InlineQueryResult[] {
     InlineQueryResultBuilder.article(
       "-1",
       "Search is temporarily unavailable"
-    ).text("Search is temporarily unavailable. Please try again later."),
+    ).text(
+      problem(
+        "Search is temporarily unavailable.",
+        "Please try again in a few minutes."
+      ).text
+    ),
   ];
 }
 
@@ -51,30 +55,30 @@ export function buildHelpResults(): InlineQueryResult[] {
   return [
     InlineQueryResultBuilder.article(
       `${SPECIAL_RESULT_PREFIXES.HELP}announcements`,
-      `${emoji("loudspeaker")} Search Announcements`,
+      `${ICON.announcements} Search Announcements`,
       {
         reply_markup: InlineKeyboard.from([INLINE_ANNOUNCEMENTS_SEARCH_BUTTON]),
       }
     ).text(
-      `${emoji("loudspeaker")} Tap the button below to search announcements.`
+      `${ICON.announcements} Tap the button below to search announcements.`
     ),
     InlineQueryResultBuilder.article(
       `${SPECIAL_RESULT_PREFIXES.HELP}calendars`,
-      `${emoji("calendar")} Search Academic Calendars`,
+      `${ICON.calendars} Search Academic Calendars`,
       {
         reply_markup: InlineKeyboard.from([INLINE_CALENDARS_SEARCH_BUTTON]),
       }
     ).text(
-      `${emoji("calendar")} Tap the button below to search academic calendars.`
+      `${ICON.calendars} Tap the button below to search academic calendars.`
     ),
     InlineQueryResultBuilder.article(
       `${SPECIAL_RESULT_PREFIXES.HELP}timetables`,
-      `${emoji("clipboard")} Search Exam Timetables`,
+      `${ICON.timetables} Search Exam Timetables`,
       {
         reply_markup: InlineKeyboard.from([INLINE_TIMETABLES_SEARCH_BUTTON]),
       }
     ).text(
-      `${emoji("clipboard")} Tap the button below to search exam timetables.`
+      `${ICON.timetables} Tap the button below to search exam timetables.`
     ),
   ];
 }
@@ -105,37 +109,13 @@ export function renderCalendarResults(
   calendars: AcademicCalendar[]
 ): InlineQueryResult[] {
   const results = calendars.map(calendar => {
-    const parts: FormattedString[] = [];
-    if (calendar.title) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Title:${b}`,
-          fmt`${calendar.title}`,
-        ])
-      );
-    }
-    if (calendar.formattedPublishedDate) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Date:${b} ${calendar.formattedPublishedDate}`,
-        ])
-      );
-    }
-    if (calendar.attachmentName) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("paperclip")} Attachment:${b} ${calendar.attachmentName}`,
-        ])
-      );
-    }
-
-    const formattedMessage = joinWithNewlines(parts, 2);
+    const formattedMessage = formatCalendarDetails(calendar);
 
     return InlineQueryResultBuilder.article(
       `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.CALENDARS]}_${calendar.id}`,
       calendar.title || "No Title",
       {
-        description: calendar.title || "",
+        description: `Published ${calendar.formattedPublishedDate}`,
       }
     ).text(formattedMessage.text, { entities: formattedMessage.entities });
   });
@@ -151,37 +131,13 @@ export function renderTimetableResults(
   timetables: ExamTimeTable[]
 ): InlineQueryResult[] {
   const results = timetables.map(timetable => {
-    const parts: FormattedString[] = [];
-    if (timetable.title) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("clipboard")} Title:${b}`,
-          fmt`${timetable.title}`,
-        ])
-      );
-    }
-    if (timetable.formattedPublishedDate) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("calendar")} Date:${b} ${timetable.formattedPublishedDate}`,
-        ])
-      );
-    }
-    if (timetable.fileName) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("paperclip")} File:${b} ${timetable.fileName}`,
-        ])
-      );
-    }
-
-    const formattedMessage = joinWithNewlines(parts, 2);
+    const formattedMessage = formatTimetableDetails(timetable);
 
     return InlineQueryResultBuilder.article(
       `${SEARCH_TYPE_TO_RESULT_ID_PREFIX_MAP[SearchType.TIMETABLES]}_${timetable.id}`,
       timetable.title || "No Title",
       {
-        description: timetable.title || "",
+        description: `Published ${timetable.formattedPublishedDate}`,
       }
     ).text(formattedMessage.text, { entities: formattedMessage.entities });
   });
@@ -198,7 +154,7 @@ export function addSearchAgainButton(
   originalQuery: string
 ): InlineQueryResult[] {
   const searchAgainKeyboard = new InlineKeyboard().switchInlineCurrent(
-    `${emoji("high_voltage")} Search Again`,
+    `${ICON.search} Search again`,
     originalQuery
   );
 

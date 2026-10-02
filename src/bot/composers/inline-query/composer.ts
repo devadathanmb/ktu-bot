@@ -1,9 +1,7 @@
 import { BotContext } from "../../../types/bot.types.js";
 import { Composer } from "grammy";
 import { createComposerErrorBoundary } from "../shared/error-boundary.js";
-import { fmt } from "@grammyjs/parse-mode";
-import { joinWithNewlines } from "../../../utils/formatting.js";
-import { emoji } from "@grammyjs/emoji";
+import { downloading, problem } from "../../../utils/message-style.js";
 import logger from "../../../utils/logger.js";
 import type { InlineQueryResult } from "grammy/types";
 import { addAttachmentDeliveryJob } from "../../../workers/attachment-delivery/queue.js";
@@ -127,15 +125,11 @@ inlineQuery.on("chosen_inline_result", async ctx => {
       return;
     }
 
-    const plural = resolution.attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.api.sendMessage(
       chatId,
-      joinWithNewlines(
-        [
-          fmt`${emoji("hourglass_not_done")} Downloading the file${plural} from your selected ${resolution.resource}…`,
-          fmt`I’ll send ${plural ? "them" : "it"} here when ready.`,
-        ],
-        2
+      downloading(
+        resolution.attachments.length > 1 ? "files" : "file",
+        resolution.attachments.length > 1
       ).text
     );
 
@@ -156,12 +150,9 @@ inlineQuery.on("chosen_inline_result", async ctx => {
     try {
       await ctx.api.sendMessage(
         chatId,
-        joinWithNewlines(
-          [
-            fmt`${emoji("warning")} Couldn’t start the download.`,
-            fmt`Use /search to find the document again.`,
-          ],
-          2
+        problem(
+          "Couldn’t start the download.",
+          "Use /search to find the document again."
         ).text
       );
     } catch (notificationError) {

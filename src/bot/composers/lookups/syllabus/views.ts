@@ -1,4 +1,4 @@
-import { emoji } from "@grammyjs/emoji";
+import { ICON } from "../../../../utils/message-style.js";
 import { FormattedString } from "@grammyjs/parse-mode";
 import { InlineKeyboard } from "grammy";
 import {
@@ -79,8 +79,8 @@ export function buildProgramsPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus programs`,
-      "program",
+      ICON.syllabus,
+      "Syllabus programs",
       "Description"
     ),
     keyboard: generatePaginatedKeyboard(
@@ -100,8 +100,8 @@ export function buildSchemesPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus schemes`,
-      "scheme",
+      ICON.syllabus,
+      "Syllabus schemes",
       "Academic year"
     ),
     keyboard: generatePaginatedKeyboard(
@@ -121,8 +121,8 @@ export function buildBranchesPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus branches`,
-      "branch",
+      ICON.syllabus,
+      "Syllabus branches",
       "Academic year"
     ),
     keyboard: generatePaginatedKeyboard(
@@ -146,8 +146,8 @@ export function buildSyllabusEntriesPage(
   return {
     text: generatePaginatedMessageText(
       pageItems,
-      `${emoji("scroll")} Syllabus files`,
-      "file",
+      ICON.syllabus,
+      "Syllabus files",
       "Description"
     ),
     keyboard: generatePaginatedKeyboard(

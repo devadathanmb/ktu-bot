@@ -11,23 +11,23 @@ export interface CoreCommandInfo {
 const CORE_COMMAND_DEFS = {
   start: {
     name: "start",
-    description: "Start the bot",
+    description: "Meet the bot",
   },
   help: {
     name: "help",
-    description: "Available commands",
+    description: "See everything I can do",
   },
   search: {
     name: "search",
-    description: "Search in any chat",
+    description: "Search KTU from any chat",
   },
   code: {
     name: "code",
-    description: "Source code",
+    description: "View the source code",
   },
   serverstatus: {
     name: "serverstatus",
-    description: "KTU service status",
+    description: "Check if KTU services are up",
   },
 } as const satisfies Record<string, CoreCommandInfo>;
 

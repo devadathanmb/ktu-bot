@@ -10,11 +10,17 @@ import {
   generateMessageText,
   MESSAGES,
 } from "./helpers.js";
-import { fmt, b } from "@grammyjs/parse-mode";
-import { joinWithNewlines } from "../../../utils/formatting.js";
+import { fmt } from "@grammyjs/parse-mode";
+import {
+  blocks,
+  bullets,
+  heading,
+  ICON,
+  lines,
+  problem,
+} from "../../../utils/message-style.js";
 import { editMessageIgnoringNotModified } from "../../../utils/bot.js";
 import { createAnnouncementSubscriptionErrorBoundary } from "../shared/error-boundary.js";
-import { emoji } from "@grammyjs/emoji";
 import {
   announcementsChangeFilterCommandInfo,
   announcementsShowStatusCommandInfo,
@@ -44,7 +50,7 @@ const announcementsSubscribeCommand = new Command<BotContext>(
     const announcementSubscription =
       await announcementSubscriptionRepo.getByChatId(chatId);
     if (announcementSubscription) {
-      const formattedMsg = joinWithNewlines(MESSAGES.ALREADY_SUBSCRIBED!, 2);
+      const formattedMsg = MESSAGES.ALREADY_SUBSCRIBED;
       await ctx.reply(formattedMsg.text, {
         entities: formattedMsg.entities,
       });
@@ -76,7 +82,10 @@ protectedComposer.callbackQuery(/^announcement_filter_select_/, async ctx => {
   );
 
   if (!(filter in ANNOUNCEMENT_FILTER_MAP)) {
-    const invalidMessage = `${emoji("cross_mark")} That category isn’t available. Choose another category.`;
+    const invalidMessage = problem(
+      "That category isn’t available.",
+      "Use /announcements_subscribe to start again."
+    ).text;
     await editMessageIgnoringNotModified(() =>
       ctx.api.editMessageText(chatId, prevMessageId, invalidMessage)
     );
@@ -155,10 +164,7 @@ const announcementsShowFilterCommand = new Command<BotContext>(
       await announcementSubscriptionRepo.getByChatId(chatId);
 
     if (!announcementSubscription) {
-      const formattedMsg = joinWithNewlines(
-        MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!,
-        2
-      );
+      const formattedMsg = MESSAGES.NOT_SUBSCRIBED;
       await ctx.reply(formattedMsg.text, {
         entities: formattedMsg.entities,
       });
@@ -172,28 +178,17 @@ const announcementsShowFilterCommand = new Command<BotContext>(
         ] || filter
     );
 
-    const statusMessage = joinWithNewlines(
-      [
-        fmt`${emoji("bell")} ${b}Announcement notifications are on${b}`,
-        joinWithNewlines([
-          fmt`${b}Selected categories (${announcementSubscription.filters.length}):${b}`,
-          ...filterNames.map(name => fmt`• ${name}`),
-        ]),
-      ],
-      2
-    );
-    const suggestionsMessage = joinWithNewlines(
-      [
+    const combinedMessage = blocks([
+      heading(ICON.alertsOn, "Announcement alerts are on"),
+      lines([
+        fmt`Following ${announcementSubscription.filters.length}:`,
+        bullets(filterNames),
+      ]),
+      lines([
         fmt`Change categories: /announcements_change_filter`,
-        fmt`Stop notifications: /announcements_unsubscribe`,
-      ],
-      2
-    );
-
-    const combinedMessage = joinWithNewlines(
-      [statusMessage, suggestionsMessage],
-      2
-    );
+        fmt`Turn alerts off: /announcements_unsubscribe`,
+      ]),
+    ]);
 
     await ctx.reply(combinedMessage.text, {
       entities: combinedMessage.entities,
@@ -213,9 +208,7 @@ const announcementsChangeFilterCommand = new Command<BotContext>(
     const existingSubscription =
       await announcementSubscriptionRepo.getByChatId(chatId);
     if (!existingSubscription) {
-      const formattedMsg = joinWithNewlines(
-        MESSAGES.NOT_SUBSCRIBED_CHANGE_FILTER!
-      );
+      const formattedMsg = MESSAGES.NOT_SUBSCRIBED;
       await ctx.reply(formattedMsg.text, {
         entities: formattedMsg.entities,
       });

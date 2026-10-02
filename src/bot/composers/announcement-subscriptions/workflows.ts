@@ -1,10 +1,13 @@
 import { CallbackQueryContext } from "grammy";
-import { emoji } from "@grammyjs/emoji";
-import { fmt, b } from "@grammyjs/parse-mode";
 import { BotContext } from "../../../types/bot.types.js";
 import { SessionNotFoundError } from "../../../errors/index.js";
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
-import { joinWithNewlines } from "../../../utils/formatting.js";
+import {
+  blocks,
+  bullets,
+  problem,
+  success,
+} from "../../../utils/message-style.js";
 import { editMessageIgnoringNotModified } from "../../../utils/bot.js";
 import { MESSAGES } from "./helpers.js";
 
@@ -30,7 +33,10 @@ export async function applyAnnouncementFilters(
   if (!prevMessageId) throw new SessionNotFoundError();
 
   if (ctx.session.selectedFilters.length === 0) {
-    const errorMessage = `${emoji("cross_mark")} Choose at least one category before applying filters.`;
+    const errorMessage = problem(
+      "Pick at least one category first.",
+      "Choose a category, then tap “Save categories”."
+    ).text;
     await editMessageIgnoringNotModified(() =>
       ctx.api.editMessageText(chatId, prevMessageId, errorMessage)
     );
@@ -39,36 +45,22 @@ export async function applyAnnouncementFilters(
 
   const change = await persistFilters(chatId, ctx.session.selectedFilters);
 
-  if (change === "updated") {
-    await editMessageIgnoringNotModified(() =>
-      ctx.api.editMessageText(
-        chatId,
-        prevMessageId,
-        `${emoji("check_mark_button")} Announcement filters updated.`
-      )
-    );
-  } else {
-    const selectedFilterNames = ctx.session.selectedFilters.map(
-      (filter: string) =>
-        ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]
-    );
-    const successMessage = joinWithNewlines(
-      [
-        fmt`${emoji("check_mark_button")} Subscribed to announcements.`,
-        joinWithNewlines([
-          fmt`${b}Selected categories:${b}`,
-          ...selectedFilterNames.map(name => fmt`• ${name}`),
-        ]),
-      ],
-      2
-    );
+  const selectedFilterNames = ctx.session.selectedFilters.map(
+    (filter: string) =>
+      ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]
+  );
+  const confirmation = blocks([
+    change === "updated"
+      ? success("Categories updated. You’ll get alerts for:")
+      : success("Alerts are on. I’ll message you about:"),
+    bullets(selectedFilterNames),
+  ]);
 
-    await editMessageIgnoringNotModified(() =>
-      ctx.api.editMessageText(chatId, prevMessageId, successMessage.text, {
-        entities: successMessage.entities,
-      })
-    );
-  }
+  await editMessageIgnoringNotModified(() =>
+    ctx.api.editMessageText(chatId, prevMessageId, confirmation.text, {
+      entities: confirmation.entities,
+    })
+  );
 
   ctx.session.selectedFilters = [];
   ctx.session.announcementSubscriptionMessageId = null;
@@ -86,8 +78,8 @@ export async function unsubscribeFromAnnouncements(
   const removed = await deleteSubscription(ctx.chatId!);
 
   const formattedMsg = removed
-    ? joinWithNewlines(MESSAGES.UNSUBSCRIBE_SUCCESS!, 2)
-    : joinWithNewlines(MESSAGES.NOT_SUBSCRIBED_WITH_EMOJI!, 2);
+    ? MESSAGES.UNSUBSCRIBE_SUCCESS
+    : MESSAGES.NOT_SUBSCRIBED;
 
   await ctx.reply(formattedMsg.text, {
     entities: formattedMsg.entities,

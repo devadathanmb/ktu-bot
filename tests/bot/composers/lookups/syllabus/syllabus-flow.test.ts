@@ -169,7 +169,7 @@ test("selectProgram rejects callbacks outside the program namespace", async () =
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(
     edits[0]?.[0] as string,
-    /That selection didn’t work\. Use \/syllabus/
+    /That option isn’t available anymore\.\n\nUse \/syllabus to start again/
   );
 });
 
@@ -302,7 +302,7 @@ test("selectBranch with nothing downloadable offers to view another", async () =
   await flow.selectBranch(ctx);
 
   const edits = ctxCalls(calls, "ctx.editMessageText");
-  assert.match(edits.at(-1)?.[0] as string, /No syllabus uploaded yet/);
+  assert.match(edits.at(-1)?.[0] as string, /No syllabus is uploaded yet/);
   const keyboard = (edits.at(-1)?.[1] as { reply_markup: InlineKeyboard })
     .reply_markup;
   assert.deepEqual(callbackData(keyboard), [
@@ -387,7 +387,7 @@ test("selectEntry rejects entries without attachments", async () => {
   const edits = ctxCalls(calls, "ctx.editMessageText");
   assert.match(
     edits[0]?.[0] as string,
-    /That selection didn’t work\. Use \/syllabus/
+    /That option isn’t available anymore\.\n\nUse \/syllabus to start again/
   );
 });
 

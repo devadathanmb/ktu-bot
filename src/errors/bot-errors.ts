@@ -1,6 +1,4 @@
-import { emoji } from "@grammyjs/emoji";
-import { joinWithNewlines } from "../utils/formatting.js";
-import { fmt } from "@grammyjs/parse-mode";
+import { problem } from "../utils/message-style.js";
 
 export class BotError extends Error {
   public readonly userMessage: string;
@@ -19,15 +17,12 @@ export class BotError extends Error {
 export class SessionNotFoundError extends BotError {
   constructor(
     message = "Session data not found for the chat",
-    userMessage = joinWithNewlines(
-      [
-        fmt`${emoji("alarm_clock")} This session has expired.`,
-        fmt`Run the command again to continue. Use /help to see the commands.`,
-      ],
-      2
-    )
+    userMessage = problem(
+      "This session has expired.",
+      "Run the command again to continue, or use /help to see all commands."
+    ).text
   ) {
-    super(message, userMessage.text);
+    super(message, userMessage);
   }
 }
 

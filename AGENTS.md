@@ -5,16 +5,28 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 ## Commands
 
 - Dev stack: `docker compose -f docker/compose/compose.dev.yaml up --build`
-- `pnpm test` (all) or one file: `node --import tsx --import ./tests/setup.ts --test tests/<path-mirroring-src>/<file>.test.ts`. Tests live at the `tests/` path mirroring the `src/` directory of the unit under test; filenames are kept stable and may cover more than one module (`setup.ts` provides the dummy env). Run the suite matching the area changed: token-solver, syllabus-views, exam-timetable, calendar-announcement-views, recurring-schedules (double-setup keeps one scheduler per job), announcements-notify-orchestration, inline-query, data-sync.
+- `pnpm test` (all) or one file: `node --import tsx --import ./tests/setup.ts --test tests/<path-mirroring-src>/<file>.test.ts`. Tests mirror the `src/` path of the unit under test; filenames are stable and may cover several modules (`setup.ts` supplies the dummy env). The full suite takes seconds: run it after any change.
 - After TS changes: `pnpm exec tsc --noEmit`. Run `pnpm lint` for lint-sensitive code. Use `pnpm exec`, never `npx`.
 
 ## TypeScript
 
 - Pure ESM (`NodeNext`): local imports need `.js` suffixes. Strict mode: watch `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused symbols, missing `override`, incomplete return paths.
-- No `any`; narrow `unknown` with guards. Bot text via GrammY `fmt` + `joinWithNewlines()`.
-- User-facing text: friendly, plain wording; useful emojis; blank lines between labels, content, and actions. Keep lists readable when commands or titles wrap. State what happened and the next step. Avoid em dashes, filler, promotional language, exaggerated apologies, and unnecessary technical details.
+- No `any`; narrow `unknown` with guards.
 - Env only in Zod-backed `src/configs/`; no new `process.env` elsewhere.
 - Comments explain rationale, invariants, external constraints, or non-obvious failure ordering; remove comments/docstrings that narrate code or justify production APIs only by testing.
+
+## User-facing messages
+
+Every string a user can see (replies, captions, button labels, inline results, notifications, error `userMessage`s, command descriptions) follows this section.
+
+- **Source of truth:** `src/utils/message-style.ts` (`ICON`, `blocks`, `lines`, `heading`, `field`, `bullets`, `tip`, `loading`, `downloading`, `problem`, `success`, `documentCard`, `invalidSelection`, `lookupEnded`, `viewAnotherPrompt`). Build messages from these on GrammY `fmt`; add a helper there instead of hand-rolling a layout in a composer. The module stays free of composers, sessions, and middleware so workers and error classes can import it.
+- **Voice:** warm, plain, second person, short sentences, contractions with the curly apostrophe (`’`). Say what happened, then what to do next, naming the exact command. No em dashes, filler, jokes, slang, promotional wording, exaggerated apologies, or technical detail (status codes, service names, stack traces). Lightness belongs in greetings and stickers, not in errors.
+- **Emoji:** one per concept, taken from `ICON` (extend `ICON` instead of picking a new emoji for a concept it covers). Use at most one, at the start of a heading, label, or status line. Never inside a sentence or stacked. Command descriptions (the Telegram menu and `/help`) are plain text with no emoji. Buttons: optional leading emoji, short sentence-case label.
+- **Layout:** a blank line between blocks (`blocks`), a single newline inside a block (`lines`, `field`). Heading, then blank line, then body. Label on its own line directly above its value; never a blank line between them and never an inline `Label: value` for document fields. No triple newlines. Bold for headings and labels only, italic for secondary metadata, code for text users copy, `tip()` (blockquote, plain text only) for at most one aside per message.
+- **Consistent terms:** fields are Title, Message, Published (use `documentCard`); names are Announcements, Academic calendars, Exam timetables, Syllabuses; states use `loading()`, `downloading()`, `success()`, `problem()`. The same thing keeps the same wording on every surface (bot, inline, workers).
+- **Errors:** `BotError.userMessage` is built with `problem(what, next)`; never expose the cause.
+- **Telegram:** send `.text` with `.entities` (`caption` with `caption_entities`) together; no `parse_mode` strings. Respect 4096 chars per message and 1024 per caption. Check the current Bot API docs before using a new entity type.
+- **Tests:** assert exact rendered text for layout-sensitive messages. Update tests in the same change as the copy.
 
 ## Architecture
 

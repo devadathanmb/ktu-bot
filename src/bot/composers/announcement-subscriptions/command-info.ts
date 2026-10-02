@@ -6,22 +6,22 @@
  */
 export const announcementsSubscribeCommandInfo = {
   name: "announcements_subscribe",
-  description: "Turn on alerts",
+  description: "Get new announcements in this chat",
 } as const;
 
 export const announcementsUnsubscribeCommandInfo = {
   name: "announcements_unsubscribe",
-  description: "Turn off alerts",
+  description: "Stop announcement alerts",
 } as const;
 
 export const announcementsShowStatusCommandInfo = {
   name: "announcements_show_status",
-  description: "View your categories",
+  description: "See the categories you follow",
 } as const;
 
 export const announcementsChangeFilterCommandInfo = {
   name: "announcements_change_filter",
-  description: "Change your categories",
+  description: "Change the categories you follow",
 } as const;
 
 /** Ordered exactly as `/help` presents the notification commands. */

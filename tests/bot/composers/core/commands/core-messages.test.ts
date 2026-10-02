@@ -104,34 +104,32 @@ test("help keeps command sections formatted after joining and disables link prev
   const { method, payload } = await renderCommand("help");
   assert.equal(method, "sendMessage");
   assert.deepEqual(formattedSpans(payload, "bold"), [
-    "Available Commands",
     "Find documents",
     "Announcement alerts",
-    "Other commands",
-    "Search in any chat",
-    `@${BotConfig.BOT_USERNAME}`,
+    "More",
   ]);
+  assert.equal(formattedSpans(payload, "blockquote").length, 1);
   assert.deepEqual(payload["link_preview_options"], { is_disabled: true });
-  assert.match(payload["text"] as string, /\/announcements_subscribe/);
+  const text = payload["text"] as string;
+  // Every section uses the same stacked layout: command, description, blank line.
   assert.match(
-    payload["text"] as string,
-    /\/announcements: KTU announcements\n\/calendars: Academic calendars\n\/timetables: Exam timetables\n\/syllabus: Syllabuses/
+    text,
+    /\/announcements\nBrowse KTU announcements\n\n\/calendars\nBrowse academic calendars\n\n\/timetables\nBrowse exam timetables\n\n\/syllabus\nDownload syllabuses/
   );
   assert.match(
-    payload["text"] as string,
-    /\/announcements_subscribe\nTurn on alerts\n\n\/announcements_unsubscribe\nTurn off alerts/
+    text,
+    /\/announcements_subscribe\nGet new announcements in this chat\n\n\/announcements_unsubscribe\nStop announcement alerts/
   );
   assert.match(
-    payload["text"] as string,
-    /\/start: Start the bot\n\/help: Available commands/
+    text,
+    /\/start\nMeet the bot\n\n\/help\nSee everything I can do/
   );
-  const commandRows = (payload["text"] as string)
-    .split("\n")
-    .filter(line => line.startsWith("/"));
+  const commandRows = text.split("\n").filter(line => line.startsWith("/"));
   assert.equal(commandRows.length, 13);
   for (const row of commandRows)
     assert.doesNotMatch(row, /\p{Extended_Pictographic}/u);
-  assert.doesNotMatch(payload["text"] as string, /—/);
+  assert.doesNotMatch(text, /—/);
+  assert.doesNotMatch(text, /\n\n\n/);
 });
 
 test("search preserves complete code examples and its inline search buttons", async () => {
@@ -147,7 +145,10 @@ test("search preserves complete code examples and its inline search buttons", as
 test("start renders user names literally and sends a valid formatted photo caption", async () => {
   const { method, payload } = await renderCommand("start", "A😀 <&>");
   assert.equal(method, "sendPhoto");
-  assert.match(payload["caption"] as string, /Hi A😀 <&>!/);
-  assert.deepEqual(formattedSpans(payload, "bold"), ["Welcome to KTU Bot!"]);
+  assert.match(
+    payload["caption"] as string,
+    /^👋 Hi A😀 <&>! Welcome to KTU Bot\./
+  );
+  assert.doesNotMatch(payload["caption"] as string, /—|\n\n\n/);
   assert.equal(payload["photo"], BotConfig.BOT_IMAGE_URL);
 });

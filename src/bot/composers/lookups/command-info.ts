@@ -5,22 +5,22 @@
  */
 export const announcementsCommandInfo = {
   name: "announcements",
-  description: "KTU announcements",
+  description: "Browse KTU announcements",
 } as const;
 
 export const calendarCommandInfo = {
   name: "calendars",
-  description: "Academic calendars",
+  description: "Browse academic calendars",
 } as const;
 
 export const timetableCommandInfo = {
   name: "timetables",
-  description: "Exam timetables",
+  description: "Browse exam timetables",
 } as const;
 
 export const syllabusCommandInfo = {
   name: "syllabus",
-  description: "Syllabuses",
+  description: "Download syllabuses",
 } as const;
 
 /** Ordered exactly as `/help` presents the lookup commands. */

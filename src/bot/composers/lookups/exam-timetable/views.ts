@@ -1,8 +1,7 @@
-import { emoji } from "@grammyjs/emoji";
-import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
+import { FormattedString } from "@grammyjs/parse-mode";
 import { InlineKeyboard } from "grammy";
 import { ExamTimeTable } from "../../../../types/service.types.js";
-import { joinWithNewlines } from "../../../../utils/formatting.js";
+import { documentCard, ICON } from "../../../../utils/message-style.js";
 import {
   generatePaginatedKeyboard,
   generatePaginatedMessageText,
@@ -31,29 +30,16 @@ export function generateTimetablesText(
   const paginatedItems = timetablesToPageItems(timetables);
   return generatePaginatedMessageText(
     paginatedItems,
-    `${emoji("books")} Exam Timetables`,
-    "timetable"
+    ICON.timetables,
+    "Exam timetables"
   );
 }
 
 export function formatTimetableDetails(
   timetable: ExamTimeTable
 ): FormattedString {
-  const parts: FormattedString[] = [];
-
-  if (timetable.title) {
-    parts.push(
-      joinWithNewlines([
-        fmt`${b}${emoji("glowing_star")} Title:${b}`,
-        fmt`${timetable.title}`,
-      ])
-    );
-  }
-  if (timetable.formattedPublishedDate) {
-    parts.push(
-      fmt`${b}${emoji("calendar")} Date:${b} ${timetable.formattedPublishedDate}`
-    );
-  }
-
-  return joinWithNewlines(parts, 2);
+  return documentCard({
+    title: timetable.title,
+    published: timetable.formattedPublishedDate,
+  });
 }

@@ -33,9 +33,9 @@ test("program pages keep API IDs, local numbering, and five buttons per row", ()
     "syllabusprog_page_info",
     "syllabusprog_next_page",
   ]);
-  assert.match(second.text.text, /1\) Program 10/);
+  assert.match(second.text.text, /1\. Program 10/);
   assert.doesNotMatch(second.text.text, /Program 9/);
-  assert.equal(second.keyboard.inline_keyboard[1]?.[1]?.text, "Page: 2");
+  assert.equal(second.keyboard.inline_keyboard[1]?.[1]?.text, "Page 2");
   assert.ok(second.text.entities.some(entity => entity.type === "bold"));
 });
 
@@ -67,7 +67,7 @@ test("scheme and branch pages preserve labels and curriculum IDs", () => {
     0
   );
   assert.equal(callbackData(branch.keyboard)[0], "syllabusbranch_select_73");
-  assert.match(branch.text.text, /1\) Computer Science/);
+  assert.match(branch.text.text, /1\. Computer Science/);
   assert.match(branch.text.text, /Academic year: 2024/);
 });
 
@@ -93,8 +93,8 @@ test("filtered syllabus pages retain original response indices across pages", ()
     "syllabusentry_page_info",
     "syllabusentry_next_page",
   ]);
-  assert.match(second.text.text, /1\) Syllabus 21.pdf/);
-  assert.match(second.text.text, /2\) Syllabus 23.pdf/);
+  assert.match(second.text.text, /1\. Syllabus 21.pdf/);
+  assert.match(second.text.text, /2\. Syllabus 23.pdf/);
   assert.doesNotMatch(second.text.text, /Syllabus 19.pdf/);
 });
 

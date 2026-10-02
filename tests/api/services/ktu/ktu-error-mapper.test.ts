@@ -33,11 +33,20 @@ function closeServer(server: Server): () => Promise<void> {
 }
 
 for (const [status, userMessage] of [
-  [429, "KTU is receiving too many requests. Please wait a bit and try again."],
-  [403, "KTU is blocking this request. Please try again later."],
-  [500, "KTU’s service is unavailable. Please try again later."],
-  [404, "The requested information isn’t available from KTU."],
-  [418, "Couldn’t load the data from KTU. Please try again later."],
+  [429, "⚠️ KTU is busy right now.\n\nPlease wait a minute and try again."],
+  [403, "⚠️ KTU blocked this request.\n\nPlease try again in a few minutes."],
+  [
+    500,
+    "⚠️ KTU isn’t responding right now.\n\nPlease try again in a few minutes.",
+  ],
+  [
+    404,
+    "⚠️ KTU doesn’t have that information right now.\n\nPlease try again later.",
+  ],
+  [
+    418,
+    "⚠️ Couldn’t load data from KTU.\n\nPlease try again in a few minutes.",
+  ],
 ] as const) {
   test(`HTTP ${status} maps to KTUAPIError with a safe message`, async t => {
     const url = await startStatusServer(status, t);
@@ -64,7 +73,7 @@ test("request failures map to KTUAPIError without a status code", async () => {
   assert.ok(error instanceof KTUAPIError);
   assert.equal(
     error.userMessage,
-    "Couldn’t connect to KTU. Please try again later."
+    "⚠️ Couldn’t connect to KTU.\n\nPlease try again in a few minutes."
   );
   assert.equal(error.statusCode, undefined);
   assert.ok(error.url?.startsWith("http://127.0.0.1:"));
@@ -80,7 +89,7 @@ test("validation failures map to KTUAPIError with the Zod cause", async () => {
   assert.ok(error instanceof KTUAPIError);
   assert.equal(
     error.userMessage,
-    "Couldn’t read KTU’s response. Please try again later."
+    "⚠️ KTU sent a response I couldn’t read.\n\nPlease try again in a few minutes."
   );
   assert.ok(error.cause instanceof ZodError);
 });

@@ -41,14 +41,22 @@ interface LookupCase<Item> {
   label: string;
   fixture: Item;
   title: string;
+  heading: string;
   keyboardBuilder: (items: Item[], page: number) => InlineKeyboard;
   textBuilder: (items: Item[]) => FormattedString;
   prefix: string;
 }
 
 function runLookupCase<Item>(lookupCase: LookupCase<Item>): void {
-  const { label, fixture, title, keyboardBuilder, textBuilder, prefix } =
-    lookupCase;
+  const {
+    label,
+    fixture,
+    title,
+    heading,
+    keyboardBuilder,
+    textBuilder,
+    prefix,
+  } = lookupCase;
   test(`${label} API pages retain all items, selection IDs and row layout`, () => {
     const items = Array.from({ length: 6 }, (_, index) => ({
       ...fixture,
@@ -65,13 +73,15 @@ function runLookupCase<Item>(lookupCase: LookupCase<Item>): void {
       `${prefix}_page_info`,
       `${prefix}_next_page`,
     ]);
-    assert.equal(keyboard.inline_keyboard[2]?.[1]?.text, "Page: 4");
+    assert.equal(keyboard.inline_keyboard[2]?.[1]?.text, "Page 4");
     const text = textBuilder(items);
-    assert.ok(text.text.includes(`6) ${title}`));
-    assert.match(text.text, /Published date: 20 September 2026/);
-    assert.ok(text.entities.some(entity => entity.type === "bold"));
-    assert.match(text.text, /below\.\n\n↔️ Use the arrows to browse pages\./);
-    assert.ok(boldText(text).some(span => span.startsWith("Choose your ")));
+    assert.ok(text.text.includes(`6. ${title}`));
+    assert.match(text.text, /Published: 20 September 2026/);
+    assert.deepEqual(boldText(text), [heading]);
+    assert.match(
+      text.text,
+      /\n\n👇 Tap a number to pick one, or use Prev and Next to browse\.$/
+    );
   });
 }
 
@@ -79,6 +89,7 @@ runLookupCase({
   label: "calendar",
   fixture: calendar,
   title: calendar.title,
+  heading: "Academic calendars",
   keyboardBuilder: generateCalendarsKeyboard,
   textBuilder: generateCalendarsText,
   prefix: "calendar",
@@ -88,6 +99,7 @@ runLookupCase({
   label: "announcement",
   fixture: announcement,
   title: announcement.subject,
+  heading: "Announcements",
   keyboardBuilder: generateAnnouncementsKeyboard,
   textBuilder: generateAnnouncementsText,
   prefix: "announcement",
@@ -101,33 +113,29 @@ function boldText(message: FormattedString): string[] {
     );
 }
 
-test("calendar details preserve inline labels and literal title", () => {
+test("calendar details put each label directly above its value", () => {
   const details = formatCalendarDetails(calendar);
   assert.equal(
     details.text,
-    "🌟 Title: Calendar <Revised> & Final\n\n📅 Date: 20 September 2026"
+    "📖 Title\nCalendar <Revised> & Final\n\n📅 Published\n20 September 2026"
   );
-  assert.deepEqual(boldText(details), ["Title:", "Date:"]);
+  assert.deepEqual(boldText(details), ["Title", "Published"]);
 });
 
 test("announcement details preserve separate sections and entities", () => {
   const details = formatAnnouncementDetails(announcement);
   assert.equal(
     details.text,
-    "📖 Title:\n\nExams <Revised> & Final\n\n📝 Message:\n\nRead <carefully> & prepare.\n\n📅 Published: 20 September 2026"
+    "📖 Title\nExams <Revised> & Final\n\n📝 Message\nRead <carefully> & prepare.\n\n📅 Published\n20 September 2026"
   );
-  assert.deepEqual(boldText(details), [
-    "📖 Title:",
-    "📝 Message:",
-    "📅 Published:",
-  ]);
+  assert.deepEqual(boldText(details), ["Title", "Message", "Published"]);
 });
 
 test("announcement details omit empty sections", () => {
   assert.equal(
     formatAnnouncementDetails({ ...announcement, subject: "", message: "" })
       .text,
-    "📅 Published: 20 September 2026"
+    "📅 Published\n20 September 2026"
   );
   assert.equal(
     formatAnnouncementDetails({
@@ -135,7 +143,7 @@ test("announcement details omit empty sections", () => {
       subject: "",
       formattedPublishedDate: "",
     }).text,
-    "📝 Message:\n\nRead <carefully> & prepare."
+    "📝 Message\nRead <carefully> & prepare."
   );
   assert.equal(
     formatAnnouncementDetails({

@@ -2,25 +2,30 @@ import { InlineKeyboard } from "grammy";
 import { ANNOUNCEMENT_FILTER_MAP } from "../../../constants/courses.js";
 import { emoji } from "@grammyjs/emoji";
 import { fmt, FormattedString } from "@grammyjs/parse-mode";
-import { joinWithNewlines } from "../../../utils/formatting.js";
+import {
+  blocks,
+  bullets,
+  heading,
+  ICON,
+  lines,
+} from "../../../utils/message-style.js";
 
-const MESSAGES: Record<string, Array<FormattedString>> = {
-  ALREADY_SUBSCRIBED: [
-    fmt`${emoji("bell")} You’re already subscribed to announcements.`,
-    fmt`Use /announcements_show_status to see your filters.`,
-  ],
-  NOT_SUBSCRIBED_WITH_EMOJI: [
-    fmt`${emoji("cross_mark")} You are not subscribed to announcements.`,
-    fmt`Use /announcements_subscribe to choose your filters and subscribe.`,
-  ],
-  NOT_SUBSCRIBED_CHANGE_FILTER: [
-    fmt`${emoji("cross_mark")} You are not subscribed to announcements.`,
-    fmt`${emoji("light_bulb")} Use /announcements_subscribe to subscribe first.`,
-  ],
-  UNSUBSCRIBE_SUCCESS: [
-    fmt`${emoji("check_mark_button")} Unsubscribed from announcements.`,
-    fmt`Use /announcements_subscribe to subscribe again.`,
-  ],
+const MESSAGES = {
+  ALREADY_SUBSCRIBED: blocks([
+    fmt`${ICON.alertsOn} You’re already getting announcement alerts.`,
+    lines([
+      fmt`See your categories: /announcements_show_status`,
+      fmt`Change them: /announcements_change_filter`,
+    ]),
+  ]),
+  NOT_SUBSCRIBED: blocks([
+    fmt`${ICON.alertsOff} You’re not getting announcement alerts yet.`,
+    fmt`Use /announcements_subscribe to choose your categories and start.`,
+  ]),
+  UNSUBSCRIBE_SUCCESS: blocks([
+    fmt`${ICON.alertsOff} Announcement alerts are off.`,
+    fmt`Use /announcements_subscribe to turn them back on.`,
+  ]),
 } as const;
 
 function generateFilterKeyboard(selectedFilters: string[]): InlineKeyboard {
@@ -54,7 +59,7 @@ function generateFilterKeyboard(selectedFilters: string[]): InlineKeyboard {
   }
 
   if (selectedFilters.length > 0) {
-    const applyButtonText = `${emoji("bullseye")} Apply Filters`;
+    const applyButtonText = `${emoji("bullseye")} Save categories`;
     keyboard.row().text(applyButtonText, "announcement_apply_filters");
   }
 
@@ -65,33 +70,27 @@ function generateMessageText(
   selectedFilters: string[],
   mode: "add" | "change" = "add"
 ): FormattedString {
+  const title = heading(
+    ICON.alertsOn,
+    mode === "add" ? "Choose your categories" : "Change your categories"
+  );
+
   if (selectedFilters.length === 0) {
-    const action = mode === "add" ? "Choose" : "Change";
-    return joinWithNewlines(
-      [
-        fmt`${emoji("bell")} ${action} your announcement filters`,
-        fmt`Choose the categories you want notifications for. You can select more than one.`,
-      ],
-      2
-    );
+    return blocks([
+      title,
+      fmt`Pick the announcement categories you want alerts for. You can choose more than one.`,
+    ]);
   }
 
   const selectedNames = selectedFilters.map(
     (filter: string) =>
       ANNOUNCEMENT_FILTER_MAP[filter as keyof typeof ANNOUNCEMENT_FILTER_MAP]
   );
-  const action = mode === "add" ? "Choose" : "Change";
-  return joinWithNewlines(
-    [
-      fmt`${emoji("bell")} ${action} your announcement filters`,
-      joinWithNewlines([
-        fmt`${emoji("check_mark_button")} Selected:`,
-        ...selectedNames.map(name => fmt`• ${name}`),
-      ]),
-      fmt`Tap a category again to remove it. Tap “Apply Filters” to save.`,
-    ],
-    2
-  );
+  return blocks([
+    title,
+    lines([fmt`${ICON.success} Selected:`, bullets(selectedNames)]),
+    fmt`Tap a category again to remove it. Tap “Save categories” when you’re done.`,
+  ]);
 }
 
 export { generateFilterKeyboard, generateMessageText, MESSAGES };

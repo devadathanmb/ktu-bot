@@ -98,7 +98,7 @@ test("previous page stops on the first page", async () => {
 
   assert.deepEqual(stub.fetchedPages, []);
   assert.deepEqual(ctxCalls(calls, "ctx.answerCallbackQuery"), [
-    ["You are already on the first page."],
+    ["You’re already on the first page."],
   ]);
 });
 
@@ -128,7 +128,7 @@ test("next page stops when the current page is short", async () => {
 
   assert.deepEqual(stub.fetchedPages, []);
   assert.deepEqual(ctxCalls(calls, "ctx.answerCallbackQuery"), [
-    ["You are already on the last page."],
+    ["You’re already on the last page."],
   ]);
 });
 
@@ -145,7 +145,7 @@ test("next page stops when the following page is empty", async () => {
   assert.deepEqual(stub.fetchedPages, [1]);
   assert.equal(stub.currentPage, 0);
   assert.deepEqual(ctxCalls(calls, "ctx.answerCallbackQuery"), [
-    ["You are already on the last page."],
+    ["You’re already on the last page."],
   ]);
 });
 

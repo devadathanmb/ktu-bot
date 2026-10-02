@@ -66,18 +66,18 @@ test("API pages retain their items and IDs on later pages", () => {
     "timetable_page_info",
     "timetable_next_page",
   ]);
-  assert.equal(keyboard.inline_keyboard[2]?.[1]?.text, "Page: 4");
+  assert.equal(keyboard.inline_keyboard[2]?.[1]?.text, "Page 4");
   const text = generateTimetablesText(items);
-  assert.match(text.text, /1\) Exam 0/);
-  assert.match(text.text, /6\) Exam 5/);
-  assert.match(text.text, /Published date: 19 September 2026/);
+  assert.match(text.text, /1\. Exam 0/);
+  assert.match(text.text, /6\. Exam 5/);
+  assert.match(text.text, /Published: 19 September 2026/);
 });
 
 test("details preserve literal text and formatting entities", () => {
   const details = formatTimetableDetails(timetable);
   assert.equal(
     details.text,
-    "🌟 Title:\nB.Tech <Revised> & Final\n\n📅 Date: 19 September 2026"
+    "📖 Title\nB.Tech <Revised> & Final\n\n📅 Published\n19 September 2026"
   );
   assert.deepEqual(
     details.entities
@@ -85,18 +85,18 @@ test("details preserve literal text and formatting entities", () => {
       .map(entity =>
         details.text.slice(entity.offset, entity.offset + entity.length)
       ),
-    ["🌟 Title:", "📅 Date:"]
+    ["Title", "Published"]
   );
 });
 
 test("details omit absent fields", () => {
   assert.equal(
     formatTimetableDetails({ ...timetable, title: "" }).text,
-    "📅 Date: 19 September 2026"
+    "📅 Published\n19 September 2026"
   );
   assert.equal(
     formatTimetableDetails({ ...timetable, formattedPublishedDate: "" }).text,
-    "🌟 Title:\nB.Tech <Revised> & Final"
+    "📖 Title\nB.Tech <Revised> & Final"
   );
   assert.equal(
     formatTimetableDetails({

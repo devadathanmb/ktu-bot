@@ -1,5 +1,4 @@
-import { emoji } from "@grammyjs/emoji";
-import { b, fmt } from "@grammyjs/parse-mode";
+import { b, fmt, type FormattedString } from "@grammyjs/parse-mode";
 import { CallbackQueryContext } from "grammy";
 import { BotContext } from "../../../../types/bot.types.js";
 import {
@@ -13,11 +12,14 @@ import {
   editMessageIgnoringNotModified,
 } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import {
-  formatCommand,
-  joinWithNewlines,
-} from "../../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
+import {
+  downloading,
+  ICON,
+  invalidSelection,
+  loading,
+} from "../../../../utils/message-style.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { LOOKUP_CONFIG } from "../constants.js";
 import {
@@ -37,10 +39,10 @@ import {
 } from "./views.js";
 
 const MESSAGES = {
-  FETCHING_PROGRAMS: [fmt`${emoji("hourglass_not_done")} Loading programs…`],
-  FETCHING_SCHEMES: [fmt`${emoji("hourglass_not_done")} Loading schemes…`],
-  FETCHING_BRANCHES: [fmt`${emoji("hourglass_not_done")} Loading branches…`],
-  FETCHING_SYLLABUS: [fmt`${emoji("hourglass_not_done")} Loading syllabuses…`],
+  FETCHING_PROGRAMS: loading("programs"),
+  FETCHING_SCHEMES: loading("schemes"),
+  FETCHING_BRANCHES: loading("branches"),
+  FETCHING_SYLLABUS: loading("syllabuses"),
 };
 
 type CallbackContext = CallbackQueryContext<BotContext>;
@@ -169,19 +171,16 @@ function buildDownloadJob(
 
 async function showLoading(
   ctx: BotContext,
-  message: (typeof MESSAGES)[keyof typeof MESSAGES]
+  message: FormattedString
 ): Promise<void> {
-  const text = joinWithNewlines(message, 2);
   await editMessageIgnoringNotModified(() =>
-    ctx.editMessageText(text.text, { entities: text.entities })
+    ctx.editMessageText(message.text, { entities: message.entities })
   );
 }
 
 async function showInvalidSelection(ctx: CallbackContext): Promise<void> {
   await editMessageIgnoringNotModified(() =>
-    ctx.editMessageText(
-      `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(syllabusCommandInfo)} to start again.`
-    )
+    ctx.editMessageText(invalidSelection(syllabusCommandInfo).text)
   );
 }
 
@@ -275,24 +274,15 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     }
     ctx.session.syllabusEnqueuedDownloadKey = downloadKey;
     await deleteMessageSafely(ctx, ctx.callbackQuery.message?.message_id);
-    const status = await ctx.reply(
-      joinWithNewlines(
-        [
-          fmt`${emoji("hourglass_not_done")} Downloading your syllabus…`,
-          fmt`I’ll send it here when ready.`,
-        ],
-        2
-      ).text
-    );
+    const status = await ctx.reply(downloading("syllabus").text);
     await deps.queueDownload(buildDownloadJob(ctx, entry, status.message_id));
   }
 
   async function start(ctx: BotContext): Promise<void> {
     clearSyllabusSession(ctx);
     ctx.session.syllabusProgramPage = LOOKUP_CONFIG.INITIAL_PAGE;
-    const loadingMessage = joinWithNewlines(MESSAGES.FETCHING_PROGRAMS, 2);
-    const status = await ctx.reply(loadingMessage.text, {
-      entities: loadingMessage.entities,
+    const status = await ctx.reply(MESSAGES.FETCHING_PROGRAMS.text, {
+      entities: MESSAGES.FETCHING_PROGRAMS.entities,
     });
     ctx.session.syllabusMessageId = status.message_id;
     const programs = await deps.fetchPrograms();
@@ -319,9 +309,13 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     if (schemes.length === 0) {
       await editMessageIgnoringNotModified(() =>
         ctx.editMessageText(
-          joinWithNewlines([
-            fmt`${emoji("woman_shrugging")} No schemes found for ${b}${program.name}${b}.`,
-          ]).text,
+          joinWithNewlines(
+            [
+              fmt`${ICON.problem} No schemes found for ${b}${program.name}${b}.`,
+              fmt`Try another program.`,
+            ],
+            2
+          ).text,
           { reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER) }
         )
       );
@@ -342,9 +336,13 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     if (branches.length === 0) {
       await editMessageIgnoringNotModified(() =>
         ctx.editMessageText(
-          joinWithNewlines([
-            fmt`${emoji("woman_shrugging")} No branches found for ${b}${scheme.scheme}${b}.`,
-          ]).text,
+          joinWithNewlines(
+            [
+              fmt`${ICON.problem} No branches found for ${b}${scheme.scheme}${b}.`,
+              fmt`Try another scheme.`,
+            ],
+            2
+          ).text,
           { reply_markup: createViewAnotherKeyboard(CB.VIEW_ANOTHER) }
         )
       );
@@ -365,7 +363,7 @@ export function createSyllabusFlow(deps: SyllabusFlowDeps): SyllabusFlow {
     if (downloadable.length === 0) {
       const text = joinWithNewlines(
         [
-          fmt`${emoji("woman_shrugging")} No syllabus uploaded yet for ${b}${branch.branchName}${b}.`,
+          fmt`${ICON.problem} No syllabus is uploaded yet for ${b}${branch.branchName}${b}.`,
           fmt`Try another branch or check back later.`,
         ],
         2

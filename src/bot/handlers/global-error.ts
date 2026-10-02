@@ -1,6 +1,6 @@
 import { BotError } from "grammy";
 import { replyMessageSafely } from "../../utils/bot.js";
-import { emoji } from "@grammyjs/emoji";
+import { problem } from "../../utils/message-style.js";
 import logger from "../../utils/logger.js";
 import { HandledBotError } from "../../errors/handled-bot-error.js";
 import type { BotMetrics } from "../../metrics/definitions.js";
@@ -60,6 +60,6 @@ export const globalErrorHandler = async (
 
   await replyMessageSafely(
     ctx,
-    `${emoji("warning")} Something went wrong. Please try again later.`
+    problem("Something went wrong.", "Please try again in a few minutes.").text
   );
 };

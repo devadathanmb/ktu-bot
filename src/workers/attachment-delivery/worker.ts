@@ -13,7 +13,6 @@ import {
   type DownloadedAttachment,
 } from "../../utils/attachment-download.js";
 import logger from "../../utils/logger.js";
-import { emoji } from "@grammyjs/emoji";
 import {
   combineFailures,
   splitCombinedFailure,
@@ -26,7 +25,15 @@ import {
 } from "../../bot/utils/presentation.js";
 import { buildReplyParameters } from "../shared/utils/telegram-send.js";
 import { splitPdfAttachment } from "../../utils/pdf-splitter.js";
-import { formatCommand, joinWithNewlines } from "../../utils/formatting.js";
+import { formatCommand } from "../../utils/formatting.js";
+import {
+  blocks,
+  bullets,
+  ICON,
+  lines,
+  problem,
+  viewAnotherPrompt,
+} from "../../utils/message-style.js";
 import { coreCommand } from "../../bot/composers/core/commands/registry.js";
 import {
   announcementsCommandInfo,
@@ -160,13 +167,10 @@ export class AttachmentDeliveryProcessor {
             await this.updateStatusMessage(
               chatId,
               statusMessageId,
-              joinWithNewlines(
-                [
-                  fmt`⏳ This PDF is too large to send as one file (${Math.ceil(downloaded.fileSizeBytes / 1024 ** 2)} MiB).`,
-                  fmt`I’ll split it into smaller parts and send them here. Please wait…`,
-                ],
-                2
-              ).text
+              blocks([
+                fmt`${ICON.loading} This PDF is too large to send as one file (${Math.ceil(downloaded.fileSizeBytes / 1024 ** 2)} MiB).`,
+                fmt`I’m splitting it into smaller parts and will send them here shortly.`,
+              ]).text
             );
           }
           try {
@@ -239,12 +243,9 @@ export class AttachmentDeliveryProcessor {
         await this.updateStatusMessage(
           chatId,
           statusMessageId,
-          joinWithNewlines(
-            [
-              fmt`${emoji("warning")} Something went wrong with your download.`,
-              fmt`If any files are missing, use ${formatCommand(DOWNLOAD_COMMANDS[context] ?? coreCommand("search"))} to download them again.`,
-            ],
-            2
+          problem(
+            "Something went wrong with your download.",
+            `If any files are missing, use ${formatCommand(DOWNLOAD_COMMANDS[context] ?? coreCommand("search"))} to try again.`
           ).text
         );
       }
@@ -284,10 +285,10 @@ export class AttachmentDeliveryProcessor {
     // Telegram rejects albums when the combined upload exceeds its request limit,
     // even when every document fits individually.
     for (const [index, part] of parts.entries()) {
-      const caption = joinWithNewlines(
-        [fmt`📄 ${originalName}`, fmt`Part ${index + 1} of ${parts.length}`],
-        2
-      ).text;
+      const caption = lines([
+        fmt`${ICON.file} ${originalName}`,
+        fmt`Part ${index + 1} of ${parts.length}`,
+      ]).text;
       await this.bot.api.sendDocument(
         chatId,
         new InputFile(part.tempFilePath, part.fileName),
@@ -336,10 +337,11 @@ export class AttachmentDeliveryProcessor {
   }
 
   private buildCaption(attachments: Attachment[], context: string): string {
-    const contextEmoji = getContextEmoji(context);
-    return joinWithNewlines([
-      fmt`${contextEmoji} Attachments:`,
-      ...attachments.map(a => fmt`${a.name}`),
+    // The document already shows its own name, so a lone file needs no caption.
+    if (attachments.length < 2) return "";
+    return lines([
+      fmt`${getContextEmoji(context)} ${attachments.length} files:`,
+      bullets(attachments.map(a => a.name)),
     ]).text;
   }
 
@@ -348,12 +350,9 @@ export class AttachmentDeliveryProcessor {
     context: string
   ): Promise<void> {
     const keyboard = createViewAnotherKeyboard(context);
-    const contextEmoji = getContextEmoji(context);
-    await this.bot.api.sendMessage(
-      chatId,
-      `${contextEmoji} View another ${context}?`,
-      { reply_markup: keyboard }
-    );
+    await this.bot.api.sendMessage(chatId, viewAnotherPrompt(context), {
+      reply_markup: keyboard,
+    });
   }
 
   private async deleteStatusMessage(

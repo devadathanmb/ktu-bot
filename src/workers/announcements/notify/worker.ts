@@ -6,9 +6,13 @@ import { AnnouncementSubscriptionRepository } from "../../../db/repositories/ann
 import type { Announcement } from "../../../types/service.types.js";
 import { AnnouncementsNotifyWorkerConfig } from "../../../configs/announcements-notify-worker.js";
 import { addBroadcastJobs } from "../../broadcasts/queue.js";
-import { fmt, b, type FormattedString } from "@grammyjs/parse-mode";
-import { joinWithNewlines } from "../../../utils/formatting.js";
-import { emoji } from "@grammyjs/emoji";
+import type { FormattedString } from "@grammyjs/parse-mode";
+import {
+  blocks,
+  documentCard,
+  heading,
+  ICON,
+} from "../../../utils/message-style.js";
 import type { AnnouncementAudienceResolver } from "./audience.js";
 import { enqueueNewAnnouncementBroadcasts } from "./orchestration.js";
 import logger from "../../../utils/logger.js";
@@ -97,36 +101,13 @@ export class AnnouncementsNotifyProcessor {
   }
 
   private prepareFormattedMessage(announcement: Announcement): FormattedString {
-    const parts: FormattedString[] = [];
-
-    parts.push(
-      fmt`${b}${emoji("loudspeaker")} New KTU Announcement ${emoji("loudspeaker")}${b}`
-    );
-
-    if (announcement.subject) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("open_book")} Subject:${b}`,
-          fmt`${announcement.subject}`,
-        ])
-      );
-    }
-
-    if (announcement.message) {
-      parts.push(
-        joinWithNewlines([
-          fmt`${b}${emoji("memo")} Message:${b}`,
-          fmt`${announcement.message}`,
-        ])
-      );
-    }
-
-    if (announcement.formattedPublishedDate) {
-      parts.push(
-        fmt`${b}${emoji("calendar")} Date:${b} ${announcement.formattedPublishedDate}`
-      );
-    }
-
-    return joinWithNewlines(parts, 2);
+    return blocks([
+      heading(ICON.announcements, "New KTU announcement"),
+      documentCard({
+        title: announcement.subject,
+        message: announcement.message,
+        published: announcement.formattedPublishedDate,
+      }),
+    ]);
   }
 }

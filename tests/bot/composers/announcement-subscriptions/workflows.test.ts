@@ -29,7 +29,7 @@ test("applying filters persists before confirming and clears the session after",
   const edits = ctxCalls(calls, "api.editMessageText");
   assert.deepEqual(edits.length, 1);
   assert.deepEqual(edits[0]?.slice(0, 2), [7, 3]);
-  assert.match(edits[0]?.[2] as string, /Announcement filters updated/);
+  assert.match(edits[0]?.[2] as string, /Categories updated/);
   assert.deepEqual(ctx.session.selectedFilters, []);
   assert.equal(ctx.session.announcementSubscriptionMessageId, null);
 });
@@ -48,16 +48,10 @@ test("applying filters confirms the created filters by name", async () => {
   const edit = ctxCalls(calls, "api.editMessageText")[0];
   assert.equal(
     edit?.[2],
-    "✅ Subscribed to announcements.\n\nSelected categories:\n• B.Tech\n• MCA"
+    "✅ Alerts are on. I’ll message you about:\n\n• B.Tech\n• MCA"
   );
   const text = edit?.[2] as string;
   const options = edit?.[3] as { entities: MessageEntity[] };
-  assert.deepEqual(
-    options.entities
-      .filter(entity => entity.type === "bold")
-      .map(entity => text.slice(entity.offset, entity.offset + entity.length)),
-    ["Selected categories:"]
-  );
   for (const entity of options.entities) {
     assert.ok(
       entity.offset >= 0 && entity.offset + entity.length <= text.length
@@ -131,7 +125,7 @@ test("applying without a selection asks again and never persists", async () => {
   assert.equal(persisted, false);
   assert.match(
     ctxCalls(calls, "api.editMessageText")[0]?.[2] as string,
-    /Choose at least one category/
+    /Pick at least one category first/
   );
 });
 
@@ -165,7 +159,7 @@ test("unsubscribing deletes before sending the success reply", async () => {
   assert.equal(repliesAtDelete, 0);
   const replies = ctxCalls(calls, "ctx.reply");
   assert.deepEqual(replies.length, 1);
-  assert.match(replies[0]?.[0] as string, /Unsubscribed from announcements/);
+  assert.match(replies[0]?.[0] as string, /Announcement alerts are off/);
 });
 
 test("unsubscribing without a subscription reports it instead of a success", async () => {
@@ -175,7 +169,7 @@ test("unsubscribing without a subscription reports it instead of a success", asy
 
   const replies = ctxCalls(calls, "ctx.reply");
   assert.deepEqual(replies.length, 1);
-  assert.match(replies[0]?.[0] as string, /You are not subscribed/);
+  assert.match(replies[0]?.[0] as string, /not getting announcement alerts/);
   assert.doesNotMatch(replies[0]?.[0] as string, /successfully unsubscribed/);
 });
 

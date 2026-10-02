@@ -1,8 +1,7 @@
-import { emoji } from "@grammyjs/emoji";
-import { FormattedString, fmt, b } from "@grammyjs/parse-mode";
+import { FormattedString } from "@grammyjs/parse-mode";
 import { InlineKeyboard } from "grammy";
 import { AcademicCalendar } from "../../../../types/service.types.js";
-import { joinWithNewlines } from "../../../../utils/formatting.js";
+import { documentCard, ICON } from "../../../../utils/message-style.js";
 import {
   generatePaginatedKeyboard,
   generatePaginatedMessageText,
@@ -31,19 +30,16 @@ export function generateCalendarsText(
   const paginatedItems: PaginatedItem[] = calendarsToPageItems(calendars);
   return generatePaginatedMessageText(
     paginatedItems,
-    `${emoji("graduation_cap")} Academic Calendars`,
-    "calendar"
+    ICON.calendars,
+    "Academic calendars"
   );
 }
 
 export function formatCalendarDetails(
   calendar: AcademicCalendar
 ): FormattedString {
-  return joinWithNewlines(
-    [
-      fmt`${emoji("glowing_star")} ${b}Title:${b} ${calendar.title}`,
-      fmt`${emoji("calendar")} ${b}Date:${b} ${calendar.formattedPublishedDate}`,
-    ],
-    2
-  );
+  return documentCard({
+    title: calendar.title,
+    published: calendar.formattedPublishedDate,
+  });
 }

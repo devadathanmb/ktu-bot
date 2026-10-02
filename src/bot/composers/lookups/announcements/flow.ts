@@ -1,15 +1,16 @@
-import { emoji } from "@grammyjs/emoji";
-import { fmt } from "@grammyjs/parse-mode";
 import { CallbackQueryContext } from "grammy";
 import { BotContext } from "../../../../types/bot.types.js";
 import { Announcement } from "../../../../types/service.types.js";
 import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import {
-  formatCommand,
-  joinWithNewlines,
-} from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
+import {
+  downloading,
+  invalidSelection,
+  loading,
+  lookupEnded,
+  viewAnotherPrompt,
+} from "../../../../utils/message-style.js";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { announcementsCommandInfo } from "../command-info.js";
 import { LOOKUP_CONFIG } from "../constants.js";
@@ -29,9 +30,7 @@ import {
 } from "./views.js";
 
 const MESSAGES = {
-  FETCHING_ANNOUNCEMENTS: [
-    fmt`${emoji("hourglass_not_done")} Loading announcements…`,
-  ],
+  FETCHING_ANNOUNCEMENTS: loading("announcements"),
 };
 
 type CallbackContext = CallbackQueryContext<BotContext>;
@@ -76,7 +75,7 @@ export function createAnnouncementsFlow(
         }),
       buildKeyboard: generateAnnouncementsKeyboard,
       buildText: generateAnnouncementsText,
-      loadingMessage: joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2),
+      loadingMessage: MESSAGES.FETCHING_ANNOUNCEMENTS,
     };
   }
 
@@ -102,20 +101,16 @@ export function createAnnouncementsFlow(
     const keyboard = createViewAnotherKeyboard("announcement");
 
     if (attachments.length === 0) {
-      await ctx.reply(`${emoji("eyes")} View another announcement?`, {
+      await ctx.reply(viewAnotherPrompt("announcement"), {
         reply_markup: keyboard,
       });
       return;
     }
 
-    const plural = attachments.length > 1 ? "s" : "";
     const statusMessage = await ctx.reply(
-      joinWithNewlines(
-        [
-          fmt`${emoji("hourglass_not_done")} Downloading your file${plural}…`,
-          fmt`I’ll send ${plural ? "them" : "it"} here when ready.`,
-        ],
-        2
+      downloading(
+        attachments.length > 1 ? "files" : "file",
+        attachments.length > 1
       ).text
     );
 
@@ -140,7 +135,7 @@ export function createAnnouncementsFlow(
       ctx.session.announcementsPage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
 
-    const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_ANNOUNCEMENTS, 2);
+    const formattedMsg = MESSAGES.FETCHING_ANNOUNCEMENTS;
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -159,9 +154,7 @@ export function createAnnouncementsFlow(
     const parsed = parseSelectCallback(ctx.callbackQuery.data, "announcement");
     if (!parsed.isValid) {
       await editMessageIgnoringNotModified(() =>
-        ctx.editMessageText(
-          `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(announcementsCommandInfo)} to start again.`
-        )
+        ctx.editMessageText(invalidSelection(announcementsCommandInfo).text)
       );
       return;
     }
@@ -200,7 +193,7 @@ export function createAnnouncementsFlow(
 
     await editMessageIgnoringNotModified(() =>
       ctx.editMessageText(
-        `Use ${formatCommand(announcementsCommandInfo)} to browse announcements again.`
+        lookupEnded(announcementsCommandInfo, "announcements")
       )
     );
 

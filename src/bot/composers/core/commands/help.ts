@@ -1,70 +1,60 @@
 import { BotContext } from "../../../../types/bot.types.js";
 import { Command } from "@grammyjs/commands";
-import { fmt, b, type FormattedString } from "@grammyjs/parse-mode";
+import { emoji } from "@grammyjs/emoji";
+import { fmt, type FormattedString } from "@grammyjs/parse-mode";
+import { formatCommand } from "../../../../utils/formatting.js";
 import {
-  formatCommand,
-  joinWithNewlines,
-} from "../../../../utils/formatting.js";
+  blocks,
+  heading,
+  ICON,
+  lines,
+  tip,
+} from "../../../../utils/message-style.js";
 import { lookupCommandInfos } from "../../lookups/command-info.js";
 import { announcementSubscriptionCommandInfos } from "../../announcement-subscriptions/command-info.js";
-import { emoji } from "@grammyjs/emoji";
 import { BotConfig } from "../../../../configs/bot.js";
-import { coreCommand, coreCommands, type CoreCommandInfo } from "./registry.js";
+import { coreCommand, coreCommands } from "./registry.js";
 
 const metadata = coreCommand("help");
 
-function formatCommandSection(
+interface HelpEntry {
+  readonly name: string;
+  readonly description: string;
+}
+
+// Command on its own line, description under it, so long command names never
+// wrap awkwardly next to their description.
+function commandSection(
   title: FormattedString,
-  commands: readonly CoreCommandInfo[],
-  layout: "compact" | "stacked" = "compact"
+  commands: readonly HelpEntry[]
 ): FormattedString {
   const entries = commands.map(cmd =>
-    layout === "stacked"
-      ? joinWithNewlines([fmt`${formatCommand(cmd)}`, fmt`${cmd.description}`])
-      : fmt`${formatCommand(cmd)}: ${cmd.description}`
+    lines([fmt`${formatCommand(cmd)}`, fmt`${cmd.description}`])
   );
-  return joinWithNewlines(
-    [title, joinWithNewlines(entries, layout === "stacked" ? 2 : 1)],
-    2
-  );
+  return blocks([title, ...entries]);
 }
 
 export const helpCommand = new Command<BotContext>(
   metadata.name,
   metadata.description,
   async ctx => {
-    const helpTitle = fmt`${b}Available Commands${b}`;
-    const coreCommandsMessage = formatCommandSection(
-      fmt`${emoji("gear")} ${b}Other commands${b}`,
-      coreCommands
-    );
-    const lookupCommands = formatCommandSection(
-      fmt`${emoji("magnifying_glass_tilted_left")} ${b}Find documents${b}`,
-      lookupCommandInfos
-    );
-    const subscriptionCommands = formatCommandSection(
-      fmt`${emoji("bell")} ${b}Announcement alerts${b}`,
-      announcementSubscriptionCommandInfos,
-      "stacked"
-    );
-    const inlineInfo = joinWithNewlines([
-      fmt`${emoji("light_bulb")} ${b}Search in any chat${b}`,
-      fmt`Type ${b}@${BotConfig.BOT_USERNAME}${b} followed by keywords to search announcements, timetables, and calendars. Use /search for examples.`,
+    const message = blocks([
+      commandSection(
+        heading(ICON.search, "Find documents"),
+        lookupCommandInfos
+      ),
+      commandSection(
+        heading(ICON.alertsOn, "Announcement alerts"),
+        announcementSubscriptionCommandInfos
+      ),
+      commandSection(heading(emoji("gear"), "More"), coreCommands),
+      tip(
+        `Search from any chat: type @${BotConfig.BOT_USERNAME} and your keywords. Send /search for examples.`
+      ),
     ]);
 
-    const fullHelpMessage = joinWithNewlines(
-      [
-        helpTitle,
-        lookupCommands,
-        subscriptionCommands,
-        coreCommandsMessage,
-        inlineInfo,
-      ],
-      2
-    );
-
-    await ctx.reply(fullHelpMessage.text, {
-      entities: fullHelpMessage.entities,
+    await ctx.reply(message.text, {
+      entities: message.entities,
       link_preview_options: { is_disabled: true },
     });
   }

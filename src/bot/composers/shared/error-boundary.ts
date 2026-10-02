@@ -7,7 +7,7 @@ import {
   SessionNotFoundError,
 } from "../../../errors/bot-errors.js";
 import { HandledBotError } from "../../../errors/handled-bot-error.js";
-import { emoji } from "@grammyjs/emoji";
+import { problem } from "../../../utils/message-style.js";
 import logger from "../../../utils/logger.js";
 
 type LoadingMessageKey = {
@@ -31,7 +31,7 @@ export function createComposerErrorBoundary(
     } else {
       userErrorMessage =
         fallbackErrorMessage ||
-        `${emoji("warning")} Something went wrong. Please try again.`;
+        problem("Something went wrong.", "Please try again.").text;
 
       const chatId = ctx.chat?.id;
       const userId = ctx.from?.id;

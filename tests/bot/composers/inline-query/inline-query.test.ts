@@ -406,7 +406,7 @@ test("malformed IDs fail without reaching a lookup", async () => {
 
     assert.deepEqual(await resolveChosenResultAttachments(resultId, deps), {
       status: "error",
-      message: "❌ Invalid result format.",
+      message: "⚠️ That result can’t be opened.\n\nUse /search to try again.",
     });
     assert.deepEqual(calls, [], `no lookup for ${JSON.stringify(resultId)}`);
   }
@@ -417,7 +417,7 @@ test("unknown resource types fail without reaching a lookup", async () => {
 
   assert.deepEqual(await resolveChosenResultAttachments("xyz_123", deps), {
     status: "error",
-    message: "❌ Unknown resource type.",
+    message: "⚠️ That result can’t be opened.\n\nUse /search to try again.",
   });
   assert.deepEqual(calls, []);
 });
@@ -454,15 +454,18 @@ test("only the selected record lookup runs, with the parsed id", async () => {
 test("missing records report resource-specific errors", async () => {
   assert.deepEqual(await resolveChosenResultAttachments("ann_9", depsWith()), {
     status: "error",
-    message: "❌ Announcement not found.",
+    message:
+      "⚠️ I couldn’t find that announcement.\n\nUse /search to look again.",
   });
   assert.deepEqual(await resolveChosenResultAttachments("cal_9", depsWith()), {
     status: "error",
-    message: "❌ Academic calendar not found.",
+    message:
+      "⚠️ I couldn’t find that academic calendar.\n\nUse /search to look again.",
   });
   assert.deepEqual(await resolveChosenResultAttachments("tt_9", depsWith()), {
     status: "error",
-    message: "❌ Exam timetable not found.",
+    message:
+      "⚠️ I couldn’t find that exam timetable.\n\nUse /search to look again.",
   });
 });
 
@@ -494,7 +497,7 @@ test("announcement attachments resolve in order; empty ones report no attachment
   );
   assert.deepEqual(empty, {
     status: "error",
-    message: "ℹ️ No attachments found for this announcement.",
+    message: "ℹ️ This announcement has no files attached.",
   });
 });
 
@@ -532,7 +535,7 @@ test("calendar and timetable resolutions keep attachment semantics", async () =>
     );
     assert.deepEqual(incomplete, {
       status: "error",
-      message: "ℹ️ No attachments found for this exam timetable.",
+      message: "ℹ️ This exam timetable has no files attached.",
     });
   }
 });

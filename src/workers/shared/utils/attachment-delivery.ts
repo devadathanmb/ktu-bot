@@ -5,7 +5,7 @@ import { BotConfig } from "../../../configs/bot.js";
 import { uploadTempFile } from "../../../api/services/file/index.js";
 import logger from "../../../utils/logger.js";
 import { fmt } from "@grammyjs/parse-mode";
-import { joinWithNewlines } from "../../../utils/formatting.js";
+import { blocks, ICON } from "../../../utils/message-style.js";
 
 export async function uploadToFileChannel(
   bot: Bot<BotContext>,
@@ -54,14 +54,12 @@ export async function sendAsLink(
   const fileUrl = await uploadToFileHost(downloaded);
 
   const sizeMiB = (downloaded.fileSizeBytes / (1024 * 1024)).toFixed(1);
-  const label = options?.contextLabel ? `${options.contextLabel} ` : "";
-  const message = joinWithNewlines(
-    [
-      fmt`${label}${downloaded.fileName} (${sizeMiB} MiB)`,
-      fmt`🔗 Download: ${fileUrl}`,
-    ],
-    2
-  ).text;
+  const label = options?.contextLabel ?? ICON.file;
+  const message = blocks([
+    fmt`${label} ${downloaded.fileName} (${sizeMiB} MiB)`,
+    fmt`This file is too large to send here, so use this link to download it:`,
+    fmt`${ICON.link} ${fileUrl}`,
+  ]).text;
 
   const sendOptions: Parameters<typeof bot.api.sendMessage>[2] = {};
 

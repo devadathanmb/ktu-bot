@@ -171,7 +171,7 @@ test("captions only the first document and threads replies", async () => {
   const sends = calls.filter(call => call.method === "sendDocument");
   assert.equal(sends.length, 2);
   const firstOptions = sends[0]?.args[2] as Record<string, unknown>;
-  assert.match(firstOptions["caption"] as string, /Attachments:/);
+  assert.match(firstOptions["caption"] as string, /2 files:/);
   assert.match(firstOptions["caption"] as string, /a\.pdf/);
   assert.match(firstOptions["caption"] as string, /b\.pdf/);
   assert.deepEqual(firstOptions["reply_parameters"], {
@@ -198,7 +198,7 @@ test("deletes the status message and offers to view another", async () => {
     ["sendDocument", "deleteMessage", "sendMessage"]
   );
   assert.deepEqual(calls[1]?.args, [7, 9]);
-  assert.match(calls[2]?.args[1] as string, /View another syllabus\?/);
+  assert.match(calls[2]?.args[1] as string, /Want to see another syllabus\?/);
 });
 
 test("routes oversized files to link sending", async () => {
@@ -234,7 +234,7 @@ test("prepares and sends numbered PDF parts in order, then cleans original and p
       );
       assert.equal(
         calls[0]?.args[2],
-        "⏳ This PDF is too large to send as one file (94 MiB).\n\nI’ll split it into smaller parts and send them here. Please wait…"
+        "⏳ This PDF is too large to send as one file (94 MiB).\n\nI’m splitting it into smaller parts and will send them here shortly."
       );
       return parts;
     },
@@ -262,7 +262,7 @@ test("prepares and sends numbered PDF parts in order, then cleans original and p
   for (const [index, send] of sends.entries()) {
     const options = send.args[2] as Record<string, unknown>;
     if (index < 3)
-      assert.equal(options["caption"], `📄 big.pdf\n\nPart ${index + 1} of 3`);
+      assert.equal(options["caption"], `📄 big.pdf\nPart ${index + 1} of 3`);
     else assert.equal("caption" in options, false);
     assert.deepEqual(options["reply_parameters"], {
       message_id: 5,
@@ -314,7 +314,7 @@ test("large part sets upload individually with context on each part", async () =
     for (const [index, send] of sends.entries()) {
       assert.equal(
         (send.args[2] as { caption: string }).caption,
-        `📄 big.pdf\n\nPart ${index + 1} of ${count}`
+        `📄 big.pdf\nPart ${index + 1} of ${count}`
       );
     }
     assert.equal(
@@ -497,7 +497,7 @@ test("send failures update the status message and propagate", async () => {
   assert.deepEqual(edit?.args.slice(0, 2), [7, 9]);
   assert.equal(
     edit?.args[2],
-    "⚠️ Something went wrong with your download.\n\nIf any files are missing, use /syllabus to download them again."
+    "⚠️ Something went wrong with your download.\n\nIf any files are missing, use /syllabus to try again."
   );
   assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf"]);
 });
@@ -519,7 +519,7 @@ test("download errors point to a usable command for each delivery context", asyn
     const edit = calls.find(call => call.method === "editMessageText");
     assert.equal(
       edit?.args[2],
-      `⚠️ Something went wrong with your download.\n\nIf any files are missing, use ${command} to download them again.`
+      `⚠️ Something went wrong with your download.\n\nIf any files are missing, use ${command} to try again.`
     );
     assert.equal(
       calls.some(call => call.method === "sendDocument"),
@@ -605,7 +605,7 @@ test("send and cleanup failures are both preserved", async () => {
   assert.deepEqual(edit?.args.slice(0, 2), [7, 9]);
   assert.equal(
     edit?.args[2],
-    "⚠️ Something went wrong with your download.\n\nIf any files are missing, use /syllabus to download them again."
+    "⚠️ Something went wrong with your download.\n\nIf any files are missing, use /syllabus to try again."
   );
   assert.deepEqual(cleaned, ["/tmp/enc-a.pdf.pdf"]);
 });

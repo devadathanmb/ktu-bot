@@ -2,11 +2,11 @@ export const KTU_API_ORIGIN_URL = "https://ktu.edu.in";
 export const KTU_API_REFERER_URL = "https://ktu.edu.in/";
 export const KTU_API_BASE_URI = "https://api.ktu.edu.in";
 
-export const KTU_API_WEBPORTAL_API_URI =
+const KTU_API_WEBPORTAL_API_URI =
   "https://api.ktu.edu.in/ktu-web-portal-api/anon";
 
 // KTU Service API (for syllabus lookup — different path prefix)
-export const KTU_API_SERVICE_URI =
+const KTU_API_SERVICE_URI =
   "https://api.ktu.edu.in/ktu-web-portal-api/service/anon";
 export const KTU_API_SERVICE_ENDPOINTS = {
   GET_PROGRAMS: `${KTU_API_SERVICE_URI}/getprograms`,

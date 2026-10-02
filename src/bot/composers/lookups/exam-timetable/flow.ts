@@ -1,15 +1,18 @@
-import { emoji } from "@grammyjs/emoji";
-import { fmt } from "@grammyjs/parse-mode";
 import { CallbackQueryContext } from "grammy";
 import { BotContext } from "../../../../types/bot.types.js";
 import { Attachment, ExamTimeTable } from "../../../../types/service.types.js";
 import { editMessageIgnoringNotModified } from "../../../../utils/bot.js";
 import logger from "../../../../utils/logger.js";
-import {
-  formatCommand,
-  joinWithNewlines,
-} from "../../../../utils/formatting.js";
+import { joinWithNewlines } from "../../../../utils/formatting.js";
 import type { AttachmentDeliveryJob } from "../../../../workers/attachment-delivery/queue.js";
+import {
+  downloading,
+  ICON,
+  invalidSelection,
+  loading,
+  lookupEnded,
+} from "../../../../utils/message-style.js";
+import { fmt } from "@grammyjs/parse-mode";
 import { createViewAnotherKeyboard } from "../../../utils/presentation.js";
 import { timetableCommandInfo } from "../command-info.js";
 import { LOOKUP_CONFIG } from "../constants.js";
@@ -30,9 +33,7 @@ import {
 } from "./views.js";
 
 const MESSAGES = {
-  FETCHING_TIMETABLES: [
-    fmt`${emoji("hourglass_not_done")} Loading exam timetables…`,
-  ],
+  FETCHING_TIMETABLES: loading("exam timetables"),
 };
 
 type CallbackContext = CallbackQueryContext<BotContext>;
@@ -75,7 +76,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
         }),
       buildKeyboard: generateTimetablesKeyboard,
       buildText: generateTimetablesText,
-      loadingMessage: joinWithNewlines(MESSAGES.FETCHING_TIMETABLES, 2),
+      loadingMessage: MESSAGES.FETCHING_TIMETABLES,
     };
   }
 
@@ -92,7 +93,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
       const noAttachmentMsg = joinWithNewlines(
         [
           formatTimetableDetails(timetable),
-          fmt`${emoji("woman_shrugging")} No attachment found for this timetable.`,
+          fmt`${ICON.info} This timetable has no file attached.`,
         ],
         2
       );
@@ -114,15 +115,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     ctx: BotContext,
     attachment: Attachment
   ): Promise<void> {
-    const statusMessage = await ctx.reply(
-      joinWithNewlines(
-        [
-          fmt`${emoji("hourglass_not_done")} Downloading your timetable…`,
-          fmt`I’ll send it here when ready.`,
-        ],
-        2
-      ).text
-    );
+    const statusMessage = await ctx.reply(downloading("timetable").text);
 
     const jobData: AttachmentDeliveryJob = {
       chatId: ctx.chat!.id,
@@ -145,7 +138,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
       ctx.session.timetablePage = LOOKUP_CONFIG.INITIAL_PAGE;
     }
 
-    const formattedMsg = joinWithNewlines(MESSAGES.FETCHING_TIMETABLES, 2);
+    const formattedMsg = MESSAGES.FETCHING_TIMETABLES;
     const loadingMessage = await ctx.reply(formattedMsg.text, {
       entities: formattedMsg.entities,
     });
@@ -164,9 +157,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     const parsed = parseSelectCallback(ctx.callbackQuery.data, "timetable");
     if (!parsed.isValid) {
       await editMessageIgnoringNotModified(() =>
-        ctx.editMessageText(
-          `${emoji("cross_mark")} That selection didn’t work. Use ${formatCommand(timetableCommandInfo)} to start again.`
-        )
+        ctx.editMessageText(invalidSelection(timetableCommandInfo).text)
       );
       return;
     }
@@ -203,9 +194,7 @@ export function createTimetableFlow(deps: TimetableFlowDeps): TimetableFlow {
     await ctx.answerCallbackQuery();
 
     await editMessageIgnoringNotModified(() =>
-      ctx.editMessageText(
-        `Use ${formatCommand(timetableCommandInfo)} to browse timetables again.`
-      )
+      ctx.editMessageText(lookupEnded(timetableCommandInfo, "timetables"))
     );
 
     ctx.session.timetablePage = null;
