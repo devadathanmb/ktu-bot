@@ -12,6 +12,7 @@ GrammY Telegram bot + BullMQ workers. PostgreSQL (Drizzle), Redis (queues). Comp
 
 - Pure ESM (`NodeNext`): local imports need `.js` suffixes. Strict mode: watch `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, unused symbols, missing `override`, incomplete return paths.
 - No `any`; narrow `unknown` with guards.
+- Files whose header comment says they are kept on purpose or deliberately not wired in (for example `src/api/hooks/before/log-request-headers.ts`) are not dead code. Read the comment before removing anything that looks unused, and never delete them.
 - Env only in Zod-backed `src/configs/`; no new `process.env` elsewhere.
 - Comments explain rationale, invariants, external constraints, or non-obvious failure ordering; remove comments/docstrings that narrate code or justify production APIs only by testing.
 
