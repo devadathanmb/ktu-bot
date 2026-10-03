@@ -217,10 +217,6 @@ Found a bug? Have an idea? [Open an issue](https://github.com/devadathanmb/ktu-b
 
 ---
 
-## Documentation
-
-- **[The Rewrite Story](./docs/rewrite.md)**: Why I rewrote this and some commonly asked questions
-
 ## License
 
 **AGPL-3.0**: See [LICENSE](./LICENSE.md) for details.
